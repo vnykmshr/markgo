@@ -112,7 +112,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (result.success) {
           showMessage(
             result.message ||
-              "Thank you for your message! I'll get back to you soon.",
+              "Thank you for your message! You'll receive a response soon.",
             "success",
           );
           contactForm.reset();
