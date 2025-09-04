@@ -227,13 +227,13 @@ func BenchmarkMemoryLeakDetection(b *testing.B) {
 			req, _ := http.NewRequest("GET", endpoint, nil)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, req)
-			
+
 			// Explicit cleanup every 20 requests to prevent accumulation
 			if j%20 == 0 {
 				runtime.GC()
 			}
 		}
-		
+
 		// Force cleanup after each batch
 		runtime.GC()
 	}

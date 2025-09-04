@@ -765,10 +765,3 @@ func createBenchmarkTemplateService(b *testing.B) *TemplateService {
 
 	return service
 }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

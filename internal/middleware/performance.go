@@ -177,23 +177,23 @@ func cleanupOldestEndpoints() {
 		endpoint string
 		count    int64
 	}
-	
+
 	var endpoints []endpointCount
 	for endpoint, count := range globalMetrics.requestsByEndpoint {
 		endpoints = append(endpoints, endpointCount{endpoint, count})
 	}
-	
+
 	// Sort by count to find least used endpoints
 	sort.Slice(endpoints, func(i, j int) bool {
 		return endpoints[i].count < endpoints[j].count
 	})
-	
+
 	// Remove bottom 20% of endpoints to keep memory bounded
 	removeCount := len(endpoints) / 5
 	if removeCount < 5 {
 		removeCount = 5
 	}
-	
+
 	for i := 0; i < removeCount && i < len(endpoints); i++ {
 		endpoint := endpoints[i].endpoint
 		delete(globalMetrics.requestsByEndpoint, endpoint)

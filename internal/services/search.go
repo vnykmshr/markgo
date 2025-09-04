@@ -24,8 +24,8 @@ type SearchResultEntry struct {
 
 // SearchCache caches processed search data and results for performance
 type SearchCache struct {
-	processedContent map[string]string           // article slug -> processed content
-	suggestions      map[string][]string         // query prefix -> suggestions
+	processedContent map[string]string             // article slug -> processed content
+	suggestions      map[string][]string           // query prefix -> suggestions
 	searchResults    map[string]*SearchResultEntry // query hash -> search results
 	mu               sync.RWMutex
 }
@@ -42,8 +42,8 @@ func NewSearchService() *SearchService {
 	return &SearchService{
 		cache: &SearchCache{
 			processedContent: make(map[string]string),
-			suggestions:     make(map[string][]string),
-			searchResults:   make(map[string]*SearchResultEntry),
+			suggestions:      make(map[string][]string),
+			searchResults:    make(map[string]*SearchResultEntry),
 		},
 		stringPool:  utils.NewStringBuilderPool(),
 		slicePool:   utils.NewSlicePool(),
@@ -58,12 +58,12 @@ func (s *SearchService) Search(articles []*models.Article, query string, limit i
 	}
 
 	query = strings.ToLower(strings.TrimSpace(query))
-	
+
 	// Check cache first for exact query matches
 	if cachedResult := s.getCachedSearchResult(query, limit); cachedResult != nil {
 		return cachedResult
 	}
-	
+
 	searchTerms := s.tokenizeOptimized(query)
 
 	if len(searchTerms) == 0 {
@@ -78,7 +78,7 @@ func (s *SearchService) Search(articles []*models.Article, query string, limit i
 
 	// Pre-allocate results with exact needed capacity
 	results := make([]*models.SearchResult, 0, maxResults)
-	
+
 	// Priority-based processing: process recent/featured articles first
 	articlesToProcess := s.prioritizeArticles(articles)
 
@@ -128,13 +128,13 @@ func (s *SearchService) SearchPaginated(articles []*models.Article, query string
 
 	// Get all search results (potentially from cache)
 	allResults := s.Search(articles, query, 0) // No limit to get all results
-	
+
 	totalResults := len(allResults)
-	
+
 	// Calculate pagination bounds
 	startIdx := (page - 1) * pageSize
 	endIdx := startIdx + pageSize
-	
+
 	var pageResults []*models.SearchResult
 	if startIdx < totalResults {
 		if endIdx > totalResults {
@@ -142,10 +142,10 @@ func (s *SearchService) SearchPaginated(articles []*models.Article, query string
 		}
 		pageResults = allResults[startIdx:endIdx]
 	}
-	
+
 	// Create pagination info
 	pagination := models.NewPagination(page, totalResults, pageSize)
-	
+
 	return &models.SearchResultPage{
 		Results:    pageResults,
 		Pagination: pagination,
@@ -281,7 +281,7 @@ func (s *SearchService) GetSuggestions(articles []*models.Article, query string,
 func (s *SearchService) ClearCache() {
 	s.cache.mu.Lock()
 	defer s.cache.mu.Unlock()
-	
+
 	s.cache.processedContent = make(map[string]string)
 	s.cache.suggestions = make(map[string][]string)
 	s.cache.searchResults = make(map[string]*SearchResultEntry)
@@ -290,15 +290,15 @@ func (s *SearchService) ClearCache() {
 // getCachedSearchResult retrieves cached search results if available and not expired
 func (s *SearchService) getCachedSearchResult(query string, limit int) []*models.SearchResult {
 	cacheKey := s.buildCacheKey(query, limit)
-	
+
 	s.cache.mu.RLock()
 	entry, exists := s.cache.searchResults[cacheKey]
 	s.cache.mu.RUnlock()
-	
+
 	if !exists || entry == nil {
 		return nil
 	}
-	
+
 	// Check if cache entry has expired
 	if time.Now().After(entry.ExpiresAt) {
 		// Remove expired entry
@@ -307,7 +307,7 @@ func (s *SearchService) getCachedSearchResult(query string, limit int) []*models
 		s.cache.mu.Unlock()
 		return nil
 	}
-	
+
 	// Return cached results
 	return entry.Results
 }
@@ -317,25 +317,25 @@ func (s *SearchService) cacheSearchResult(query string, results []*models.Search
 	if len(results) == 0 || ttl <= 0 {
 		return // Don't cache empty results or with invalid TTL
 	}
-	
+
 	cacheKey := s.buildCacheKey(query, len(results))
 	now := time.Now()
-	
+
 	entry := &SearchResultEntry{
 		Results:   results,
 		Query:     query,
 		Timestamp: now,
 		ExpiresAt: now.Add(ttl),
 	}
-	
+
 	s.cache.mu.Lock()
 	defer s.cache.mu.Unlock()
-	
+
 	// Prevent unbounded cache growth
 	if len(s.cache.searchResults) > 100 {
 		s.cleanupExpiredSearchResults()
 	}
-	
+
 	s.cache.searchResults[cacheKey] = entry
 }
 
@@ -343,12 +343,12 @@ func (s *SearchService) cacheSearchResult(query string, results []*models.Search
 func (s *SearchService) buildCacheKey(query string, limit int) string {
 	builder := s.stringPool.Get()
 	defer s.stringPool.Put(builder)
-	
+
 	builder.Reset()
 	builder.WriteString(query)
 	builder.WriteString(":")
 	builder.WriteString(fmt.Sprintf("%d", limit))
-	
+
 	return builder.String()
 }
 
@@ -356,37 +356,37 @@ func (s *SearchService) buildCacheKey(query string, limit int) string {
 func (s *SearchService) cleanupExpiredSearchResults() {
 	now := time.Now()
 	expiredKeys := make([]string, 0, 20) // Pre-allocate for common case
-	
+
 	for key, entry := range s.cache.searchResults {
 		if entry == nil || now.After(entry.ExpiresAt) {
 			expiredKeys = append(expiredKeys, key)
 		}
 	}
-	
+
 	// Remove expired entries
 	for _, key := range expiredKeys {
 		delete(s.cache.searchResults, key)
 	}
-	
+
 	// If still too many entries, remove oldest ones
 	if len(s.cache.searchResults) > 50 {
 		type entryInfo struct {
 			key       string
 			timestamp time.Time
 		}
-		
+
 		var entries []entryInfo
 		for key, entry := range s.cache.searchResults {
 			if entry != nil {
 				entries = append(entries, entryInfo{key, entry.Timestamp})
 			}
 		}
-		
+
 		// Sort by timestamp to find oldest
 		sort.Slice(entries, func(i, j int) bool {
 			return entries[i].timestamp.Before(entries[j].timestamp)
 		})
-		
+
 		// Remove oldest 30 entries
 		removeCount := len(entries) - 50
 		for i := 0; i < removeCount && i < len(entries); i++ {
@@ -399,7 +399,7 @@ func (s *SearchService) cleanupExpiredSearchResults() {
 func (s *SearchService) GetCacheStats() map[string]int {
 	s.cache.mu.RLock()
 	defer s.cache.mu.RUnlock()
-	
+
 	return map[string]int{
 		"processed_content": len(s.cache.processedContent),
 		"suggestions":       len(s.cache.suggestions),
@@ -425,10 +425,10 @@ func (s *SearchService) tokenizeOptimized(text string) []string {
 			builder.WriteRune(char)
 		}
 	}
-	
+
 	// Split by whitespace and filter
 	words := strings.Fields(builder.String())
-	
+
 	// Use pooled slice for tokens
 	tokens := s.slicePool.GetStringSlice()
 	defer s.slicePool.PutStringSlice(tokens)
@@ -483,7 +483,7 @@ func (s *SearchService) calculateScoreOptimized(article *models.Article, searchT
 			}
 		}
 
-		// Categories matching - early exit optimization  
+		// Categories matching - early exit optimization
 		if catScore := s.scoreCategoriesMatch(article.Categories, term); catScore > 0 {
 			termScore += catScore
 			if !matchedFieldsMap["categories"] {
@@ -537,7 +537,7 @@ func (s *SearchService) calculateScoreOptimized(article *models.Article, searchT
 		}
 
 		score += termScore
-		
+
 		// Early exit if we have a very high score already
 		if score > 100.0 {
 			break
@@ -576,7 +576,7 @@ func (s *SearchService) getProcessedContent(article *models.Article) string {
 
 	// Process content
 	content := strings.ToLower(s.stripHTMLOptimized(article.GetProcessedContent()))
-	
+
 	// Cache the processed content with bounds checking
 	s.cache.mu.Lock()
 	// Prevent unbounded cache growth during benchmarks
@@ -591,7 +591,7 @@ func (s *SearchService) getProcessedContent(article *models.Article) string {
 	}
 	s.cache.processedContent[article.Slug] = content
 	s.cache.mu.Unlock()
-	
+
 	return content
 }
 
@@ -600,7 +600,7 @@ func (s *SearchService) scoreTitleMatch(title, term string) float64 {
 	if !strings.Contains(title, term) {
 		return 0
 	}
-	
+
 	if title == term {
 		return 30.0 // Exact title match
 	} else if strings.HasPrefix(title, term) {
@@ -635,7 +635,7 @@ func (s *SearchService) stripHTMLOptimized(html string) string {
 	if html == "" {
 		return ""
 	}
-	
+
 	builder := s.stringPool.Get()
 	defer s.stringPool.Put(builder)
 	builder.Reset()
@@ -680,14 +680,6 @@ func (s *SearchService) partialSort(results []*models.SearchResult, k int) {
 	}
 }
 
-// min is a simple min function for integers
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 // prioritizeArticles sorts articles to process high-priority ones first
 func (s *SearchService) prioritizeArticles(articles []*models.Article) []*models.Article {
 	if len(articles) <= 100 {
@@ -702,12 +694,12 @@ func (s *SearchService) prioritizeArticles(articles []*models.Article) []*models
 	// Sort by priority: featured and recent articles first
 	sort.Slice(prioritized, func(i, j int) bool {
 		a, b := prioritized[i], prioritized[j]
-		
+
 		// Featured articles get highest priority
 		if a.Featured != b.Featured {
 			return a.Featured
 		}
-		
+
 		// Then by recency
 		return a.Date.After(b.Date)
 	})
