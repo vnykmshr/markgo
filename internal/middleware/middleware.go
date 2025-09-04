@@ -7,11 +7,11 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/utils"
 )
 
 // Logger middleware for structured logging
@@ -110,107 +110,22 @@ func Security() gin.HandlerFunc {
 	}
 }
 
-// Rate limiter implementation
-type rateLimiter struct {
-	requests map[string][]time.Time
-	mutex    sync.RWMutex
-	limit    int
-	window   time.Duration
-}
-
-func newRateLimiter(limit int, window time.Duration) *rateLimiter {
-	rl := &rateLimiter{
-		requests: make(map[string][]time.Time),
-		limit:    limit,
-		window:   window,
-	}
-
-	// Start cleanup goroutine
-	go rl.cleanup()
-
-	return rl
-}
-
-func (rl *rateLimiter) isAllowed(key string) bool {
-	rl.mutex.Lock()
-	defer rl.mutex.Unlock()
-
-	now := time.Now()
-	windowStart := now.Add(-rl.window)
-
-	// Get existing requests for this key
-	requests := rl.requests[key]
-
-	// Filter out old requests
-	var validRequests []time.Time
-	for _, reqTime := range requests {
-		if reqTime.After(windowStart) {
-			validRequests = append(validRequests, reqTime)
-		}
-	}
-
-	// Check if limit exceeded
-	if len(validRequests) >= rl.limit {
-		return false
-	}
-
-	// Add current request
-	validRequests = append(validRequests, now)
-	rl.requests[key] = validRequests
-
-	return true
-}
-
-func (rl *rateLimiter) cleanup() {
-	ticker := time.NewTicker(time.Minute)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		rl.mutex.Lock()
-		now := time.Now()
-		windowStart := now.Add(-rl.window)
-
-		for key, requests := range rl.requests {
-			var validRequests []time.Time
-			for _, reqTime := range requests {
-				if reqTime.After(windowStart) {
-					validRequests = append(validRequests, reqTime)
-				}
-			}
-
-			if len(validRequests) == 0 {
-				delete(rl.requests, key)
-			} else {
-				rl.requests[key] = validRequests
-			}
-		}
-		rl.mutex.Unlock()
-	}
-}
-
-// Global rate limiters
-var (
-	generalLimiter *rateLimiter
-	contactLimiter *rateLimiter
-	limiterMutex   sync.Mutex
-)
+// Use optimized rate limiter manager for all rate limiting needs
+var rateLimiterManager = utils.GetGlobalRateLimiterManager()
 
 // RateLimit middleware for general rate limiting
 func RateLimit(limit int, window time.Duration) gin.HandlerFunc {
-	limiterMutex.Lock()
-	if generalLimiter == nil {
-		generalLimiter = newRateLimiter(limit, window)
-	}
-	limiterMutex.Unlock()
+	limiter := rateLimiterManager.GetLimiter("general", limit, window)
 
 	return func(c *gin.Context) {
 		key := c.ClientIP()
 
-		if !generalLimiter.isAllowed(key) {
-			c.JSON(http.StatusTooManyRequests, gin.H{
-				"error":   "Rate limit exceeded",
-				"message": fmt.Sprintf("Too many requests. Limit: %d requests per %v", limit, window),
-			})
+		if !limiter.IsAllowed(key) {
+			data := utils.GetTemplateData()
+			data["error"] = "Rate limit exceeded"
+			data["message"] = fmt.Sprintf("Too many requests. Limit: %d requests per %v", limit, window)
+			c.JSON(http.StatusTooManyRequests, data)
+			utils.PutTemplateData(data)
 			c.Abort()
 			return
 		}
@@ -221,20 +136,17 @@ func RateLimit(limit int, window time.Duration) gin.HandlerFunc {
 
 // ContactRateLimit middleware for contact form rate limiting
 func ContactRateLimit() gin.HandlerFunc {
-	limiterMutex.Lock()
-	if contactLimiter == nil {
-		contactLimiter = newRateLimiter(5, time.Hour) // 5 requests per hour
-	}
-	limiterMutex.Unlock()
+	limiter := rateLimiterManager.GetLimiter("contact", 5, time.Hour) // 5 requests per hour
 
 	return func(c *gin.Context) {
 		key := c.ClientIP()
 
-		if !contactLimiter.isAllowed(key) {
-			c.JSON(http.StatusTooManyRequests, gin.H{
-				"error":   "Contact form rate limit exceeded",
-				"message": "Too many contact form submissions. Please try again later.",
-			})
+		if !limiter.IsAllowed(key) {
+			data := utils.GetTemplateData()
+			data["error"] = "Contact form rate limit exceeded"
+			data["message"] = "Too many contact form submissions. Please try again later."
+			c.JSON(http.StatusTooManyRequests, data)
+			utils.PutTemplateData(data)
 			c.Abort()
 			return
 		}
@@ -318,11 +230,12 @@ func Timeout(timeout time.Duration) gin.HandlerFunc {
 		case <-finished:
 			// Request completed normally
 		case <-ctx.Done():
-			// Request timed out
-			c.JSON(http.StatusRequestTimeout, gin.H{
-				"error":   "Request timeout",
-				"message": "Request took too long to process",
-			})
+			// Request timed out - use pooled template data
+			data := utils.GetTemplateData()
+			data["error"] = "Request timeout"
+			data["message"] = "Request took too long to process"
+			c.JSON(http.StatusRequestTimeout, data)
+			utils.PutTemplateData(data)
 			c.Abort()
 		}
 	}
@@ -343,11 +256,26 @@ func RequestID() gin.HandlerFunc {
 }
 
 func generateRequestID() string {
-	// Generate 8 random bytes and convert to hex for uniqueness
-	bytes := make([]byte, 8)
+	pool := utils.GetGlobalRequestIDPool()
+	
+	// Get pooled random bytes
+	bytes := pool.GetRandomBytes()
+	defer pool.PutRandomBytes(bytes)
+	
 	if _, err := rand.Read(bytes); err != nil {
 		// Fallback to timestamp-only ID if random generation fails
 		return fmt.Sprintf("%d", time.Now().UnixNano())
 	}
-	return fmt.Sprintf("%d-%s", time.Now().UnixNano(), hex.EncodeToString(bytes))
+	
+	// Use pooled buffer for building the request ID
+	buffer := pool.GetBuffer()
+	defer pool.PutBuffer(buffer)
+	
+	// Build request ID efficiently
+	timestamp := time.Now().UnixNano()
+	hexBytes := hex.EncodeToString(bytes)
+	
+	// Format: timestamp-hexbytes
+	buffer = append(buffer, fmt.Sprintf("%d-%s", timestamp, hexBytes)...)
+	return string(buffer)
 }

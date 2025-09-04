@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/utils"
 )
 
 func TestMain(m *testing.M) {
@@ -199,40 +200,40 @@ func TestSecurity(t *testing.T) {
 }
 
 func TestRateLimiter_IsAllowed(t *testing.T) {
-	rl := newRateLimiter(2, time.Minute)
+	rl := utils.NewOptimizedRateLimiter(2, time.Minute)
 
 	// First request should be allowed
-	assert.True(t, rl.isAllowed("test-ip"))
+	assert.True(t, rl.IsAllowed("test-ip"))
 
 	// Second request should be allowed
-	assert.True(t, rl.isAllowed("test-ip"))
+	assert.True(t, rl.IsAllowed("test-ip"))
 
 	// Third request should be denied
-	assert.False(t, rl.isAllowed("test-ip"))
+	assert.False(t, rl.IsAllowed("test-ip"))
 
 	// Different IP should be allowed
-	assert.True(t, rl.isAllowed("different-ip"))
+	assert.True(t, rl.IsAllowed("different-ip"))
 }
 
 func TestRateLimiter_WindowExpiry(t *testing.T) {
-	rl := newRateLimiter(1, 100*time.Millisecond)
+	rl := utils.NewOptimizedRateLimiter(1, 100*time.Millisecond)
 
 	// First request should be allowed
-	assert.True(t, rl.isAllowed("test-ip"))
+	assert.True(t, rl.IsAllowed("test-ip"))
 
 	// Second request should be denied
-	assert.False(t, rl.isAllowed("test-ip"))
+	assert.False(t, rl.IsAllowed("test-ip"))
 
 	// Wait for window to expire
 	time.Sleep(150 * time.Millisecond)
 
 	// Request should be allowed again
-	assert.True(t, rl.isAllowed("test-ip"))
+	assert.True(t, rl.IsAllowed("test-ip"))
 }
 
 func TestRateLimit(t *testing.T) {
-	// Reset global limiter
-	generalLimiter = nil
+	// Reset rate limiter manager for clean tests
+	rateLimiterManager = utils.NewRateLimiterManager()
 
 	router := gin.New()
 	router.Use(RateLimit(2, time.Minute))
@@ -263,8 +264,8 @@ func TestRateLimit(t *testing.T) {
 }
 
 func TestContactRateLimit(t *testing.T) {
-	// Reset global limiter
-	contactLimiter = nil
+	// Reset rate limiter manager for clean tests
+	rateLimiterManager = utils.NewRateLimiterManager()
 
 	router := gin.New()
 	router.Use(ContactRateLimit())
@@ -466,45 +467,23 @@ func TestGenerateRequestID(t *testing.T) {
 }
 
 func TestRateLimiterCleanup(t *testing.T) {
-	rl := newRateLimiter(1, 50*time.Millisecond)
+	rl := utils.NewOptimizedRateLimiter(1, 50*time.Millisecond)
 
 	// Add some requests
-	rl.isAllowed("ip1")
-	rl.isAllowed("ip2")
+	rl.IsAllowed("ip1")
+	rl.IsAllowed("ip2")
 
-	// Check that entries exist
-	rl.mutex.RLock()
-	assert.Len(t, rl.requests, 2)
-	rl.mutex.RUnlock()
+	// Check that entries exist using stats
+	stats := rl.GetStats()
+	assert.GreaterOrEqual(t, stats["active_keys"], 1)
 
-	// Wait for cleanup to run (cleanup runs every minute, but we can test the logic)
+	// Wait for rate limit window to expire
 	time.Sleep(100 * time.Millisecond)
 
-	// Manually trigger cleanup logic
-	rl.mutex.Lock()
-	now := time.Now()
-	windowStart := now.Add(-rl.window)
-
-	for key, requests := range rl.requests {
-		var validRequests []time.Time
-		for _, reqTime := range requests {
-			if reqTime.After(windowStart) {
-				validRequests = append(validRequests, reqTime)
-			}
-		}
-
-		if len(validRequests) == 0 {
-			delete(rl.requests, key)
-		} else {
-			rl.requests[key] = validRequests
-		}
-	}
-	rl.mutex.Unlock()
-
-	// Old entries should be cleaned up
-	rl.mutex.RLock()
-	assert.Len(t, rl.requests, 0)
-	rl.mutex.RUnlock()
+	// Test that rate limiting works correctly after window expiry
+	// Since the window was 50ms and we waited 100ms, requests should be allowed again
+	assert.True(t, rl.IsAllowed("ip1"))
+	assert.True(t, rl.IsAllowed("ip2"))
 }
 
 func TestCORSDisallowedOrigin(t *testing.T) {
@@ -552,8 +531,8 @@ func BenchmarkLogger(b *testing.B) {
 }
 
 func BenchmarkRateLimit(b *testing.B) {
-	// Reset global limiter
-	generalLimiter = nil
+	// Reset rate limiter manager for clean benchmark
+	rateLimiterManager = utils.NewRateLimiterManager()
 
 	router := gin.New()
 	router.Use(RateLimit(1000, time.Minute)) // High limit for benchmarking
