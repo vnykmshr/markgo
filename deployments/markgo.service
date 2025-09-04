@@ -1,0 +1,50 @@
+[Unit]
+Description=MarkGo Engine - High-Performance Blog Engine
+Documentation=https://github.com/yourusername/markgo
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=markgo
+Group=markgo
+WorkingDirectory=/opt/markgo
+ExecStart=/usr/local/bin/markgo
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/markgo/logs
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Environment variables
+Environment=ENVIRONMENT=production
+Environment=PORT=3000
+Environment=ARTICLES_PATH=/opt/markgo/articles
+Environment=STATIC_PATH=/opt/markgo/web/static
+Environment=TEMPLATES_PATH=/opt/markgo/web/templates
+Environment=BASE_URL=https://yourblog.com
+
+# Logging
+StandardOutput=append:/var/log/markgo/access.log
+StandardError=append:/var/log/markgo/error.log
+SyslogIdentifier=markgo
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Process management
+KillMode=mixed
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

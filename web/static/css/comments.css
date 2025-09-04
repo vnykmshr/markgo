@@ -1,0 +1,215 @@
+/* Comments Section Styling */
+.comments-section {
+    margin-top: 4rem;
+    padding-top: 3rem;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.comments-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.comments-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary, #1f2937);
+    margin: 0 0 0.5rem 0;
+}
+
+.comments-icon {
+    color: var(--accent-color, #3b82f6);
+}
+
+.comments-description {
+    color: var(--text-secondary, #6b7280);
+    font-size: 0.9rem;
+    margin: 0;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.comments-content {
+    margin-top: 1.5rem;
+}
+
+.giscus,
+.disqus-container {
+    width: 100%;
+    max-width: none;
+}
+
+.comments-noscript {
+    padding: 2rem;
+    background-color: var(--bg-secondary, #f9fafb);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    text-align: center;
+    color: var(--text-secondary, #6b7280);
+}
+
+.comments-noscript a {
+    color: var(--accent-color, #3b82f6);
+    text-decoration: none;
+}
+
+.comments-noscript a:hover {
+    text-decoration: underline;
+}
+
+.comments-unavailable {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-secondary, #6b7280);
+    background-color: var(--bg-secondary, #f9fafb);
+    border-radius: 8px;
+}
+
+/* Giscus specific styling */
+.giscus-frame {
+    width: 100%;
+    border: none;
+    color-scheme: light dark;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+    .comments-title {
+        color: var(--text-primary-dark, #f9fafb);
+    }
+
+    .comments-description {
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+
+    .comments-noscript,
+    .comments-unavailable {
+        background-color: var(--bg-secondary-dark, #1f2937);
+        border-color: var(--border-color-dark, #374151);
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .comments-section {
+        margin-top: 3rem;
+        padding-top: 2rem;
+    }
+
+    .comments-title {
+        font-size: 1.25rem;
+    }
+
+    .comments-noscript,
+    .comments-unavailable {
+        padding: 1.5rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Giscus Widget Styling */
+.giscus {
+    background: var(--bg-primary, #ffffff);
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+/* Target the Giscus iframe directly */
+.giscus iframe {
+    border-radius: 6px;
+    border: none;
+    width: 100%;
+    background: transparent;
+}
+
+/* Dark mode container styling */
+@media (prefers-color-scheme: dark) {
+    .giscus {
+        background: var(--bg-primary-dark, #111827);
+        border-color: var(--border-color-dark, #374151);
+    }
+}
+
+/* Responsive Giscus styling */
+@media (max-width: 768px) {
+    .giscus {
+        padding: 0.75rem;
+        margin-top: 0.75rem;
+        border-radius: 6px;
+    }
+}
+
+/* Article navigation styling */
+.article-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.nav-back,
+.nav-comments {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    color: var(--text-secondary, #6b7280);
+    text-decoration: none;
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    background-color: var(--bg-primary, #ffffff);
+}
+
+.nav-back:hover,
+.nav-comments:hover {
+    color: var(--accent-color, #3b82f6);
+    border-color: var(--accent-color, #3b82f6);
+    background-color: var(--bg-secondary, #f9fafb);
+    text-decoration: none;
+}
+
+.nav-back svg,
+.nav-comments svg {
+    flex-shrink: 0;
+}
+
+/* Dark mode for navigation */
+@media (prefers-color-scheme: dark) {
+    .nav-back,
+    .nav-comments {
+        color: var(--text-secondary-dark, #9ca3af);
+        border-color: var(--border-color-dark, #374151);
+        background-color: var(--bg-primary-dark, #111827);
+    }
+
+    .nav-back:hover,
+    .nav-comments:hover {
+        color: var(--accent-color-dark, #60a5fa);
+        border-color: var(--accent-color-dark, #60a5fa);
+        background-color: var(--bg-secondary-dark, #1f2937);
+    }
+}
+
+/* Mobile responsive navigation */
+@media (max-width: 640px) {
+    .article-navigation {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .nav-back,
+    .nav-comments {
+        justify-content: center;
+        padding: 1rem;
+    }
+}

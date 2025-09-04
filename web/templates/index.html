@@ -1,0 +1,215 @@
+{{ define "index-content" }}
+<div class="homepage">
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">{{ .config.Blog.Title }}</h1>
+                <p class="hero-description">{{ .config.Blog.Description }}</p>
+                <div class="hero-stats">
+                    <span class="stat-item"
+                        >{{ .totalCount }}
+                        <a href="/articles">articles</a>
+                    </span>
+                    <span class="stat-item"
+                        >{{ .totalCats }}
+                        <a href="/categories">categories</a>
+                    </span>
+                    <span class="stat-item"
+                        >{{ .totalTags }} <a href="/tags">tags</a>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="page-content">
+        <!-- Featured Articles -->
+        {{ if .featured }}
+        <section class="featured-section">
+            <div class="container">
+                <h2 class="section-title">Featured Articles</h2>
+                <div class="featured-grid">
+                    {{ range .featured }}
+                    <article class="featured-card">
+                        <div class="card-content">
+                            <h3 class="card-title">
+                                <a href="/articles/{{ .Slug }}">{{ .Title }}</a>
+                            </h3>
+                            <p class="card-excerpt">{{ .Excerpt }}</p>
+                            <div class="card-meta">
+                                <time class="card-date"
+                                    >{{ .Date.Format "January 2, 2006" }}</time
+                                >
+                                <span class="card-reading-time"
+                                    >{{ .ReadingTime }} min read</span
+                                >
+                            </div>
+                            {{ if .Tags }}
+                            <div class="card-tags">
+                                {{ range .Tags }}
+                                <a href="/tags/{{ . }}" class="tag">{{ . }}</a>
+                                {{ end }}
+                            </div>
+                            {{ end }}
+                        </div>
+                    </article>
+                    {{ end }}
+                </div>
+            </div>
+        </section>
+        {{ end }}
+
+        <!-- Recent Articles -->
+        <section class="recent-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">Recent Articles</h2>
+                    <a href="/articles" class="section-link"
+                        >View all articles →</a
+                    >
+                </div>
+
+                {{ if .recent }}
+                <div class="articles-grid">
+                    {{ range .recent }}
+                    <article class="article-card">
+                        <div class="card-content">
+                            <h3 class="card-title">
+                                <a href="/articles/{{ .Slug }}">{{ .Title }}</a>
+                            </h3>
+                            {{ if .Description }}
+                            <p class="card-description">{{ .Description }}</p>
+                            {{ end }}
+                            <p class="card-excerpt">{{ .Excerpt }}</p>
+
+                            <div class="card-meta">
+                                <time class="card-date"
+                                    >{{ .Date.Format "January 2, 2006" }}</time
+                                >
+                                <span class="card-reading-time"
+                                    >{{ .ReadingTime }} min read</span
+                                >
+                                {{ if .WordCount }}
+                                <span class="card-word-count"
+                                    >{{ .WordCount }} words</span
+                                >
+                                {{ end }}
+                            </div>
+
+                            {{ if .Tags }}
+                            <div class="card-tags">
+                                {{ range .Tags }}
+                                <a href="/tags/{{ . }}" class="tag">{{ . }}</a>
+                                {{ end }}
+                            </div>
+                            {{ end }} {{ if .Categories }}
+                            <div class="card-categories">
+                                {{ range .Categories }}
+                                <a href="/categories/{{ . }}" class="category"
+                                    >{{ . }}</a
+                                >
+                                {{ end }}
+                            </div>
+                            {{ end }}
+                        </div>
+                    </article>
+                    {{ end }}
+                </div>
+                {{ else }}
+                <div class="empty-state">
+                    <h3>No articles yet</h3>
+                    <p>Check back later for new content!</p>
+                </div>
+                {{ end }}
+            </div>
+        </section>
+
+        <!-- Popular Tags -->
+        {{ if .tags }}
+        <section class="tags-section">
+            <div class="container">
+                <h2 class="section-title">Popular Tags</h2>
+                <div class="tags-cloud">
+                    {{ range .tags }}
+                    <a
+                        href="/tags/{{ .Tag }}"
+                        class="tag-cloud-item"
+                        data-count="{{ .Count }}"
+                    >
+                        {{ .Tag }}
+                        <span class="tag-count">({{ .Count }})</span>
+                    </a>
+                    {{ end }}
+                </div>
+                <div class="tags-footer">
+                    <a href="/tags" class="section-link">View all tags →</a>
+                </div>
+            </div>
+        </section>
+        {{ end }}
+
+        <!-- Newsletter/Contact CTA -->
+        <section class="cta-section">
+            <div class="container">
+                <div class="cta-content">
+                    <h2 class="cta-title">Stay Connected</h2>
+                    <p class="cta-description">
+                        Want to discuss technology, cricket, or just say hello?
+                        <br />
+                        I'd love to hear from you.
+                    </p>
+                    <div class="cta-actions">
+                        <a href="/contact" class="btn btn-primary"
+                            >Get in Touch</a
+                        >
+                        <a href="/feed.xml" class="btn btn-secondary"
+                            >Subscribe to RSS</a
+                        >
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- JSON-LD Structured Data -->
+<script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Blog",
+        "name": "{{ .config.Blog.Title }}",
+        "description": "{{ .config.Blog.Description }}",
+        "url": "{{ .config.BaseURL }}",
+        "author": {
+            "@type": "Person",
+            "name": "{{ .config.Blog.Author }}",
+            "email": "{{ .config.Blog.AuthorEmail }}"
+        },
+        "inLanguage": "{{ .config.Blog.Language }}",
+        "blogPost": [
+            {{ range $index, $article := .recent }}
+            {{ if $index }},{{ end }}
+            {
+                "@type": "BlogPosting",
+                "headline": "{{ $article.Title }}",
+                "description": "{{ $article.Excerpt }}",
+                "url": "{{ $.config.BaseURL }}/articles/{{ $article.Slug }}",
+                "datePublished": "{{ $article.Date.Format "2006-01-02T15:04:05Z07:00" }}",
+                "author": {
+                    "@type": "Person",
+                    "name": "{{ $.config.Blog.Author }}"
+                },
+                "keywords": "{{ join ", " $article.Tags }}"
+            }
+            {{ end }}
+        ]
+    }
+</script>
+{{ end }} {{ define "index-head" }}
+<meta name="description" content="{{ .config.Blog.Description }}" />
+<meta
+    name="keywords"
+    content="blog, technology, programming, cricket, {{ .config.Blog.Author }}"
+/>
+{{ end }} {{ define "body-class" }}homepage{{ end }}

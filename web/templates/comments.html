@@ -1,0 +1,106 @@
+{{ define "comments" }} {{ if .config.Comments.Enabled }}
+<section class="comments-section" id="comments">
+    <div class="container">
+        <div class="comments-header">
+            <h3 class="comments-title">
+                <svg
+                    width="20"
+                    height="20"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    class="comments-icon"
+                >
+                    <path
+                        d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"
+                    />
+                </svg>
+                Discussion
+            </h3>
+            <p class="comments-description">
+                Share your thoughts and join the conversation. Sign in with
+                GitHub to participate.
+            </p>
+        </div>
+
+        <div class="comments-content">
+            {{ if eq .config.Comments.Provider "giscus" }} {{ template
+            "giscus-comments" . }} {{ else if eq .config.Comments.Provider
+            "disqus" }} {{ template "disqus-comments" . }} {{ else }}
+            <div class="comments-unavailable">
+                <p>Comments are currently unavailable.</p>
+            </div>
+            {{ end }}
+        </div>
+    </div>
+</section>
+{{ end }} {{ end }} {{ define "giscus-comments" }}
+<div class="giscus">
+    <script
+        src="https://giscus.app/client.js"
+        data-repo="{{ .config.Comments.GiscusRepo }}"
+        data-repo-id="{{ .config.Comments.GiscusRepoId }}"
+        data-category="{{ .config.Comments.GiscusCategory }}"
+        data-category-id="{{ .config.Comments.GiscusCategoryId }}"
+        data-mapping="pathname"
+        data-strict="0"
+        data-reactions-enabled="{{ if .config.Comments.ReactionsEnabled }}1{{ else }}0{{ end }}"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="{{ .config.Comments.Theme }}"
+        data-lang="{{ .config.Comments.Language }}"
+        data-loading="lazy"
+        data-create-issue="true"
+        crossorigin="anonymous"
+        async />
+    </script>
+
+    <noscript>
+        <div class="comments-noscript">
+            <p>
+                Comments require JavaScript to load.
+                <a
+                    href="https://github.com/{{ .config.Comments.GiscusRepo }}/discussions"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    View discussions on GitHub
+                </a>
+            </p>
+        </div>
+    </noscript>
+</div>
+{{ end }} {{ define "disqus-comments" }}
+<div class="disqus-container">
+    <div id="disqus_thread"></div>
+    <script>
+        var disqus_config = function () {
+            this.page.url =
+                "{{ .config.BaseURL }}/articles/{{ .article.Slug }}";
+            this.page.identifier = "{{ .article.Slug }}";
+            this.page.title = "{{ .article.Title }}";
+        };
+
+        (function () {
+            var d = document,
+                s = d.createElement("script");
+            s.src =
+                "https://{{ .config.Comments.DisqusShortname }}.disqus.com/embed.js";
+            s.setAttribute("data-timestamp", +new Date());
+            (d.head || d.body).appendChild(s);
+        })();
+    </script>
+
+    <noscript>
+        <div class="comments-noscript">
+            <p>
+                Please enable JavaScript to view the
+                <a href="https://disqus.com/?ref_noscript"
+                    >comments powered by Disqus.</a
+                >
+            </p>
+        </div>
+    </noscript>
+</div>
+{{ end }} {{ define "comments-css" }}
+<link rel="stylesheet" href="/static/css/comments.css?v=1.0.0" />
+{{ end }}

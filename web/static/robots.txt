@@ -1,0 +1,53 @@
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://yourblog.com/sitemap.xml
+
+# Crawl delay (optional)
+Crawl-delay: 1
+
+# Disallow certain paths
+Disallow: /admin/
+Disallow: /api/
+Disallow: /tmp/
+Disallow: /*.json$
+Disallow: /*?*
+Disallow: /search?
+
+# Allow important pages
+Allow: /articles/
+Allow: /tags/
+Allow: /categories/
+Allow: /feed.xml
+Allow: /sitemap.xml
+
+# Popular crawlers
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+# Social media crawlers
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+# Block aggressive crawlers
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
