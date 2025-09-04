@@ -308,6 +308,15 @@ install-dev-tools: ## Install development tools
 	@$(GOCMD) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	@echo "Development tools installed"
 
+# Forking and customization targets
+update-imports: ## Update import paths for forked repository (usage: make update-imports USERNAME=yourusername)
+	@if [ -z "$(USERNAME)" ]; then \
+		echo "Usage: make update-imports USERNAME=yourusername"; \
+		echo "   Or: make update-imports USERNAME=github.com/yourusername/markgo"; \
+		exit 1; \
+	fi
+	@./scripts/update-imports.sh $(USERNAME)
+
 
 
 # Production targets

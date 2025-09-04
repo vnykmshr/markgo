@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/yourusername/markgo/internal/models"
+	"github.com/vnykmshr/markgo/internal/models"
 )
 
 func TestNewSearchService(t *testing.T) {

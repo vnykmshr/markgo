@@ -16,10 +16,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"github.com/yourusername/markgo/internal/config"
-	"github.com/yourusername/markgo/internal/handlers"
-	"github.com/yourusername/markgo/internal/models"
-	"github.com/yourusername/markgo/internal/services"
+	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/handlers"
+	"github.com/vnykmshr/markgo/internal/models"
+	"github.com/vnykmshr/markgo/internal/services"
 )
 
 // Helper function to create minimal templates for testing

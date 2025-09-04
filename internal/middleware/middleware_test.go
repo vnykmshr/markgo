@@ -11,7 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"github.com/yourusername/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/config"
 )
 
 func TestMain(m *testing.M) {

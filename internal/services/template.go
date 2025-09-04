@@ -15,7 +15,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/microcosm-cc/bluemonday"
-	"github.com/yourusername/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/config"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"golang.org/x/text/unicode/norm"

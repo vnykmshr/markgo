@@ -3,7 +3,7 @@ package services
 import (
 	"time"
 
-	"github.com/yourusername/markgo/internal/models"
+	"github.com/vnykmshr/markgo/internal/models"
 )
 
 // ArticleServiceInterface defines the interface for article operations

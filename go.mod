@@ -1,4 +1,4 @@
-module github.com/yourusername/markgo
+module github.com/vnykmshr/markgo
 
 go 1.24.4
 

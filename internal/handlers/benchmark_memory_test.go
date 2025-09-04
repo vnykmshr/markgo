@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/mock"
-	"github.com/yourusername/markgo/internal/models"
+	"github.com/vnykmshr/markgo/internal/models"
 )
 
 // Memory and Resource Usage Benchmarks

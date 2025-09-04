@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/yourusername/markgo/internal/models"
+	"github.com/vnykmshr/markgo/internal/models"
 )
 
 // TestHandlerGroup_PageRoutes tests multiple page routes with table-driven approach

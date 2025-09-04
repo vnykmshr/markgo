@@ -19,7 +19,7 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 	"gopkg.in/yaml.v3"
 
-	"github.com/yourusername/markgo/internal/models"
+	"github.com/vnykmshr/markgo/internal/models"
 )
 
 // Ensure ArticleService implements ArticleServiceInterface

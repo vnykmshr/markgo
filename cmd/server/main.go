@@ -13,10 +13,10 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/gin-gonic/gin"
-	"github.com/yourusername/markgo/internal/config"
-	"github.com/yourusername/markgo/internal/handlers"
-	"github.com/yourusername/markgo/internal/middleware"
-	"github.com/yourusername/markgo/internal/services"
+	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/handlers"
+	"github.com/vnykmshr/markgo/internal/middleware"
+	"github.com/vnykmshr/markgo/internal/services"
 )
 
 func main() {

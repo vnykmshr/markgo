@@ -335,9 +335,9 @@ func calculatePercentile(times []time.Duration, percentile float64) time.Duratio
 }
 
 func displayResults(result *LoadTestResult, config LoadTestConfig) {
-	fmt.Println("\n" + "="*60)
+	fmt.Println("\n" + strings.Repeat("=", 60))
 	fmt.Println("📈 LOAD TEST RESULTS")
-	fmt.Println("="*60)
+	fmt.Println(strings.Repeat("=", 60))
 	
 	fmt.Printf("Total Requests:       %d\n", result.TotalRequests)
 	fmt.Printf("Successful Requests:  %d (%.1f%%)\n", result.SuccessfulRequests, 
@@ -362,7 +362,7 @@ func displayResults(result *LoadTestResult, config LoadTestConfig) {
 	fmt.Println("\n⏱️  Response Time Distribution:")
 	displayResponseTimeDistribution(result.ResponseTimes)
 	
-	fmt.Println("\n" + "="*60)
+	fmt.Println("\n" + strings.Repeat("=", 60))
 }
 
 func displayResponseTimeDistribution(times []time.Duration) {
@@ -403,7 +403,7 @@ func displayResponseTimeDistribution(times []time.Duration) {
 
 func validatePerformanceTargets(result *LoadTestResult) {
 	fmt.Println("\n🎯 PERFORMANCE TARGET VALIDATION")
-	fmt.Println("="*40)
+	fmt.Println(strings.Repeat("=", 40))
 	
 	targets := []struct {
 		name        string
@@ -476,7 +476,7 @@ func validatePerformanceTargets(result *LoadTestResult) {
 	
 	// Competitive analysis summary
 	fmt.Println("\n🏆 COMPETITIVE ANALYSIS")
-	fmt.Println("="*25)
+	fmt.Println(strings.Repeat("=", 25))
 	
 	if result.P95ResponseTime < 50*time.Millisecond {
 		fmt.Println("✅ Faster than Ghost (typical ~200ms)")

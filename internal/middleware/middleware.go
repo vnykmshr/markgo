@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yourusername/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/config"
 )
 
 // Logger middleware for structured logging

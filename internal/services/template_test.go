@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/yourusername/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/config"
 )
 
 func TestNewTemplateService(t *testing.T) {

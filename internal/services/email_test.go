@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/yourusername/markgo/internal/config"
-	"github.com/yourusername/markgo/internal/models"
+	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/models"
 )
 
 func TestNewEmailService(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yourusername/markgo/internal/models"
+	"github.com/vnykmshr/markgo/internal/models"
 )
 
 // Ensure SearchService implements SearchServiceInterface

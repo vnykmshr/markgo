@@ -12,8 +12,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/yourusername/markgo/internal/config"
-	"github.com/yourusername/markgo/internal/models"
+	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/models"
 )
 
 // TestHandlerMocks contains all mocked services for testing
