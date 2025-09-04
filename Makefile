@@ -104,6 +104,46 @@ benchmark: ## Run benchmarks
 	@echo "Running benchmarks..."
 	$(GOTEST) -bench=. -benchmem ./...
 
+load-test: ## Run load test against running server
+	@echo "Running load test..."
+	@./scripts/load-test.sh
+
+load-test-quick: ## Run quick load test (10 users, 10s)
+	@echo "Running quick load test..."
+	@CONCURRENT_USERS=10 DURATION=10s ./scripts/load-test.sh
+
+load-test-stress: ## Run stress test (100 users, 60s)
+	@echo "Running stress test..."
+	@CONCURRENT_USERS=100 DURATION=60s ./scripts/load-test.sh
+
+benchmark-integration: ## Run integration benchmarks
+	@echo "Running integration benchmarks..."
+	$(GOTEST) -run=^$$ -bench=BenchmarkFullRequestFlow -benchmem ./internal/handlers
+	$(GOTEST) -run=^$$ -bench=BenchmarkConcurrentArticleAccess -benchmem ./internal/handlers
+	$(GOTEST) -run=^$$ -bench=BenchmarkSearchWithLargeDataset -benchmem ./internal/handlers
+
+benchmark-memory: ## Run memory profiling benchmarks
+	@echo "Running memory benchmarks..."
+	$(GOTEST) -run=^$$ -bench=BenchmarkMemory -benchmem ./internal/handlers
+	$(GOTEST) -run=^$$ -bench=BenchmarkBaseline -benchmem ./internal/handlers
+
+benchmark-regression: ## Run performance regression tests
+	@echo "Running performance regression tests..."
+	@mkdir -p benchmarks/baseline
+	$(GOTEST) -run=^$$ -bench=. -benchmem -count=5 ./... | tee benchmarks/current-benchmark.txt
+	@echo "Benchmark results saved to benchmarks/current-benchmark.txt"
+
+performance-report: ## Generate comprehensive performance report
+	@echo "Generating performance report..."
+	@./scripts/competitor-benchmark.sh || echo "Benchmark completed with warnings"
+
+benchmark-all: benchmark benchmark-integration benchmark-memory ## Run all benchmarks
+
+benchmark-ci: ## Run benchmarks for CI/CD pipeline
+	@echo "Running CI benchmarks..."
+	$(GOTEST) -run=^$$ -bench=BenchmarkFullRequestFlow -benchmem -count=3 ./internal/handlers
+	$(GOTEST) -run=^$$ -bench=BenchmarkBaselineResourceUsage -benchmem ./internal/handlers
+
 # Code quality targets
 fmt: ## Format code
 	@echo "Formatting code..."

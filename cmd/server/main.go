@@ -73,6 +73,8 @@ func main() {
 	router.Use(
 		gin.Recovery(),
 		middleware.Logger(logger),
+		middleware.PerformanceMiddleware(logger),
+		middleware.CompetitorBenchmarkMiddleware(),
 		middleware.CORS(cfg.CORS),
 		middleware.Security(),
 		middleware.RateLimit(cfg.RateLimit.General.Requests, cfg.RateLimit.General.Window),
