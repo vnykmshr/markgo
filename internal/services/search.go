@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -13,10 +14,19 @@ import (
 // Ensure SearchService implements SearchServiceInterface
 var _ SearchServiceInterface = (*SearchService)(nil)
 
-// SearchCache caches processed search data for performance
+// SearchResultEntry represents a cached search result with metadata
+type SearchResultEntry struct {
+	Results   []*models.SearchResult
+	Query     string
+	Timestamp time.Time
+	ExpiresAt time.Time
+}
+
+// SearchCache caches processed search data and results for performance
 type SearchCache struct {
-	processedContent map[string]string // article slug -> processed content
-	suggestions      map[string][]string // query prefix -> suggestions
+	processedContent map[string]string           // article slug -> processed content
+	suggestions      map[string][]string         // query prefix -> suggestions
+	searchResults    map[string]*SearchResultEntry // query hash -> search results
 	mu               sync.RWMutex
 }
 
@@ -33,6 +43,7 @@ func NewSearchService() *SearchService {
 		cache: &SearchCache{
 			processedContent: make(map[string]string),
 			suggestions:     make(map[string][]string),
+			searchResults:   make(map[string]*SearchResultEntry),
 		},
 		stringPool:  utils.NewStringBuilderPool(),
 		slicePool:   utils.NewSlicePool(),
@@ -40,13 +51,19 @@ func NewSearchService() *SearchService {
 	}
 }
 
-// Search performs an optimized full-text search across articles
+// Search performs an optimized full-text search across articles with caching
 func (s *SearchService) Search(articles []*models.Article, query string, limit int) []*models.SearchResult {
 	if query == "" || len(articles) == 0 {
 		return []*models.SearchResult{}
 	}
 
 	query = strings.ToLower(strings.TrimSpace(query))
+	
+	// Check cache first for exact query matches
+	if cachedResult := s.getCachedSearchResult(query, limit); cachedResult != nil {
+		return cachedResult
+	}
+	
 	searchTerms := s.tokenizeOptimized(query)
 
 	if len(searchTerms) == 0 {
@@ -94,7 +111,47 @@ func (s *SearchService) Search(articles []*models.Article, query string, limit i
 		}
 	}
 
+	// Cache the results for future queries
+	s.cacheSearchResult(query, results, 5*time.Minute)
+
 	return results
+}
+
+// SearchPaginated performs a paginated search with caching support
+func (s *SearchService) SearchPaginated(articles []*models.Article, query string, page, pageSize int) (*models.SearchResultPage, error) {
+	if pageSize <= 0 {
+		pageSize = 10 // Default page size
+	}
+	if page <= 0 {
+		page = 1 // Default to first page
+	}
+
+	// Get all search results (potentially from cache)
+	allResults := s.Search(articles, query, 0) // No limit to get all results
+	
+	totalResults := len(allResults)
+	
+	// Calculate pagination bounds
+	startIdx := (page - 1) * pageSize
+	endIdx := startIdx + pageSize
+	
+	var pageResults []*models.SearchResult
+	if startIdx < totalResults {
+		if endIdx > totalResults {
+			endIdx = totalResults
+		}
+		pageResults = allResults[startIdx:endIdx]
+	}
+	
+	// Create pagination info
+	pagination := models.NewPagination(page, totalResults, pageSize)
+	
+	return &models.SearchResultPage{
+		Results:    pageResults,
+		Pagination: pagination,
+		Query:      query,
+		TotalTime:  0, // Will be set by caller if needed
+	}, nil
 }
 
 // SearchInTitle searches only in article titles
@@ -227,6 +284,115 @@ func (s *SearchService) ClearCache() {
 	
 	s.cache.processedContent = make(map[string]string)
 	s.cache.suggestions = make(map[string][]string)
+	s.cache.searchResults = make(map[string]*SearchResultEntry)
+}
+
+// getCachedSearchResult retrieves cached search results if available and not expired
+func (s *SearchService) getCachedSearchResult(query string, limit int) []*models.SearchResult {
+	cacheKey := s.buildCacheKey(query, limit)
+	
+	s.cache.mu.RLock()
+	entry, exists := s.cache.searchResults[cacheKey]
+	s.cache.mu.RUnlock()
+	
+	if !exists || entry == nil {
+		return nil
+	}
+	
+	// Check if cache entry has expired
+	if time.Now().After(entry.ExpiresAt) {
+		// Remove expired entry
+		s.cache.mu.Lock()
+		delete(s.cache.searchResults, cacheKey)
+		s.cache.mu.Unlock()
+		return nil
+	}
+	
+	// Return cached results
+	return entry.Results
+}
+
+// cacheSearchResult stores search results in cache with expiration
+func (s *SearchService) cacheSearchResult(query string, results []*models.SearchResult, ttl time.Duration) {
+	if len(results) == 0 || ttl <= 0 {
+		return // Don't cache empty results or with invalid TTL
+	}
+	
+	cacheKey := s.buildCacheKey(query, len(results))
+	now := time.Now()
+	
+	entry := &SearchResultEntry{
+		Results:   results,
+		Query:     query,
+		Timestamp: now,
+		ExpiresAt: now.Add(ttl),
+	}
+	
+	s.cache.mu.Lock()
+	defer s.cache.mu.Unlock()
+	
+	// Prevent unbounded cache growth
+	if len(s.cache.searchResults) > 100 {
+		s.cleanupExpiredSearchResults()
+	}
+	
+	s.cache.searchResults[cacheKey] = entry
+}
+
+// buildCacheKey creates a consistent cache key for query and limit
+func (s *SearchService) buildCacheKey(query string, limit int) string {
+	builder := s.stringPool.Get()
+	defer s.stringPool.Put(builder)
+	
+	builder.Reset()
+	builder.WriteString(query)
+	builder.WriteString(":")
+	builder.WriteString(fmt.Sprintf("%d", limit))
+	
+	return builder.String()
+}
+
+// cleanupExpiredSearchResults removes expired search result cache entries
+func (s *SearchService) cleanupExpiredSearchResults() {
+	now := time.Now()
+	expiredKeys := make([]string, 0, 20) // Pre-allocate for common case
+	
+	for key, entry := range s.cache.searchResults {
+		if entry == nil || now.After(entry.ExpiresAt) {
+			expiredKeys = append(expiredKeys, key)
+		}
+	}
+	
+	// Remove expired entries
+	for _, key := range expiredKeys {
+		delete(s.cache.searchResults, key)
+	}
+	
+	// If still too many entries, remove oldest ones
+	if len(s.cache.searchResults) > 50 {
+		type entryInfo struct {
+			key       string
+			timestamp time.Time
+		}
+		
+		var entries []entryInfo
+		for key, entry := range s.cache.searchResults {
+			if entry != nil {
+				entries = append(entries, entryInfo{key, entry.Timestamp})
+			}
+		}
+		
+		// Sort by timestamp to find oldest
+		sort.Slice(entries, func(i, j int) bool {
+			return entries[i].timestamp.Before(entries[j].timestamp)
+		})
+		
+		// Remove oldest 30 entries
+		removeCount := len(entries) - 50
+		for i := 0; i < removeCount && i < len(entries); i++ {
+			delete(s.cache.searchResults, entries[i].key)
+		}
+	}
 }
 
 // GetCacheStats returns cache statistics
@@ -236,7 +402,8 @@ func (s *SearchService) GetCacheStats() map[string]int {
 	
 	return map[string]int{
 		"processed_content": len(s.cache.processedContent),
-		"suggestions":      len(s.cache.suggestions),
+		"suggestions":       len(s.cache.suggestions),
+		"search_results":    len(s.cache.searchResults),
 	}
 }
 
