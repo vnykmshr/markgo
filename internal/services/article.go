@@ -20,10 +20,22 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/vnykmshr/markgo/internal/models"
+	"github.com/vnykmshr/markgo/internal/utils"
 )
 
-// Ensure ArticleService implements ArticleServiceInterface
+// Ensure ArticleService implements ArticleServiceInterface and ArticleProcessor
 var _ ArticleServiceInterface = (*ArticleService)(nil)
+var _ models.ArticleProcessor = (*ArticleService)(nil)
+
+// Pre-compiled regexes for excerpt generation (memory optimization)
+var (
+	codeBlockRe = regexp.MustCompile("```[\\s\\S]*?```")
+	linkRe      = regexp.MustCompile(`\[([^\]]*)\]\([^)]*\)`)
+	imageRe     = regexp.MustCompile(`!\[([^\]]*)\]\([^)]*\)`)
+	htmlTagRe   = regexp.MustCompile(`<[^>]*>`)
+	htmlEntityRe = regexp.MustCompile(`&[#\w]+;`)
+	multiSpaceRe = regexp.MustCompile(`\s+`)
+)
 
 type ArticleService struct {
 	articlesPath string
@@ -33,6 +45,7 @@ type ArticleService struct {
 	mutex        sync.RWMutex
 	markdown     goldmark.Markdown
 	lastReload   time.Time
+	tagInterner  *utils.TagInterner
 }
 
 func NewArticleService(articlesPath string, logger *slog.Logger) (*ArticleService, error) {
@@ -41,6 +54,7 @@ func NewArticleService(articlesPath string, logger *slog.Logger) (*ArticleServic
 		logger:       logger,
 		cache:        make(map[string]*models.Article),
 		articles:     make([]*models.Article, 0),
+		tagInterner:  utils.NewTagInterner(),
 		markdown: goldmark.New(
 			goldmark.WithExtensions(
 				extension.GFM,
@@ -157,23 +171,21 @@ func (s *ArticleService) ParseArticle(slug, content string) (*models.Article, er
 		}
 	}
 
+	// Intern strings for memory optimization
+	article.Tags = utils.InternStringSlice(article.Tags)
+	article.Categories = utils.InternStringSlice(article.Categories)
+	article.Author = utils.InternString(article.Author)
+
 	// Set default title if not provided
 	if article.Title == "" {
 		article.Title = s.slugToTitle(slug)
 	}
 
-	// Parse markdown content to HTML
-	var buf strings.Builder
-	if err := s.markdown.Convert([]byte(content), &buf); err != nil {
-		return nil, fmt.Errorf("failed to convert markdown: %w", err)
-	}
-	article.Content = buf.String()
+	// Store markdown content for lazy processing
+	article.Content = content
 
-	// Process content to handle duplicate titles and store separately
-	article.ProcessedContent = s.processDuplicateTitles(article.Title, article.Content)
-
-	// Generate excerpt
-	article.Excerpt = s.generateExcerpt(content, 200)
+	// Set the processor for lazy content processing
+	article.SetProcessor(s)
 
 	// Calculate word count and reading time
 	wordCount := len(strings.Fields(content))
@@ -194,6 +206,31 @@ func (s *ArticleService) slugToTitle(slug string) string {
 	return strings.Join(words, " ")
 }
 
+// ProcessMarkdown implements ArticleProcessor interface for lazy content processing
+func (s *ArticleService) ProcessMarkdown(content string) (string, error) {
+	// Parse markdown content to HTML
+	buf := utils.GetStringBuilder()
+	defer utils.PutStringBuilder(buf)
+	
+	if err := s.markdown.Convert([]byte(content), buf); err != nil {
+		return "", fmt.Errorf("failed to convert markdown: %w", err)
+	}
+	
+	// Note: For duplicate title processing, we need article title context
+	// This will be handled in the Article.GetProcessedContent method
+	return buf.String(), nil
+}
+
+// GenerateExcerpt implements ArticleProcessor interface for lazy excerpt generation
+func (s *ArticleService) GenerateExcerpt(content string, maxLength int) string {
+	return s.generateExcerpt(content, maxLength)
+}
+
+// ProcessDuplicateTitles implements ArticleProcessor interface for duplicate title handling
+func (s *ArticleService) ProcessDuplicateTitles(title, htmlContent string) string {
+	return s.processDuplicateTitles(title, htmlContent)
+}
+
 func (s *ArticleService) generateExcerpt(content string, maxLength int) string {
 	// Step 1: Clean markdown syntax properly
 	cleaned := s.cleanMarkdown(content)
@@ -209,8 +246,7 @@ func (s *ArticleService) generateExcerpt(content string, maxLength int) string {
 }
 
 func (s *ArticleService) cleanMarkdown(content string) string {
-	// Remove code blocks first (```code```)
-	codeBlockRe := regexp.MustCompile("```[\\s\\S]*?```")
+	// Use pre-compiled regex for better memory efficiency
 	content = codeBlockRe.ReplaceAllString(content, "")
 
 	// Remove inline code (`code`) but preserve surrounding spaces properly
@@ -218,7 +254,6 @@ func (s *ArticleService) cleanMarkdown(content string) string {
 	content = inlineCodeRe.ReplaceAllString(content, " ")
 
 	// Handle links properly [text](url) -> text
-	linkRe := regexp.MustCompile(`\[([^\]]*)\]\([^)]*\)`)
 	content = linkRe.ReplaceAllString(content, "$1")
 
 	// Remove headers completely - they're usually not good for excerpts
@@ -234,7 +269,6 @@ func (s *ArticleService) cleanMarkdown(content string) string {
 	content = underlineRe.ReplaceAllString(content, "$1")
 
 	// Remove image syntax ![alt](url) -> alt
-	imageRe := regexp.MustCompile(`!\[([^\]]*)\]\([^)]*\)`)
 	content = imageRe.ReplaceAllString(content, "$1")
 
 	// Remove horizontal rules and other markdown syntax
@@ -300,7 +334,9 @@ func (s *ArticleService) buildExcerpt(paragraphs []string, maxLength int) string
 		return ""
 	}
 
-	var excerpt strings.Builder
+	// Use pooled string builder for memory efficiency
+	excerpt := utils.GetStringBuilder()
+	defer utils.PutStringBuilder(excerpt)
 
 	for _, para := range paragraphs {
 		// Check if adding this paragraph would exceed limit
@@ -319,7 +355,8 @@ func (s *ArticleService) buildExcerpt(paragraphs []string, maxLength int) string
 		}
 	}
 
-	return excerpt.String()
+	result := excerpt.String()
+	return result
 }
 
 func (s *ArticleService) finalizeExcerpt(excerpt string, maxLength int) string {
@@ -602,20 +639,20 @@ func max(a, b int) int {
 	return b
 }
 
-// processDuplicateTitles detects and handles duplicate titles in article content
-func (s *ArticleService) processDuplicateTitles(title, content string) string {
+// processDuplicateTitles detects and handles duplicate titles in HTML content
+func (s *ArticleService) processDuplicateTitles(title, htmlContent string) string {
 	if title == "" {
-		return content
+		return htmlContent
 	}
 
 	// Check if the first heading in content matches the title
-	firstHeading := s.extractFirstHeading(content)
+	firstHeading := s.extractFirstHeading(htmlContent)
 	if firstHeading != "" && s.normalizeText(firstHeading) == s.normalizeText(title) {
 		// Demote the first heading from h1 to h2
-		return s.demoteFirstHeading(content)
+		return s.demoteFirstHeading(htmlContent)
 	}
 
-	return content
+	return htmlContent
 }
 
 // extractFirstHeading extracts the text content of the first h1 heading from HTML

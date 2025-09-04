@@ -81,3 +81,7 @@ cache/
 
 # Project specific
 todos/
+
+# Project binaries
+markgo
+server

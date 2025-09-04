@@ -171,7 +171,7 @@ func BenchmarkGoroutineUsage(b *testing.B) {
 	setupMinimalTemplates(router)
 	router.GET("/", handlers.Home)
 
-	_ = runtime.NumGoroutine() // startGoroutines
+	startGoroutines := runtime.NumGoroutine()
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -263,7 +263,6 @@ func BenchmarkBaselineResourceUsage(b *testing.B) {
 	runtime.GC()
 	var m1, m2 runtime.MemStats
 	runtime.ReadMemStats(&m1)
-	_ = runtime.NumGoroutine() // startGoroutines
 
 	b.ResetTimer()
 	b.ReportAllocs()

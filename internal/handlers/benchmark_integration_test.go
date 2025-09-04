@@ -463,7 +463,6 @@ func createLargeArticleSet(count int) []*models.Article {
 			Featured:    i%10 == 0, // Every 10th article is featured
 			Draft:       false,
 			Content:     generateLargeContent(1000 + i*10), // Varying content sizes
-			Excerpt:     fmt.Sprintf("This is an excerpt for test article %d with substantial content to test performance", i),
 		}
 	}
 	
@@ -481,7 +480,6 @@ func createLargeArticle() *models.Article {
 		Featured:    true,
 		Draft:       false,
 		Content:     generateLargeContent(5000), // 5KB of content
-		Excerpt:     "This comprehensive guide explores modern software architecture patterns and practices for building scalable, maintainable applications",
 	}
 }
 

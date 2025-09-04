@@ -69,7 +69,6 @@ func createTestArticles() []*models.Article {
 			Featured:    true,
 			Draft:       false,
 			Content:     "Test content 1",
-			Excerpt:     "Test excerpt 1",
 		},
 		{
 			Slug:        "test-article-2",
@@ -81,7 +80,6 @@ func createTestArticles() []*models.Article {
 			Featured:    false,
 			Draft:       false,
 			Content:     "Test content 2",
-			Excerpt:     "Test excerpt 2",
 		},
 	}
 }

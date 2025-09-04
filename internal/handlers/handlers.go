@@ -15,6 +15,7 @@ import (
 	"github.com/vnykmshr/markgo/internal/middleware"
 	"github.com/vnykmshr/markgo/internal/models"
 	"github.com/vnykmshr/markgo/internal/services"
+	"github.com/vnykmshr/markgo/internal/utils"
 )
 
 // Handlers contains all HTTP handlers
@@ -79,20 +80,18 @@ func (h *Handlers) Home(c *gin.Context) {
 		popularTags = popularTags[:10]
 	}
 
-	data := gin.H{
-		"title":           h.config.Blog.Title,
-		"description":     h.config.Blog.Description,
-		"featured":        featured,
-		"recent":          recent,
-		"tags":            popularTags,
-		"totalCount":      len(articles),
-		"totalCats":       len(categoryCounts),
-		"totalTags":       len(tagCounts),
-		"config":          h.config,
-		"template":        "index",
-		"headTemplate":    "index-head",
-		"contentTemplate": "index-content",
-	}
+	data := utils.BaseTemplateData(h.config.Blog.Title, h.config).
+		Set("description", h.config.Blog.Description).
+		Set("featured", featured).
+		Set("recent", recent).
+		Set("tags", popularTags).
+		Set("totalCount", len(articles)).
+		Set("totalCats", len(categoryCounts)).
+		Set("totalTags", len(tagCounts)).
+		Set("template", "index").
+		Set("headTemplate", "index-head").
+		Set("contentTemplate", "index-content").
+		Build()
 
 	h.cacheService.Set(cacheKey, data, h.config.Cache.TTL)
 	h.renderHTML(c, http.StatusOK, "base.html", data)
@@ -129,14 +128,7 @@ func (h *Handlers) Articles(c *gin.Context) {
 	// Get recent articles
 	recent := h.articleService.GetRecentArticles(9)
 
-	data := gin.H{
-		"title":      "All Articles",
-		"articles":   articles,
-		"recent":     recent,
-		"pagination": pagination,
-		"config":     h.config,
-		"template":   "articles",
-	}
+	data := utils.ListPageData("All Articles", h.config, recent, articles, pagination).Build()
 
 	h.cacheService.Set(cacheKey, data, h.config.Cache.TTL)
 	h.renderHTML(c, http.StatusOK, "base.html", data)
@@ -177,14 +169,11 @@ func (h *Handlers) Article(c *gin.Context) {
 	// Get recent articles
 	recent := h.articleService.GetRecentArticles(5)
 
-	data := gin.H{
-		"title":    article.Title,
-		"article":  article,
-		"related":  related,
-		"recent":   recent,
-		"config":   h.config,
-		"template": "article",
-	}
+	data := utils.ArticlePageData(article.Title, h.config, recent).
+		Set("article", article).
+		Set("related", related).
+		Set("template", "article").
+		Build()
 
 	h.cacheService.Set(cacheKey, data, h.config.Cache.TTL)
 	h.renderHTML(c, http.StatusOK, "base.html", data)
@@ -202,14 +191,12 @@ func (h *Handlers) ArticlesByTag(c *gin.Context) {
 
 	articles := h.articleService.GetArticlesByTag(tag)
 
-	data := gin.H{
-		"title":    fmt.Sprintf("Articles tagged with '%s'", tag),
-		"tag":      tag,
-		"articles": articles,
-		"count":    len(articles),
-		"config":   h.config,
-		"template": "articles",
-	}
+	data := utils.BaseTemplateData(fmt.Sprintf("Articles tagged with '%s'", tag), h.config).
+		Set("tag", tag).
+		Set("articles", articles).
+		Set("count", len(articles)).
+		Set("template", "articles").
+		Build()
 
 	h.cacheService.Set(cacheKey, data, h.config.Cache.TTL)
 	h.renderHTML(c, http.StatusOK, "base.html", data)
@@ -227,14 +214,12 @@ func (h *Handlers) ArticlesByCategory(c *gin.Context) {
 
 	articles := h.articleService.GetArticlesByCategory(category)
 
-	data := gin.H{
-		"title":    fmt.Sprintf("Articles in '%s'", category),
-		"category": category,
-		"articles": articles,
-		"count":    len(articles),
-		"config":   h.config,
-		"template": "articles",
-	}
+	data := utils.BaseTemplateData(fmt.Sprintf("Articles in '%s'", category), h.config).
+		Set("category", category).
+		Set("articles", articles).
+		Set("count", len(articles)).
+		Set("template", "articles").
+		Build()
 
 	h.cacheService.Set(cacheKey, data, h.config.Cache.TTL)
 	h.renderHTML(c, http.StatusOK, "base.html", data)
@@ -254,14 +239,11 @@ func (h *Handlers) Tags(c *gin.Context) {
 	// Get recent articles
 	recent := h.articleService.GetRecentArticles(5)
 
-	data := gin.H{
-		"title":    "All Tags",
-		"tags":     tagCounts,
-		"count":    len(tagCounts),
-		"recent":   recent,
-		"config":   h.config,
-		"template": "tags",
-	}
+	data := utils.ArticlePageData("All Tags", h.config, recent).
+		Set("tags", tagCounts).
+		Set("count", len(tagCounts)).
+		Set("template", "tags").
+		Build()
 
 	h.cacheService.Set(cacheKey, data, h.config.Cache.TTL)
 	h.renderHTML(c, http.StatusOK, "base.html", data)
@@ -278,13 +260,11 @@ func (h *Handlers) Categories(c *gin.Context) {
 
 	categories := h.articleService.GetCategoryCounts()
 
-	data := gin.H{
-		"title":      "All Categories",
-		"categories": categories,
-		"count":      len(categories),
-		"config":     h.config,
-		"template":   "categories",
-	}
+	data := utils.BaseTemplateData("All Categories", h.config).
+		Set("categories", categories).
+		Set("count", len(categories)).
+		Set("template", "categories").
+		Build()
 
 	h.cacheService.Set(cacheKey, data, h.config.Cache.TTL)
 	h.renderHTML(c, http.StatusOK, "base.html", data)
@@ -300,15 +280,13 @@ func (h *Handlers) Search(c *gin.Context) {
 		categoryCounts := h.articleService.GetCategoryCounts()
 		recent := h.articleService.GetRecentArticles(5)
 
-		h.renderHTML(c, http.StatusOK, "base.html", gin.H{
-			"title":      "Search",
-			"config":     h.config,
-			"template":   "search",
-			"recent":     recent,
-			"totalCount": len(allArticles),
-			"tags":       tagCounts,
-			"categories": categoryCounts,
-		})
+		data := utils.ArticlePageData("Search", h.config, recent).
+			Set("template", "search").
+			Set("totalCount", len(allArticles)).
+			Set("tags", tagCounts).
+			Set("categories", categoryCounts).
+			Build()
+		h.renderHTML(c, http.StatusOK, "base.html", data)
 		return
 	}
 
@@ -322,15 +300,12 @@ func (h *Handlers) Search(c *gin.Context) {
 	results := h.searchService.Search(articles, query, 20)
 	recent := h.articleService.GetRecentArticles(5)
 
-	data := gin.H{
-		"title":    fmt.Sprintf("Search results for '%s'", query),
-		"query":    query,
-		"results":  results,
-		"recent":   recent,
-		"count":    len(results),
-		"config":   h.config,
-		"template": "search",
-	}
+	data := utils.ArticlePageData(fmt.Sprintf("Search results for '%s'", query), h.config, recent).
+		Set("query", query).
+		Set("results", results).
+		Set("count", len(results)).
+		Set("template", "search").
+		Build()
 
 	h.cacheService.Set(cacheKey, data, 30*time.Minute)
 	h.renderHTML(c, http.StatusOK, "base.html", data)
@@ -348,13 +323,10 @@ func (h *Handlers) AboutArticle(c *gin.Context) {
 	// Get recent articles
 	recent := h.articleService.GetRecentArticles(5)
 
-	data := gin.H{
-		"title":    article.Title,
-		"article":  article,
-		"recent":   recent,
-		"config":   h.config,
-		"template": "about-article",
-	}
+	data := utils.ArticlePageData(article.Title, h.config, recent).
+		Set("article", article).
+		Set("template", "about-article").
+		Build()
 
 	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
@@ -364,12 +336,9 @@ func (h *Handlers) ContactForm(c *gin.Context) {
 	// Get recent articles
 	recent := h.articleService.GetRecentArticles(5)
 
-	data := gin.H{
-		"title":    "Contact",
-		"config":   h.config,
-		"template": "contact",
-		"recent":   recent,
-	}
+	data := utils.ArticlePageData("Contact", h.config, recent).
+		Set("template", "contact").
+		Build()
 
 	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
@@ -379,37 +348,41 @@ func (h *Handlers) ContactSubmit(c *gin.Context) {
 	var msg models.ContactMessage
 
 	if err := c.ShouldBindJSON(&msg); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Invalid form data",
-			"message": err.Error(),
-		})
+		data := utils.GetTemplateData()
+		data["error"] = "Invalid form data"
+		data["message"] = err.Error()
+		c.JSON(http.StatusBadRequest, data)
+		utils.PutTemplateData(data)
 		return
 	}
 
 	// Verify simple numeric captcha
 	if !h.verifyCaptcha(strings.TrimSpace(msg.CaptchaQuestion), strings.TrimSpace(msg.CaptchaAnswer)) {
 		h.logger.Warn("Invalid captcha submission", "email", msg.Email)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Invalid captcha",
-			"message": "Please solve the math problem correctly",
-		})
+		data := utils.GetTemplateData()
+		data["error"] = "Invalid captcha"
+		data["message"] = "Please solve the math problem correctly"
+		c.JSON(http.StatusBadRequest, data)
+		utils.PutTemplateData(data)
 		return
 	}
 
 	// Send email
 	if err := h.emailService.SendContactMessage(&msg); err != nil {
 		h.logger.Error("Failed to send contact email", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Failed to send message",
-			"message": "Please try again later",
-		})
+		data := utils.GetTemplateData()
+		data["error"] = "Failed to send message"
+		data["message"] = "Please try again later"
+		c.JSON(http.StatusInternalServerError, data)
+		utils.PutTemplateData(data)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "Thank you for your message! I'll get back to you soon.",
-	})
+	data := utils.GetTemplateData()
+	data["success"] = true
+	data["message"] = "Thank you for your message! I'll get back to you soon."
+	c.JSON(http.StatusOK, data)
+	utils.PutTemplateData(data)
 }
 
 // RSSFeed generates RSS feed
@@ -442,7 +415,10 @@ func (h *Handlers) JSONFeed(c *gin.Context) {
 
 	feedJSON, err := json.MarshalIndent(feed, "", "  ")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate feed"})
+		data := utils.GetTemplateData()
+		data["error"] = "Failed to generate feed"
+		c.JSON(http.StatusInternalServerError, data)
+		utils.PutTemplateData(data)
 		return
 	}
 
@@ -462,7 +438,10 @@ func (h *Handlers) Sitemap(c *gin.Context) {
 	sitemap := h.generateSitemap()
 	sitemapXML, err := xml.MarshalIndent(sitemap, "", "  ")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate sitemap"})
+		data := utils.GetTemplateData()
+		data["error"] = "Failed to generate sitemap"
+		c.JSON(http.StatusInternalServerError, data)
+		utils.PutTemplateData(data)
 		return
 	}
 
@@ -475,11 +454,12 @@ func (h *Handlers) Sitemap(c *gin.Context) {
 
 // Health check endpoint
 func (h *Handlers) Health(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"status":    "healthy",
-		"timestamp": time.Now().Format(time.RFC3339),
-		"version":   "2.0.0",
-	})
+	data := utils.GetTemplateData()
+	data["status"] = "healthy"
+	data["timestamp"] = time.Now().Format(time.RFC3339)
+	data["version"] = "2.0.0"
+	c.JSON(http.StatusOK, data)
+	utils.PutTemplateData(data)
 }
 
 // Metrics endpoint
@@ -492,44 +472,53 @@ func (h *Handlers) Metrics(c *gin.Context) {
 	p95 := calculatePercentile(perfMetrics.ResponseTimes, 0.95)
 	p99 := calculatePercentile(perfMetrics.ResponseTimes, 0.99)
 
-	performanceData := gin.H{
-		"request_count":        perfMetrics.RequestCount,
-		"avg_response_time_ms": float64(perfMetrics.AverageResponseTime.Nanoseconds()) / 1e6,
-		"min_response_time_ms": float64(perfMetrics.MinResponseTime.Nanoseconds()) / 1e6,
-		"max_response_time_ms": float64(perfMetrics.MaxResponseTime.Nanoseconds()) / 1e6,
-		"p95_response_time_ms": float64(p95.Nanoseconds()) / 1e6,
-		"p99_response_time_ms": float64(p99.Nanoseconds()) / 1e6,
-		"requests_per_second":  perfMetrics.RequestsPerSecond,
-		"memory_usage_mb":      perfMetrics.MemoryUsage / 1024 / 1024,
-		"goroutine_count":      perfMetrics.GoroutineCount,
-		"requests_by_endpoint": perfMetrics.RequestsByEndpoint,
-		"avg_response_by_endpoint": formatEndpointTimes(perfMetrics.ResponseTimesByEndpoint),
-	}
+	performanceData := utils.GetTemplateData()
+	performanceData["request_count"] = perfMetrics.RequestCount
+	performanceData["avg_response_time_ms"] = float64(perfMetrics.AverageResponseTime.Nanoseconds()) / 1e6
+	performanceData["min_response_time_ms"] = float64(perfMetrics.MinResponseTime.Nanoseconds()) / 1e6
+	performanceData["max_response_time_ms"] = float64(perfMetrics.MaxResponseTime.Nanoseconds()) / 1e6
+	performanceData["p95_response_time_ms"] = float64(p95.Nanoseconds()) / 1e6
+	performanceData["p99_response_time_ms"] = float64(p99.Nanoseconds()) / 1e6
+	performanceData["requests_per_second"] = perfMetrics.RequestsPerSecond
+	performanceData["memory_usage_mb"] = perfMetrics.MemoryUsage / 1024 / 1024
+	performanceData["goroutine_count"] = perfMetrics.GoroutineCount
+	performanceData["requests_by_endpoint"] = perfMetrics.RequestsByEndpoint
+	performanceData["avg_response_by_endpoint"] = formatEndpointTimes(perfMetrics.ResponseTimesByEndpoint)
+	defer utils.PutTemplateData(performanceData)
 
 	// Add competitive comparison
-	competitorComparison := gin.H{
-		"vs_ghost": gin.H{
-			"response_time_advantage": "4x faster", // Ghost ~200ms vs MarkGo <50ms
-			"memory_advantage":        "10x more efficient", // Ghost ~300MB vs MarkGo ~30MB
-		},
-		"vs_wordpress": gin.H{
-			"response_time_advantage": "10x faster", // WordPress ~500ms vs MarkGo <50ms
-			"memory_advantage":        "30x more efficient", // WordPress ~2GB vs MarkGo ~30MB
-		},
-		"vs_hugo": gin.H{
-			"dynamic_features": "search, forms, real-time updates",
-			"deployment":       "single binary vs build process",
-		},
-	}
+	competitorComparison := utils.GetTemplateData()
+	vsGhost := utils.GetTemplateData()
+	vsGhost["response_time_advantage"] = "4x faster" // Ghost ~200ms vs MarkGo <50ms
+	vsGhost["memory_advantage"] = "10x more efficient" // Ghost ~300MB vs MarkGo ~30MB
+	competitorComparison["vs_ghost"] = vsGhost
+	
+	vsWordpress := utils.GetTemplateData()
+	vsWordpress["response_time_advantage"] = "10x faster" // WordPress ~500ms vs MarkGo <50ms
+	vsWordpress["memory_advantage"] = "30x more efficient" // WordPress ~2GB vs MarkGo ~30MB
+	competitorComparison["vs_wordpress"] = vsWordpress
+	
+	vsHugo := utils.GetTemplateData()
+	vsHugo["dynamic_features"] = "search, forms, real-time updates"
+	vsHugo["deployment"] = "single binary vs build process"
+	competitorComparison["vs_hugo"] = vsHugo
+	
+	defer func() {
+		utils.PutTemplateData(vsGhost)
+		utils.PutTemplateData(vsWordpress)
+		utils.PutTemplateData(vsHugo)
+		utils.PutTemplateData(competitorComparison)
+	}()
 
-	c.JSON(http.StatusOK, gin.H{
-		"blog":                stats,
-		"cache":               cacheStats,
-		"performance":         performanceData,
-		"competitor_analysis": competitorComparison,
-		"timestamp":           time.Now().Format(time.RFC3339),
-		"version":             "2.0.0",
-	})
+	responseData := utils.GetTemplateData()
+	responseData["blog"] = stats
+	responseData["cache"] = cacheStats
+	responseData["performance"] = performanceData
+	responseData["competitor_analysis"] = competitorComparison
+	responseData["timestamp"] = time.Now().Format(time.RFC3339)
+	responseData["version"] = "2.0.0"
+	c.JSON(http.StatusOK, responseData)
+	utils.PutTemplateData(responseData)
 }
 
 func calculatePercentile(times []time.Duration, percentile float64) time.Duration {
@@ -570,10 +559,11 @@ func (h *Handlers) ClearCache(c *gin.Context) {
 	h.cacheService.Clear()
 	h.logger.Info("Cache cleared by admin")
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "Cache cleared successfully",
-	})
+	data := utils.GetTemplateData()
+	data["success"] = true
+	data["message"] = "Cache cleared successfully"
+	c.JSON(http.StatusOK, data)
+	utils.PutTemplateData(data)
 }
 
 // AdminStats returns admin statistics
@@ -581,21 +571,23 @@ func (h *Handlers) AdminStats(c *gin.Context) {
 	stats := h.articleService.GetStats()
 	cacheStats := h.cacheService.Stats()
 
-	c.JSON(http.StatusOK, gin.H{
-		"articles": stats,
-		"cache":    cacheStats,
-		"config":   h.emailService.GetConfig(),
-	})
+	data := utils.GetTemplateData()
+	data["articles"] = stats
+	data["cache"] = cacheStats
+	data["config"] = h.emailService.GetConfig()
+	c.JSON(http.StatusOK, data)
+	utils.PutTemplateData(data)
 }
 
 // ReloadArticles reloads articles from disk
 func (h *Handlers) ReloadArticles(c *gin.Context) {
 	if err := h.articleService.ReloadArticles(); err != nil {
 		h.logger.Error("Failed to reload articles", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Failed to reload articles",
-			"message": err.Error(),
-		})
+		data := utils.GetTemplateData()
+		data["error"] = "Failed to reload articles"
+		data["message"] = err.Error()
+		c.JSON(http.StatusInternalServerError, data)
+		utils.PutTemplateData(data)
 		return
 	}
 
@@ -603,20 +595,19 @@ func (h *Handlers) ReloadArticles(c *gin.Context) {
 	h.cacheService.Clear()
 	h.logger.Info("Articles reloaded by admin")
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "Articles reloaded successfully",
-	})
+	data := utils.GetTemplateData()
+	data["success"] = true
+	data["message"] = "Articles reloaded successfully"
+	c.JSON(http.StatusOK, data)
+	utils.PutTemplateData(data)
 }
 
 // NotFound handles 404 errors
 func (h *Handlers) NotFound(c *gin.Context) {
-	data := gin.H{
-		"title":    "Page Not Found",
-		"message":  "The page you're looking for doesn't exist.",
-		"config":   h.config,
-		"template": "404",
-	}
+	data := utils.BaseTemplateData("Page Not Found", h.config).
+		Set("message", "The page you're looking for doesn't exist.").
+		Set("template", "404").
+		Build()
 
 	h.renderHTML(c, http.StatusNotFound, "base.html", data)
 }
@@ -665,7 +656,7 @@ func (h *Handlers) generateRSSFeed(articles []*models.Article) []byte {
 	for _, article := range articles {
 		rss.WriteString(`<item>`)
 		rss.WriteString(fmt.Sprintf(`<title>%s</title>`, article.Title))
-		rss.WriteString(fmt.Sprintf(`<description>%s</description>`, article.Excerpt))
+		rss.WriteString(fmt.Sprintf(`<description>%s</description>`, article.GetExcerpt()))
 		rss.WriteString(fmt.Sprintf(`<link>%s/articles/%s</link>`, h.config.BaseURL, article.Slug))
 		rss.WriteString(fmt.Sprintf(`<guid>%s/articles/%s</guid>`, h.config.BaseURL, article.Slug))
 		rss.WriteString(fmt.Sprintf(`<pubDate>%s</pubDate>`, article.Date.Format(time.RFC1123Z)))
@@ -687,7 +678,7 @@ func (h *Handlers) generateJSONFeed(articles []*models.Article) *models.Feed {
 			Title:       article.Title,
 			ContentHTML: article.Content,
 			URL:         fmt.Sprintf("%s/articles/%s", h.config.BaseURL, article.Slug),
-			Summary:     article.Excerpt,
+			Summary:     article.GetExcerpt(),
 			Published:   article.Date,
 			Modified:    article.LastModified,
 			Tags:        article.Tags,

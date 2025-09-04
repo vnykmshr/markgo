@@ -7,6 +7,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// mockProcessor implements ArticleProcessor for testing
+type mockProcessor struct{}
+
+func (m *mockProcessor) ProcessMarkdown(content string) (string, error) {
+	return content, nil
+}
+
+func (m *mockProcessor) GenerateExcerpt(content string, maxLength int) string {
+	if len(content) <= maxLength {
+		return content
+	}
+	return content[:maxLength] + "..."
+}
+
+func (m *mockProcessor) ProcessDuplicateTitles(title, htmlContent string) string {
+	return htmlContent
+}
+
 func TestArticleToListView(t *testing.T) {
 	now := time.Now()
 	article := &Article{
@@ -20,10 +38,10 @@ func TestArticleToListView(t *testing.T) {
 		Featured:    true,
 		Author:      "Test Author",
 		Content:     "This is the article content",
-		Excerpt:     "This is the excerpt",
 		ReadingTime: 5,
 		WordCount:   100,
 	}
+	article.SetProcessor(&mockProcessor{})
 
 	listView := article.ToListView()
 
@@ -33,7 +51,7 @@ func TestArticleToListView(t *testing.T) {
 	assert.Equal(t, article.Date, listView.Date)
 	assert.Equal(t, article.Tags, listView.Tags)
 	assert.Equal(t, article.Categories, listView.Categories)
-	assert.Equal(t, article.Excerpt, listView.Excerpt)
+	assert.Equal(t, article.GetExcerpt(), listView.Excerpt)
 	assert.Equal(t, article.ReadingTime, listView.ReadingTime)
 	assert.Equal(t, article.Featured, listView.Featured)
 
@@ -171,7 +189,6 @@ func BenchmarkArticleToListView(b *testing.B) {
 		Date:        time.Now(),
 		Tags:        []string{"golang", "benchmark"},
 		Categories:  []string{"performance"},
-		Excerpt:     "This is the excerpt",
 		ReadingTime: 5,
 		Featured:    true,
 	}

@@ -186,8 +186,8 @@ func (s *SearchService) calculateScore(article *models.Article, searchTerms []st
 
 	title := strings.ToLower(article.Title)
 	description := strings.ToLower(article.Description)
-	excerpt := strings.ToLower(article.Excerpt)
-	content := strings.ToLower(s.stripHTML(article.Content))
+	excerpt := strings.ToLower(article.GetExcerpt())
+	content := strings.ToLower(s.stripHTML(article.GetProcessedContent()))
 
 	for _, term := range searchTerms {
 		termScore := 0.0

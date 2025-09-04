@@ -1,12 +1,40 @@
 package services
 
 import (
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/vnykmshr/markgo/internal/models"
 )
+
+// mockProcessor implements ArticleProcessor for testing
+type mockProcessor struct{}
+
+func (m *mockProcessor) ProcessMarkdown(content string) (string, error) {
+	// Simple mock - just return the content as-is (assume it's already HTML)
+	return content, nil
+}
+
+func (m *mockProcessor) GenerateExcerpt(content string, maxLength int) string {
+	// Simple excerpt generation for tests
+	if len(content) <= maxLength {
+		return content
+	}
+	// Strip HTML tags for excerpt
+	cleaned := strings.ReplaceAll(content, "<p>", "")
+	cleaned = strings.ReplaceAll(cleaned, "</p>", "")
+	if len(cleaned) <= maxLength {
+		return cleaned
+	}
+	return cleaned[:maxLength] + "..."
+}
+
+func (m *mockProcessor) ProcessDuplicateTitles(title, htmlContent string) string {
+	// No processing for tests
+	return htmlContent
+}
 
 func TestNewSearchService(t *testing.T) {
 	service := NewSearchService()
@@ -190,11 +218,11 @@ func TestSearchService_CalculateScore(t *testing.T) {
 		Description: "Learn golang programming language",
 		Tags:        []string{"golang", "tutorial"},
 		Categories:  []string{"programming"},
-		Excerpt:     "This is a comprehensive golang tutorial",
 		Content:     "<p>golang is a programming language developed by Google</p>",
 		Featured:    true,
 		Date:        time.Now(),
 	}
+	article.SetProcessor(&mockProcessor{})
 
 	// Test title match with "golang" (3+ chars, not filtered)
 	score, fields := service.calculateScore(article, []string{"golang"})
@@ -382,7 +410,6 @@ func TestSearchService_IsRecentAffectsScoring(t *testing.T) {
 		Description: "Learn golang programming",
 		Tags:        []string{"golang", "tutorial"},
 		Categories:  []string{"programming"},
-		Excerpt:     "This is a golang tutorial",
 		Content:     "<p>golang programming tutorial content</p>",
 		Featured:    false,                         // Not featured to isolate isRecent effect
 		Date:        time.Now().AddDate(0, 0, -10), // 10 days ago (recent)
@@ -394,7 +421,6 @@ func TestSearchService_IsRecentAffectsScoring(t *testing.T) {
 		Description: "Learn golang programming",
 		Tags:        []string{"golang", "tutorial"},
 		Categories:  []string{"programming"},
-		Excerpt:     "This is a golang tutorial",
 		Content:     "<p>golang programming tutorial content</p>",
 		Featured:    false,                         // Not featured to isolate isRecent effect
 		Date:        time.Now().AddDate(0, 0, -40), // 40 days ago (old)
@@ -506,14 +532,13 @@ func TestSearchService_EmptyAndNilInputs(t *testing.T) {
 
 // Helper function to create test articles
 func createTestArticles() []*models.Article {
-	return []*models.Article{
+	articles := []*models.Article{
 		{
 			Slug:        "golang-tutorial",
 			Title:       "golang tutorial complete",
 			Description: "Learn golang programming basics",
 			Tags:        []string{"golang", "tutorial"},
 			Categories:  []string{"programming"},
-			Excerpt:     "This is a golang tutorial for beginners",
 			Content:     "<p>golang is a programming language</p>",
 			Featured:    true,
 			Date:        time.Now(),
@@ -524,7 +549,6 @@ func createTestArticles() []*models.Article {
 			Description: "Modern web development",
 			Tags:        []string{"web", "development"},
 			Categories:  []string{"web"},
-			Excerpt:     "Learn web development",
 			Content:     "<p>Web development with modern tools</p>",
 			Featured:    false,
 			Date:        time.Now().AddDate(0, 0, -10),
@@ -535,7 +559,6 @@ func createTestArticles() []*models.Article {
 			Description: "Advanced golang programming patterns",
 			Tags:        []string{"golang", "advanced"},
 			Categories:  []string{"programming"},
-			Excerpt:     "Advanced golang programming techniques",
 			Content:     "<p>Advanced patterns in golang programming</p>",
 			Featured:    false,
 			Date:        time.Now().AddDate(0, 0, -40),
@@ -546,12 +569,19 @@ func createTestArticles() []*models.Article {
 			Description: "A test article",
 			Tags:        []string{"test"},
 			Categories:  []string{"misc"},
-			Excerpt:     "This is a test",
 			Content:     "<p>Test content</p>",
 			Featured:    false,
 			Date:        time.Now().AddDate(0, 0, -5),
 		},
 	}
+	
+	// Set processor for all articles
+	processor := &mockProcessor{}
+	for _, article := range articles {
+		article.SetProcessor(processor)
+	}
+	
+	return articles
 }
 
 // Benchmark tests
@@ -599,9 +629,9 @@ func BenchmarkSearchService_CalculateScore(b *testing.B) {
 		Description: "Learn Go programming language",
 		Tags:        []string{"golang", "tutorial"},
 		Categories:  []string{"programming"},
-		Excerpt:     "This is a comprehensive Go tutorial",
 		Content:     "<p>Go is a programming language developed by Google</p>",
 	}
+	article.SetProcessor(&mockProcessor{})
 	terms := []string{"go", "programming", "tutorial"}
 
 	for b.Loop() {

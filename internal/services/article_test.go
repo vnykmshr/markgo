@@ -125,7 +125,7 @@ This article has invalid frontmatter.`,
 			assert.True(t, article.Featured)
 			assert.False(t, article.Draft)
 			assert.NotEmpty(t, article.Content)
-			assert.NotEmpty(t, article.Excerpt)
+			assert.NotEmpty(t, article.GetExcerpt())
 			assert.Greater(t, article.WordCount, 0)
 			assert.Greater(t, article.ReadingTime, 0)
 			break
@@ -413,8 +413,8 @@ This is a comprehensive test content paragraph that contains enough meaningful t
 				assert.Equal(t, []string{"cat1"}, article.Categories)
 				assert.True(t, article.Featured)
 				assert.False(t, article.Draft)
-				assert.Contains(t, article.Content, "<h1 id=\"test-content\">Test Content</h1>")
-				assert.NotEmpty(t, article.Excerpt)
+				assert.Contains(t, article.GetProcessedContent(), "<h1 id=\"test-content\">Test Content</h1>")
+				assert.NotEmpty(t, article.GetExcerpt())
 				assert.Greater(t, article.WordCount, 0)
 				assert.Greater(t, article.ReadingTime, 0)
 			},
@@ -429,8 +429,8 @@ This is a simple article with just content and no frontmatter. It contains enoug
 			validate: func(t *testing.T, article *models.Article) {
 				assert.Equal(t, "no-frontmatter", article.Slug)
 				assert.Equal(t, "No Frontmatter", article.Title) // Generated from slug
-				assert.Contains(t, article.Content, "<h1 id=\"simple-article\">Simple Article</h1>")
-				assert.NotEmpty(t, article.Excerpt)
+				assert.Contains(t, article.GetProcessedContent(), "<h1 id=\"simple-article\">Simple Article</h1>")
+				assert.NotEmpty(t, article.GetExcerpt())
 			},
 		},
 		{
@@ -907,9 +907,10 @@ func TestArticleService_ParseArticle_EdgeCases(t *testing.T) {
 			content: "---\ntitle: \"Unicode Test\"\n---\n# Unicode: 你好 🌍 café naïve",
 			wantErr: false,
 			checkFn: func(t *testing.T, article *models.Article) {
-				assert.Contains(t, article.Content, "你好")
-				assert.Contains(t, article.Content, "🌍")
-				assert.Contains(t, article.Content, "café")
+				processedContent := article.GetProcessedContent()
+				assert.Contains(t, processedContent, "你好")
+				assert.Contains(t, processedContent, "🌍")
+				assert.Contains(t, processedContent, "café")
 			},
 		},
 		{
@@ -917,7 +918,7 @@ func TestArticleService_ParseArticle_EdgeCases(t *testing.T) {
 			content: "---\ntitle: \"Long Content\"\n---\n" + strings.Repeat("Lorem ipsum dolor sit amet. ", 1000),
 			wantErr: false,
 			checkFn: func(t *testing.T, article *models.Article) {
-				assert.Greater(t, len(article.Content), 10000)
+				assert.Greater(t, len(article.GetProcessedContent()), 10000)
 				assert.Greater(t, article.WordCount, 3000)
 			},
 		},
@@ -1081,11 +1082,12 @@ This is the content of my article.`
 	article, err := service.ParseArticle("my-test-article", content)
 	assert.NoError(t, err)
 	assert.Equal(t, "My Test Article", article.Title)
-	assert.NotEmpty(t, article.ProcessedContent)
+	assert.NotEmpty(t, article.GetProcessedContent())
 
 	// Check that h1 was converted to h2
-	assert.Contains(t, article.ProcessedContent, "<h2")
-	assert.NotContains(t, article.ProcessedContent, "<h1")
+	processedContent := article.GetProcessedContent()
+	assert.Contains(t, processedContent, "<h2")
+	assert.NotContains(t, processedContent, "<h1")
 
 	// Test different heading - should remain unchanged
 	differentContent := `---
@@ -1101,5 +1103,5 @@ This is the content of my article.`
 	article2, err := service.ParseArticle("my-test-article-2", differentContent)
 	assert.NoError(t, err)
 	assert.Equal(t, "My Test Article", article2.Title)
-	assert.Contains(t, article2.ProcessedContent, "<h1")
+	assert.Contains(t, article2.GetProcessedContent(), "<h1")
 }

@@ -16,6 +16,24 @@ import (
 	"github.com/vnykmshr/markgo/internal/models"
 )
 
+// mockProcessor implements ArticleProcessor for testing
+type mockProcessor struct{}
+
+func (m *mockProcessor) ProcessMarkdown(content string) (string, error) {
+	return content, nil
+}
+
+func (m *mockProcessor) GenerateExcerpt(content string, maxLength int) string {
+	if len(content) <= maxLength {
+		return content
+	}
+	return content[:maxLength] + "..."
+}
+
+func (m *mockProcessor) ProcessDuplicateTitles(title, htmlContent string) string {
+	return htmlContent
+}
+
 // TestHandlerMocks contains all mocked services for testing
 type TestHandlerMocks struct {
 	ArticleService *MockArticleService
@@ -102,7 +120,7 @@ func SetupDefaultMocks(mocks *TestHandlerMocks) {
 // CreateTestArticlesWithVariations creates test articles with different characteristics
 func CreateTestArticlesWithVariations() []*models.Article {
 	now := time.Now()
-	return []*models.Article{
+	articles := []*models.Article{
 		{
 			Slug:        "published-article",
 			Title:       "Published Article",
@@ -113,7 +131,6 @@ func CreateTestArticlesWithVariations() []*models.Article {
 			Featured:    true,
 			Draft:       false,
 			Content:     "Published content",
-			Excerpt:     "Published excerpt",
 			WordCount:   100,
 			ReadingTime: 1,
 		},
@@ -127,7 +144,6 @@ func CreateTestArticlesWithVariations() []*models.Article {
 			Featured:    false,
 			Draft:       true,
 			Content:     "Draft content",
-			Excerpt:     "Draft excerpt",
 			WordCount:   50,
 			ReadingTime: 1,
 		},
@@ -141,11 +157,18 @@ func CreateTestArticlesWithVariations() []*models.Article {
 			Featured:    true,
 			Draft:       false,
 			Content:     "Featured content with more text to make it longer",
-			Excerpt:     "Featured excerpt",
 			WordCount:   200,
 			ReadingTime: 2,
 		},
 	}
+	
+	// Set processor for all articles
+	processor := &mockProcessor{}
+	for _, article := range articles {
+		article.SetProcessor(processor)
+	}
+	
+	return articles
 }
 
 // AssertHTMLResponse asserts common HTML response properties
