@@ -136,11 +136,11 @@ func GetGlobalPerformancePool() *PerformanceMetricsPool {
 
 // CircularResponseTimeBuffer provides a memory-efficient circular buffer for response times
 type CircularResponseTimeBuffer struct {
-	buffer   []time.Duration
-	size     int
-	head     int
-	count    int
-	mu       sync.RWMutex
+	buffer []time.Duration
+	size   int
+	head   int
+	count  int
+	mu     sync.RWMutex
 }
 
 // NewCircularResponseTimeBuffer creates a circular buffer for response times
@@ -155,7 +155,7 @@ func NewCircularResponseTimeBuffer(size int) *CircularResponseTimeBuffer {
 func (c *CircularResponseTimeBuffer) Add(duration time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	c.buffer[c.head] = duration
 	c.head = (c.head + 1) % c.size
 	if c.count < c.size {
@@ -167,11 +167,11 @@ func (c *CircularResponseTimeBuffer) Add(duration time.Duration) {
 func (c *CircularResponseTimeBuffer) GetAll() []time.Duration {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	if c.count == 0 {
 		return nil
 	}
-	
+
 	result := make([]time.Duration, c.count)
 	if c.count < c.size {
 		// Buffer not full yet, copy from beginning
@@ -181,7 +181,7 @@ func (c *CircularResponseTimeBuffer) GetAll() []time.Duration {
 		copy(result, c.buffer[c.head:])
 		copy(result[c.size-c.head:], c.buffer[:c.head])
 	}
-	
+
 	return result
 }
 
@@ -190,29 +190,29 @@ func (c *CircularResponseTimeBuffer) GetSorted() []time.Duration {
 	pool := GetGlobalPerformancePool()
 	sortingSlice := pool.GetSortingSlice()
 	defer pool.PutSortingSlice(sortingSlice)
-	
+
 	c.mu.RLock()
 	times := c.GetAll()
 	c.mu.RUnlock()
-	
+
 	if len(times) == 0 {
 		return nil
 	}
-	
+
 	// Use pooled slice for sorting
 	*sortingSlice = append(*sortingSlice, times...)
-	
+
 	// Optimized insertion sort for small datasets, quicksort for large
 	if len(*sortingSlice) <= 50 {
 		insertionSort(*sortingSlice)
 	} else {
 		quickSort(*sortingSlice, 0, len(*sortingSlice)-1)
 	}
-	
+
 	// Return a copy since we'll put the slice back in the pool
 	result := make([]time.Duration, len(*sortingSlice))
 	copy(result, *sortingSlice)
-	
+
 	return result
 }
 
@@ -248,7 +248,7 @@ func quickSort(arr []time.Duration, low, high int) {
 func partition(arr []time.Duration, low, high int) int {
 	pivot := arr[high]
 	i := low - 1
-	
+
 	for j := low; j < high; j++ {
 		if arr[j] <= pivot {
 			i++

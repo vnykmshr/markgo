@@ -489,20 +489,20 @@ func (h *Handlers) Metrics(c *gin.Context) {
 	// Add competitive comparison
 	competitorComparison := utils.GetTemplateData()
 	vsGhost := utils.GetTemplateData()
-	vsGhost["response_time_advantage"] = "4x faster" // Ghost ~200ms vs MarkGo <50ms
+	vsGhost["response_time_advantage"] = "4x faster"   // Ghost ~200ms vs MarkGo <50ms
 	vsGhost["memory_advantage"] = "10x more efficient" // Ghost ~300MB vs MarkGo ~30MB
 	competitorComparison["vs_ghost"] = vsGhost
-	
+
 	vsWordpress := utils.GetTemplateData()
-	vsWordpress["response_time_advantage"] = "10x faster" // WordPress ~500ms vs MarkGo <50ms
+	vsWordpress["response_time_advantage"] = "10x faster"  // WordPress ~500ms vs MarkGo <50ms
 	vsWordpress["memory_advantage"] = "30x more efficient" // WordPress ~2GB vs MarkGo ~30MB
 	competitorComparison["vs_wordpress"] = vsWordpress
-	
+
 	vsHugo := utils.GetTemplateData()
 	vsHugo["dynamic_features"] = "search, forms, real-time updates"
 	vsHugo["deployment"] = "single binary vs build process"
 	competitorComparison["vs_hugo"] = vsHugo
-	
+
 	defer func() {
 		utils.PutTemplateData(vsGhost)
 		utils.PutTemplateData(vsWordpress)

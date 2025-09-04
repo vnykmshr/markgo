@@ -7,10 +7,10 @@ import (
 
 // SlicePool provides pooled slice allocations for template functions
 type SlicePool struct {
-	intSlicePool      sync.Pool
-	stringSlicePool   sync.Pool
+	intSlicePool       sync.Pool
+	stringSlicePool    sync.Pool
 	interfaceSlicePool sync.Pool
-	byteSlicePool     sync.Pool
+	byteSlicePool      sync.Pool
 }
 
 // NewSlicePool creates a new slice pool
@@ -170,11 +170,11 @@ func (p *SlicePool) IntSequencePooled(start, end int) []int {
 	if start > end {
 		return []int{}
 	}
-	
+
 	return p.WithIntSlice(func(pooledSlice *[]int) []int {
 		// Calculate required capacity
 		seqLen := end - start + 1
-		
+
 		// Ensure capacity
 		if cap(*pooledSlice) < seqLen {
 			// If pool slice is too small, create new slice and don't return to pool
@@ -184,13 +184,13 @@ func (p *SlicePool) IntSequencePooled(start, end int) []int {
 			}
 			return result
 		}
-		
+
 		// Use pooled slice
 		*pooledSlice = (*pooledSlice)[:seqLen]
 		for i := 0; i < seqLen; i++ {
 			(*pooledSlice)[i] = start + i
 		}
-		
+
 		// Return a copy since the pooled slice will go back to pool
 		result := make([]int, seqLen)
 		copy(result, *pooledSlice)

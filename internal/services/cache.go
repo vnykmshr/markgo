@@ -15,30 +15,30 @@ import (
 var _ CacheServiceInterface = (*CacheService)(nil)
 
 type CacheItem struct {
-	Value         any
-	CompressedData []byte  // Compressed data when using compression
+	Value          any
+	CompressedData []byte // Compressed data when using compression
 	Expiration     time.Time
 	IsCompressed   bool
-	OriginalSize   int64   // Size before compression
-	CompressedSize int64   // Size after compression
+	OriginalSize   int64 // Size before compression
+	CompressedSize int64 // Size after compression
 }
 
 type CacheService struct {
-	items         map[string]*CacheItem
-	mutex         sync.RWMutex
-	defaultTTL    time.Duration
-	maxSize       int
-	cleanupTick   *time.Ticker
-	stopCleanup   chan bool
-	
+	items       map[string]*CacheItem
+	mutex       sync.RWMutex
+	defaultTTL  time.Duration
+	maxSize     int
+	cleanupTick *time.Ticker
+	stopCleanup chan bool
+
 	// Memory management
-	enableCompression bool
-	compressionThreshold int64  // Minimum size to compress (bytes)
-	maxMemoryUsage      int64   // Max memory usage before eviction (bytes)
-	currentMemoryUsage  int64   // Current estimated memory usage (atomic)
-	hitCount           int64   // Cache hits (atomic)
-	missCount          int64   // Cache misses (atomic)
-	compressionCount   int64   // Number of compressed items (atomic)
+	enableCompression    bool
+	compressionThreshold int64 // Minimum size to compress (bytes)
+	maxMemoryUsage       int64 // Max memory usage before eviction (bytes)
+	currentMemoryUsage   int64 // Current estimated memory usage (atomic)
+	hitCount             int64 // Cache hits (atomic)
+	missCount            int64 // Cache misses (atomic)
+	compressionCount     int64 // Number of compressed items (atomic)
 }
 
 func NewCacheService(defaultTTL time.Duration, maxSize int) *CacheService {
@@ -49,7 +49,7 @@ func NewCacheService(defaultTTL time.Duration, maxSize int) *CacheService {
 		cleanupTick:          time.NewTicker(10 * time.Minute),
 		stopCleanup:          make(chan bool),
 		enableCompression:    true,
-		compressionThreshold: 1024,    // Compress items larger than 1KB
+		compressionThreshold: 1024,     // Compress items larger than 1KB
 		maxMemoryUsage:       50 << 20, // 50MB max cache memory
 	}
 
@@ -297,7 +297,7 @@ func (c *CacheService) Stats() map[string]any {
 	compressed := 0
 	totalOriginalSize := int64(0)
 	totalCompressedSize := int64(0)
-	
+
 	now := time.Now()
 	for _, item := range c.items {
 		if now.After(item.Expiration) {
@@ -327,20 +327,20 @@ func (c *CacheService) Stats() map[string]any {
 	runtime.ReadMemStats(&m)
 
 	return map[string]any{
-		"total_items":       len(c.items),
-		"expired_items":     expired,
-		"compressed_items":  compressed,
-		"max_size":          c.maxSize,
-		"default_ttl":       c.defaultTTL.String(),
-		"hit_count":         hitCount,
-		"miss_count":        missCount,
-		"hit_ratio":         hitRatio,
-		"compression_ratio": compressionRatio,
-		"memory_usage":      atomic.LoadInt64(&c.currentMemoryUsage),
-		"max_memory":        c.maxMemoryUsage,
-		"heap_alloc":        m.Alloc,
-		"heap_sys":          m.HeapSys,
-		"enable_compression": c.enableCompression,
+		"total_items":           len(c.items),
+		"expired_items":         expired,
+		"compressed_items":      compressed,
+		"max_size":              c.maxSize,
+		"default_ttl":           c.defaultTTL.String(),
+		"hit_count":             hitCount,
+		"miss_count":            missCount,
+		"hit_ratio":             hitRatio,
+		"compression_ratio":     compressionRatio,
+		"memory_usage":          atomic.LoadInt64(&c.currentMemoryUsage),
+		"max_memory":            c.maxMemoryUsage,
+		"heap_alloc":            m.Alloc,
+		"heap_sys":              m.HeapSys,
+		"enable_compression":    c.enableCompression,
 		"compression_threshold": c.compressionThreshold,
 	}
 }
@@ -378,12 +378,12 @@ func (c *CacheService) compressBytes(data []byte, originalSize int64, isString b
 	if err := writer.Close(); err != nil {
 		return nil, 0, 0, fmt.Errorf("failed to close compressor: %w", err)
 	}
-	
+
 	var typeMarker byte = 0x01 // []byte
 	if isString {
 		typeMarker = 0x03 // string
 	}
-	// Add a type marker at the beginning 
+	// Add a type marker at the beginning
 	result := append([]byte{typeMarker}, compressedBuf.Bytes()...)
 	return result, originalSize, int64(len(result)), nil
 }
@@ -395,9 +395,9 @@ func (c *CacheService) compressWithGob(value any) ([]byte, int64, int64, error) 
 	if err := encoder.Encode(value); err != nil {
 		return nil, 0, 0, fmt.Errorf("failed to encode value: %w", err)
 	}
-	
+
 	originalSize := int64(gobBuf.Len())
-	
+
 	// Compress the serialized data
 	var compressedBuf bytes.Buffer
 	writer := gzip.NewWriter(&compressedBuf)
@@ -408,7 +408,7 @@ func (c *CacheService) compressWithGob(value any) ([]byte, int64, int64, error) 
 	if err := writer.Close(); err != nil {
 		return nil, 0, 0, fmt.Errorf("failed to close compressor: %w", err)
 	}
-	
+
 	// Add a type marker at the beginning to distinguish from raw bytes
 	result := append([]byte{0x02}, compressedBuf.Bytes()...)
 	return result, originalSize, int64(len(result)), nil
@@ -419,11 +419,11 @@ func (c *CacheService) decompressValue(compressedData []byte) (any, error) {
 	if len(compressedData) == 0 {
 		return nil, fmt.Errorf("empty compressed data")
 	}
-	
+
 	// Check the type marker
 	typeMarker := compressedData[0]
 	actualData := compressedData[1:]
-	
+
 	switch typeMarker {
 	case 0x01:
 		// []byte
@@ -447,14 +447,14 @@ func (c *CacheService) decompressBytes(compressedData []byte, asString bool) (an
 		return nil, fmt.Errorf("failed to create gzip reader: %w", err)
 	}
 	defer reader.Close()
-	
+
 	var decompressedBuf bytes.Buffer
 	if _, err := decompressedBuf.ReadFrom(reader); err != nil {
 		return nil, fmt.Errorf("failed to decompress data: %w", err)
 	}
-	
+
 	if asString {
-		return string(decompressedBuf.Bytes()), nil
+		return decompressedBuf.String(), nil
 	}
 	return decompressedBuf.Bytes(), nil
 }
@@ -466,19 +466,19 @@ func (c *CacheService) decompressWithGob(compressedData []byte) (any, error) {
 		return nil, fmt.Errorf("failed to create gzip reader: %w", err)
 	}
 	defer reader.Close()
-	
+
 	var decompressedBuf bytes.Buffer
 	if _, err := decompressedBuf.ReadFrom(reader); err != nil {
 		return nil, fmt.Errorf("failed to decompress data: %w", err)
 	}
-	
+
 	// Deserialize the value using gob
 	decoder := gob.NewDecoder(&decompressedBuf)
 	var value any
 	if err := decoder.Decode(&value); err != nil {
 		return nil, fmt.Errorf("failed to decode value: %w", err)
 	}
-	
+
 	return value, nil
 }
 
@@ -521,16 +521,16 @@ func (c *CacheService) removeItemMemoryUsage(item *CacheItem) {
 // checkMemoryUsageAndEvict checks current memory usage and evicts items if necessary
 func (c *CacheService) checkMemoryUsageAndEvict() {
 	currentUsage := atomic.LoadInt64(&c.currentMemoryUsage)
-	
+
 	// Check if we're over the memory limit
 	if currentUsage > c.maxMemoryUsage {
 		c.evictByMemoryPressure()
 	}
-	
+
 	// Also check system memory pressure
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	
+
 	// If heap usage is over 80% of system memory or growing too fast, be more aggressive
 	if m.Alloc > m.Sys*4/5 || currentUsage > c.maxMemoryUsage/2 {
 		c.evictByMemoryPressure()
@@ -545,34 +545,34 @@ func (c *CacheService) evictByMemoryPressure() {
 		item     *CacheItem
 		priority float64 // Higher priority = more likely to be evicted
 	}
-	
+
 	var items []itemInfo
 	now := time.Now()
-	
+
 	for key, item := range c.items {
 		// Calculate priority based on:
 		// 1. Time until expiration (items expiring soon have higher priority for eviction)
-		// 2. Size (larger items have higher priority for eviction) 
+		// 2. Size (larger items have higher priority for eviction)
 		// 3. Compression status (uncompressed items have higher priority)
-		
+
 		timeToExpiration := item.Expiration.Sub(now).Seconds()
 		size := item.OriginalSize
 		if item.IsCompressed {
 			size = item.CompressedSize
 		}
-		
+
 		priority := float64(size) / (timeToExpiration + 1) // +1 to avoid division by zero
 		if !item.IsCompressed && c.enableCompression {
 			priority *= 2 // Prefer evicting uncompressed items
 		}
-		
+
 		items = append(items, itemInfo{
 			key:      key,
 			item:     item,
 			priority: priority,
 		})
 	}
-	
+
 	// Sort by priority (highest first)
 	for i := 0; i < len(items)-1; i++ {
 		for j := i + 1; j < len(items); j++ {
@@ -581,11 +581,11 @@ func (c *CacheService) evictByMemoryPressure() {
 			}
 		}
 	}
-	
+
 	// Evict items until we're under the memory limit
 	targetUsage := c.maxMemoryUsage * 3 / 4 // Evict until we're at 75% of max
 	currentUsage := atomic.LoadInt64(&c.currentMemoryUsage)
-	
+
 	for i := 0; i < len(items) && currentUsage > targetUsage; i++ {
 		item := items[i]
 		c.removeItemMemoryUsage(item.item)
@@ -598,7 +598,7 @@ func (c *CacheService) evictByMemoryPressure() {
 func (c *CacheService) SetCompressionSettings(enabled bool, threshold int64) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	
+
 	c.enableCompression = enabled
 	c.compressionThreshold = threshold
 }
@@ -607,6 +607,6 @@ func (c *CacheService) SetCompressionSettings(enabled bool, threshold int64) {
 func (c *CacheService) SetMaxMemoryUsage(maxMemory int64) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	
+
 	c.maxMemoryUsage = maxMemory
 }

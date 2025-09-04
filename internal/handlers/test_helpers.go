@@ -161,13 +161,13 @@ func CreateTestArticlesWithVariations() []*models.Article {
 			ReadingTime: 2,
 		},
 	}
-	
+
 	// Set processor for all articles
 	processor := &mockProcessor{}
 	for _, article := range articles {
 		article.SetProcessor(processor)
 	}
-	
+
 	return articles
 }
 

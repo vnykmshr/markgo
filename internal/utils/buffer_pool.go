@@ -8,7 +8,7 @@ import (
 
 // BufferPool provides pooled buffer allocations for template rendering and string building
 type BufferPool struct {
-	bytesBufferPool   sync.Pool
+	bytesBufferPool    sync.Pool
 	stringsBuilderPool sync.Pool
 }
 
@@ -64,7 +64,7 @@ func (p *BufferPool) WithBytesBuffer(fn func(*bytes.Buffer) error) (*bytes.Buffe
 	buf := p.GetBytesBuffer()
 	defer p.PutBytesBuffer(buf)
 	err := fn(buf)
-	
+
 	// Return a copy since the pooled buffer will go back to pool
 	result := bytes.NewBuffer(make([]byte, 0, buf.Len()))
 	result.Write(buf.Bytes())
@@ -82,11 +82,11 @@ func (p *BufferPool) WithStringsBuilder(fn func(*strings.Builder) string) string
 func (p *BufferPool) RenderToString(renderFn func(*bytes.Buffer) error) (string, error) {
 	buf := p.GetBytesBuffer()
 	defer p.PutBytesBuffer(buf)
-	
+
 	if err := renderFn(buf); err != nil {
 		return "", err
 	}
-	
+
 	return buf.String(), nil
 }
 
@@ -94,7 +94,7 @@ func (p *BufferPool) RenderToString(renderFn func(*bytes.Buffer) error) (string,
 func (p *BufferPool) BuildString(buildFn func(*strings.Builder)) string {
 	builder := p.GetStringsBuilder()
 	defer p.PutStringsBuilder(builder)
-	
+
 	buildFn(builder)
 	return builder.String()
 }
@@ -143,7 +143,7 @@ func (p *FeedBufferPool) PutBuilder(builder *strings.Builder) {
 func (p *FeedBufferPool) BuildFeed(buildFn func(*strings.Builder)) string {
 	builder := p.GetBuilder()
 	defer p.PutBuilder(builder)
-	
+
 	buildFn(builder)
 	return builder.String()
 }
@@ -192,7 +192,7 @@ func (p *SmallBufferPool) PutBuilder(builder *strings.Builder) {
 func (p *SmallBufferPool) BuildSmallString(buildFn func(*strings.Builder)) string {
 	builder := p.GetBuilder()
 	defer p.PutBuilder(builder)
-	
+
 	buildFn(builder)
 	return builder.String()
 }

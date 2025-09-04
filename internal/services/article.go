@@ -32,9 +32,6 @@ var (
 	codeBlockRe = regexp.MustCompile("```[\\s\\S]*?```")
 	linkRe      = regexp.MustCompile(`\[([^\]]*)\]\([^)]*\)`)
 	imageRe     = regexp.MustCompile(`!\[([^\]]*)\]\([^)]*\)`)
-	htmlTagRe   = regexp.MustCompile(`<[^>]*>`)
-	htmlEntityRe = regexp.MustCompile(`&[#\w]+;`)
-	multiSpaceRe = regexp.MustCompile(`\s+`)
 )
 
 type ArticleService struct {
@@ -211,11 +208,11 @@ func (s *ArticleService) ProcessMarkdown(content string) (string, error) {
 	// Parse markdown content to HTML
 	buf := utils.GetStringBuilder()
 	defer utils.PutStringBuilder(buf)
-	
+
 	if err := s.markdown.Convert([]byte(content), buf); err != nil {
 		return "", fmt.Errorf("failed to convert markdown: %w", err)
 	}
-	
+
 	// Note: For duplicate title processing, we need article title context
 	// This will be handled in the Article.GetProcessedContent method
 	return buf.String(), nil

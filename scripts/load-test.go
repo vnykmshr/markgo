@@ -32,18 +32,18 @@ type EndpointConfig struct {
 
 // LoadTestResult holds results from load testing
 type LoadTestResult struct {
-	TotalRequests     int
-	SuccessfulRequests int
-	FailedRequests    int
-	RequestsPerSecond float64
+	TotalRequests       int
+	SuccessfulRequests  int
+	FailedRequests      int
+	RequestsPerSecond   float64
 	AverageResponseTime time.Duration
-	MinResponseTime   time.Duration
-	MaxResponseTime   time.Duration
-	P95ResponseTime   time.Duration
-	P99ResponseTime   time.Duration
-	ErrorRate         float64
-	ResponseTimes     []time.Duration
-	StatusCodes       map[int]int
+	MinResponseTime     time.Duration
+	MaxResponseTime     time.Duration
+	P95ResponseTime     time.Duration
+	P99ResponseTime     time.Duration
+	ErrorRate           float64
+	ResponseTimes       []time.Duration
+	StatusCodes         map[int]int
 }
 
 // Request represents a single HTTP request result
@@ -65,13 +65,13 @@ func main() {
 		RampUpTime:      5 * time.Second,
 		RequestTimeout:  10 * time.Second,
 		Endpoints: []EndpointConfig{
-			{Path: "/", Method: "GET", Weight: 30},                    // Homepage - most frequent
-			{Path: "/articles", Method: "GET", Weight: 20},            // Articles listing
-			{Path: "/search?q=golang", Method: "GET", Weight: 15},     // Search functionality
+			{Path: "/", Method: "GET", Weight: 30},                        // Homepage - most frequent
+			{Path: "/articles", Method: "GET", Weight: 20},                // Articles listing
+			{Path: "/search?q=golang", Method: "GET", Weight: 15},         // Search functionality
 			{Path: "/articles/sample-article", Method: "GET", Weight: 15}, // Article details
-			{Path: "/tags", Method: "GET", Weight: 10},                // Tags page
-			{Path: "/categories", Method: "GET", Weight: 5},           // Categories page
-			{Path: "/health", Method: "GET", Weight: 5},               // Health checks
+			{Path: "/tags", Method: "GET", Weight: 10},                    // Tags page
+			{Path: "/categories", Method: "GET", Weight: 5},               // Categories page
+			{Path: "/health", Method: "GET", Weight: 5},                   // Health checks
 		},
 	}
 
@@ -105,7 +105,7 @@ func runLoadTest(config LoadTestConfig) (*LoadTestResult, error) {
 	// Start result collector
 	var allResults []Request
 	var resultsMutex sync.Mutex
-	
+
 	go func() {
 		for req := range results {
 			resultsMutex.Lock()
@@ -121,13 +121,13 @@ func runLoadTest(config LoadTestConfig) (*LoadTestResult, error) {
 
 	// Start load test workers with ramp-up
 	rampUpInterval := config.RampUpTime / time.Duration(config.ConcurrentUsers)
-	
+
 	for i := 0; i < config.ConcurrentUsers; i++ {
 		wg.Add(1)
-		
+
 		// Stagger worker starts for ramp-up
 		time.Sleep(rampUpInterval)
-		
+
 		go func(workerID int) {
 			defer wg.Done()
 			runWorker(ctx, workerID, config, client, results)
@@ -149,7 +149,7 @@ func runLoadTest(config LoadTestConfig) (*LoadTestResult, error) {
 
 func runWorker(ctx context.Context, workerID int, config LoadTestConfig, client *http.Client, results chan<- Request) {
 	endTime := time.Now().Add(config.Duration)
-	
+
 	for time.Now().Before(endTime) {
 		select {
 		case <-ctx.Done():
@@ -158,19 +158,19 @@ func runWorker(ctx context.Context, workerID int, config LoadTestConfig, client 
 			// Select endpoint based on weight
 			endpoint := selectEndpoint(config.Endpoints)
 			url := config.BaseURL + endpoint.Path
-			
+
 			// Make request
 			startTime := time.Now()
 			resp, err := client.Do(createRequest(endpoint.Method, url))
 			responseTime := time.Since(startTime)
-			
+
 			var statusCode int
 			if resp != nil {
 				statusCode = resp.StatusCode
-				io.Copy(io.Discard, resp.Body) // Drain and close body
+				_, _ = io.Copy(io.Discard, resp.Body) // Drain and close body
 				resp.Body.Close()
 			}
-			
+
 			results <- Request{
 				URL:          url,
 				Method:       endpoint.Method,
@@ -179,7 +179,7 @@ func runWorker(ctx context.Context, workerID int, config LoadTestConfig, client 
 				Error:        err,
 				Timestamp:    startTime,
 			}
-			
+
 			// Small delay to prevent overwhelming the server
 			time.Sleep(time.Millisecond * time.Duration(rand.Intn(10)))
 		}
@@ -192,18 +192,18 @@ func selectEndpoint(endpoints []EndpointConfig) EndpointConfig {
 	for _, ep := range endpoints {
 		totalWeight += ep.Weight
 	}
-	
+
 	// Select random endpoint based on weight
 	r := rand.Intn(totalWeight)
 	currentWeight := 0
-	
+
 	for _, ep := range endpoints {
 		currentWeight += ep.Weight
 		if r < currentWeight {
 			return ep
 		}
 	}
-	
+
 	return endpoints[0] // fallback
 }
 
@@ -213,23 +213,23 @@ func createRequest(method, url string) *http.Request {
 		log.Printf("Failed to create request: %v", err)
 		return nil
 	}
-	
+
 	// Add realistic headers
 	req.Header.Set("User-Agent", "MarkGo-LoadTest/1.0")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.5")
 	req.Header.Set("Accept-Encoding", "gzip, deflate")
 	req.Header.Set("Connection", "keep-alive")
-	
+
 	return req
 }
 
 func reportProgress(ctx context.Context, duration time.Duration) {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
-	
+
 	startTime := time.Now()
-	
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -237,12 +237,12 @@ func reportProgress(ctx context.Context, duration time.Duration) {
 		case <-ticker.C:
 			elapsed := time.Since(startTime)
 			remaining := duration - elapsed
-			
+
 			if remaining <= 0 {
 				fmt.Println("⏰ Load test completed!")
 				return
 			}
-			
+
 			progress := float64(elapsed) / float64(duration) * 100
 			fmt.Printf("📊 Progress: %.1f%% - Remaining: %v\n", progress, remaining.Round(time.Second))
 		}
@@ -259,25 +259,25 @@ func analyzeResults(results []Request) *LoadTestResult {
 	failedRequests := 0
 	var responseTimes []time.Duration
 	statusCodes := make(map[int]int)
-	
+
 	var minTime, maxTime, totalTime time.Duration
 	minTime = time.Hour // Initialize to large value
-	
+
 	// Process all results
 	firstRequest := results[0].Timestamp
 	lastRequest := results[len(results)-1].Timestamp
 	testDuration := lastRequest.Sub(firstRequest)
-	
+
 	for _, req := range results {
 		if req.Error == nil && req.StatusCode >= 200 && req.StatusCode < 400 {
 			successfulRequests++
 		} else {
 			failedRequests++
 		}
-		
+
 		responseTimes = append(responseTimes, req.ResponseTime)
 		statusCodes[req.StatusCode]++
-		
+
 		totalTime += req.ResponseTime
 		if req.ResponseTime < minTime {
 			minTime = req.ResponseTime
@@ -286,15 +286,15 @@ func analyzeResults(results []Request) *LoadTestResult {
 			maxTime = req.ResponseTime
 		}
 	}
-	
+
 	avgTime := totalTime / time.Duration(totalRequests)
 	rps := float64(totalRequests) / testDuration.Seconds()
 	errorRate := float64(failedRequests) / float64(totalRequests) * 100
-	
+
 	// Calculate percentiles
 	p95 := calculatePercentile(responseTimes, 0.95)
 	p99 := calculatePercentile(responseTimes, 0.99)
-	
+
 	return &LoadTestResult{
 		TotalRequests:       totalRequests,
 		SuccessfulRequests:  successfulRequests,
@@ -315,11 +315,11 @@ func calculatePercentile(times []time.Duration, percentile float64) time.Duratio
 	if len(times) == 0 {
 		return 0
 	}
-	
+
 	// Simple percentile calculation with sorting
 	sorted := make([]time.Duration, len(times))
 	copy(sorted, times)
-	
+
 	// Bubble sort (simple but works for our use case)
 	n := len(sorted)
 	for i := 0; i < n-1; i++ {
@@ -329,7 +329,7 @@ func calculatePercentile(times []time.Duration, percentile float64) time.Duratio
 			}
 		}
 	}
-	
+
 	index := int(percentile * float64(len(sorted)-1))
 	return sorted[index]
 }
@@ -338,30 +338,30 @@ func displayResults(result *LoadTestResult, config LoadTestConfig) {
 	fmt.Println("\n" + strings.Repeat("=", 60))
 	fmt.Println("📈 LOAD TEST RESULTS")
 	fmt.Println(strings.Repeat("=", 60))
-	
+
 	fmt.Printf("Total Requests:       %d\n", result.TotalRequests)
-	fmt.Printf("Successful Requests:  %d (%.1f%%)\n", result.SuccessfulRequests, 
+	fmt.Printf("Successful Requests:  %d (%.1f%%)\n", result.SuccessfulRequests,
 		float64(result.SuccessfulRequests)/float64(result.TotalRequests)*100)
 	fmt.Printf("Failed Requests:      %d (%.1f%%)\n", result.FailedRequests, result.ErrorRate)
 	fmt.Printf("Requests per Second:  %.2f\n", result.RequestsPerSecond)
-	
+
 	fmt.Println("\n📊 Response Times:")
 	fmt.Printf("  Average:  %v\n", result.AverageResponseTime)
 	fmt.Printf("  Minimum:  %v\n", result.MinResponseTime)
 	fmt.Printf("  Maximum:  %v\n", result.MaxResponseTime)
 	fmt.Printf("  95th %%:   %v\n", result.P95ResponseTime)
 	fmt.Printf("  99th %%:   %v\n", result.P99ResponseTime)
-	
+
 	fmt.Println("\n🌐 HTTP Status Codes:")
 	for code, count := range result.StatusCodes {
 		percentage := float64(count) / float64(result.TotalRequests) * 100
 		fmt.Printf("  %d: %d requests (%.1f%%)\n", code, count, percentage)
 	}
-	
+
 	// Response time distribution
 	fmt.Println("\n⏱️  Response Time Distribution:")
 	displayResponseTimeDistribution(result.ResponseTimes)
-	
+
 	fmt.Println("\n" + strings.Repeat("=", 60))
 }
 
@@ -369,7 +369,7 @@ func displayResponseTimeDistribution(times []time.Duration) {
 	if len(times) == 0 {
 		return
 	}
-	
+
 	ranges := []struct {
 		label string
 		min   time.Duration
@@ -382,9 +382,9 @@ func displayResponseTimeDistribution(times []time.Duration) {
 		{"200-500ms", 200 * time.Millisecond, 500 * time.Millisecond},
 		{"> 500ms", 500 * time.Millisecond, time.Hour},
 	}
-	
+
 	total := len(times)
-	
+
 	for _, r := range ranges {
 		count := 0
 		for _, t := range times {
@@ -392,7 +392,7 @@ func displayResponseTimeDistribution(times []time.Duration) {
 				count++
 			}
 		}
-		
+
 		if count > 0 {
 			percentage := float64(count) / float64(total) * 100
 			bar := strings.Repeat("█", int(percentage/2)) // Visual bar
@@ -404,13 +404,13 @@ func displayResponseTimeDistribution(times []time.Duration) {
 func validatePerformanceTargets(result *LoadTestResult) {
 	fmt.Println("\n🎯 PERFORMANCE TARGET VALIDATION")
 	fmt.Println(strings.Repeat("=", 40))
-	
+
 	targets := []struct {
-		name        string
-		target      interface{}
-		actual      interface{}
-		comparison  string
-		passed      bool
+		name       string
+		target     interface{}
+		actual     interface{}
+		comparison string
+		passed     bool
 	}{
 		{
 			name:       "Requests per Second",
@@ -448,24 +448,24 @@ func validatePerformanceTargets(result *LoadTestResult) {
 			passed:     result.P99ResponseTime < 100*time.Millisecond,
 		},
 	}
-	
+
 	passed := 0
 	total := len(targets)
-	
+
 	for _, target := range targets {
 		status := "❌ FAIL"
 		if target.passed {
 			status = "✅ PASS"
 			passed++
 		}
-		
+
 		fmt.Printf("%s %-30s %s\n", status, target.name+":", target.actual)
 		fmt.Printf("    %s\n", target.comparison)
 		fmt.Println()
 	}
-	
+
 	fmt.Printf("Overall: %d/%d targets met (%.1f%%)\n", passed, total, float64(passed)/float64(total)*100)
-	
+
 	if passed == total {
 		fmt.Println("🎉 ALL PERFORMANCE TARGETS MET! MarkGo is ready for production.")
 	} else if passed >= total*3/4 {
@@ -473,24 +473,24 @@ func validatePerformanceTargets(result *LoadTestResult) {
 	} else {
 		fmt.Println("🔧 Significant performance improvements needed before production.")
 	}
-	
+
 	// Competitive analysis summary
 	fmt.Println("\n🏆 COMPETITIVE ANALYSIS")
 	fmt.Println(strings.Repeat("=", 25))
-	
+
 	if result.P95ResponseTime < 50*time.Millisecond {
 		fmt.Println("✅ Faster than Ghost (typical ~200ms)")
 		fmt.Println("✅ Faster than WordPress (typical ~300-500ms)")
 	}
-	
+
 	if result.RequestsPerSecond > 1000 {
 		fmt.Println("✅ Higher throughput than Ghost (400 concurrent user limit)")
 		fmt.Println("✅ Excellent scalability for production workloads")
 	}
-	
+
 	fmt.Println("✅ Single binary deployment advantage over all competitors")
 	fmt.Println("✅ Dynamic features advantage over Hugo")
-	
+
 	// Save results to JSON for further analysis
 	saveResultsToJSON(result)
 }
@@ -498,32 +498,32 @@ func validatePerformanceTargets(result *LoadTestResult) {
 func saveResultsToJSON(result *LoadTestResult) {
 	// Convert to JSON for external analysis
 	data := map[string]interface{}{
-		"timestamp":              time.Now().Format(time.RFC3339),
-		"total_requests":         result.TotalRequests,
-		"successful_requests":    result.SuccessfulRequests,
-		"failed_requests":        result.FailedRequests,
-		"requests_per_second":    result.RequestsPerSecond,
-		"avg_response_time_ms":   float64(result.AverageResponseTime.Nanoseconds()) / 1e6,
-		"min_response_time_ms":   float64(result.MinResponseTime.Nanoseconds()) / 1e6,
-		"max_response_time_ms":   float64(result.MaxResponseTime.Nanoseconds()) / 1e6,
-		"p95_response_time_ms":   float64(result.P95ResponseTime.Nanoseconds()) / 1e6,
-		"p99_response_time_ms":   float64(result.P99ResponseTime.Nanoseconds()) / 1e6,
-		"error_rate_percent":     result.ErrorRate,
-		"status_codes":           result.StatusCodes,
+		"timestamp":            time.Now().Format(time.RFC3339),
+		"total_requests":       result.TotalRequests,
+		"successful_requests":  result.SuccessfulRequests,
+		"failed_requests":      result.FailedRequests,
+		"requests_per_second":  result.RequestsPerSecond,
+		"avg_response_time_ms": float64(result.AverageResponseTime.Nanoseconds()) / 1e6,
+		"min_response_time_ms": float64(result.MinResponseTime.Nanoseconds()) / 1e6,
+		"max_response_time_ms": float64(result.MaxResponseTime.Nanoseconds()) / 1e6,
+		"p95_response_time_ms": float64(result.P95ResponseTime.Nanoseconds()) / 1e6,
+		"p99_response_time_ms": float64(result.P99ResponseTime.Nanoseconds()) / 1e6,
+		"error_rate_percent":   result.ErrorRate,
+		"status_codes":         result.StatusCodes,
 	}
-	
+
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		log.Printf("Failed to marshal results to JSON: %v", err)
 		return
 	}
-	
+
 	filename := fmt.Sprintf("load-test-results-%d.json", time.Now().Unix())
 	err = os.WriteFile(filename, jsonData, 0644)
 	if err != nil {
 		log.Printf("Failed to save results to file: %v", err)
 		return
 	}
-	
+
 	fmt.Printf("\n💾 Results saved to: %s\n", filename)
 }

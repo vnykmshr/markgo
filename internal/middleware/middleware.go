@@ -14,49 +14,79 @@ import (
 	"github.com/vnykmshr/markgo/internal/utils"
 )
 
-// Logger middleware for structured logging
+// Logger middleware for structured logging with pooled context
 func Logger(logger *slog.Logger) gin.HandlerFunc {
+	contextPool := utils.GetGlobalMiddlewareContextPool()
+	responseWriterPool := utils.GetGlobalResponseWriterPool()
+
 	return func(c *gin.Context) {
 		start := time.Now()
 		path := c.Request.URL.Path
 		raw := c.Request.URL.RawQuery
 
-		// Process request
-		c.Next()
+		// Use pooled response writer for efficient response handling
+		pooledWriter := responseWriterPool.GetWriter(c.Writer)
+		defer responseWriterPool.PutWriter(pooledWriter)
+		c.Writer = pooledWriter
 
-		// Calculate latency
-		latency := time.Since(start)
+		// Use pooled context for log metadata
+		contextPool.WithContext(func(ctx *utils.MiddlewareContext) {
+			// Collect metadata efficiently
+			ctx.Values["method"] = c.Request.Method
+			ctx.Values["path"] = path
+			ctx.Values["ip"] = c.ClientIP()
+			ctx.Values["user_agent"] = c.Request.UserAgent()
+			if raw != "" {
+				ctx.Values["query"] = raw
+			}
 
-		// Build log entry
-		logEntry := logger.With(
-			"method", c.Request.Method,
-			"path", path,
-			"status", c.Writer.Status(),
-			"latency", latency.String(),
-			"ip", c.ClientIP(),
-			"user_agent", c.Request.UserAgent(),
-		)
+			// Process request
+			c.Next()
 
-		if raw != "" {
-			logEntry = logEntry.With("query", raw)
-		}
+			// Flush pooled response writer
+			pooledWriter.Flush()
 
-		// Log based on status code
-		switch {
-		case c.Writer.Status() >= 500:
-			logEntry.Error("Server error")
-		case c.Writer.Status() >= 400:
-			logEntry.Warn("Client error")
-		case c.Writer.Status() >= 300:
-			logEntry.Info("Redirect")
-		default:
-			logEntry.Info("Request completed")
-		}
+			// Calculate latency and add to context
+			latency := time.Since(start)
+			ctx.Values["latency"] = latency.String()
+			ctx.Values["status"] = pooledWriter.Status()
+
+			// Build log entry with pooled values
+			logEntry := logger.With(
+				"method", ctx.Values["method"],
+				"path", ctx.Values["path"],
+				"status", ctx.Values["status"],
+				"latency", ctx.Values["latency"],
+				"ip", ctx.Values["ip"],
+				"user_agent", ctx.Values["user_agent"],
+			)
+
+			if query, exists := ctx.Values["query"]; exists {
+				logEntry = logEntry.With("query", query)
+			}
+
+			// Log based on status code
+			status := ctx.Values["status"].(int)
+			switch {
+			case status >= 500:
+				logEntry.Error("Server error")
+			case status >= 400:
+				logEntry.Warn("Client error")
+			case status >= 300:
+				logEntry.Info("Redirect")
+			default:
+				logEntry.Info("Request completed")
+			}
+		})
 	}
 }
 
-// CORS middleware for cross-origin requests
+// CORS middleware for cross-origin requests with optimized header handling
 func CORS(config config.CORSConfig) gin.HandlerFunc {
+	// Pre-compute joined strings to avoid repeated allocations
+	allowedMethods := strings.Join(config.AllowedMethods, ", ")
+	allowedHeaders := strings.Join(config.AllowedHeaders, ", ")
+
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
 
@@ -69,9 +99,10 @@ func CORS(config config.CORSConfig) gin.HandlerFunc {
 			}
 		}
 
+		// Set CORS headers efficiently
 		c.Header("Access-Control-Allow-Origin", allowedOrigin)
-		c.Header("Access-Control-Allow-Methods", strings.Join(config.AllowedMethods, ", "))
-		c.Header("Access-Control-Allow-Headers", strings.Join(config.AllowedHeaders, ", "))
+		c.Header("Access-Control-Allow-Methods", allowedMethods)
+		c.Header("Access-Control-Allow-Headers", allowedHeaders)
 		c.Header("Access-Control-Allow-Credentials", "true")
 		c.Header("Access-Control-Max-Age", "86400")
 
@@ -182,6 +213,9 @@ func CacheControl(maxAge time.Duration) gin.HandlerFunc {
 
 // Compress middleware for response compression
 func Compress() gin.HandlerFunc {
+	compressedPool := utils.GetGlobalCompressedResponsePool()
+	responseWriterPool := utils.GetGlobalResponseWriterPool()
+
 	return func(c *gin.Context) {
 		// Check if client accepts gzip
 		if !strings.Contains(c.Request.Header.Get("Accept-Encoding"), "gzip") {
@@ -198,8 +232,20 @@ func Compress() gin.HandlerFunc {
 			return
 		}
 
+		// Use pooled response writer for efficient compression handling
+		pooledWriter := responseWriterPool.GetWriter(c.Writer)
+		defer func() {
+			pooledWriter.Flush()
+			responseWriterPool.PutWriter(pooledWriter)
+		}()
+
+		// Use pooled buffer for compression
+		compressBuffer := compressedPool.GetBuffer()
+		defer compressedPool.PutBuffer(compressBuffer)
+
 		c.Header("Content-Encoding", "gzip")
 		c.Header("Vary", "Accept-Encoding")
+		c.Writer = pooledWriter
 
 		c.Next()
 	}
@@ -257,24 +303,24 @@ func RequestID() gin.HandlerFunc {
 
 func generateRequestID() string {
 	pool := utils.GetGlobalRequestIDPool()
-	
+
 	// Get pooled random bytes
 	bytes := pool.GetRandomBytes()
 	defer pool.PutRandomBytes(bytes)
-	
+
 	if _, err := rand.Read(bytes); err != nil {
 		// Fallback to timestamp-only ID if random generation fails
 		return fmt.Sprintf("%d", time.Now().UnixNano())
 	}
-	
+
 	// Use pooled buffer for building the request ID
 	buffer := pool.GetBuffer()
 	defer pool.PutBuffer(buffer)
-	
+
 	// Build request ID efficiently
 	timestamp := time.Now().UnixNano()
 	hexBytes := hex.EncodeToString(bytes)
-	
+
 	// Format: timestamp-hexbytes
 	buffer = append(buffer, fmt.Sprintf("%d-%s", timestamp, hexBytes)...)
 	return string(buffer)

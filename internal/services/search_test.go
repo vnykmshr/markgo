@@ -574,13 +574,13 @@ func createTestArticles() []*models.Article {
 			Date:        time.Now().AddDate(0, 0, -5),
 		},
 	}
-	
+
 	// Set processor for all articles
 	processor := &mockProcessor{}
 	for _, article := range articles {
 		article.SetProcessor(processor)
 	}
-	
+
 	return articles
 }
 

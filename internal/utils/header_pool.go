@@ -15,18 +15,18 @@ type HeaderValuePool struct {
 // NewHeaderValuePool creates a new header value pool
 func NewHeaderValuePool() *HeaderValuePool {
 	pool := &HeaderValuePool{}
-	
+
 	// Pre-populate common values to avoid allocations
 	for i := 0; i <= 1000; i++ {
 		pool.intCache.Store(i, strconv.Itoa(i))
 	}
-	
+
 	// Pre-populate common memory deltas (in bytes)
 	commonMemoryDeltas := []uint64{0, 1024, 2048, 4096, 8192, 16384, 32768, 65536}
 	for _, delta := range commonMemoryDeltas {
 		pool.memoryCache.Store(delta, strconv.FormatUint(delta, 10))
 	}
-	
+
 	return pool
 }
 
@@ -37,12 +37,12 @@ func (p *HeaderValuePool) GetGoroutineCountString(count int) string {
 			return cached.(string)
 		}
 	}
-	
+
 	// Not in cache or too large, check goroutine-specific cache
 	if cached, found := p.goroutineCache.Load(count); found {
 		return cached.(string)
 	}
-	
+
 	// Generate and cache
 	str := strconv.Itoa(count)
 	if count <= 10000 { // Don't cache extremely high values
@@ -56,7 +56,7 @@ func (p *HeaderValuePool) GetMemoryDeltaString(delta uint64) string {
 	if cached, found := p.memoryCache.Load(delta); found {
 		return cached.(string)
 	}
-	
+
 	// Generate and cache if reasonable size
 	str := strconv.FormatUint(delta, 10)
 	if delta <= 1048576 { // Don't cache deltas > 1MB to prevent memory leaks
@@ -98,22 +98,22 @@ type PerformanceClassCache struct {
 // NewPerformanceClassCache creates a new performance class cache
 func NewPerformanceClassCache() *PerformanceClassCache {
 	cache := &PerformanceClassCache{}
-	
+
 	// Pre-populate common performance classes
 	commonClasses := map[string]string{
-		"exceptional":      "exceptional",
-		"excellent":        "excellent", 
-		"good":             "good",
+		"exceptional":        "exceptional",
+		"excellent":          "excellent",
+		"good":               "good",
 		"needs-optimization": "needs-optimization",
-		"4x faster":        "4x faster",
-		"10x faster":       "10x faster",
-		"comparable":       "comparable",
+		"4x faster":          "4x faster",
+		"10x faster":         "10x faster",
+		"comparable":         "comparable",
 	}
-	
+
 	for key, value := range commonClasses {
 		cache.cache.Store(key, value)
 	}
-	
+
 	return cache
 }
 
@@ -122,7 +122,7 @@ func (p *PerformanceClassCache) GetClass(class string) string {
 	if cached, found := p.cache.Load(class); found {
 		return cached.(string)
 	}
-	
+
 	// Store and return if not found
 	p.cache.Store(class, class)
 	return class
@@ -131,7 +131,7 @@ func (p *PerformanceClassCache) GetClass(class string) string {
 // Global performance class cache
 var globalPerformanceClassCache = NewPerformanceClassCache()
 
-// GetGlobalPerformanceClassCache returns the global performance class cache  
+// GetGlobalPerformanceClassCache returns the global performance class cache
 func GetGlobalPerformanceClassCache() *PerformanceClassCache {
 	return globalPerformanceClassCache
 }

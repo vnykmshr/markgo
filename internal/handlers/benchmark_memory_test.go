@@ -46,14 +46,14 @@ func BenchmarkArticleMemoryUsage(b *testing.B) {
 		req, _ := http.NewRequest("GET", "/articles/large-article", nil)
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, req)
-		
+
 		if recorder.Code != http.StatusOK {
 			b.Fatalf("Expected status 200, got %d", recorder.Code)
 		}
 	}
 
 	runtime.ReadMemStats(&m2)
-	
+
 	// Report memory metrics
 	b.ReportMetric(float64(m2.Alloc-m1.Alloc)/float64(b.N), "bytes/op")
 	b.ReportMetric(float64(m2.TotalAlloc-m1.TotalAlloc)/float64(b.N), "total-bytes/op")
@@ -99,7 +99,7 @@ func BenchmarkCacheMemoryEfficiency(b *testing.B) {
 		req, _ := http.NewRequest("GET", fmt.Sprintf("/articles/%s", article.Slug), nil)
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, req)
-		
+
 		if recorder.Code != http.StatusOK {
 			b.Fatalf("Expected status 200, got %d", recorder.Code)
 		}
@@ -107,7 +107,7 @@ func BenchmarkCacheMemoryEfficiency(b *testing.B) {
 	}
 
 	runtime.ReadMemStats(&m2)
-	
+
 	// Report cache efficiency metrics
 	b.ReportMetric(float64(m2.Alloc-m1.Alloc)/float64(b.N), "bytes/op")
 	b.ReportMetric(float64(m2.HeapObjects-m1.HeapObjects)/float64(b.N), "heap-objects/op")
@@ -140,14 +140,14 @@ func BenchmarkSearchMemoryUsage(b *testing.B) {
 		req, _ := http.NewRequest("GET", "/search?q=golang", nil)
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, req)
-		
+
 		if recorder.Code != http.StatusOK {
 			b.Fatalf("Expected status 200, got %d", recorder.Code)
 		}
 	}
 
 	runtime.ReadMemStats(&m2)
-	
+
 	// Report search-specific memory metrics
 	b.ReportMetric(float64(m2.Alloc-m1.Alloc)/float64(b.N), "bytes/op")
 	b.ReportMetric(float64(m2.Sys-m1.Sys)/float64(b.N), "sys-bytes/op")
@@ -180,7 +180,7 @@ func BenchmarkGoroutineUsage(b *testing.B) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, req)
-		
+
 		if recorder.Code != http.StatusOK {
 			b.Fatalf("Expected status 200, got %d", recorder.Code)
 		}
@@ -188,7 +188,7 @@ func BenchmarkGoroutineUsage(b *testing.B) {
 
 	endGoroutines := runtime.NumGoroutine()
 	goroutineDelta := endGoroutines - startGoroutines
-	
+
 	b.ReportMetric(float64(goroutineDelta), "goroutine-delta")
 	b.ReportMetric(float64(endGoroutines), "total-goroutines")
 }
@@ -210,7 +210,7 @@ func BenchmarkMemoryLeakDetection(b *testing.B) {
 
 	// Run multiple iterations to detect leaks
 	var memStats []runtime.MemStats
-	
+
 	for i := 0; i < 10; i++ {
 		var m runtime.MemStats
 		runtime.GC()
@@ -237,7 +237,7 @@ func BenchmarkMemoryLeakDetection(b *testing.B) {
 	// Check for concerning memory growth (>50% increase might indicate a leak)
 	growthRatio := float64(finalMem) / float64(initialMem)
 	if growthRatio > 1.5 {
-		b.Logf("WARNING: Potential memory leak detected. Memory grew by %.1f%% over test duration", 
+		b.Logf("WARNING: Potential memory leak detected. Memory grew by %.1f%% over test duration",
 			(growthRatio-1)*100)
 	}
 }
@@ -271,7 +271,7 @@ func BenchmarkBaselineResourceUsage(b *testing.B) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, req)
-		
+
 		if recorder.Code != http.StatusOK {
 			b.Fatalf("Expected status 200, got %d", recorder.Code)
 		}
@@ -293,7 +293,7 @@ func BenchmarkBaselineResourceUsage(b *testing.B) {
 	if heapMB > 50 {
 		b.Logf("WARNING: Heap usage %.1fMB exceeds target of 50MB (Ghost baseline: ~300MB)", heapMB)
 	} else {
-		b.Logf("✅ Memory usage %.1fMB is within target (%.1fx better than Ghost ~300MB)", 
+		b.Logf("✅ Memory usage %.1fMB is within target (%.1fx better than Ghost ~300MB)",
 			heapMB, 300/heapMB)
 	}
 }
@@ -306,7 +306,7 @@ func BenchmarkMemoryProfileComparison(b *testing.B) {
 	// Setup for multiple request types
 	mockCacheService.On("Get", mock.Anything).Return(nil, false).Maybe()
 	mockCacheService.On("Set", mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
-	
+
 	mockArticleService.On("GetAllArticles").Return(articles).Maybe()
 	mockArticleService.On("GetArticleBySlug", mock.Anything).Return(articles[0], nil).Maybe()
 	mockArticleService.On("GetFeaturedArticles", mock.Anything).Return(articles[:3]).Maybe()
@@ -314,7 +314,7 @@ func BenchmarkMemoryProfileComparison(b *testing.B) {
 	mockArticleService.On("GetCategoryCounts").Return(createCategoryCounts(20)).Maybe()
 	mockArticleService.On("GetTagCounts").Return(createTagCounts(50)).Maybe()
 	mockArticleService.On("GetArticlesByTag", mock.Anything).Return(articles[:5]).Maybe()
-	
+
 	mockSearchService.On("Search", mock.Anything, mock.Anything, mock.Anything).Return(createSearchResults(10)).Maybe()
 
 	router := gin.New()
@@ -345,7 +345,7 @@ func BenchmarkMemoryProfileComparison(b *testing.B) {
 		req, _ := http.NewRequest("GET", reqType.path, nil)
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, req)
-		
+
 		if recorder.Code != http.StatusOK {
 			b.Fatalf("Expected status 200, got %d for %s", recorder.Code, reqType.name)
 		}
@@ -357,11 +357,11 @@ func BenchmarkMemoryProfileComparison(b *testing.B) {
 
 	// Generate competitor comparison metrics
 	currentMemoryMB := float64(finalMem.Alloc) / 1024 / 1024
-	
+
 	// Competitor memory usage (from research)
 	ghostMemoryMB := 300.0
 	wpMemoryMB := 2048.0
-	
+
 	memoryAdvantageGhost := ghostMemoryMB / currentMemoryMB
 	memoryAdvantageWP := wpMemoryMB / currentMemoryMB
 

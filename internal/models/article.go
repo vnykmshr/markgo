@@ -8,25 +8,25 @@ import (
 
 // Article represents a blog article with memory optimization
 type Article struct {
-	Slug             string    `yaml:"slug" json:"slug"`
-	Title            string    `yaml:"title" json:"title"`
-	Description      string    `yaml:"description" json:"description"`
-	Date             time.Time `yaml:"date" json:"date"`
-	Tags             []string  `yaml:"tags" json:"tags"`
-	Categories       []string  `yaml:"categories" json:"categories"`
-	Draft            bool      `yaml:"draft" json:"draft"`
-	Featured         bool      `yaml:"featured" json:"featured"`
-	Author           string    `yaml:"author" json:"author"`
-	Content          string    `yaml:"-" json:"content"`
-	ReadingTime      int       `yaml:"-" json:"reading_time"`
-	WordCount        int       `yaml:"-" json:"word_count"`
-	LastModified     time.Time `yaml:"-" json:"last_modified"`
-	
+	Slug         string    `yaml:"slug" json:"slug"`
+	Title        string    `yaml:"title" json:"title"`
+	Description  string    `yaml:"description" json:"description"`
+	Date         time.Time `yaml:"date" json:"date"`
+	Tags         []string  `yaml:"tags" json:"tags"`
+	Categories   []string  `yaml:"categories" json:"categories"`
+	Draft        bool      `yaml:"draft" json:"draft"`
+	Featured     bool      `yaml:"featured" json:"featured"`
+	Author       string    `yaml:"author" json:"author"`
+	Content      string    `yaml:"-" json:"content"`
+	ReadingTime  int       `yaml:"-" json:"reading_time"`
+	WordCount    int       `yaml:"-" json:"word_count"`
+	LastModified time.Time `yaml:"-" json:"last_modified"`
+
 	// Memory optimized fields - lazy loaded
-	processedContent *string       `yaml:"-" json:"-"`
-	excerpt          *string       `yaml:"-" json:"-"`
-	contentHash      [16]byte      `yaml:"-" json:"-"`
-	mu               sync.RWMutex  `yaml:"-" json:"-"`
+	processedContent *string          `yaml:"-" json:"-"`
+	excerpt          *string          `yaml:"-" json:"-"`
+	contentHash      [16]byte         `yaml:"-" json:"-"`
+	mu               sync.RWMutex     `yaml:"-" json:"-"`
 	processor        ArticleProcessor `yaml:"-" json:"-"`
 }
 
@@ -50,12 +50,12 @@ func (a *Article) GetProcessedContent() string {
 	// Generate processed content
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	
+
 	// Double-check pattern - another goroutine might have processed it
 	if a.processedContent != nil {
 		return *a.processedContent
 	}
-	
+
 	// Generate content hash for cache invalidation
 	hash := md5.Sum([]byte(a.Content))
 	if a.contentHash != hash && a.processor != nil {
@@ -68,7 +68,7 @@ func (a *Article) GetProcessedContent() string {
 			return processed
 		}
 	}
-	
+
 	// Fallback to raw content if processing fails
 	a.processedContent = &a.Content
 	return a.Content
@@ -87,24 +87,24 @@ func (a *Article) GetExcerpt() string {
 	// Generate excerpt
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	
+
 	// Double-check pattern
 	if a.excerpt != nil {
 		return *a.excerpt
 	}
-	
+
 	if a.processor != nil {
 		excerpt := a.processor.GenerateExcerpt(a.Content, 200)
 		a.excerpt = &excerpt
 		return excerpt
 	}
-	
+
 	// Fallback to description or truncated content
 	if a.Description != "" {
 		a.excerpt = &a.Description
 		return a.Description
 	}
-	
+
 	const maxLength = 200
 	content := a.Content
 	if len(content) > maxLength {
@@ -126,7 +126,7 @@ func (a *Article) ProcessedContent() string {
 	return a.GetProcessedContent()
 }
 
-// Excerpt returns the excerpt (for JSON serialization compatibility)  
+// Excerpt returns the excerpt (for JSON serialization compatibility)
 func (a *Article) Excerpt() string {
 	return a.GetExcerpt()
 }

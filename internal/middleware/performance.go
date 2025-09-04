@@ -19,7 +19,7 @@ type PerformanceMetrics struct {
 	maxResponseTime   int64 // nanoseconds
 	minResponseTime   int64 // nanoseconds, use atomic.LoadInt64 with special handling
 	memoryUsage       uint64
-	
+
 	// Less frequently updated fields protected by mutex
 	mu                      sync.RWMutex
 	responseTimeBuffer      *utils.CircularResponseTimeBuffer
@@ -107,11 +107,11 @@ func PerformanceMiddleware(logger *slog.Logger) gin.HandlerFunc {
 
 func updateMetrics(responseTime time.Duration, endpoint string) {
 	responseTimeNs := responseTime.Nanoseconds()
-	
+
 	// Update atomic counters (lock-free)
 	atomic.AddInt64(&globalMetrics.requestCount, 1)
 	atomic.AddInt64(&globalMetrics.totalResponseTime, responseTimeNs)
-	
+
 	// Update max response time (lock-free)
 	for {
 		oldMax := atomic.LoadInt64(&globalMetrics.maxResponseTime)
@@ -122,7 +122,7 @@ func updateMetrics(responseTime time.Duration, endpoint string) {
 			break
 		}
 	}
-	
+
 	// Update min response time (lock-free)
 	for {
 		oldMin := atomic.LoadInt64(&globalMetrics.minResponseTime)
@@ -133,20 +133,20 @@ func updateMetrics(responseTime time.Duration, endpoint string) {
 			break
 		}
 	}
-	
+
 	// Store in circular buffer (lock-based but efficient)
 	globalMetrics.responseTimeBuffer.Add(responseTime)
-	
+
 	// Update less frequent metrics with mutex
 	globalMetrics.mu.Lock()
 	defer globalMetrics.mu.Unlock()
-	
+
 	// Update requests per second
 	now := time.Now()
 	if elapsed := now.Sub(globalMetrics.lastUpdateTime); elapsed > 0 {
 		globalMetrics.requestsPerSecond = float64(atomic.LoadInt64(&globalMetrics.requestCount)) / elapsed.Seconds()
 	}
-	
+
 	// Update per-endpoint metrics
 	globalMetrics.requestsByEndpoint[endpoint]++
 	if existingTime, exists := globalMetrics.responseTimesByEndpoint[endpoint]; exists {
@@ -154,7 +154,7 @@ func updateMetrics(responseTime time.Duration, endpoint string) {
 	} else {
 		globalMetrics.responseTimesByEndpoint[endpoint] = responseTime
 	}
-	
+
 	// Update memory usage less frequently (every 10th request to reduce overhead)
 	if atomic.LoadInt64(&globalMetrics.requestCount)%10 == 0 {
 		var mem runtime.MemStats
@@ -171,18 +171,18 @@ func logPerformanceSummary(logger *slog.Logger) {
 	maxResponseTime := atomic.LoadInt64(&globalMetrics.maxResponseTime)
 	minResponseTime := atomic.LoadInt64(&globalMetrics.minResponseTime)
 	memoryUsage := atomic.LoadUint64(&globalMetrics.memoryUsage)
-	
+
 	// Calculate average
 	var avgResponseTime time.Duration
 	if requestCount > 0 {
 		avgResponseTime = time.Duration(totalResponseTime / requestCount)
 	}
-	
+
 	// Get percentiles from circular buffer
 	responseTimes := globalMetrics.responseTimeBuffer.GetSorted()
 	p95 := calculatePercentile(responseTimes, 0.95)
 	p99 := calculatePercentile(responseTimes, 0.99)
-	
+
 	globalMetrics.mu.RLock()
 	rps := globalMetrics.requestsPerSecond
 	goroutines := globalMetrics.goroutineCount
@@ -238,19 +238,19 @@ func GetPerformanceMetrics() PublicPerformanceMetrics {
 	maxResponseTime := atomic.LoadInt64(&globalMetrics.maxResponseTime)
 	minResponseTime := atomic.LoadInt64(&globalMetrics.minResponseTime)
 	memoryUsage := atomic.LoadUint64(&globalMetrics.memoryUsage)
-	
+
 	// Calculate average
 	var averageResponseTime time.Duration
 	if requestCount > 0 {
 		averageResponseTime = time.Duration(totalResponseTime / requestCount)
 	}
-	
+
 	// Get mutex-protected values
 	globalMetrics.mu.RLock()
 	requestsPerSecond := globalMetrics.requestsPerSecond
 	goroutineCount := globalMetrics.goroutineCount
 	lastUpdateTime := globalMetrics.lastUpdateTime
-	
+
 	// Use pooled maps for efficient copying
 	requestsByEndpoint := globalMetrics.pool.WithStringInt64Map(func(pooledMap map[string]int64) map[string]int64 {
 		for k, v := range globalMetrics.requestsByEndpoint {
@@ -263,7 +263,7 @@ func GetPerformanceMetrics() PublicPerformanceMetrics {
 		}
 		return result
 	})
-	
+
 	responseTimesByEndpoint := globalMetrics.pool.WithStringDurationMap(func(pooledMap map[string]time.Duration) map[string]time.Duration {
 		for k, v := range globalMetrics.responseTimesByEndpoint {
 			pooledMap[k] = v
@@ -276,7 +276,7 @@ func GetPerformanceMetrics() PublicPerformanceMetrics {
 		return result
 	})
 	globalMetrics.mu.RUnlock()
-	
+
 	// Get response times from circular buffer
 	responseTimes := globalMetrics.responseTimeBuffer.GetAll()
 
@@ -288,10 +288,10 @@ func GetPerformanceMetrics() PublicPerformanceMetrics {
 		MinResponseTime:         time.Duration(minResponseTime),
 		ResponseTimes:           responseTimes,
 		RequestsPerSecond:       requestsPerSecond,
-		MemoryUsage:            memoryUsage,
-		GoroutineCount:         goroutineCount,
-		LastUpdateTime:         lastUpdateTime,
-		RequestsByEndpoint:     requestsByEndpoint,
+		MemoryUsage:             memoryUsage,
+		GoroutineCount:          goroutineCount,
+		LastUpdateTime:          lastUpdateTime,
+		RequestsByEndpoint:      requestsByEndpoint,
 		ResponseTimesByEndpoint: responseTimesByEndpoint,
 	}
 }
@@ -311,7 +311,7 @@ func ResetPerformanceMetrics() {
 	globalMetrics.requestsPerSecond = 0
 	globalMetrics.goroutineCount = 0
 	globalMetrics.lastUpdateTime = time.Now()
-	
+
 	// Clear maps
 	for k := range globalMetrics.requestsByEndpoint {
 		delete(globalMetrics.requestsByEndpoint, k)
@@ -319,7 +319,7 @@ func ResetPerformanceMetrics() {
 	for k := range globalMetrics.responseTimesByEndpoint {
 		delete(globalMetrics.responseTimesByEndpoint, k)
 	}
-	
+
 	// Reset circular buffer
 	globalMetrics.responseTimeBuffer = utils.NewCircularResponseTimeBuffer(1000)
 }
@@ -328,25 +328,25 @@ func ResetPerformanceMetrics() {
 func CompetitorBenchmarkMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		startTime := time.Now()
-		
+
 		c.Next()
-		
+
 		responseTime := time.Since(startTime)
-		
+
 		// Add competitive comparison headers
 		c.Header("X-MarkGo-Response-Time", responseTime.String())
-		
+
 		// Compare to competitor targets (use cached strings)
 		classCache := utils.GetGlobalPerformanceClassCache()
 		if responseTime.Milliseconds() < 50 {
-			c.Header("X-Performance-vs-Ghost", classCache.GetClass("4x faster")) // Ghost ~200ms
+			c.Header("X-Performance-vs-Ghost", classCache.GetClass("4x faster"))      // Ghost ~200ms
 			c.Header("X-Performance-vs-WordPress", classCache.GetClass("10x faster")) // WordPress ~500ms
 		}
-		
+
 		if responseTime.Milliseconds() < 30 {
 			c.Header("X-Performance-vs-Hugo", classCache.GetClass("comparable")) // Hugo ~10ms (static)
 		}
-		
+
 		// Performance classification (use cached strings)
 		if responseTime.Milliseconds() < 10 {
 			c.Header("X-Performance-Class", classCache.GetClass("exceptional"))

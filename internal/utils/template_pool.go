@@ -53,7 +53,7 @@ func PutTemplateData(data gin.H) {
 func WithTemplateData(fn func(gin.H) gin.H) gin.H {
 	data := GetTemplateData()
 	defer PutTemplateData(data)
-	
+
 	return fn(data)
 }
 
@@ -119,11 +119,11 @@ func (b *TemplateDataBuilder) Build() gin.H {
 	for k, v := range b.data {
 		result[k] = v
 	}
-	
+
 	// Return the pooled data back to the pool
 	b.pool.Put(b.data)
 	b.data = nil // Prevent further use
-	
+
 	return result
 }
 
@@ -142,7 +142,7 @@ func BaseTemplateData(title string, config any) *TemplateDataBuilder {
 		Set("config", config)
 }
 
-// ArticlePageData creates template data for article pages  
+// ArticlePageData creates template data for article pages
 func ArticlePageData(title string, config any, recent any) *TemplateDataBuilder {
 	return BaseTemplateData(title, config).
 		Set("recent", recent)

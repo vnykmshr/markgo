@@ -45,7 +45,7 @@ func BenchmarkFullRequestFlow_Home(b *testing.B) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, req)
-		
+
 		if recorder.Code != http.StatusOK {
 			b.Fatalf("Expected status 200, got %d", recorder.Code)
 		}
@@ -74,7 +74,7 @@ func BenchmarkFullRequestFlow_Article(b *testing.B) {
 		req, _ := http.NewRequest("GET", "/articles/large-article", nil)
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, req)
-		
+
 		if recorder.Code != http.StatusOK {
 			b.Fatalf("Expected status 200, got %d", recorder.Code)
 		}
@@ -103,7 +103,7 @@ func BenchmarkFullRequestFlow_Search(b *testing.B) {
 		req, _ := http.NewRequest("GET", "/search?q=golang", nil)
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, req)
-		
+
 		if recorder.Code != http.StatusOK {
 			b.Fatalf("Expected status 200, got %d", recorder.Code)
 		}
@@ -139,7 +139,7 @@ func BenchmarkConcurrentArticleAccess(b *testing.B) {
 			req, _ := http.NewRequest("GET", fmt.Sprintf("/articles/%s", article.Slug), nil)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, req)
-			
+
 			if recorder.Code != http.StatusOK {
 				b.Fatalf("Expected status 200, got %d", recorder.Code)
 			}
@@ -176,7 +176,7 @@ func BenchmarkSearchWithLargeDataset(b *testing.B) {
 		req, _ := http.NewRequest("GET", fmt.Sprintf("/search?q=%s", term), nil)
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, req)
-		
+
 		if recorder.Code != http.StatusOK {
 			b.Fatalf("Expected status 200, got %d", recorder.Code)
 		}
@@ -214,7 +214,7 @@ func BenchmarkConcurrentSearchRequests(b *testing.B) {
 			req, _ := http.NewRequest("GET", fmt.Sprintf("/search?q=%s", term), nil)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, req)
-			
+
 			if recorder.Code != http.StatusOK {
 				b.Fatalf("Expected status 200, got %d", recorder.Code)
 			}
@@ -254,7 +254,7 @@ func BenchmarkMemoryUsageUnderLoad(b *testing.B) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, req)
-		
+
 		if recorder.Code != http.StatusOK {
 			b.Fatalf("Expected status 200, got %d", recorder.Code)
 		}
@@ -293,11 +293,11 @@ func BenchmarkCompetitorComparison_ResponseTime(b *testing.B) {
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, req)
 		elapsed := time.Since(start)
-		
+
 		if recorder.Code != http.StatusOK {
 			b.Fatalf("Expected status 200, got %d", recorder.Code)
 		}
-		
+
 		responseTimes = append(responseTimes, elapsed)
 	}
 
@@ -306,7 +306,7 @@ func BenchmarkCompetitorComparison_ResponseTime(b *testing.B) {
 		// Simple 95th percentile calculation
 		sortedTimes := make([]time.Duration, len(responseTimes))
 		copy(sortedTimes, responseTimes)
-		
+
 		// Basic bubble sort for small datasets
 		n := len(sortedTimes)
 		for i := 0; i < n-1; i++ {
@@ -316,19 +316,19 @@ func BenchmarkCompetitorComparison_ResponseTime(b *testing.B) {
 				}
 			}
 		}
-		
+
 		p95Index := int(0.95 * float64(len(sortedTimes)))
 		if p95Index >= len(sortedTimes) {
 			p95Index = len(sortedTimes) - 1
 		}
-		
+
 		p95Time := sortedTimes[p95Index]
 		b.ReportMetric(float64(p95Time.Nanoseconds())/1e6, "p95-ms")
-		
+
 		// Report if we meet our target (<50ms)
 		target := 50 * time.Millisecond
 		if p95Time > target {
-			b.Logf("WARNING: 95th percentile response time %.2fms exceeds target of 50ms", 
+			b.Logf("WARNING: 95th percentile response time %.2fms exceeds target of 50ms",
 				float64(p95Time.Nanoseconds())/1e6)
 		}
 	}
@@ -366,7 +366,7 @@ func BenchmarkThroughputTest(b *testing.B) {
 		go func(workerID int) {
 			defer wg.Done()
 			localRequests := int64(0)
-			
+
 			for {
 				select {
 				case <-ctx.Done():
@@ -385,15 +385,15 @@ func BenchmarkThroughputTest(b *testing.B) {
 					case 2:
 						req, _ = http.NewRequest("GET", "/health", nil)
 					}
-					
+
 					recorder := httptest.NewRecorder()
 					router.ServeHTTP(recorder, req)
-					
+
 					if recorder.Code != http.StatusOK {
 						b.Logf("Worker %d: Request failed with status %d", workerID, recorder.Code)
 						continue
 					}
-					
+
 					localRequests++
 				}
 			}
@@ -405,11 +405,11 @@ func BenchmarkThroughputTest(b *testing.B) {
 
 	requestsPerSecond := float64(requests) / elapsed.Seconds()
 	b.ReportMetric(requestsPerSecond, "req/s")
-	
+
 	if requestsPerSecond < 1000 {
 		b.Logf("WARNING: Throughput %.0f req/s is below target of 1000 req/s", requestsPerSecond)
 	}
-	
+
 	b.Logf("Processed %d requests in %v (%.0f req/s)", requests, elapsed, requestsPerSecond)
 }
 
@@ -451,7 +451,7 @@ func createLargeArticleSet(count int) []*models.Article {
 	articles := make([]*models.Article, count)
 	categories := []string{"programming", "web", "mobile", "devops", "security", "data", "ai", "blockchain"}
 	tags := []string{"golang", "javascript", "python", "rust", "java", "docker", "kubernetes", "aws", "performance", "testing"}
-	
+
 	for i := 0; i < count; i++ {
 		articles[i] = &models.Article{
 			Slug:        fmt.Sprintf("test-article-%d", i),
@@ -465,7 +465,7 @@ func createLargeArticleSet(count int) []*models.Article {
 			Content:     generateLargeContent(1000 + i*10), // Varying content sizes
 		}
 	}
-	
+
 	return articles
 }
 
@@ -535,42 +535,42 @@ Performance is crucial for user experience and business success. Here are key op
 	for len(content) < size {
 		content += "\n\n" + content
 	}
-	
+
 	return content[:size]
 }
 
 func createCategoryCounts(count int) []models.CategoryCount {
 	categories := []string{"programming", "web", "mobile", "devops", "security", "data", "ai", "blockchain", "design", "management"}
 	counts := make([]models.CategoryCount, count)
-	
+
 	for i := 0; i < count; i++ {
 		counts[i] = models.CategoryCount{
 			Category: categories[i%len(categories)] + fmt.Sprintf("-%d", i),
 			Count:    10 + i,
 		}
 	}
-	
+
 	return counts
 }
 
 func createTagCounts(count int) []models.TagCount {
 	tags := []string{"golang", "javascript", "python", "rust", "java", "docker", "kubernetes", "aws", "performance", "testing"}
 	counts := make([]models.TagCount, count)
-	
+
 	for i := 0; i < count; i++ {
 		counts[i] = models.TagCount{
 			Tag:   tags[i%len(tags)] + fmt.Sprintf("-%d", i),
 			Count: 5 + i,
 		}
 	}
-	
+
 	return counts
 }
 
 func createSearchResults(count int) []*models.SearchResult {
 	articles := createLargeArticleSet(count)
 	results := make([]*models.SearchResult, count)
-	
+
 	for i, article := range articles {
 		results[i] = &models.SearchResult{
 			Article:       article,
@@ -578,7 +578,7 @@ func createSearchResults(count int) []*models.SearchResult {
 			MatchedFields: []string{"title", "content", "tags"},
 		}
 	}
-	
+
 	return results
 }
 

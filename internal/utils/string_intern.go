@@ -14,11 +14,11 @@ type StringInterner struct {
 
 // InternerStats tracks interning statistics
 type InternerStats struct {
-	TotalLookups    int64
-	HitCount        int64  
-	MissCount       int64
-	UniqueStrings   int64
-	MemorySaved     int64  // Estimated bytes saved
+	TotalLookups  int64
+	HitCount      int64
+	MissCount     int64
+	UniqueStrings int64
+	MemorySaved   int64 // Estimated bytes saved
 }
 
 // Global interner for application-wide string interning
@@ -167,10 +167,10 @@ func (ti *TagInterner) InternTag(tag string) (string, uint16) {
 	interned := ti.StringInterner.Intern(tag)
 	id := ti.nextID
 	ti.nextID++
-	
+
 	ti.tagMap[tag] = id
 	ti.idMap[id] = interned
-	
+
 	return interned, id
 }
 
@@ -179,7 +179,7 @@ func (ti *TagInterner) GetTagByID(id uint16) string {
 	if id == 0 {
 		return ""
 	}
-	
+
 	ti.mu.RLock()
 	defer ti.mu.RUnlock()
 	return ti.idMap[id]
@@ -200,12 +200,12 @@ func (ti *TagInterner) InternTagSlice(tags []string) ([]string, []uint16) {
 
 	internedTags := make([]string, len(tags))
 	tagIDs := make([]uint16, len(tags))
-	
+
 	for i, tag := range tags {
 		internedTag, id := ti.InternTag(tag)
 		internedTags[i] = internedTag
 		tagIDs[i] = id
 	}
-	
+
 	return internedTags, tagIDs
 }

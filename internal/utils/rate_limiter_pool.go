@@ -26,7 +26,7 @@ func NewCircularTimeBuffer(size int) *CircularTimeBuffer {
 func (c *CircularTimeBuffer) Add(t time.Time) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	c.buffer[c.head] = t
 	c.head = (c.head + 1) % c.size
 	if c.count < c.size {
@@ -38,12 +38,12 @@ func (c *CircularTimeBuffer) Add(t time.Time) {
 func (c *CircularTimeBuffer) CountSince(since time.Time) int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	validCount := 0
 	if c.count == 0 {
 		return 0
 	}
-	
+
 	// Iterate through all valid entries
 	for i := 0; i < c.count; i++ {
 		idx := (c.head - 1 - i + c.size) % c.size
@@ -54,7 +54,7 @@ func (c *CircularTimeBuffer) CountSince(since time.Time) int {
 			break
 		}
 	}
-	
+
 	return validCount
 }
 
@@ -62,7 +62,7 @@ func (c *CircularTimeBuffer) CountSince(since time.Time) int {
 func (c *CircularTimeBuffer) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	c.head = 0
 	c.count = 0
 }
@@ -114,10 +114,10 @@ func NewOptimizedRateLimiter(limit int, window time.Duration) *OptimizedRateLimi
 		window:  window,
 		bufPool: NewCircularTimeBufferPool(limit * 2), // Buffer size slightly larger than limit
 	}
-	
+
 	// Start cleanup goroutine with less frequent cleanup
 	go rl.cleanup()
-	
+
 	return rl
 }
 
@@ -125,19 +125,19 @@ func NewOptimizedRateLimiter(limit int, window time.Duration) *OptimizedRateLimi
 func (rl *OptimizedRateLimiter) IsAllowed(key string) bool {
 	now := time.Now()
 	windowStart := now.Add(-rl.window)
-	
+
 	// Get or create buffer for this key
 	bufferInterface, _ := rl.requests.LoadOrStore(key, rl.bufPool.GetBuffer())
 	buffer := bufferInterface.(*CircularTimeBuffer)
-	
+
 	// Count valid requests in the time window
 	validCount := buffer.CountSince(windowStart)
-	
+
 	// Check if limit exceeded
 	if validCount >= rl.limit {
 		return false
 	}
-	
+
 	// Add current request
 	buffer.Add(now)
 	return true
@@ -147,16 +147,16 @@ func (rl *OptimizedRateLimiter) IsAllowed(key string) bool {
 func (rl *OptimizedRateLimiter) cleanup() {
 	ticker := time.NewTicker(5 * time.Minute) // Less frequent cleanup
 	defer ticker.Stop()
-	
+
 	for range ticker.C {
 		now := time.Now()
 		windowStart := now.Add(-rl.window * 2) // Keep entries a bit longer for efficiency
-		
+
 		var keysToDelete []string
-		
+
 		rl.requests.Range(func(key, value any) bool {
 			buffer := value.(*CircularTimeBuffer)
-			
+
 			// Check if this key has any recent activity
 			if buffer.CountSince(windowStart) == 0 {
 				keysToDelete = append(keysToDelete, key.(string))
@@ -165,7 +165,7 @@ func (rl *OptimizedRateLimiter) cleanup() {
 			}
 			return true
 		})
-		
+
 		// Delete inactive keys
 		for _, key := range keysToDelete {
 			rl.requests.Delete(key)
@@ -180,7 +180,7 @@ func (rl *OptimizedRateLimiter) GetStats() map[string]any {
 		activeKeys++
 		return true
 	})
-	
+
 	return map[string]any{
 		"active_keys": activeKeys,
 		"limit":       rl.limit,
@@ -210,13 +210,13 @@ func (m *RateLimiterManager) GetLimiter(name string, limit int, window time.Dura
 // GetStats returns statistics for all managed rate limiters
 func (m *RateLimiterManager) GetStats() map[string]any {
 	stats := make(map[string]any)
-	
+
 	m.limiters.Range(func(key, value any) bool {
 		limiter := value.(*OptimizedRateLimiter)
 		stats[key.(string)] = limiter.GetStats()
 		return true
 	})
-	
+
 	return stats
 }
 
@@ -230,7 +230,7 @@ func GetGlobalRateLimiterManager() *RateLimiterManager {
 
 // RequestIDPool provides pooled request ID generation to avoid allocations
 type RequestIDPool struct {
-	bufferPool sync.Pool
+	bufferPool  sync.Pool
 	counterPool sync.Pool
 }
 
@@ -239,13 +239,15 @@ func NewRequestIDPool() *RequestIDPool {
 	return &RequestIDPool{
 		bufferPool: sync.Pool{
 			New: func() any {
-				return make([]byte, 8) // For random bytes
+				buf := make([]byte, 8) // For random bytes
+				return &buf
 			},
 		},
 		counterPool: sync.Pool{
 			New: func() any {
 				// Pre-allocated byte slice for building request ID string
-				return make([]byte, 0, 32) // Enough capacity for typical request ID
+				buf := make([]byte, 0, 32) // Enough capacity for typical request ID
+				return &buf
 			},
 		},
 	}
@@ -253,26 +255,28 @@ func NewRequestIDPool() *RequestIDPool {
 
 // GetRandomBytes gets pooled random bytes
 func (p *RequestIDPool) GetRandomBytes() []byte {
-	return p.bufferPool.Get().([]byte)
+	bufPtr := p.bufferPool.Get().(*[]byte)
+	return *bufPtr
 }
 
 // PutRandomBytes returns random bytes to pool
 func (p *RequestIDPool) PutRandomBytes(buf []byte) {
-	if buf != nil && len(buf) == 8 {
-		p.bufferPool.Put(buf)
+	if len(buf) == 8 {
+		p.bufferPool.Put(&buf)
 	}
 }
 
 // GetBuffer gets a pooled buffer for building request ID
 func (p *RequestIDPool) GetBuffer() []byte {
-	buf := p.counterPool.Get().([]byte)
+	bufPtr := p.counterPool.Get().(*[]byte)
+	buf := *bufPtr
 	return buf[:0] // Reset length but keep capacity
 }
 
 // PutBuffer returns buffer to pool
 func (p *RequestIDPool) PutBuffer(buf []byte) {
-	if buf != nil && cap(buf) == 32 {
-		p.counterPool.Put(buf)
+	if cap(buf) == 32 {
+		p.counterPool.Put(&buf)
 	}
 }
 
@@ -282,4 +286,77 @@ var globalRequestIDPool = NewRequestIDPool()
 // GetGlobalRequestIDPool returns the global request ID pool
 func GetGlobalRequestIDPool() *RequestIDPool {
 	return globalRequestIDPool
+}
+
+// Cleanup methods for memory leak prevention
+
+// Cleanup clears all active rate limiters and buffers (for memory leak prevention)
+func (m *RateLimiterManager) Cleanup() {
+	// Clear all rate limiters
+	m.limiters.Range(func(key, value interface{}) bool {
+		m.limiters.Delete(key)
+		return true
+	})
+
+	// Reset buffer pool
+	m.bufPool = NewCircularTimeBufferPool(100)
+}
+
+// Cleanup clears all request buffers (for OptimizedRateLimiter)
+func (rl *OptimizedRateLimiter) Cleanup() {
+	// Clear all request tracking
+	rl.requests.Range(func(key, value interface{}) bool {
+		buffer := value.(*CircularTimeBuffer)
+		rl.bufPool.PutBuffer(buffer)
+		rl.requests.Delete(key)
+		return true
+	})
+}
+
+// GetStats returns more detailed statistics for RateLimiterManager
+func (m *RateLimiterManager) GetStatsDetailed() map[string]interface{} {
+	stats := m.GetStats()
+
+	totalActiveKeys := 0
+	limiterCount := 0
+
+	m.limiters.Range(func(key, value interface{}) bool {
+		limiter := value.(*OptimizedRateLimiter)
+		limiterStats := limiter.GetStats()
+		if activeKeys, ok := limiterStats["active_keys"].(int); ok {
+			totalActiveKeys += activeKeys
+		}
+		limiterCount++
+		return true
+	})
+
+	stats["total_active_keys"] = totalActiveKeys
+	stats["limiter_count"] = limiterCount
+	stats["type"] = "RateLimiterManager"
+
+	return stats
+}
+
+// Cleanup clears all pooled request ID buffers (for memory leak prevention)
+func (p *RequestIDPool) Cleanup() {
+	p.bufferPool = sync.Pool{
+		New: func() any {
+			buf := make([]byte, 8)
+			return &buf
+		},
+	}
+	p.counterPool = sync.Pool{
+		New: func() any {
+			buf := make([]byte, 0, 32)
+			return &buf
+		},
+	}
+}
+
+// GetStats returns statistics for the request ID pool
+func (p *RequestIDPool) GetStats() map[string]interface{} {
+	return map[string]interface{}{
+		"type": "RequestIDPool",
+		"note": "sync.Pool doesn't expose internal metrics",
+	}
 }
