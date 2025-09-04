@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"fmt"
 	"html"
 	"html/template"
@@ -16,6 +17,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/utils"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"golang.org/x/text/unicode/norm"
@@ -72,11 +74,10 @@ func (t *TemplateService) Render(w io.Writer, templateName string, data any) err
 }
 
 func (t *TemplateService) RenderToString(templateName string, data any) (string, error) {
-	var buf strings.Builder
-	if err := t.Render(&buf, templateName, data); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
+	// Use pooled buffer for template rendering
+	return utils.GetGlobalBufferPool().RenderToString(func(buf *bytes.Buffer) error {
+		return t.Render(buf, templateName, data)
+	})
 }
 
 func (t *TemplateService) HasTemplate(templateName string) bool {
@@ -125,34 +126,8 @@ var templateFuncs = template.FuncMap{
 		return strings.Join(items, sep)
 	},
 	"slice": func(items any, start, end int) any {
-		val := reflect.ValueOf(items)
-
-		// Check if it's a slice or array
-		if val.Kind() != reflect.Slice && val.Kind() != reflect.Array {
-			return items // Return original if not slice/array
-		}
-
-		length := val.Len()
-
-		// Boundary checks
-		if start < 0 {
-			start = 0
-		}
-		if start > length {
-			start = length
-		}
-		if end < start {
-			end = start
-		}
-		if end > length {
-			end = length
-		}
-
-		// Create new slice of the same type
-		result := reflect.MakeSlice(val.Type(), end-start, end-start)
-		reflect.Copy(result, val.Slice(start, end))
-
-		return result.Interface()
+		// Use pooled slice copying for better memory efficiency
+		return utils.GetGlobalSlicePool().SliceCopyPooled(items, start, end)
 	},
 	"add": func(a, b int) int {
 		return a + b
@@ -186,14 +161,8 @@ var templateFuncs = template.FuncMap{
 		return a / b
 	},
 	"seq": func(start, end int) []int {
-		if start > end {
-			return []int{}
-		}
-		seq := make([]int, end-start+1)
-		for i := range seq {
-			seq[i] = start + i
-		}
-		return seq
+		// Use pooled int sequence generation
+		return utils.GetGlobalSlicePool().IntSequencePooled(start, end)
 	},
 	"gt": func(a, b int) bool {
 		return a > b
@@ -309,38 +278,55 @@ var templateFuncs = template.FuncMap{
 		return strings.TrimSpace(s)
 	},
 	"truncate": func(s string, length int) string {
-		runes := []rune(s)
-		if len(runes) <= length {
+		if utf8.RuneCountInString(s) <= length {
 			return s
 		}
-		return string(runes[:length]) + "..."
+		// Use pooled rune slice for truncation
+		truncatedRunes := utils.GetGlobalRuneSlicePool().WithRuneSlice(func(pooledRunes *[]rune) []rune {
+			*pooledRunes = append(*pooledRunes, []rune(s)...)
+			if len(*pooledRunes) <= length {
+				result := make([]rune, len(*pooledRunes))
+				copy(result, *pooledRunes)
+				return result
+			}
+			result := make([]rune, length)
+			copy(result, (*pooledRunes)[:length])
+			return result
+		})
+		return string(truncatedRunes) + "..."
 	},
 	"truncateHTML": func(s string, length int) template.HTML {
 		if utf8.RuneCountInString(s) <= length {
 			return template.HTML(s)
 		}
-		// Properly handle UTF-8 boundaries
-		runes := []rune(s)
-		safe := template.HTMLEscapeString(string(runes[:length])) + "..."
+		// Use pooled rune slice for HTML truncation
+		truncatedRunes := utils.GetGlobalRuneSlicePool().WithRuneSlice(func(pooledRunes *[]rune) []rune {
+			*pooledRunes = append(*pooledRunes, []rune(s)...)
+			result := make([]rune, length)
+			copy(result, (*pooledRunes)[:length])
+			return result
+		})
+		safe := template.HTMLEscapeString(string(truncatedRunes)) + "..."
 		return template.HTML(safe)
 	},
 	"slugify": func(s string) string {
 		s = strings.ToLower(s)
-		var b strings.Builder
-		for _, r := range norm.NFD.String(s) {
-			switch {
-			case r >= 'a' && r <= 'z':
-				b.WriteRune(r)
-			case r >= '0' && r <= '9':
-				b.WriteRune(r)
-			case r == ' ' || r == '-':
-				b.WriteRune('-')
-			// Remove diacritics
-			case unicode.Is(unicode.Mn, r): // Mn: Nonspacing marks
-				continue
+		// Use pooled string builder for slugification
+		return utils.GetGlobalBufferPool().BuildString(func(b *strings.Builder) {
+			for _, r := range norm.NFD.String(s) {
+				switch {
+				case r >= 'a' && r <= 'z':
+					b.WriteRune(r)
+				case r >= '0' && r <= '9':
+					b.WriteRune(r)
+				case r == ' ' || r == '-':
+					b.WriteRune('-')
+				// Remove diacritics
+				case unicode.Is(unicode.Mn, r): // Mn: Nonspacing marks
+					continue
+				}
 			}
-		}
-		return b.String()
+		})
 	},
 	"timeAgo": func(date time.Time) string {
 		duration := time.Since(date)

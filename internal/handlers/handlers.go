@@ -642,31 +642,32 @@ func (h *Handlers) renderHTML(c *gin.Context, status int, template string, data 
 }
 
 func (h *Handlers) generateRSSFeed(articles []*models.Article) []byte {
-	// Basic RSS 2.0 feed
-	var rss strings.Builder
-	rss.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
-	rss.WriteString(`<rss version="2.0">`)
-	rss.WriteString(`<channel>`)
-	rss.WriteString(fmt.Sprintf(`<title>%s</title>`, h.config.Blog.Title))
-	rss.WriteString(fmt.Sprintf(`<description>%s</description>`, h.config.Blog.Description))
-	rss.WriteString(fmt.Sprintf(`<link>%s</link>`, h.config.BaseURL))
-	rss.WriteString(fmt.Sprintf(`<language>%s</language>`, h.config.Blog.Language))
-	rss.WriteString(fmt.Sprintf(`<lastBuildDate>%s</lastBuildDate>`, time.Now().Format(time.RFC1123Z)))
+	// Use pooled buffer for RSS feed generation
+	feedContent := utils.GetGlobalFeedBufferPool().BuildFeed(func(rss *strings.Builder) {
+		rss.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
+		rss.WriteString(`<rss version="2.0">`)
+		rss.WriteString(`<channel>`)
+		rss.WriteString(fmt.Sprintf(`<title>%s</title>`, h.config.Blog.Title))
+		rss.WriteString(fmt.Sprintf(`<description>%s</description>`, h.config.Blog.Description))
+		rss.WriteString(fmt.Sprintf(`<link>%s</link>`, h.config.BaseURL))
+		rss.WriteString(fmt.Sprintf(`<language>%s</language>`, h.config.Blog.Language))
+		rss.WriteString(fmt.Sprintf(`<lastBuildDate>%s</lastBuildDate>`, time.Now().Format(time.RFC1123Z)))
 
-	for _, article := range articles {
-		rss.WriteString(`<item>`)
-		rss.WriteString(fmt.Sprintf(`<title>%s</title>`, article.Title))
-		rss.WriteString(fmt.Sprintf(`<description>%s</description>`, article.GetExcerpt()))
-		rss.WriteString(fmt.Sprintf(`<link>%s/articles/%s</link>`, h.config.BaseURL, article.Slug))
-		rss.WriteString(fmt.Sprintf(`<guid>%s/articles/%s</guid>`, h.config.BaseURL, article.Slug))
-		rss.WriteString(fmt.Sprintf(`<pubDate>%s</pubDate>`, article.Date.Format(time.RFC1123Z)))
-		rss.WriteString(`</item>`)
-	}
+		for _, article := range articles {
+			rss.WriteString(`<item>`)
+			rss.WriteString(fmt.Sprintf(`<title>%s</title>`, article.Title))
+			rss.WriteString(fmt.Sprintf(`<description>%s</description>`, article.GetExcerpt()))
+			rss.WriteString(fmt.Sprintf(`<link>%s/articles/%s</link>`, h.config.BaseURL, article.Slug))
+			rss.WriteString(fmt.Sprintf(`<guid>%s/articles/%s</guid>`, h.config.BaseURL, article.Slug))
+			rss.WriteString(fmt.Sprintf(`<pubDate>%s</pubDate>`, article.Date.Format(time.RFC1123Z)))
+			rss.WriteString(`</item>`)
+		}
 
-	rss.WriteString(`</channel>`)
-	rss.WriteString(`</rss>`)
+		rss.WriteString(`</channel>`)
+		rss.WriteString(`</rss>`)
+	})
 
-	return []byte(rss.String())
+	return []byte(feedContent)
 }
 
 func (h *Handlers) generateJSONFeed(articles []*models.Article) *models.Feed {
