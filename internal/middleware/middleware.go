@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -254,29 +255,38 @@ func Compress() gin.HandlerFunc {
 // Timeout middleware for request timeout
 func Timeout(timeout time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Create a context with timeout
-		ctx, cancel := c.Request.Context(), func() {}
-		if timeout > 0 {
-			ctx, cancel = c.Request.Context(), func() {}
+		if timeout <= 0 {
+			// No timeout specified, just pass through
+			c.Next()
+			return
 		}
+
+		// Create a context with timeout
+		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
 		defer cancel()
 
 		// Replace request context
 		c.Request = c.Request.WithContext(ctx)
 
 		// Channel to signal completion
-		finished := make(chan struct{})
+		finished := make(chan struct{}, 1) // Buffered to prevent goroutine leak
 
 		go func() {
+			defer func() {
+				// Ensure we always signal completion to prevent goroutine leak
+				select {
+				case finished <- struct{}{}:
+				default:
+				}
+			}()
 			c.Next()
-			finished <- struct{}{}
 		}()
 
 		select {
 		case <-finished:
 			// Request completed normally
 		case <-ctx.Done():
-			// Request timed out - use pooled template data
+			// Request timed out or cancelled - use pooled template data
 			data := utils.GetTemplateData()
 			data["error"] = "Request timeout"
 			data["message"] = "Request took too long to process"

@@ -208,6 +208,10 @@ func BenchmarkMemoryLeakDetection(b *testing.B) {
 
 	endpoints := []string{"/", "/articles/test-article-0", "/articles/test-article-1"}
 
+	// Force cleanup before starting
+	runtime.GC()
+	runtime.GC() // Double GC to ensure cleanup
+
 	// Run multiple iterations to detect leaks
 	var memStats []runtime.MemStats
 
@@ -223,7 +227,15 @@ func BenchmarkMemoryLeakDetection(b *testing.B) {
 			req, _ := http.NewRequest("GET", endpoint, nil)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, req)
+			
+			// Explicit cleanup every 20 requests to prevent accumulation
+			if j%20 == 0 {
+				runtime.GC()
+			}
 		}
+		
+		// Force cleanup after each batch
+		runtime.GC()
 	}
 
 	// Analyze memory growth patterns

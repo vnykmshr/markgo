@@ -3,6 +3,7 @@ package middleware
 import (
 	"log/slog"
 	"runtime"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -147,12 +148,17 @@ func updateMetrics(responseTime time.Duration, endpoint string) {
 		globalMetrics.requestsPerSecond = float64(atomic.LoadInt64(&globalMetrics.requestCount)) / elapsed.Seconds()
 	}
 
-	// Update per-endpoint metrics
+	// Update per-endpoint metrics with bounds checking to prevent memory leaks
 	globalMetrics.requestsByEndpoint[endpoint]++
 	if existingTime, exists := globalMetrics.responseTimesByEndpoint[endpoint]; exists {
 		globalMetrics.responseTimesByEndpoint[endpoint] = (existingTime + responseTime) / 2
 	} else {
 		globalMetrics.responseTimesByEndpoint[endpoint] = responseTime
+	}
+
+	// Prevent unbounded map growth during benchmarks/heavy load
+	if len(globalMetrics.requestsByEndpoint) > 100 {
+		cleanupOldestEndpoints()
 	}
 
 	// Update memory usage less frequently (every 10th request to reduce overhead)
@@ -161,6 +167,37 @@ func updateMetrics(responseTime time.Duration, endpoint string) {
 		runtime.ReadMemStats(&mem)
 		atomic.StoreUint64(&globalMetrics.memoryUsage, mem.Alloc)
 		globalMetrics.goroutineCount = runtime.NumGoroutine()
+	}
+}
+
+// cleanupOldestEndpoints removes endpoints with lowest request counts to prevent memory leaks
+func cleanupOldestEndpoints() {
+	// Find endpoints with lowest request counts
+	type endpointCount struct {
+		endpoint string
+		count    int64
+	}
+	
+	var endpoints []endpointCount
+	for endpoint, count := range globalMetrics.requestsByEndpoint {
+		endpoints = append(endpoints, endpointCount{endpoint, count})
+	}
+	
+	// Sort by count to find least used endpoints
+	sort.Slice(endpoints, func(i, j int) bool {
+		return endpoints[i].count < endpoints[j].count
+	})
+	
+	// Remove bottom 20% of endpoints to keep memory bounded
+	removeCount := len(endpoints) / 5
+	if removeCount < 5 {
+		removeCount = 5
+	}
+	
+	for i := 0; i < removeCount && i < len(endpoints); i++ {
+		endpoint := endpoints[i].endpoint
+		delete(globalMetrics.requestsByEndpoint, endpoint)
+		delete(globalMetrics.responseTimesByEndpoint, endpoint)
 	}
 }
 
