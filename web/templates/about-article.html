@@ -40,7 +40,7 @@
                 <section class="about-section connect-section">
                     <div class="connect-actions">
                         <a href="/contact" class="btn btn-primary">Get in Touch</a>
-                        <a href="https://github.com/yourusername" class="btn btn-secondary" target="_blank" rel="noopener">
+                        <a href="https://github.com/username" class="btn btn-secondary" target="_blank" rel="noopener">
                             View on GitHub
                         </a>
                     </div>
@@ -52,9 +52,9 @@
                 <div class="sidebar-card">
                     <h3>Quick Facts</h3>
                     <ul class="facts-list">
-                        <li><strong>Location:</strong> New Delhi, India</li>
+                        <li><strong>Location:</strong> Available worldwide</li>
                         <li><strong>Languages:</strong> Go, JavaScript, Python</li>
-                        <li><strong>Interests:</strong> Technology, Cricket, Open Source</li>
+                        <li><strong>Interests:</strong> Technology, Programming, Open Source</li>
                         <li><strong>Favorite Editor:</strong> Zed</li>
                     </ul>
                 </div>
@@ -146,7 +146,7 @@
         "jobTitle": "Software Professional",
         "email": "{{ .config.Blog.AuthorEmail }}",
         "url": "{{ .config.BaseURL }}",
-        "sameAs": ["https://github.com/yourusername"],
+        "sameAs": ["https://github.com/username"],
         "knowsAbout": [
             {{ range $index, $tag := .article.Tags }}
             {{ if $index }},{{ end }}"{{ $tag }}"
