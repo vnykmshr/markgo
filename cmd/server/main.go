@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -80,6 +81,12 @@ func main() {
 		middleware.ErrorHandler(logger), // Centralized error handling (must be last)
 	)
 
+	// Development-specific enhanced logging
+	if cfg.Environment == "development" {
+		router.Use(middleware.RequestTracker(logger, cfg.Environment))
+		logger.Info("Development logging enhancements enabled")
+	}
+
 	// Initialize handlers
 	h := handlers.New(&handlers.Config{
 		ArticleService:  articleService,
@@ -92,7 +99,7 @@ func main() {
 	})
 
 	// Setup routes
-	setupRoutes(router, h, cfg)
+	setupRoutes(router, h, cfg, logger)
 
 	// Setup template hot-reload for development
 	if cfg.Environment == "development" {
@@ -138,7 +145,7 @@ func main() {
 	slog.Info("Server exited gracefully")
 }
 
-func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config) {
+func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, logger *slog.Logger) {
 	// Static files
 	router.Static("/static", cfg.StaticPath)
 	router.StaticFile("/favicon.ico", cfg.StaticPath+"/img/favicon.ico")
@@ -181,6 +188,36 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config) {
 			adminGroup.GET("/stats", h.AdminStats)
 			adminGroup.POST("/articles/reload", h.ReloadArticles)
 		}
+	}
+
+	// Debug endpoints (development only)
+	if cfg.Environment == "development" {
+		debugGroup := router.Group("/debug")
+		{
+			// Memory and runtime debugging
+			debugGroup.GET("/memory", h.DebugMemory)
+			debugGroup.GET("/runtime", h.DebugRuntime)
+			debugGroup.GET("/config", h.DebugConfig)
+			debugGroup.GET("/requests", h.DebugRequests)
+			debugGroup.POST("/log-level", h.SetLogLevel)
+			
+			// Go pprof profiling endpoints
+			pprofGroup := debugGroup.Group("/pprof")
+			{
+				pprofGroup.GET("/", h.PprofIndex)
+				pprofGroup.GET("/cmdline", gin.WrapH(http.HandlerFunc(pprof.Cmdline)))
+				pprofGroup.GET("/profile", h.PprofProfile)
+				pprofGroup.GET("/symbol", gin.WrapH(http.HandlerFunc(pprof.Symbol)))
+				pprofGroup.GET("/trace", h.PprofTrace)
+				pprofGroup.GET("/heap", h.PprofHeap)
+				pprofGroup.GET("/goroutine", h.PprofGoroutine)
+				pprofGroup.GET("/allocs", h.PprofAllocs)
+				pprofGroup.GET("/block", h.PprofBlock)
+				pprofGroup.GET("/mutex", h.PprofMutex)
+			}
+		}
+		
+		logger.Info("Debug endpoints enabled", "environment", cfg.Environment)
 	}
 
 	// 404 handler

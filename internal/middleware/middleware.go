@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -343,4 +345,131 @@ func generateRequestID() string {
 	// Format: timestamp-hexbytes
 	buffer = append(buffer, fmt.Sprintf("%d-%s", timestamp, hexBytes)...)
 	return string(buffer)
+}
+
+// DevelopmentLogger provides enhanced logging for development environments
+func DevelopmentLogger(logger *slog.Logger) gin.HandlerFunc {
+	return gin.LoggerWithConfig(gin.LoggerConfig{
+		Formatter: func(param gin.LogFormatterParams) string {
+			// Enhanced development logging with more details
+			var statusColor, methodColor, resetColor string
+			if param.IsOutputColor() {
+				statusColor = param.StatusCodeColor()
+				methodColor = param.MethodColor()
+				resetColor = param.ResetColor()
+			}
+
+			if param.Latency > time.Minute {
+				param.Latency = param.Latency.Truncate(time.Second)
+			}
+
+			// Log request details for development debugging
+			logger.Debug("HTTP Request Details",
+				"method", param.Method,
+				"path", param.Path,
+				"status", param.StatusCode,
+				"latency", param.Latency,
+				"client_ip", param.ClientIP,
+				"user_agent", param.Request.UserAgent(),
+				"request_size", param.Request.ContentLength,
+				"response_size", param.BodySize,
+				"referer", param.Request.Referer(),
+			)
+
+			// Performance warning for slow requests
+			if param.Latency > 1*time.Second {
+				logger.Warn("Slow request detected",
+					"method", param.Method,
+					"path", param.Path,
+					"latency", param.Latency,
+					"status", param.StatusCode,
+				)
+			}
+
+			return fmt.Sprintf("[GIN] %v |%s %3d %s| %13v | %15s |%s %-7s %s %#v\n%s",
+				param.TimeStamp.Format("2006/01/02 - 15:04:05"),
+				statusColor, param.StatusCode, resetColor,
+				param.Latency,
+				param.ClientIP,
+				methodColor, param.Method, resetColor,
+				param.Path,
+				param.ErrorMessage,
+			)
+		},
+		Output: os.Stdout, // Development output
+	})
+}
+
+// RequestTracker adds detailed request tracking for development
+func RequestTracker(logger *slog.Logger, environment string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if environment != "development" {
+			c.Next()
+			return
+		}
+
+		start := time.Now()
+		
+		// Log request start with detailed info
+		logger.Debug("Request started",
+			"method", c.Request.Method,
+			"url", c.Request.URL.String(),
+			"headers", getSafeHeaders(c.Request.Header),
+			"content_length", c.Request.ContentLength,
+			"remote_addr", c.Request.RemoteAddr,
+			"user_agent", c.Request.UserAgent(),
+		)
+
+		c.Next()
+
+		duration := time.Since(start)
+
+		// Log request completion with response info
+		logger.Debug("Request completed",
+			"method", c.Request.Method,
+			"url", c.Request.URL.String(),
+			"status", c.Writer.Status(),
+			"duration", duration,
+			"response_size", c.Writer.Size(),
+			"errors", c.Errors.String(),
+		)
+
+		// Log memory usage for requests over 100ms
+		if duration > 100*time.Millisecond {
+			var m runtime.MemStats
+			runtime.ReadMemStats(&m)
+			logger.Debug("Request memory usage",
+				"method", c.Request.Method,
+				"path", c.Request.URL.Path,
+				"duration", duration,
+				"heap_alloc_kb", m.Alloc/1024,
+				"num_goroutines", runtime.NumGoroutine(),
+			)
+		}
+	}
+}
+
+// getSafeHeaders filters headers to exclude sensitive information
+func getSafeHeaders(headers http.Header) map[string]string {
+	safe := make(map[string]string)
+	sensitiveHeaders := []string{
+		"Authorization", "Cookie", "Set-Cookie", "X-Api-Key", "X-Auth-Token",
+	}
+	
+	for name, values := range headers {
+		// Skip sensitive headers
+		sensitive := false
+		for _, sensitiveHeader := range sensitiveHeaders {
+			if strings.EqualFold(name, sensitiveHeader) {
+				sensitive = true
+				break
+			}
+		}
+		
+		if !sensitive && len(values) > 0 {
+			safe[name] = values[0]
+		}
+	}
+	
+	return safe
 }

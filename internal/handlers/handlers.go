@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/http/pprof"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -28,6 +30,7 @@ type Handlers struct {
 	templateService *services.TemplateService
 	config          *config.Config
 	logger          *slog.Logger
+	startTime       time.Time // Track server start time for uptime calculation
 }
 
 // Config for handler initialization
@@ -51,6 +54,7 @@ func New(cfg *Config) *Handlers {
 		templateService: cfg.TemplateService,
 		config:          cfg.Config,
 		logger:          cfg.Logger,
+		startTime:       time.Now(),
 	}
 }
 
@@ -589,6 +593,268 @@ func (h *Handlers) ReloadArticles(c *gin.Context) {
 	data["message"] = "Articles reloaded successfully"
 	c.JSON(http.StatusOK, data)
 	utils.PutTemplateData(data)
+}
+
+// Enhanced Debug Endpoints
+
+// DebugMemory returns detailed memory statistics
+func (h *Handlers) DebugMemory(c *gin.Context) {
+	memMonitor := utils.GetGlobalMemoryMonitor(h.logger)
+	currentStats := memMonitor.GetCurrentStats()
+	report := memMonitor.GetMemoryReport()
+	
+	// Get cleanup manager stats
+	cleanupStats := utils.GetGlobalCleanupManager().GetAllStats()
+	
+	data := utils.GetTemplateData()
+	data["current"] = map[string]interface{}{
+		"heap_alloc_mb":  float64(currentStats.HeapAlloc) / 1024 / 1024,
+		"heap_sys_mb":    float64(currentStats.HeapSys) / 1024 / 1024,
+		"num_gc":         currentStats.NumGC,
+		"num_goroutines": currentStats.NumGoroutine,
+		"timestamp":      currentStats.Timestamp.Format(time.RFC3339),
+	}
+	data["report"] = report
+	data["cleanup_pools"] = cleanupStats
+	data["gc_stats"] = h.getGCStats()
+	
+	c.JSON(http.StatusOK, data)
+	utils.PutTemplateData(data)
+}
+
+// DebugRuntime returns Go runtime information
+func (h *Handlers) DebugRuntime(c *gin.Context) {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	
+	data := utils.GetTemplateData()
+	data["go_version"] = runtime.Version()
+	data["go_os"] = runtime.GOOS
+	data["go_arch"] = runtime.GOARCH
+	data["num_cpu"] = runtime.NumCPU()
+	data["num_goroutine"] = runtime.NumGoroutine()
+	data["memory"] = map[string]interface{}{
+		"alloc_mb":        float64(m.Alloc) / 1024 / 1024,
+		"total_alloc_mb":  float64(m.TotalAlloc) / 1024 / 1024,
+		"sys_mb":          float64(m.Sys) / 1024 / 1024,
+		"num_gc":          m.NumGC,
+		"gc_cpu_fraction": m.GCCPUFraction,
+		"heap_objects":    m.HeapObjects,
+	}
+	data["uptime_seconds"] = time.Since(h.startTime).Seconds()
+	data["timestamp"] = time.Now().Format(time.RFC3339)
+	
+	c.JSON(http.StatusOK, data)
+	utils.PutTemplateData(data)
+}
+
+// DebugConfig returns safe configuration information for debugging
+func (h *Handlers) DebugConfig(c *gin.Context) {
+	data := utils.GetTemplateData()
+	data["environment"] = h.config.Environment
+	data["port"] = h.config.Port
+	data["log_level"] = h.config.Logging.Level
+	data["cache_ttl"] = h.config.Cache.TTL.String()
+	data["posts_per_page"] = h.config.Blog.PostsPerPage
+	data["rate_limit"] = map[string]interface{}{
+		"general_requests": h.config.RateLimit.General.Requests,
+		"general_window":   h.config.RateLimit.General.Window.String(),
+		"contact_requests": h.config.RateLimit.Contact.Requests,
+		"contact_window":   h.config.RateLimit.Contact.Window.String(),
+	}
+	// Note: Sensitive config like secrets/passwords are intentionally excluded
+	data["timestamp"] = time.Now().Format(time.RFC3339)
+	
+	c.JSON(http.StatusOK, data)
+	utils.PutTemplateData(data)
+}
+
+// DebugRequests returns detailed request debugging info (development only)
+func (h *Handlers) DebugRequests(c *gin.Context) {
+	// Only enable in development environment
+	if h.config.Environment != "development" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Debug requests endpoint only available in development"})
+		return
+	}
+	
+	perfMetrics := middleware.GetPerformanceMetrics()
+	
+	data := utils.GetTemplateData()
+	data["current_request"] = map[string]interface{}{
+		"method":     c.Request.Method,
+		"path":       c.Request.URL.Path,
+		"query":      c.Request.URL.RawQuery,
+		"user_agent": c.Request.UserAgent(),
+		"remote_ip":  c.ClientIP(),
+		"headers":    h.getSafeHeaders(c.Request.Header),
+	}
+	data["performance"] = map[string]interface{}{
+		"request_count":      perfMetrics.RequestCount,
+		"requests_per_second": perfMetrics.RequestsPerSecond,
+		"avg_response_time_ms": float64(perfMetrics.TotalResponseTime) / float64(perfMetrics.RequestCount) / 1e6,
+		"max_response_time_ms": float64(perfMetrics.MaxResponseTime) / 1e6,
+		"min_response_time_ms": float64(perfMetrics.MinResponseTime) / 1e6,
+		"goroutine_count":      perfMetrics.GoroutineCount,
+	}
+	data["timestamp"] = time.Now().Format(time.RFC3339)
+	
+	c.JSON(http.StatusOK, data)
+	utils.PutTemplateData(data)
+}
+
+// SetLogLevel allows dynamic log level changes (development only)
+func (h *Handlers) SetLogLevel(c *gin.Context) {
+	// Only enable in development environment
+	if h.config.Environment != "development" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Log level changes only available in development"})
+		return
+	}
+	
+	var request struct {
+		Level string `json:"level" binding:"required"`
+	}
+	
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		return
+	}
+	
+	// Validate log level
+	validLevels := []string{"debug", "info", "warn", "error"}
+	validLevel := false
+	for _, level := range validLevels {
+		if request.Level == level {
+			validLevel = true
+			break
+		}
+	}
+	
+	if !validLevel {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid log level. Must be one of: debug, info, warn, error"})
+		return
+	}
+	
+	// Update logger dynamically
+	h.logger.Info("Log level changed dynamically", "old_level", h.config.Logging.Level, "new_level", request.Level)
+	h.config.Logging.Level = request.Level
+	
+	data := utils.GetTemplateData()
+	data["success"] = true
+	data["message"] = fmt.Sprintf("Log level changed to: %s", request.Level)
+	data["level"] = request.Level
+	data["timestamp"] = time.Now().Format(time.RFC3339)
+	
+	c.JSON(http.StatusOK, data)
+	utils.PutTemplateData(data)
+}
+
+// Helper methods for debug endpoints
+
+func (h *Handlers) getGCStats() map[string]interface{} {
+	var stats runtime.MemStats
+	runtime.ReadMemStats(&stats)
+	
+	return map[string]interface{}{
+		"num_gc":           stats.NumGC,
+		"pause_total_ns":   stats.PauseTotalNs,
+		"pause_avg_ns":     float64(stats.PauseTotalNs) / float64(stats.NumGC+1),
+		"gc_cpu_fraction":  stats.GCCPUFraction,
+		"next_gc_mb":       float64(stats.NextGC) / 1024 / 1024,
+		"last_gc":          time.Unix(0, int64(stats.LastGC)).Format(time.RFC3339),
+	}
+}
+
+func (h *Handlers) getSafeHeaders(headers map[string][]string) map[string]string {
+	safe := make(map[string]string)
+	
+	// Only include non-sensitive headers
+	safeHeaders := []string{
+		"Accept", "Accept-Encoding", "Accept-Language", "Cache-Control",
+		"Content-Type", "User-Agent", "Referer", "X-Forwarded-For",
+		"X-Real-IP", "X-Requested-With",
+	}
+	
+	for _, headerName := range safeHeaders {
+		if values := headers[headerName]; len(values) > 0 {
+			safe[headerName] = values[0]
+		}
+	}
+	
+	return safe
+}
+
+// Profiling endpoints (pprof integration for development)
+
+// PprofIndex serves the pprof index page
+func (h *Handlers) PprofIndex(c *gin.Context) {
+	if h.config.Environment != "development" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Profiling endpoints only available in development"})
+		return
+	}
+	pprof.Index(c.Writer, c.Request)
+}
+
+// PprofProfile serves CPU profiling data
+func (h *Handlers) PprofProfile(c *gin.Context) {
+	if h.config.Environment != "development" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Profiling endpoints only available in development"})
+		return
+	}
+	pprof.Profile(c.Writer, c.Request)
+}
+
+// PprofHeap serves heap profiling data
+func (h *Handlers) PprofHeap(c *gin.Context) {
+	if h.config.Environment != "development" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Profiling endpoints only available in development"})
+		return
+	}
+	pprof.Handler("heap").ServeHTTP(c.Writer, c.Request)
+}
+
+// PprofGoroutine serves goroutine profiling data
+func (h *Handlers) PprofGoroutine(c *gin.Context) {
+	if h.config.Environment != "development" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Profiling endpoints only available in development"})
+		return
+	}
+	pprof.Handler("goroutine").ServeHTTP(c.Writer, c.Request)
+}
+
+// PprofAllocs serves allocation profiling data
+func (h *Handlers) PprofAllocs(c *gin.Context) {
+	if h.config.Environment != "development" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Profiling endpoints only available in development"})
+		return
+	}
+	pprof.Handler("allocs").ServeHTTP(c.Writer, c.Request)
+}
+
+// PprofBlock serves block profiling data
+func (h *Handlers) PprofBlock(c *gin.Context) {
+	if h.config.Environment != "development" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Profiling endpoints only available in development"})
+		return
+	}
+	pprof.Handler("block").ServeHTTP(c.Writer, c.Request)
+}
+
+// PprofMutex serves mutex profiling data
+func (h *Handlers) PprofMutex(c *gin.Context) {
+	if h.config.Environment != "development" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Profiling endpoints only available in development"})
+		return
+	}
+	pprof.Handler("mutex").ServeHTTP(c.Writer, c.Request)
+}
+
+// PprofTrace serves execution trace data
+func (h *Handlers) PprofTrace(c *gin.Context) {
+	if h.config.Environment != "development" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Profiling endpoints only available in development"})
+		return
+	}
+	pprof.Trace(c.Writer, c.Request)
 }
 
 // NotFound handles 404 errors
