@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/vnykmshr/markgo/internal/config"
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/utils"
 )
 
@@ -153,11 +154,18 @@ func RateLimit(limit int, window time.Duration) gin.HandlerFunc {
 		key := c.ClientIP()
 
 		if !limiter.IsAllowed(key) {
-			data := utils.GetTemplateData()
-			data["error"] = "Rate limit exceeded"
-			data["message"] = fmt.Sprintf("Too many requests. Limit: %d requests per %v", limit, window)
-			c.JSON(http.StatusTooManyRequests, data)
-			utils.PutTemplateData(data)
+			// Calculate wait time for better user experience
+			waitTime := window / time.Duration(limit)
+			if waitTime < time.Minute {
+				waitTime = time.Minute // Minimum 1 minute wait
+			}
+
+			c.Header("Retry-After", fmt.Sprintf("%.0f", waitTime.Seconds()))
+			_ = c.Error(apperrors.NewHTTPError(
+				http.StatusTooManyRequests,
+				fmt.Sprintf("Rate limit exceeded. Please wait %v before trying again.", waitTime.Round(time.Second)),
+				nil,
+			))
 			c.Abort()
 			return
 		}
@@ -174,11 +182,12 @@ func ContactRateLimit() gin.HandlerFunc {
 		key := c.ClientIP()
 
 		if !limiter.IsAllowed(key) {
-			data := utils.GetTemplateData()
-			data["error"] = "Contact form rate limit exceeded"
-			data["message"] = "Too many contact form submissions. Please try again later."
-			c.JSON(http.StatusTooManyRequests, data)
-			utils.PutTemplateData(data)
+			c.Header("Retry-After", "3600") // 1 hour in seconds
+			_ = c.Error(apperrors.NewHTTPError(
+				http.StatusTooManyRequests,
+				"Too many contact form submissions. You can submit up to 5 messages per hour. Please try again in 1 hour or contact us directly via email.",
+				nil,
+			))
 			c.Abort()
 			return
 		}
@@ -286,12 +295,12 @@ func Timeout(timeout time.Duration) gin.HandlerFunc {
 		case <-finished:
 			// Request completed normally
 		case <-ctx.Done():
-			// Request timed out or cancelled - use pooled template data
-			data := utils.GetTemplateData()
-			data["error"] = "Request timeout"
-			data["message"] = "Request took too long to process"
-			c.JSON(http.StatusRequestTimeout, data)
-			utils.PutTemplateData(data)
+			// Request timed out or cancelled
+			_ = c.Error(apperrors.NewHTTPError(
+				http.StatusRequestTimeout,
+				fmt.Sprintf("Request took longer than %v to process. Please try again with a simpler request or contact support if the issue persists.", timeout),
+				apperrors.ErrSearchTimeout,
+			))
 			c.Abort()
 		}
 	}

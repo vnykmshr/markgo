@@ -71,13 +71,14 @@ func main() {
 
 	// Global middleware
 	router.Use(
-		gin.Recovery(),
+		middleware.RecoveryWithErrorHandler(logger), // Custom recovery with error handling
 		middleware.Logger(logger),
 		middleware.PerformanceMiddleware(logger),
 		middleware.CompetitorBenchmarkMiddleware(),
 		middleware.CORS(cfg.CORS),
 		middleware.Security(),
 		middleware.RateLimit(cfg.RateLimit.General.Requests, cfg.RateLimit.General.Window),
+		middleware.ErrorHandler(logger), // Centralized error handling (must be last)
 	)
 
 	// Initialize handlers

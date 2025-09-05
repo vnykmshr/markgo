@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/vnykmshr/markgo/internal/config"
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/middleware"
 	"github.com/vnykmshr/markgo/internal/models"
 	"github.com/vnykmshr/markgo/internal/services"
@@ -146,7 +147,8 @@ func (h *Handlers) Article(c *gin.Context) {
 
 	article, err := h.articleService.GetArticleBySlug(slug)
 	if err != nil {
-		h.NotFound(c)
+		_ = c.Error(apperrors.NewArticleError("", fmt.Sprintf("Article '%s' not found", slug), apperrors.ErrArticleNotFound))
+		c.Abort()
 		return
 	}
 
@@ -315,8 +317,9 @@ func (h *Handlers) Search(c *gin.Context) {
 func (h *Handlers) AboutArticle(c *gin.Context) {
 	article, err := h.articleService.GetArticleBySlug("about")
 	if err != nil {
-		slog.Error("Error loading about article", "error", err)
-		h.NotFound(c)
+		h.logger.Error("Error loading about article", "error", err)
+		_ = c.Error(apperrors.NewArticleError("about", "About page not found", apperrors.ErrArticleNotFound))
+		c.Abort()
 		return
 	}
 
@@ -348,33 +351,24 @@ func (h *Handlers) ContactSubmit(c *gin.Context) {
 	var msg models.ContactMessage
 
 	if err := c.ShouldBindJSON(&msg); err != nil {
-		data := utils.GetTemplateData()
-		data["error"] = "Invalid form data"
-		data["message"] = err.Error()
-		c.JSON(http.StatusBadRequest, data)
-		utils.PutTemplateData(data)
+		_ = c.Error(apperrors.NewValidationError("contact_form", nil, "Invalid contact form data", err))
+		c.Abort()
 		return
 	}
 
 	// Verify simple numeric captcha
 	if !h.verifyCaptcha(strings.TrimSpace(msg.CaptchaQuestion), strings.TrimSpace(msg.CaptchaAnswer)) {
 		h.logger.Warn("Invalid captcha submission", "email", msg.Email)
-		data := utils.GetTemplateData()
-		data["error"] = "Invalid captcha"
-		data["message"] = "Please solve the math problem correctly"
-		c.JSON(http.StatusBadRequest, data)
-		utils.PutTemplateData(data)
+		_ = c.Error(apperrors.NewValidationError("captcha", msg.CaptchaAnswer, "Please solve the math problem correctly", apperrors.ErrValidationFailed))
+		c.Abort()
 		return
 	}
 
 	// Send email
 	if err := h.emailService.SendContactMessage(&msg); err != nil {
-		h.logger.Error("Failed to send contact email", "error", err)
-		data := utils.GetTemplateData()
-		data["error"] = "Failed to send message"
-		data["message"] = "Please try again later"
-		c.JSON(http.StatusInternalServerError, data)
-		utils.PutTemplateData(data)
+		h.logger.Error("Failed to send contact email", "error", err, "recipient", msg.Email)
+		_ = c.Error(err) // Email service should return appropriate error types
+		c.Abort()
 		return
 	}
 
@@ -415,10 +409,9 @@ func (h *Handlers) JSONFeed(c *gin.Context) {
 
 	feedJSON, err := json.MarshalIndent(feed, "", "  ")
 	if err != nil {
-		data := utils.GetTemplateData()
-		data["error"] = "Failed to generate feed"
-		c.JSON(http.StatusInternalServerError, data)
-		utils.PutTemplateData(data)
+		h.logger.Error("Failed to marshal JSON feed", "error", err)
+		_ = c.Error(apperrors.NewHTTPError(http.StatusInternalServerError, "Failed to generate JSON feed", err))
+		c.Abort()
 		return
 	}
 
@@ -438,10 +431,9 @@ func (h *Handlers) Sitemap(c *gin.Context) {
 	sitemap := h.generateSitemap()
 	sitemapXML, err := xml.MarshalIndent(sitemap, "", "  ")
 	if err != nil {
-		data := utils.GetTemplateData()
-		data["error"] = "Failed to generate sitemap"
-		c.JSON(http.StatusInternalServerError, data)
-		utils.PutTemplateData(data)
+		h.logger.Error("Failed to marshal XML sitemap", "error", err)
+		_ = c.Error(apperrors.NewHTTPError(http.StatusInternalServerError, "Failed to generate sitemap", err))
+		c.Abort()
 		return
 	}
 
@@ -583,11 +575,8 @@ func (h *Handlers) AdminStats(c *gin.Context) {
 func (h *Handlers) ReloadArticles(c *gin.Context) {
 	if err := h.articleService.ReloadArticles(); err != nil {
 		h.logger.Error("Failed to reload articles", "error", err)
-		data := utils.GetTemplateData()
-		data["error"] = "Failed to reload articles"
-		data["message"] = err.Error()
-		c.JSON(http.StatusInternalServerError, data)
-		utils.PutTemplateData(data)
+		_ = c.Error(err) // Service should return appropriate error types
+		c.Abort()
 		return
 	}
 

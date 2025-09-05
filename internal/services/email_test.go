@@ -107,7 +107,7 @@ func TestEmailService_SendContactMessage(t *testing.T) {
 				Message: "This is a test message",
 			},
 			expectError: true,
-			errorMsg:    "email service not configured",
+			errorMsg:    "email credentials not configured",
 		},
 		{
 			name: "Empty credentials",
@@ -126,7 +126,7 @@ func TestEmailService_SendContactMessage(t *testing.T) {
 				Message: "This is a test message",
 			},
 			expectError: true,
-			errorMsg:    "email service not configured",
+			errorMsg:    "email credentials not configured",
 		},
 	}
 
@@ -186,7 +186,7 @@ func TestEmailService_SendNotification(t *testing.T) {
 			subject:     "Test Notification",
 			body:        "This is a test notification",
 			expectError: true,
-			errorMsg:    "email service not configured",
+			errorMsg:    "email credentials not configured",
 		},
 	}
 

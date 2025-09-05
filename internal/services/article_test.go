@@ -147,7 +147,7 @@ func TestArticleService_GetArticleBySlug(t *testing.T) {
 	// Test non-existent article
 	_, err = service.GetArticleBySlug("non-existent")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "article not found")
+	assert.Contains(t, err.Error(), "does not exist")
 
 	// Test draft article (should be in cache)
 	draftArticle, err := service.GetArticleBySlug("draft-article")
@@ -860,7 +860,7 @@ func TestArticleService_GetArticleBySlug_WithSpecialCharacters(t *testing.T) {
 		article, err := service.GetArticleBySlug(slug)
 		// Should not crash, but may return not found
 		if err != nil {
-			assert.Contains(t, err.Error(), "article not found")
+			assert.Contains(t, err.Error(), "does not exist")
 		}
 		if article != nil {
 			assert.NotEmpty(t, article.Slug)

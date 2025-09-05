@@ -1,12 +1,14 @@
 package config
 
 import (
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
 )
 
 type Config struct {
@@ -143,8 +145,8 @@ func Load() (*Config, error) {
 		},
 
 		Admin: AdminConfig{
-			Username: getEnv("ADMIN_USERNAME", "admin"),
-			Password: getEnv("ADMIN_PASSWORD", "changeme"),
+			Username: getEnv("ADMIN_USERNAME", ""),
+			Password: getEnv("ADMIN_PASSWORD", ""),
 		},
 
 		Blog: BlogConfig{
@@ -168,6 +170,11 @@ func Load() (*Config, error) {
 			Language:         getEnv("GISCUS_LANGUAGE", "en"),
 			ReactionsEnabled: getEnvBool("GISCUS_REACTIONS_ENABLED", true),
 		},
+	}
+
+	// Validate the configuration
+	if err := cfg.Validate(); err != nil {
+		return nil, err
 	}
 
 	return cfg, nil
@@ -228,4 +235,195 @@ func splitString(s, delimiter string) []string {
 		}
 	}
 	return result
+}
+
+// Validate validates all configuration settings
+func (c *Config) Validate() error {
+	// Validate basic fields
+	if err := c.validateBasic(); err != nil {
+		return err
+	}
+
+	// Validate server configuration
+	if err := c.Server.Validate(); err != nil {
+		return apperrors.NewConfigError("server", c.Server, "Invalid server configuration", err)
+	}
+
+	// Validate cache configuration
+	if err := c.Cache.Validate(); err != nil {
+		return apperrors.NewConfigError("cache", c.Cache, "Invalid cache configuration", err)
+	}
+
+	// Validate email configuration (only if configured)
+	if c.Email.Username != "" || c.Email.Password != "" {
+		if err := c.Email.Validate(); err != nil {
+			return apperrors.NewConfigError("email", c.Email, "Invalid email configuration", err)
+		}
+	}
+
+	// Validate rate limit configuration
+	if err := c.RateLimit.Validate(); err != nil {
+		return apperrors.NewConfigError("rate_limit", c.RateLimit, "Invalid rate limit configuration", err)
+	}
+
+	// Validate blog configuration
+	if err := c.Blog.Validate(); err != nil {
+		return apperrors.NewConfigError("blog", c.Blog, "Invalid blog configuration", err)
+	}
+
+	// Validate admin configuration
+	if err := c.Admin.Validate(); err != nil {
+		return apperrors.NewConfigError("admin", c.Admin, "Invalid admin configuration", err)
+	}
+
+	return nil
+}
+
+func (c *Config) validateBasic() error {
+	// Validate port
+	if c.Port <= 0 || c.Port > 65535 {
+		return apperrors.NewConfigError("port", c.Port, "Port must be between 1 and 65535", apperrors.ErrConfigValidation)
+	}
+
+	// Validate paths exist
+	if _, err := os.Stat(c.ArticlesPath); os.IsNotExist(err) {
+		return apperrors.NewConfigError("articles_path", c.ArticlesPath, "Articles directory does not exist", apperrors.ErrMissingConfig)
+	}
+
+	if _, err := os.Stat(c.StaticPath); os.IsNotExist(err) {
+		return apperrors.NewConfigError("static_path", c.StaticPath, "Static files directory does not exist", apperrors.ErrMissingConfig)
+	}
+
+	if _, err := os.Stat(c.TemplatesPath); os.IsNotExist(err) {
+		return apperrors.NewConfigError("templates_path", c.TemplatesPath, "Templates directory does not exist", apperrors.ErrMissingConfig)
+	}
+
+	// Validate base URL
+	if c.BaseURL == "" {
+		return apperrors.NewConfigError("base_url", c.BaseURL, "Base URL cannot be empty", apperrors.ErrMissingConfig)
+	}
+
+	if _, err := url.Parse(c.BaseURL); err != nil {
+		return apperrors.NewConfigError("base_url", c.BaseURL, "Invalid base URL format", apperrors.ErrConfigValidation)
+	}
+
+	// Validate environment
+	validEnvs := []string{"development", "production", "test"}
+	if !contains(validEnvs, c.Environment) {
+		return apperrors.NewConfigError("environment", c.Environment, "Environment must be one of: development, production, test", apperrors.ErrConfigValidation)
+	}
+
+	return nil
+}
+
+// Validate server configuration
+func (s *ServerConfig) Validate() error {
+	if s.ReadTimeout <= 0 {
+		return apperrors.NewConfigError("read_timeout", s.ReadTimeout, "Read timeout must be positive", apperrors.ErrConfigValidation)
+	}
+	if s.WriteTimeout <= 0 {
+		return apperrors.NewConfigError("write_timeout", s.WriteTimeout, "Write timeout must be positive", apperrors.ErrConfigValidation)
+	}
+	if s.IdleTimeout <= 0 {
+		return apperrors.NewConfigError("idle_timeout", s.IdleTimeout, "Idle timeout must be positive", apperrors.ErrConfigValidation)
+	}
+	return nil
+}
+
+// Validate cache configuration
+func (c *CacheConfig) Validate() error {
+	if c.TTL <= 0 {
+		return apperrors.NewConfigError("ttl", c.TTL, "Cache TTL must be positive", apperrors.ErrConfigValidation)
+	}
+	if c.MaxSize <= 0 {
+		return apperrors.NewConfigError("max_size", c.MaxSize, "Cache max size must be positive", apperrors.ErrConfigValidation)
+	}
+	if c.CleanupInterval <= 0 {
+		return apperrors.NewConfigError("cleanup_interval", c.CleanupInterval, "Cleanup interval must be positive", apperrors.ErrConfigValidation)
+	}
+	return nil
+}
+
+// Validate email configuration
+func (e *EmailConfig) Validate() error {
+	if e.Host == "" {
+		return apperrors.NewConfigError("host", e.Host, "Email host cannot be empty", apperrors.ErrMissingConfig)
+	}
+	if e.Port <= 0 || e.Port > 65535 {
+		return apperrors.NewConfigError("port", e.Port, "Email port must be between 1 and 65535", apperrors.ErrConfigValidation)
+	}
+	if e.Username == "" {
+		return apperrors.NewConfigError("username", e.Username, "Email username cannot be empty when email is configured", apperrors.ErrMissingConfig)
+	}
+	if e.Password == "" {
+		return apperrors.NewConfigError("password", "***", "Email password cannot be empty when email is configured", apperrors.ErrMissingConfig)
+	}
+	if e.From == "" {
+		return apperrors.NewConfigError("from", e.From, "Email 'from' address cannot be empty", apperrors.ErrMissingConfig)
+	}
+	if e.To == "" {
+		return apperrors.NewConfigError("to", e.To, "Email 'to' address cannot be empty", apperrors.ErrMissingConfig)
+	}
+	return nil
+}
+
+// Validate rate limit configuration
+func (r *RateLimitConfig) Validate() error {
+	if err := r.General.Validate("general"); err != nil {
+		return err
+	}
+	if err := r.Contact.Validate("contact"); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Validate individual rate limit
+func (r *RateLimit) Validate(name string) error {
+	if r.Requests <= 0 {
+		return apperrors.NewConfigError("requests", r.Requests, name+" rate limit requests must be positive", apperrors.ErrConfigValidation)
+	}
+	if r.Window <= 0 {
+		return apperrors.NewConfigError("window", r.Window, name+" rate limit window must be positive", apperrors.ErrConfigValidation)
+	}
+	return nil
+}
+
+// Validate blog configuration
+func (b *BlogConfig) Validate() error {
+	if b.Title == "" {
+		return apperrors.NewConfigError("title", b.Title, "Blog title cannot be empty", apperrors.ErrMissingConfig)
+	}
+	if b.Author == "" {
+		return apperrors.NewConfigError("author", b.Author, "Blog author cannot be empty", apperrors.ErrMissingConfig)
+	}
+	if b.PostsPerPage <= 0 {
+		return apperrors.NewConfigError("posts_per_page", b.PostsPerPage, "Posts per page must be positive", apperrors.ErrConfigValidation)
+	}
+	if b.Language == "" {
+		return apperrors.NewConfigError("language", b.Language, "Blog language cannot be empty", apperrors.ErrMissingConfig)
+	}
+	return nil
+}
+
+// Validate admin configuration
+func (a *AdminConfig) Validate() error {
+	// Admin config is optional, but if username is provided, password must also be provided
+	if a.Username != "" && a.Password == "" {
+		return apperrors.NewConfigError("password", "***", "Admin password is required when username is provided", apperrors.ErrMissingConfig)
+	}
+	if a.Username != "" && a.Password == "changeme" {
+		return apperrors.NewConfigError("password", "***", "Admin password must be changed from default value", apperrors.ErrConfigValidation)
+	}
+	return nil
+}
+
+// Helper function to check if slice contains string
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }

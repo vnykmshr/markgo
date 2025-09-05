@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"bytes"
-	"encoding/json"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -235,8 +234,13 @@ func TestRateLimit(t *testing.T) {
 	// Reset rate limiter manager for clean tests
 	rateLimiterManager = utils.NewRateLimiterManager()
 
+	// Setup logger
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
 	router := gin.New()
 	router.Use(RateLimit(2, time.Minute))
+	router.Use(ErrorHandler(logger)) // Add error handler to process rate limit errors
 	router.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "test"})
 	})
@@ -257,18 +261,25 @@ func TestRateLimit(t *testing.T) {
 	router.ServeHTTP(recorder, req)
 	assert.Equal(t, http.StatusTooManyRequests, recorder.Code)
 
-	var response map[string]any
-	err := json.Unmarshal(recorder.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Equal(t, "Rate limit exceeded", response["error"])
+	// Check response contains rate limit error message
+	responseBody := recorder.Body.String()
+	assert.Contains(t, responseBody, "Rate limit exceeded")
+
+	// Check Retry-After header is set
+	assert.NotEmpty(t, recorder.Header().Get("Retry-After"))
 }
 
 func TestContactRateLimit(t *testing.T) {
 	// Reset rate limiter manager for clean tests
 	rateLimiterManager = utils.NewRateLimiterManager()
 
+	// Setup logger
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
 	router := gin.New()
 	router.Use(ContactRateLimit())
+	router.Use(ErrorHandler(logger)) // Add error handler to process rate limit errors
 	router.POST("/contact", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "contact sent"})
 	})
@@ -289,10 +300,12 @@ func TestContactRateLimit(t *testing.T) {
 	router.ServeHTTP(recorder, req)
 	assert.Equal(t, http.StatusTooManyRequests, recorder.Code)
 
-	var response map[string]any
-	err := json.Unmarshal(recorder.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Equal(t, "Contact form rate limit exceeded", response["error"])
+	// Check response contains rate limit error message
+	responseBody := recorder.Body.String()
+	assert.Contains(t, responseBody, "Too many contact form submissions")
+
+	// Check Retry-After header is set to 1 hour
+	assert.Equal(t, "3600", recorder.Header().Get("Retry-After"))
 }
 
 func TestBasicAuth(t *testing.T) {

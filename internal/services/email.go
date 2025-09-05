@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/vnykmshr/markgo/internal/config"
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/models"
 )
 
@@ -55,8 +56,8 @@ func NewEmailService(cfg config.EmailConfig, logger *slog.Logger) *EmailService 
 // SendContactMessage sends a contact form message via email
 func (e *EmailService) SendContactMessage(msg *models.ContactMessage) error {
 	if e.config.Username == "" || e.config.Password == "" {
-		e.logger.Warn("Email service not configured, skipping email send")
-		return fmt.Errorf("email service not configured")
+		e.logger.Warn("Email credentials not configured, skipping email send")
+		return apperrors.ErrEmailNotConfigured
 	}
 
 	// Check for duplicate submission
@@ -76,12 +77,12 @@ func (e *EmailService) SendContactMessage(msg *models.ContactMessage) error {
 	subject := fmt.Sprintf("[markgo] Contact Form: %s", msg.Subject)
 	body, err := e.generateContactEmailBody(msg)
 	if err != nil {
-		return fmt.Errorf("failed to generate email body: %w", err)
+		return apperrors.NewHTTPError(500, "Failed to generate email template", err)
 	}
 
 	// Send email
 	if err := e.sendEmail(e.config.To, subject, body); err != nil {
-		return fmt.Errorf("failed to send email: %w", err)
+		return err // sendEmail should return appropriate error types
 	}
 
 	e.logger.Info("Contact form email sent successfully",
@@ -95,8 +96,8 @@ func (e *EmailService) SendContactMessage(msg *models.ContactMessage) error {
 // SendNotification sends a general notification email
 func (e *EmailService) SendNotification(to, subject, body string) error {
 	if e.config.Username == "" || e.config.Password == "" {
-		e.logger.Warn("Email service not configured, skipping notification")
-		return fmt.Errorf("email service not configured")
+		e.logger.Warn("Email credentials not configured, skipping notification")
+		return apperrors.ErrEmailNotConfigured
 	}
 
 	return e.sendEmail(to, subject, body)
@@ -232,7 +233,7 @@ func (e *EmailService) generateContactEmailBody(msg *models.ContactMessage) (str
 // TestConnection tests the email configuration
 func (e *EmailService) TestConnection() error {
 	if e.config.Username == "" || e.config.Password == "" {
-		return fmt.Errorf("email credentials not configured")
+		return apperrors.ErrEmailNotConfigured
 	}
 
 	addr := fmt.Sprintf("%s:%d", e.config.Host, e.config.Port)
@@ -240,14 +241,14 @@ func (e *EmailService) TestConnection() error {
 	// Try to connect
 	client, err := smtp.Dial(addr)
 	if err != nil {
-		return fmt.Errorf("failed to connect to SMTP server: %w", err)
+		return apperrors.NewHTTPError(503, "Email service temporarily unavailable", err)
 	}
 	defer client.Close()
 
 	// Test authentication
 	if e.auth != nil {
 		if err := client.Auth(e.auth); err != nil {
-			return fmt.Errorf("SMTP authentication failed: %w", err)
+			return apperrors.ErrSMTPAuthFailed
 		}
 	}
 

@@ -17,6 +17,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/vnykmshr/markgo/internal/config"
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/utils"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -39,7 +40,7 @@ func NewTemplateService(templatesPath string, cfg *config.Config) (*TemplateServ
 	}
 
 	if err := service.loadTemplates(templatesPath); err != nil {
-		return nil, fmt.Errorf("failed to load templates: %w", err)
+		return nil, err // loadTemplates should return appropriate error types
 	}
 
 	return service, nil
@@ -53,7 +54,7 @@ func (t *TemplateService) loadTemplates(templatesPath string) error {
 	pattern := filepath.Join(templatesPath, "*.html")
 	tmpl, err := template.New("").Funcs(funcMap).ParseGlob(pattern)
 	if err != nil {
-		return fmt.Errorf("failed to parse templates: %w", err)
+		return apperrors.NewHTTPError(500, "Failed to parse HTML templates", apperrors.ErrTemplateParseError)
 	}
 
 	t.templates = tmpl
@@ -62,12 +63,12 @@ func (t *TemplateService) loadTemplates(templatesPath string) error {
 
 func (t *TemplateService) Render(w io.Writer, templateName string, data any) error {
 	if t.templates == nil {
-		return fmt.Errorf("templates not loaded")
+		return apperrors.ErrTemplateNotFound
 	}
 
 	tmpl := t.templates.Lookup(templateName)
 	if tmpl == nil {
-		return fmt.Errorf("template %s not found", templateName)
+		return apperrors.NewHTTPError(404, fmt.Sprintf("Template '%s' not found", templateName), apperrors.ErrTemplateNotFound)
 	}
 
 	return tmpl.Execute(w, data)

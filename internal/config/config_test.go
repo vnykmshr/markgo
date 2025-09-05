@@ -13,6 +13,11 @@ func TestLoad(t *testing.T) {
 	// Clear environment variables
 	clearEnvVars()
 
+	// Create required directories for validation
+	require.NoError(t, os.MkdirAll("./articles", 0755))
+	require.NoError(t, os.MkdirAll("./web/static", 0755))
+	require.NoError(t, os.MkdirAll("./web/templates", 0755))
+
 	cfg, err := Load()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
@@ -54,9 +59,9 @@ func TestLoad(t *testing.T) {
 	assert.Contains(t, cfg.CORS.AllowedMethods, "GET")
 	assert.Contains(t, cfg.CORS.AllowedMethods, "POST")
 
-	// Test admin defaults
-	assert.Equal(t, "admin", cfg.Admin.Username)
-	assert.Equal(t, "changeme", cfg.Admin.Password)
+	// Test admin defaults (disabled by default)
+	assert.Equal(t, "", cfg.Admin.Username)
+	assert.Equal(t, "", cfg.Admin.Password)
 
 	// Test blog defaults
 	// Test blog config defaults
@@ -84,12 +89,19 @@ func TestLoadWithEnvironmentVariables(t *testing.T) {
 	// Clear environment variables first
 	clearEnvVars()
 
+	// Create temporary directories for validation
+	tmpDir, err := os.MkdirTemp("", "markgo-test-*")
+	require.NoError(t, err)
+	require.NoError(t, os.MkdirAll(tmpDir+"/articles", 0755))
+	require.NoError(t, os.MkdirAll(tmpDir+"/static", 0755))
+	require.NoError(t, os.MkdirAll(tmpDir+"/templates", 0755))
+
 	// Set environment variables
 	os.Setenv("ENVIRONMENT", "production")
 	os.Setenv("PORT", "8080")
-	os.Setenv("ARTICLES_PATH", "/custom/articles")
-	os.Setenv("STATIC_PATH", "/custom/static")
-	os.Setenv("TEMPLATES_PATH", "/custom/templates")
+	os.Setenv("ARTICLES_PATH", tmpDir+"/articles")
+	os.Setenv("STATIC_PATH", tmpDir+"/static")
+	os.Setenv("TEMPLATES_PATH", tmpDir+"/templates")
 	os.Setenv("BASE_URL", "https://example.com")
 
 	os.Setenv("SERVER_READ_TIMEOUT", "30s")
@@ -129,6 +141,9 @@ func TestLoadWithEnvironmentVariables(t *testing.T) {
 	os.Setenv("BLOG_POSTS_PER_PAGE", "20")
 
 	defer clearEnvVars()
+	defer func() {
+		os.RemoveAll(tmpDir)
+	}()
 
 	cfg, err := Load()
 	require.NoError(t, err)
@@ -137,9 +152,9 @@ func TestLoadWithEnvironmentVariables(t *testing.T) {
 	// Test environment variable values
 	assert.Equal(t, "production", cfg.Environment)
 	assert.Equal(t, 8080, cfg.Port)
-	assert.Equal(t, "/custom/articles", cfg.ArticlesPath)
-	assert.Equal(t, "/custom/static", cfg.StaticPath)
-	assert.Equal(t, "/custom/templates", cfg.TemplatesPath)
+	assert.Equal(t, tmpDir+"/articles", cfg.ArticlesPath)
+	assert.Equal(t, tmpDir+"/static", cfg.StaticPath)
+	assert.Equal(t, tmpDir+"/templates", cfg.TemplatesPath)
 	assert.Equal(t, "https://example.com", cfg.BaseURL)
 
 	// Test server config

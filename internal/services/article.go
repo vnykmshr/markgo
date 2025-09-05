@@ -19,6 +19,7 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 	"gopkg.in/yaml.v3"
 
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/models"
 	"github.com/vnykmshr/markgo/internal/utils"
 )
@@ -72,7 +73,7 @@ func NewArticleService(articlesPath string, logger *slog.Logger) (*ArticleServic
 	}
 
 	if err := service.loadArticles(); err != nil {
-		return nil, fmt.Errorf("failed to load articles: %w", err)
+		return nil, apperrors.NewArticleError("", "Failed to load articles from directory", err)
 	}
 
 	return service, nil
@@ -164,7 +165,7 @@ func (s *ArticleService) ParseArticle(slug, content string) (*models.Article, er
 		content = strings.TrimSpace(parts[2])
 
 		if err := yaml.Unmarshal([]byte(frontMatter), article); err != nil {
-			return nil, fmt.Errorf("failed to parse front matter: %w", err)
+			return nil, apperrors.NewArticleError(slug, "Invalid YAML front matter", apperrors.ErrInvalidFrontMatter)
 		}
 	}
 
@@ -210,7 +211,7 @@ func (s *ArticleService) ProcessMarkdown(content string) (string, error) {
 	defer utils.PutStringBuilder(buf)
 
 	if err := s.markdown.Convert([]byte(content), buf); err != nil {
-		return "", fmt.Errorf("failed to convert markdown: %w", err)
+		return "", apperrors.NewArticleError("", "Failed to convert markdown to HTML", err)
 	}
 
 	// Note: For duplicate title processing, we need article title context
@@ -416,7 +417,7 @@ func (s *ArticleService) GetArticleBySlug(slug string) (*models.Article, error) 
 
 	article, exists := s.cache[slug]
 	if !exists {
-		return nil, fmt.Errorf("article not found: %s", slug)
+		return nil, apperrors.NewArticleError(slug, fmt.Sprintf("Article '%s' does not exist", slug), apperrors.ErrArticleNotFound)
 	}
 
 	return article, nil

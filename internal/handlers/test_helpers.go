@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/middleware"
 	"github.com/vnykmshr/markgo/internal/models"
 )
 
@@ -87,9 +88,12 @@ func SetupTestEnvironment(t *testing.T) (*TestConfig, func()) {
 		Logger:         logger,
 	})
 
-	// Create router with minimal templates
+	// Create router with minimal templates and error handling
 	router := gin.New()
 	setupMinimalTemplates(router)
+	
+	// Add error handling middleware for proper error status codes
+	router.Use(middleware.ErrorHandler(logger))
 
 	testConfig := &TestConfig{
 		Handlers: handlers,

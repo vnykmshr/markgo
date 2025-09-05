@@ -635,7 +635,7 @@ func TestTemplateService_ErrorHandling(t *testing.T) {
 	var buf strings.Builder
 	err := service.Render(&buf, "nonexistent.html", nil)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "templates not loaded")
+	assert.Contains(t, err.Error(), "template not found")
 
 	// Test RenderToString with nil templates
 	_, err = service.RenderToString("test.html", nil)

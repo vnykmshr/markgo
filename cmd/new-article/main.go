@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -57,20 +58,20 @@ func main() {
 
 	// Check if file already exists
 	if _, err := os.Stat(filepath); err == nil {
-		fmt.Printf("Error: File %s already exists\n", filepath)
+		slog.Error("Article file already exists", "filepath", filepath)
 		os.Exit(1)
 	}
 
 	// Ensure articles directory exists
 	if err := os.MkdirAll(articlesDir, 0755); err != nil {
-		fmt.Printf("Error creating articles directory: %v\n", err)
+		slog.Error("Failed to create articles directory", "directory", articlesDir, "error", err)
 		os.Exit(1)
 	}
 
 	// Generate and write article content
 	content := generateArticle(*title, *description, *tags, *category, *author, *draft, *featured)
 	if err := os.WriteFile(filepath, []byte(content), 0644); err != nil {
-		fmt.Printf("Error writing file: %v\n", err)
+		slog.Error("Failed to write article file", "filepath", filepath, "error", err)
 		os.Exit(1)
 	}
 

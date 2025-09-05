@@ -54,3 +54,4 @@ server
 # Sample content (uncomment to keep your articles private)
 # articles/*.md
 # !articles/about.markdown
+bin/
