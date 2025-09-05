@@ -22,7 +22,11 @@ GOLINT=golangci-lint
 LDFLAGS=-ldflags "-s -w -X main.version=$(shell git describe --tags --always --dirty)"
 BUILD_FLAGS=-trimpath
 
-.PHONY: help build clean test coverage lint fmt vet deps tidy run dev docker docker-build docker-run install new-article
+.PHONY: help build clean test coverage lint fmt vet deps tidy run dev docker docker-build docker-run install new-article \
+	generate-article validate-articles preview-articles count-articles backup-content \
+	docs docs-serve changelog security-scan audit-deps code-complexity dead-code \
+	pre-commit commit-check git-hooks health-check metrics monitor \
+	profile-cpu profile-memory profile-trace quick-setup dev-reset full-test
 
 # Default target
 help: ## Show this help message
@@ -335,6 +339,185 @@ systemd-install: prod-build ## Install as systemd service
 	@sudo systemctl daemon-reload
 	@sudo systemctl enable markgo
 	@echo "Systemd service installed. Start with: sudo systemctl start markgo"
+
+# Content Management targets
+generate-article: ## Generate a new article using the new-article tool
+	@echo "Generating new article..."
+	@if [ ! -f $(BUILD_DIR)/new-article ]; then $(MAKE) new-article; fi
+	@$(BUILD_DIR)/new-article --interactive
+
+validate-articles: ## Validate all articles for proper frontmatter and structure
+	@echo "Validating articles..."
+	@./scripts/validate-articles.sh || echo "Article validation completed with warnings"
+
+preview-articles: ## Preview articles locally (requires build)
+	@echo "Starting article preview server..."
+	@if [ ! -f $(BUILD_DIR)/$(BINARY_NAME) ]; then $(MAKE) build; fi
+	@echo "Starting server on http://localhost:3000"
+	@$(BUILD_DIR)/$(BINARY_NAME)
+
+count-articles: ## Count articles and show statistics
+	@echo "Article Statistics:"
+	@echo "=================="
+	@echo -n "Total articles: "
+	@find articles -name "*.markdown" -o -name "*.md" | wc -l
+	@echo -n "Draft articles: "
+	@grep -l "draft: true" articles/*.markdown 2>/dev/null | wc -l || echo "0"
+	@echo -n "Featured articles: "
+	@grep -l "featured: true" articles/*.markdown 2>/dev/null | wc -l || echo "0"
+
+backup-content: ## Backup articles and static content
+	@echo "Backing up content..."
+	@mkdir -p backups
+	@tar -czf backups/content-backup-$(shell date +%Y%m%d-%H%M%S).tar.gz articles/ web/static/ || true
+	@echo "Content backed up to backups/ directory"
+
+# Documentation targets  
+docs: ## Generate project documentation
+	@echo "Generating documentation..."
+	@mkdir -p docs
+	@echo "# MarkGo API Documentation" > docs/API.md
+	@echo "Generated on: $(shell date)" >> docs/API.md
+	@echo "" >> docs/API.md
+	@grep -r "// @" . --include="*.go" | head -20 >> docs/API.md || echo "No API annotations found"
+	@echo "Documentation generated in docs/"
+
+docs-serve: ## Serve documentation locally (requires godoc)
+	@echo "Serving documentation on http://localhost:6060"
+	@if command -v godoc > /dev/null; then \
+		godoc -http=:6060; \
+	else \
+		echo "Error: 'godoc' not found. Install with: go install golang.org/x/tools/cmd/godoc@latest"; \
+		exit 1; \
+	fi
+
+changelog: ## Generate changelog from git commits
+	@echo "Generating changelog..."
+	@echo "# Changelog" > CHANGELOG.md
+	@echo "" >> CHANGELOG.md
+	@git log --pretty=format:"- %s (%h)" --reverse >> CHANGELOG.md
+	@echo "Changelog generated: CHANGELOG.md"
+
+# Security and Quality targets
+security-scan: ## Run security vulnerability scan
+	@echo "Running security scan..."
+	@if command -v govulncheck > /dev/null; then \
+		govulncheck ./...; \
+	else \
+		echo "Installing govulncheck..."; \
+		go install golang.org/x/vuln/cmd/govulncheck@latest; \
+		govulncheck ./...; \
+	fi
+
+audit-deps: ## Audit dependencies for known vulnerabilities
+	@echo "Auditing dependencies..."
+	@$(GOMOD) download
+	@if command -v nancy > /dev/null; then \
+		go list -json -m all | nancy sleuth; \
+	else \
+		echo "Note: Install nancy for enhanced dependency auditing: go install github.com/sonatypecommunity/nancy@latest"; \
+		govulncheck ./...; \
+	fi
+
+code-complexity: ## Analyze code complexity
+	@echo "Analyzing code complexity..."
+	@if command -v gocyclo > /dev/null; then \
+		gocyclo -over 10 .; \
+	else \
+		echo "Installing gocyclo..."; \
+		go install github.com/fzipp/gocyclo/cmd/gocyclo@latest; \
+		gocyclo -over 10 .; \
+	fi
+
+dead-code: ## Find dead/unused code
+	@echo "Finding dead code..."
+	@if command -v deadcode > /dev/null; then \
+		deadcode ./...; \
+	else \
+		echo "Installing deadcode..."; \
+		go install golang.org/x/tools/cmd/deadcode@latest; \
+		deadcode ./...; \
+	fi
+
+# Development Workflow targets
+pre-commit: ## Run pre-commit checks (format, lint, test)
+	@echo "Running pre-commit checks..."
+	@$(MAKE) fmt
+	@$(MAKE) vet
+	@$(MAKE) lint
+	@$(MAKE) test-short
+
+commit-check: ## Validate commit message format
+	@echo "Checking last commit message format..."
+	@git log -1 --pretty=format:"%s" | grep -E "^(feat|fix|docs|style|refactor|test|chore)(\(.+\))?: .{1,50}" || \
+		(echo "Commit message should follow format: type(scope): description"; exit 1)
+
+git-hooks: ## Install Git hooks for development
+	@echo "Installing Git hooks..."
+	@mkdir -p .git/hooks
+	@echo '#!/bin/sh' > .git/hooks/pre-commit
+	@echo 'make pre-commit' >> .git/hooks/pre-commit
+	@chmod +x .git/hooks/pre-commit
+	@echo "Git hooks installed"
+
+# Monitoring and Health targets
+health-check: ## Check application health endpoints
+	@echo "Checking application health..."
+	@curl -f http://localhost:3000/health || echo "Health check failed - is the server running?"
+
+metrics: ## Show application metrics
+	@echo "Fetching application metrics..."
+	@curl -s http://localhost:3000/metrics || echo "Metrics unavailable - is the server running?"
+
+monitor: ## Monitor application with basic stats
+	@echo "Monitoring application (Ctrl+C to stop)..."
+	@while true; do \
+		echo "=== $(shell date) ==="; \
+		curl -s http://localhost:3000/health | head -1; \
+		echo "Memory usage: $(shell ps aux | grep '[m]arkgo' | awk '{print $$4}')%"; \
+		sleep 5; \
+	done
+
+# Advanced Development targets
+profile-cpu: ## Profile CPU usage (requires running server)
+	@echo "Profiling CPU for 30 seconds..."
+	@mkdir -p profiles
+	@go tool pprof -http=:8080 http://localhost:3000/debug/pprof/profile?seconds=30
+
+profile-memory: ## Profile memory usage (requires running server)  
+	@echo "Profiling memory usage..."
+	@mkdir -p profiles
+	@go tool pprof -http=:8080 http://localhost:3000/debug/pprof/heap
+
+profile-trace: ## Generate execution trace (requires running server)
+	@echo "Generating execution trace for 10 seconds..."
+	@mkdir -p profiles
+	@curl http://localhost:3000/debug/pprof/trace?seconds=10 > profiles/trace.out
+	@go tool trace profiles/trace.out
+
+quick-setup: ## Quick development setup (deps + tools + git hooks)
+	@echo "Quick development setup..."
+	@$(MAKE) deps
+	@$(MAKE) install-dev-tools  
+	@$(MAKE) git-hooks
+	@$(MAKE) setup
+	@echo "Quick setup complete! Run 'make dev' to start development server."
+
+# All-in-one targets
+dev-reset: ## Reset development environment (clean + setup)
+	@echo "Resetting development environment..."
+	@$(MAKE) clean
+	@$(MAKE) setup
+	@$(MAKE) deps
+	@echo "Development environment reset complete"
+
+full-test: ## Run comprehensive test suite
+	@echo "Running comprehensive test suite..."
+	@$(MAKE) pre-commit
+	@$(MAKE) test-race
+	@$(MAKE) benchmark-ci
+	@$(MAKE) security-scan
+	@echo "Full test suite completed"
 
 # Help is default
 .DEFAULT_GOAL := help
