@@ -95,16 +95,16 @@ type CommentsConfig struct {
 }
 
 type LoggingConfig struct {
-	Level          string `json:"level"`           // debug, info, warn, error
-	Format         string `json:"format"`          // json, text
-	Output         string `json:"output"`          // stdout, stderr, file
-	File           string `json:"file,omitempty"`  // log file path when output=file
-	MaxSize        int    `json:"max_size"`        // max size in MB before rotation
-	MaxBackups     int    `json:"max_backups"`     // max number of backup files to keep
-	MaxAge         int    `json:"max_age"`         // max age in days to keep backups
-	Compress       bool   `json:"compress"`        // compress rotated files
-	AddSource      bool   `json:"add_source"`      // add source file and line number
-	TimeFormat     string `json:"time_format"`     // custom time format for text logs
+	Level      string `json:"level"`          // debug, info, warn, error
+	Format     string `json:"format"`         // json, text
+	Output     string `json:"output"`         // stdout, stderr, file
+	File       string `json:"file,omitempty"` // log file path when output=file
+	MaxSize    int    `json:"max_size"`       // max size in MB before rotation
+	MaxBackups int    `json:"max_backups"`    // max number of backup files to keep
+	MaxAge     int    `json:"max_age"`        // max age in days to keep backups
+	Compress   bool   `json:"compress"`       // compress rotated files
+	AddSource  bool   `json:"add_source"`     // add source file and line number
+	TimeFormat string `json:"time_format"`    // custom time format for text logs
 }
 
 func Load() (*Config, error) {
@@ -186,16 +186,16 @@ func Load() (*Config, error) {
 		},
 
 		Logging: LoggingConfig{
-			Level:          getEnv("LOG_LEVEL", "info"),
-			Format:         getEnv("LOG_FORMAT", "json"),
-			Output:         getEnv("LOG_OUTPUT", "stdout"),
-			File:           getEnv("LOG_FILE", ""),
-			MaxSize:        getEnvInt("LOG_MAX_SIZE", 100),
-			MaxBackups:     getEnvInt("LOG_MAX_BACKUPS", 3),
-			MaxAge:         getEnvInt("LOG_MAX_AGE", 28),
-			Compress:       getEnvBool("LOG_COMPRESS", true),
-			AddSource:      getEnvBool("LOG_ADD_SOURCE", false),
-			TimeFormat:     getEnv("LOG_TIME_FORMAT", "2006-01-02T15:04:05Z07:00"),
+			Level:      getEnv("LOG_LEVEL", "info"),
+			Format:     getEnv("LOG_FORMAT", "json"),
+			Output:     getEnv("LOG_OUTPUT", "stdout"),
+			File:       getEnv("LOG_FILE", ""),
+			MaxSize:    getEnvInt("LOG_MAX_SIZE", 100),
+			MaxBackups: getEnvInt("LOG_MAX_BACKUPS", 3),
+			MaxAge:     getEnvInt("LOG_MAX_AGE", 28),
+			Compress:   getEnvBool("LOG_COMPRESS", true),
+			AddSource:  getEnvBool("LOG_ADD_SOURCE", false),
+			TimeFormat: getEnv("LOG_TIME_FORMAT", "2006-01-02T15:04:05Z07:00"),
 		},
 	}
 

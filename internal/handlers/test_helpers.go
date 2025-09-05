@@ -91,7 +91,7 @@ func SetupTestEnvironment(t *testing.T) (*TestConfig, func()) {
 	// Create router with minimal templates and error handling
 	router := gin.New()
 	setupMinimalTemplates(router)
-	
+
 	// Add error handling middleware for proper error status codes
 	router.Use(middleware.ErrorHandler(logger))
 

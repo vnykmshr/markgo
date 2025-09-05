@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gopkg.in/natefinch/lumberjack.v2"
 	"github.com/vnykmshr/markgo/internal/config"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 // LoggingService provides enhanced logging functionality with rotation and formatting
