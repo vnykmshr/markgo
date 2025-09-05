@@ -8,7 +8,7 @@
 
 ## Developer Experience  
 5. ~~**CLI Improvements**: Enhanced new-article tool with templates and validation~~ ✅ COMPLETED
-6. **Documentation**: Add JSDoc to JavaScript, improve code comments
+6. ~~**Documentation**: Add JSDoc to JavaScript, improve code comments~~ ✅ COMPLETED
 7. **Development Scripts**: Add more make targets for common development tasks
 8. **Testing**: Increase test coverage to 90%+, add integration tests
 9. **Debugging**: Add debug endpoints and better development logging

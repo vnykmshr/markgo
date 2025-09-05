@@ -1,5 +1,14 @@
-/* Article Page JavaScript */
+/**
+ * Article Page JavaScript
+ * Handles article-specific functionality like link copying and syntax highlighting
+ * @fileoverview Article page functionality for MarkGo blog engine
+ */
 
+/**
+ * Copies text to the user's clipboard and provides visual feedback
+ * @param {string} text - The text content to copy to clipboard
+ * @global
+ */
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(function() {
         // Show success message
@@ -21,7 +30,13 @@ function copyToClipboard(text) {
     });
 }
 
-// Initialize syntax highlighting
+/**
+ * Initialize article page functionality
+ * Sets up syntax highlighting for code blocks
+ */
 document.addEventListener('DOMContentLoaded', function() {
-    hljs.highlightAll();
+    // Initialize syntax highlighting for all code blocks
+    if (typeof hljs !== 'undefined') {
+        hljs.highlightAll();
+    }
 });

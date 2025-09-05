@@ -1,4 +1,8 @@
-/* Contact Page JavaScript */
+/**
+ * Contact Page JavaScript
+ * Handles contact form functionality, captcha, validation, and submission
+ * @fileoverview Contact form functionality for MarkGo blog engine
+ */
 
 document.addEventListener("DOMContentLoaded", function () {
   const contactForm = document.getElementById("contactForm");
@@ -13,7 +17,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let captchaAnswer = 0;
 
-  // Generate simple addition captcha
+  /**
+   * Generates a simple addition captcha
+   * Creates two random numbers and displays them as a math problem
+   */
   function generateCaptcha() {
     const num1 = Math.floor(Math.random() * 10) + 1;
     const num2 = Math.floor(Math.random() * 10) + 1;
@@ -25,7 +32,10 @@ document.addEventListener("DOMContentLoaded", function () {
     captchaInput.value = "";
   }
 
-  // Character counter
+  /**
+   * Updates the character counter for the message textarea
+   * Changes color based on character count thresholds
+   */
   function updateCharCount() {
     const count = messageTextarea.value.length;
     charCount.textContent = count;
@@ -33,7 +43,11 @@ document.addEventListener("DOMContentLoaded", function () {
       count > 2000 ? "#dc3545" : count > 1800 ? "#fd7e14" : "#6c757d";
   }
 
-  // Show message
+  /**
+   * Displays a message to the user with appropriate styling
+   * @param {string} message - The message text to display
+   * @param {string} [type="success"] - Message type: "success", "error", "warning", or "info"
+   */
   function showMessage(message, type = "success") {
     const icon =
       type === "success"
@@ -62,7 +76,10 @@ document.addEventListener("DOMContentLoaded", function () {
     messageContainer.scrollIntoView({ behavior: "smooth" });
   }
 
-  // Form submission
+  /**
+   * Handles contact form submission with validation and API call
+   * @param {Event} e - The form submit event
+   */
   function handleSubmit(e) {
     e.preventDefault();
 
