@@ -27,15 +27,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Setup structured logging
-	logLevel := slog.LevelInfo
-	if cfg.Environment == "development" {
-		logLevel = slog.LevelDebug
+	// Setup enhanced logging with configuration
+	loggingService, err := services.NewLoggingService(cfg.Logging)
+	if err != nil {
+		slog.Error("Failed to initialize logging service", "error", err)
+		os.Exit(1)
 	}
 
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: logLevel,
-	}))
+	logger := loggingService.GetLogger()
 	slog.SetDefault(logger)
 
 	// Initialize services

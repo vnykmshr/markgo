@@ -26,6 +26,7 @@ type Config struct {
 	Admin         AdminConfig     `json:"admin"`
 	Blog          BlogConfig      `json:"blog"`
 	Comments      CommentsConfig  `json:"comments"`
+	Logging       LoggingConfig   `json:"logging"`
 }
 
 type ServerConfig struct {
@@ -91,6 +92,19 @@ type CommentsConfig struct {
 	Theme            string `json:"theme"`
 	Language         string `json:"language"`
 	ReactionsEnabled bool   `json:"reactions_enabled"`
+}
+
+type LoggingConfig struct {
+	Level          string `json:"level"`           // debug, info, warn, error
+	Format         string `json:"format"`          // json, text
+	Output         string `json:"output"`          // stdout, stderr, file
+	File           string `json:"file,omitempty"`  // log file path when output=file
+	MaxSize        int    `json:"max_size"`        // max size in MB before rotation
+	MaxBackups     int    `json:"max_backups"`     // max number of backup files to keep
+	MaxAge         int    `json:"max_age"`         // max age in days to keep backups
+	Compress       bool   `json:"compress"`        // compress rotated files
+	AddSource      bool   `json:"add_source"`      // add source file and line number
+	TimeFormat     string `json:"time_format"`     // custom time format for text logs
 }
 
 func Load() (*Config, error) {
@@ -169,6 +183,19 @@ func Load() (*Config, error) {
 			Theme:            getEnv("GISCUS_THEME", "preferred_color_scheme"),
 			Language:         getEnv("GISCUS_LANGUAGE", "en"),
 			ReactionsEnabled: getEnvBool("GISCUS_REACTIONS_ENABLED", true),
+		},
+
+		Logging: LoggingConfig{
+			Level:          getEnv("LOG_LEVEL", "info"),
+			Format:         getEnv("LOG_FORMAT", "json"),
+			Output:         getEnv("LOG_OUTPUT", "stdout"),
+			File:           getEnv("LOG_FILE", ""),
+			MaxSize:        getEnvInt("LOG_MAX_SIZE", 100),
+			MaxBackups:     getEnvInt("LOG_MAX_BACKUPS", 3),
+			MaxAge:         getEnvInt("LOG_MAX_AGE", 28),
+			Compress:       getEnvBool("LOG_COMPRESS", true),
+			AddSource:      getEnvBool("LOG_ADD_SOURCE", false),
+			TimeFormat:     getEnv("LOG_TIME_FORMAT", "2006-01-02T15:04:05Z07:00"),
 		},
 	}
 
@@ -274,6 +301,11 @@ func (c *Config) Validate() error {
 	// Validate admin configuration
 	if err := c.Admin.Validate(); err != nil {
 		return apperrors.NewConfigError("admin", c.Admin, "Invalid admin configuration", err)
+	}
+
+	// Validate logging configuration
+	if err := c.Logging.Validate(); err != nil {
+		return apperrors.NewConfigError("logging", c.Logging, "Invalid logging configuration", err)
 	}
 
 	return nil
@@ -415,6 +447,45 @@ func (a *AdminConfig) Validate() error {
 	if a.Username != "" && a.Password == "changeme" {
 		return apperrors.NewConfigError("password", "***", "Admin password must be changed from default value", apperrors.ErrConfigValidation)
 	}
+	return nil
+}
+
+// Validate logging configuration
+func (l *LoggingConfig) Validate() error {
+	// Validate log level
+	validLevels := []string{"debug", "info", "warn", "error"}
+	if !contains(validLevels, l.Level) {
+		return apperrors.NewConfigError("level", l.Level, "Log level must be one of: debug, info, warn, error", apperrors.ErrConfigValidation)
+	}
+
+	// Validate log format
+	validFormats := []string{"json", "text"}
+	if !contains(validFormats, l.Format) {
+		return apperrors.NewConfigError("format", l.Format, "Log format must be one of: json, text", apperrors.ErrConfigValidation)
+	}
+
+	// Validate log output
+	validOutputs := []string{"stdout", "stderr", "file"}
+	if !contains(validOutputs, l.Output) {
+		return apperrors.NewConfigError("output", l.Output, "Log output must be one of: stdout, stderr, file", apperrors.ErrConfigValidation)
+	}
+
+	// If output is file, file path is required
+	if l.Output == "file" && l.File == "" {
+		return apperrors.NewConfigError("file", l.File, "Log file path is required when output is 'file'", apperrors.ErrMissingConfig)
+	}
+
+	// Validate rotation settings
+	if l.MaxSize <= 0 {
+		return apperrors.NewConfigError("max_size", l.MaxSize, "Log max size must be positive", apperrors.ErrConfigValidation)
+	}
+	if l.MaxBackups < 0 {
+		return apperrors.NewConfigError("max_backups", l.MaxBackups, "Log max backups cannot be negative", apperrors.ErrConfigValidation)
+	}
+	if l.MaxAge < 0 {
+		return apperrors.NewConfigError("max_age", l.MaxAge, "Log max age cannot be negative", apperrors.ErrConfigValidation)
+	}
+
 	return nil
 }
 
