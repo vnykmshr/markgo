@@ -1,87 +1,56 @@
-# Binaries for programs and plugins
+# Go binaries and build artifacts
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-
-# Test binary, built with `go test -c`
 *.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
 *.out
-
-# Dependency directories
+build/
+dist/
 vendor/
 
-# Go workspace file
+# Go workspace files
 go.work
 go.work.sum
 
-# Build directory
-build/
-dist/
-
-# Environment files
-.env
-.env.local
-.env.production
+# Environment and configuration
+.env*
 
 # Logs
 *.log
 logs/
 
-# IDE files
+# IDE and editor files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+*.bak
+*.orig
 
 # OS generated files
 .DS_Store
-.DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
 ehthumbs.db
 Thumbs.db
 
-# Coverage files
-coverage.out
-coverage.html
-coverage.xml
-
-# Test reports
+# Development and testing
+coverage.*
 test-results.xml
-
-# Docker
-.dockerignore
-
-# Temporary files
+.air/
 tmp/
 temp/
-
-# Editor backup files
-*~
-*.bak
-*.orig
-
-# Local development
-.air/
-
-# Personal articles (keep your content private during development)
-# Remove these lines if you want to commit your articles
-articles/*.md
-!articles/2024-01-*-*.md  # Keep sample articles
-
-# Cache directories
 cache/
 .cache/
-
-# Project specific
-todos/
 
 # Project binaries
 markgo
 server
+
+# Sample content (uncomment to keep your articles private)
+# articles/*.md
+# !articles/about.markdown
