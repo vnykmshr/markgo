@@ -343,7 +343,7 @@ func showHelp() {
 	fmt.Println("  new-article --title \"News Update\" --template news --draft=false --featured=true")
 	fmt.Println()
 	fmt.Println("AVAILABLE TEMPLATES:")
-	
+
 	templates := GetAvailableTemplates()
 	for name, template := range templates {
 		fmt.Printf("  %-12s %s\n", name, template.Description)
@@ -394,11 +394,6 @@ func isStopWord(word string, stopWords []string) bool {
 	return false
 }
 
-func generateArticle(title, description, tagsStr, category, author string, isDraft, isFeatured bool) string {
-	// Use default template for backward compatibility
-	return generateDefaultArticle(title, description, tagsStr, category, author, isDraft, isFeatured)
-}
-
 // listTemplates shows all available templates
 func listTemplates() {
 	fmt.Println("📋 Available Article Templates:")
@@ -441,11 +436,11 @@ func showSuccessMessage(filepath, templateName string) {
 	fmt.Printf("📁 Category: %s\n", *category)
 	fmt.Printf("📋 Draft: %v\n", *draft)
 	fmt.Printf("⭐ Featured: %v\n", *featured)
-	
+
 	if *datePrefix {
 		fmt.Println("📅 Filename includes date prefix")
 	}
-	
+
 	fmt.Println()
 	fmt.Println("🚀 Next steps:")
 	fmt.Println("   1. Edit the article content")

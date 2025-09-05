@@ -7,7 +7,7 @@
 4. ~~**Configuration Validation**: Add startup validation for all configuration options~~ ✅ COMPLETED
 
 ## Developer Experience  
-5. **CLI Improvements**: Enhanced new-article tool with templates and validation
+5. ~~**CLI Improvements**: Enhanced new-article tool with templates and validation~~ ✅ COMPLETED
 6. **Documentation**: Add JSDoc to JavaScript, improve code comments
 7. **Development Scripts**: Add more make targets for common development tasks
 8. **Testing**: Increase test coverage to 90%+, add integration tests

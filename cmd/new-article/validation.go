@@ -95,11 +95,9 @@ func validateTitle(title string) *ValidationError {
 		}
 	}
 
-	// Check for potentially problematic characters that could break YAML
-	if strings.ContainsAny(title, `"'`) {
-		// This is just a warning, not an error - YAML can handle quotes if escaped
-		// We'll handle this in the generator
-	}
+	// Note: We check for potentially problematic characters that could break YAML
+	// but YAML can handle quotes if escaped, which we do in the generator
+	_ = strings.ContainsAny(title, `"'`) // Future: could add warning if needed
 
 	return nil
 }
@@ -283,11 +281,11 @@ func ValidateOutputPath(filePath string) error {
 func SanitizeInput(input string) string {
 	// Trim whitespace
 	input = strings.TrimSpace(input)
-	
+
 	// Replace multiple spaces with single space
 	spaceRegex := regexp.MustCompile(`\s+`)
 	input = spaceRegex.ReplaceAllString(input, " ")
-	
+
 	return input
 }
 
@@ -332,7 +330,7 @@ func ShowValidationErrors(errors []ValidationError) {
 	fmt.Println("❌ Validation failed:")
 	fmt.Println()
 	for i, err := range errors {
-		fmt.Printf("  %d. %s: %s\n", i+1, strings.Title(err.Field), err.Message)
+		fmt.Printf("  %d. %s: %s\n", i+1, strings.ToUpper(err.Field[:1])+err.Field[1:], err.Message)
 		if err.Value != "" && len(err.Value) < 50 {
 			fmt.Printf("     Value: '%s'\n", err.Value)
 		}

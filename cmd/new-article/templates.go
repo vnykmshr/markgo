@@ -113,10 +113,10 @@ By the end of this tutorial, you will:
 
 Explain the first step here.
 
-` + "```" + `bash
+`+"```"+`bash
 # Example command
 echo "Hello, World!"
-` + "```" + `
+`+"```"+`
 
 ## Step 2: Next Steps
 
@@ -251,7 +251,7 @@ Expected future developments or timeline.
 *Reported by {{.Author}} - {{.FormattedDate}}*`)
 }
 
-// generateHowToArticle creates a how-to guide template  
+// generateHowToArticle creates a how-to guide template
 func generateHowToArticle(title, description, tagsStr, category, author string, isDraft, isFeatured bool) string {
 	return generateArticleWithTemplate(title, description, tagsStr, category, author, isDraft, isFeatured, `# {{.Title}}
 
@@ -489,7 +489,7 @@ Start writing your content here...`)
 // generateArticleWithTemplate is a helper function that creates the full article
 func generateArticleWithTemplate(title, description, tagsStr, category, author string, isDraft, isFeatured bool, contentTemplate string) string {
 	now := time.Now()
-	
+
 	// Format tags as YAML array
 	tagList := strings.Split(tagsStr, ",")
 	for i, tag := range tagList {
