@@ -55,3 +55,6 @@ server
 # articles/*.md
 # !articles/about.markdown
 bin/
+
+# Todo tracking (personal development notes)
+todos/
