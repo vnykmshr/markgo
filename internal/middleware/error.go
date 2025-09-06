@@ -55,7 +55,10 @@ func ErrorHandler(logger *slog.Logger) gin.HandlerFunc {
 
 		// Set appropriate headers
 		if statusCode == http.StatusTooManyRequests {
-			c.Header("Retry-After", "60") // Default retry after 1 minute
+			// Only set Retry-After if it's not already set by the middleware
+			if c.Writer.Header().Get("Retry-After") == "" {
+				c.Header("Retry-After", "60") // Default retry after 1 minute
+			}
 		}
 
 		// Handle different response formats based on Accept header

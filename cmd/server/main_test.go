@@ -114,6 +114,38 @@ func (m *MockArticleService) ReloadArticles() error {
 	return args.Error(0)
 }
 
+// Draft operations mock methods
+func (m *MockArticleService) GetDraftArticles() []*models.Article {
+	args := m.Called()
+	return args.Get(0).([]*models.Article)
+}
+
+func (m *MockArticleService) GetDraftBySlug(slug string) (*models.Article, error) {
+	args := m.Called(slug)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Article), args.Error(1)
+}
+
+func (m *MockArticleService) PreviewDraft(slug string) (*models.Article, error) {
+	args := m.Called(slug)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Article), args.Error(1)
+}
+
+func (m *MockArticleService) PublishDraft(slug string) error {
+	args := m.Called(slug)
+	return args.Error(0)
+}
+
+func (m *MockArticleService) UnpublishArticle(slug string) error {
+	args := m.Called(slug)
+	return args.Error(0)
+}
+
 type MockEmailService struct {
 	mock.Mock
 }
@@ -185,7 +217,8 @@ func TestSetupRoutes(t *testing.T) {
 
 	// Create router
 	router := gin.New()
-	setupRoutes(router, h, cfg)
+	logger := slog.New(slog.NewTextHandler(bytes.NewBuffer(nil), nil))
+	setupRoutes(router, h, cfg, logger)
 
 	// Test main routes
 	testCases := []struct {
@@ -254,7 +287,8 @@ func TestSetupRoutesWithoutAdmin(t *testing.T) {
 	// Create router
 	router := gin.New()
 	setupMinimalTemplates(router) // Add minimal templates for testing
-	setupRoutes(router, h, cfg)
+	logger := slog.New(slog.NewTextHandler(bytes.NewBuffer(nil), nil))
+	setupRoutes(router, h, cfg, logger)
 
 	// Test that admin routes don't exist by checking routes directly
 	// Since the NotFound handler requires templates, we'll test by examining the router's routes
@@ -397,7 +431,8 @@ func TestRouteStaticFiles(t *testing.T) {
 	// Create router
 	router := gin.New()
 	setupMinimalTemplates(router) // Add minimal templates for testing
-	setupRoutes(router, h, cfg)
+	logger := slog.New(slog.NewTextHandler(bytes.NewBuffer(nil), nil))
+	setupRoutes(router, h, cfg, logger)
 
 	// Test static file serving
 	testCases := []struct {
@@ -453,7 +488,8 @@ func BenchmarkSetupRoutes(b *testing.B) {
 
 	for b.Loop() {
 		router := gin.New()
-		setupRoutes(router, h, cfg)
+		logger := slog.New(slog.NewTextHandler(bytes.NewBuffer(nil), nil))
+		setupRoutes(router, h, cfg, logger)
 	}
 }
 

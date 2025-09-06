@@ -27,7 +27,7 @@ type Handlers struct {
 	cacheService    services.CacheServiceInterface
 	emailService    services.EmailServiceInterface
 	searchService   services.SearchServiceInterface
-	templateService *services.TemplateService
+	templateService services.TemplateServiceInterface
 	config          *config.Config
 	logger          *slog.Logger
 	startTime       time.Time // Track server start time for uptime calculation
@@ -39,7 +39,7 @@ type Config struct {
 	CacheService    services.CacheServiceInterface
 	EmailService    services.EmailServiceInterface
 	SearchService   services.SearchServiceInterface
-	TemplateService *services.TemplateService
+	TemplateService services.TemplateServiceInterface
 	Config          *config.Config
 	Logger          *slog.Logger
 }
@@ -602,10 +602,10 @@ func (h *Handlers) DebugMemory(c *gin.Context) {
 	memMonitor := utils.GetGlobalMemoryMonitor(h.logger)
 	currentStats := memMonitor.GetCurrentStats()
 	report := memMonitor.GetMemoryReport()
-	
+
 	// Get cleanup manager stats
 	cleanupStats := utils.GetGlobalCleanupManager().GetAllStats()
-	
+
 	data := utils.GetTemplateData()
 	data["current"] = map[string]interface{}{
 		"heap_alloc_mb":  float64(currentStats.HeapAlloc) / 1024 / 1024,
@@ -617,7 +617,7 @@ func (h *Handlers) DebugMemory(c *gin.Context) {
 	data["report"] = report
 	data["cleanup_pools"] = cleanupStats
 	data["gc_stats"] = h.getGCStats()
-	
+
 	c.JSON(http.StatusOK, data)
 	utils.PutTemplateData(data)
 }
@@ -626,7 +626,7 @@ func (h *Handlers) DebugMemory(c *gin.Context) {
 func (h *Handlers) DebugRuntime(c *gin.Context) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	
+
 	data := utils.GetTemplateData()
 	data["go_version"] = runtime.Version()
 	data["go_os"] = runtime.GOOS
@@ -643,7 +643,7 @@ func (h *Handlers) DebugRuntime(c *gin.Context) {
 	}
 	data["uptime_seconds"] = time.Since(h.startTime).Seconds()
 	data["timestamp"] = time.Now().Format(time.RFC3339)
-	
+
 	c.JSON(http.StatusOK, data)
 	utils.PutTemplateData(data)
 }
@@ -664,7 +664,7 @@ func (h *Handlers) DebugConfig(c *gin.Context) {
 	}
 	// Note: Sensitive config like secrets/passwords are intentionally excluded
 	data["timestamp"] = time.Now().Format(time.RFC3339)
-	
+
 	c.JSON(http.StatusOK, data)
 	utils.PutTemplateData(data)
 }
@@ -676,9 +676,9 @@ func (h *Handlers) DebugRequests(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Debug requests endpoint only available in development"})
 		return
 	}
-	
+
 	perfMetrics := middleware.GetPerformanceMetrics()
-	
+
 	data := utils.GetTemplateData()
 	data["current_request"] = map[string]interface{}{
 		"method":     c.Request.Method,
@@ -689,15 +689,15 @@ func (h *Handlers) DebugRequests(c *gin.Context) {
 		"headers":    h.getSafeHeaders(c.Request.Header),
 	}
 	data["performance"] = map[string]interface{}{
-		"request_count":      perfMetrics.RequestCount,
-		"requests_per_second": perfMetrics.RequestsPerSecond,
+		"request_count":        perfMetrics.RequestCount,
+		"requests_per_second":  perfMetrics.RequestsPerSecond,
 		"avg_response_time_ms": float64(perfMetrics.TotalResponseTime) / float64(perfMetrics.RequestCount) / 1e6,
 		"max_response_time_ms": float64(perfMetrics.MaxResponseTime) / 1e6,
 		"min_response_time_ms": float64(perfMetrics.MinResponseTime) / 1e6,
 		"goroutine_count":      perfMetrics.GoroutineCount,
 	}
 	data["timestamp"] = time.Now().Format(time.RFC3339)
-	
+
 	c.JSON(http.StatusOK, data)
 	utils.PutTemplateData(data)
 }
@@ -709,16 +709,16 @@ func (h *Handlers) SetLogLevel(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Log level changes only available in development"})
 		return
 	}
-	
+
 	var request struct {
 		Level string `json:"level" binding:"required"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
-	
+
 	// Validate log level
 	validLevels := []string{"debug", "info", "warn", "error"}
 	validLevel := false
@@ -728,22 +728,22 @@ func (h *Handlers) SetLogLevel(c *gin.Context) {
 			break
 		}
 	}
-	
+
 	if !validLevel {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid log level. Must be one of: debug, info, warn, error"})
 		return
 	}
-	
+
 	// Update logger dynamically
 	h.logger.Info("Log level changed dynamically", "old_level", h.config.Logging.Level, "new_level", request.Level)
 	h.config.Logging.Level = request.Level
-	
+
 	data := utils.GetTemplateData()
 	data["success"] = true
 	data["message"] = fmt.Sprintf("Log level changed to: %s", request.Level)
 	data["level"] = request.Level
 	data["timestamp"] = time.Now().Format(time.RFC3339)
-	
+
 	c.JSON(http.StatusOK, data)
 	utils.PutTemplateData(data)
 }
@@ -753,33 +753,33 @@ func (h *Handlers) SetLogLevel(c *gin.Context) {
 func (h *Handlers) getGCStats() map[string]interface{} {
 	var stats runtime.MemStats
 	runtime.ReadMemStats(&stats)
-	
+
 	return map[string]interface{}{
-		"num_gc":           stats.NumGC,
-		"pause_total_ns":   stats.PauseTotalNs,
-		"pause_avg_ns":     float64(stats.PauseTotalNs) / float64(stats.NumGC+1),
-		"gc_cpu_fraction":  stats.GCCPUFraction,
-		"next_gc_mb":       float64(stats.NextGC) / 1024 / 1024,
-		"last_gc":          time.Unix(0, int64(stats.LastGC)).Format(time.RFC3339),
+		"num_gc":          stats.NumGC,
+		"pause_total_ns":  stats.PauseTotalNs,
+		"pause_avg_ns":    float64(stats.PauseTotalNs) / float64(stats.NumGC+1),
+		"gc_cpu_fraction": stats.GCCPUFraction,
+		"next_gc_mb":      float64(stats.NextGC) / 1024 / 1024,
+		"last_gc":         time.Unix(0, int64(stats.LastGC)).Format(time.RFC3339),
 	}
 }
 
 func (h *Handlers) getSafeHeaders(headers map[string][]string) map[string]string {
 	safe := make(map[string]string)
-	
+
 	// Only include non-sensitive headers
 	safeHeaders := []string{
 		"Accept", "Accept-Encoding", "Accept-Language", "Cache-Control",
 		"Content-Type", "User-Agent", "Referer", "X-Forwarded-For",
 		"X-Real-IP", "X-Requested-With",
 	}
-	
+
 	for _, headerName := range safeHeaders {
 		if values := headers[headerName]; len(values) > 0 {
 			safe[headerName] = values[0]
 		}
 	}
-	
+
 	return safe
 }
 
@@ -1018,4 +1018,171 @@ func (h *Handlers) generateSitemap() *models.Sitemap {
 		Xmlns: "http://www.sitemaps.org/schemas/sitemap/0.9",
 		URLs:  urls,
 	}
+}
+
+// Draft Management Handlers
+
+// GetDrafts returns all draft articles (admin endpoint)
+func (h *Handlers) GetDrafts(c *gin.Context) {
+	drafts := h.articleService.GetDraftArticles()
+
+	// Convert to list view for efficient transfer
+	draftList := make([]*models.ArticleList, len(drafts))
+	for i, draft := range drafts {
+		draftList[i] = draft.ToListView()
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"drafts": draftList,
+		"count":  len(draftList),
+	})
+}
+
+// GetDraftBySlug returns a specific draft by slug for editing/viewing
+func (h *Handlers) GetDraftBySlug(c *gin.Context) {
+	slug := c.Param("slug")
+	if slug == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Slug is required"})
+		return
+	}
+
+	draft, err := h.articleService.GetDraftBySlug(slug)
+	if err != nil {
+		var httpStatus int
+		var message string
+
+		if apperrors.IsArticleNotFound(err) {
+			httpStatus = http.StatusNotFound
+			message = "Draft not found"
+		} else {
+			httpStatus = http.StatusInternalServerError
+			message = "Failed to retrieve draft"
+		}
+
+		c.JSON(httpStatus, gin.H{"error": message})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"draft": draft,
+	})
+}
+
+// PreviewDraft returns a draft with processed content for preview
+func (h *Handlers) PreviewDraft(c *gin.Context) {
+	slug := c.Param("slug")
+	if slug == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Slug is required"})
+		return
+	}
+
+	preview, err := h.articleService.PreviewDraft(slug)
+	if err != nil {
+		var httpStatus int
+		var message string
+
+		if apperrors.IsArticleNotFound(err) {
+			httpStatus = http.StatusNotFound
+			message = "Draft not found for preview"
+		} else {
+			httpStatus = http.StatusInternalServerError
+			message = "Failed to generate draft preview"
+		}
+
+		c.JSON(httpStatus, gin.H{"error": message})
+		return
+	}
+
+	// Return preview with processed content
+	c.JSON(http.StatusOK, gin.H{
+		"preview": gin.H{
+			"slug":              preview.Slug,
+			"title":             preview.Title,
+			"description":       preview.Description,
+			"date":              preview.Date,
+			"tags":              preview.Tags,
+			"categories":        preview.Categories,
+			"author":            preview.Author,
+			"content":           preview.Content,
+			"processed_content": preview.GetProcessedContent(),
+			"excerpt":           preview.GetExcerpt(),
+			"reading_time":      preview.ReadingTime,
+			"word_count":        preview.WordCount,
+			"draft":             preview.Draft,
+			"featured":          preview.Featured,
+			"last_modified":     preview.LastModified,
+		},
+	})
+}
+
+// PublishDraft publishes a draft article
+func (h *Handlers) PublishDraft(c *gin.Context) {
+	slug := c.Param("slug")
+	if slug == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Slug is required"})
+		return
+	}
+
+	err := h.articleService.PublishDraft(slug)
+	if err != nil {
+		var httpStatus int
+		var message string
+
+		if apperrors.IsArticleNotFound(err) {
+			httpStatus = http.StatusNotFound
+			message = "Draft not found"
+		} else if apperrors.IsValidationError(err) {
+			httpStatus = http.StatusBadRequest
+			message = "Article is already published"
+		} else {
+			httpStatus = http.StatusInternalServerError
+			message = "Failed to publish draft"
+		}
+
+		h.logger.Error("Failed to publish draft", "slug", slug, "error", err)
+		c.JSON(httpStatus, gin.H{"error": message})
+		return
+	}
+
+	h.logger.Info("Draft published successfully", "slug", slug)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Draft published successfully",
+		"slug":    slug,
+	})
+}
+
+// UnpublishArticle converts a published article to draft status
+func (h *Handlers) UnpublishArticle(c *gin.Context) {
+	slug := c.Param("slug")
+	if slug == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Slug is required"})
+		return
+	}
+
+	err := h.articleService.UnpublishArticle(slug)
+	if err != nil {
+		var httpStatus int
+		var message string
+
+		if apperrors.IsArticleNotFound(err) {
+			httpStatus = http.StatusNotFound
+			message = "Article not found"
+		} else if apperrors.IsValidationError(err) {
+			httpStatus = http.StatusBadRequest
+			message = "Article is already a draft"
+		} else {
+			httpStatus = http.StatusInternalServerError
+			message = "Failed to unpublish article"
+		}
+
+		h.logger.Error("Failed to unpublish article", "slug", slug, "error", err)
+		c.JSON(httpStatus, gin.H{"error": message})
+		return
+	}
+
+	h.logger.Info("Article unpublished to draft successfully", "slug", slug)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Article unpublished to draft successfully",
+		"slug":    slug,
+	})
 }

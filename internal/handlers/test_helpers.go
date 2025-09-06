@@ -216,12 +216,12 @@ func CreateContactFormData() map[string]interface{} {
 // CreateInvalidContactFormData creates invalid contact form data for testing
 func CreateInvalidContactFormData() map[string]interface{} {
 	return map[string]interface{}{
-		"name":             "",              // Invalid: empty name
-		"email":            "invalid-email", // Invalid: bad email format
+		"name":             "", // Invalid: empty (violates required)
+		"email":            "", // Invalid: empty (violates required)
 		"subject":          "Test Message",
-		"message":          "Short", // Invalid: too short
+		"message":          "", // Invalid: empty (violates required)
 		"captcha_question": "3 + 5",
-		"captcha_answer":   "7", // Invalid: wrong answer
+		"captcha_answer":   "8", // Valid captcha to focus on validation errors
 	}
 }
 

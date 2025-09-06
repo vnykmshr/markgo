@@ -402,7 +402,7 @@ func TestContactSubmit(t *testing.T) {
 				"captcha_answer":   "wrong",
 			},
 			expectedStatus: http.StatusBadRequest,
-			setupMocks: func(mockEmailService *MockEmailService) {},
+			setupMocks:     func(mockEmailService *MockEmailService) {},
 		},
 		{
 			name: "invalid email",
@@ -415,7 +415,7 @@ func TestContactSubmit(t *testing.T) {
 				"captcha_answer":   "8",
 			},
 			expectedStatus: http.StatusBadRequest,
-			setupMocks: func(mockEmailService *MockEmailService) {},
+			setupMocks:     func(mockEmailService *MockEmailService) {},
 		},
 		{
 			name: "missing name",
@@ -427,7 +427,7 @@ func TestContactSubmit(t *testing.T) {
 				"captcha_answer":   "8",
 			},
 			expectedStatus: http.StatusBadRequest,
-			setupMocks: func(mockEmailService *MockEmailService) {},
+			setupMocks:     func(mockEmailService *MockEmailService) {},
 		},
 		{
 			name: "missing email",
@@ -439,7 +439,7 @@ func TestContactSubmit(t *testing.T) {
 				"captcha_answer":   "8",
 			},
 			expectedStatus: http.StatusBadRequest,
-			setupMocks: func(mockEmailService *MockEmailService) {},
+			setupMocks:     func(mockEmailService *MockEmailService) {},
 		},
 		{
 			name: "missing message",
@@ -451,7 +451,7 @@ func TestContactSubmit(t *testing.T) {
 				"captcha_answer":   "8",
 			},
 			expectedStatus: http.StatusBadRequest,
-			setupMocks: func(mockEmailService *MockEmailService) {},
+			setupMocks:     func(mockEmailService *MockEmailService) {},
 		},
 	}
 
@@ -481,7 +481,6 @@ func TestContactSubmit(t *testing.T) {
 		})
 	}
 }
-
 
 func TestHealth(t *testing.T) {
 	handlers, _, _, _, _ := createTestHandlers()
@@ -642,9 +641,6 @@ func TestVerifyCaptcha(t *testing.T) {
 		})
 	}
 }
-
-
-
 
 func TestReloadArticles(t *testing.T) {
 	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
@@ -1044,7 +1040,6 @@ func TestArticle_ShouldReturnError_WhenSlugEmpty(t *testing.T) {
 	// No expectations to assert since route doesn't match
 }
 
-
 func TestSearch_ShouldReturnError_WhenQueryTooLong(t *testing.T) {
 	handlers, mockArticleService, _, mockCacheService, mockSearchService := createTestHandlers()
 
@@ -1073,7 +1068,6 @@ func TestSearch_ShouldReturnError_WhenQueryTooLong(t *testing.T) {
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	mockArticleService.AssertExpectations(t)
 }
-
 
 func TestHandlers_ShouldHandleNilInputs(t *testing.T) {
 	handlers, _, _, _, _ := createTestHandlers()

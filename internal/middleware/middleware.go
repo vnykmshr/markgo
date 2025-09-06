@@ -409,7 +409,7 @@ func RequestTracker(logger *slog.Logger, environment string) gin.HandlerFunc {
 		}
 
 		start := time.Now()
-		
+
 		// Log request start with detailed info
 		logger.Debug("Request started",
 			"method", c.Request.Method,
@@ -455,7 +455,7 @@ func getSafeHeaders(headers http.Header) map[string]string {
 	sensitiveHeaders := []string{
 		"Authorization", "Cookie", "Set-Cookie", "X-Api-Key", "X-Auth-Token",
 	}
-	
+
 	for name, values := range headers {
 		// Skip sensitive headers
 		sensitive := false
@@ -465,11 +465,11 @@ func getSafeHeaders(headers http.Header) map[string]string {
 				break
 			}
 		}
-		
+
 		if !sensitive && len(values) > 0 {
 			safe[name] = values[0]
 		}
 	}
-	
+
 	return safe
 }

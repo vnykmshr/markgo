@@ -697,3 +697,218 @@ func (s *ArticleService) demoteFirstHeading(content string) string {
 		return match
 	})
 }
+
+// Draft Operations Implementation
+
+// GetDraftArticles returns all articles marked as drafts
+func (s *ArticleService) GetDraftArticles() []*models.Article {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	var drafts []*models.Article
+	for _, article := range s.cache {
+		if article.Draft {
+			drafts = append(drafts, article)
+		}
+	}
+
+	// Sort drafts by last modified time (most recent first)
+	sort.Slice(drafts, func(i, j int) bool {
+		return drafts[i].LastModified.After(drafts[j].LastModified)
+	})
+
+	return drafts
+}
+
+// GetDraftBySlug returns a draft article by slug, regardless of its draft status
+func (s *ArticleService) GetDraftBySlug(slug string) (*models.Article, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	article, exists := s.cache[slug]
+	if !exists {
+		return nil, apperrors.NewArticleError(slug, "Draft not found", apperrors.ErrArticleNotFound)
+	}
+
+	return article, nil
+}
+
+// PreviewDraft returns a draft article with processed content for preview
+func (s *ArticleService) PreviewDraft(slug string) (*models.Article, error) {
+	article, err := s.GetDraftBySlug(slug)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a copy for preview to avoid modifying the cached version
+	previewArticle := &models.Article{
+		Slug:         article.Slug,
+		Title:        article.Title,
+		Description:  article.Description,
+		Date:         article.Date,
+		Tags:         article.Tags,
+		Categories:   article.Categories,
+		Draft:        article.Draft,
+		Featured:     article.Featured,
+		Author:       article.Author,
+		Content:      article.Content,
+		ReadingTime:  article.ReadingTime,
+		WordCount:    article.WordCount,
+		LastModified: article.LastModified,
+	}
+	previewArticle.SetProcessor(s)
+
+	// Force content processing for preview
+	_ = previewArticle.GetProcessedContent()
+	_ = previewArticle.GetExcerpt()
+
+	return previewArticle, nil
+}
+
+// PublishDraft changes a draft article to published status
+func (s *ArticleService) PublishDraft(slug string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	article, exists := s.cache[slug]
+	if !exists {
+		return apperrors.NewArticleError(slug, "Draft not found", apperrors.ErrArticleNotFound)
+	}
+
+	if !article.Draft {
+		return apperrors.NewArticleError(slug, "Article is already published", apperrors.ErrValidationFailed)
+	}
+
+	// Update the article's draft status
+	article.Draft = false
+	article.LastModified = time.Now()
+
+	// Update the file on disk
+	if err := s.updateArticleFile(slug, article); err != nil {
+		// Revert the in-memory change if file update fails
+		article.Draft = true
+		return apperrors.NewArticleError(slug, "Failed to update article file", err)
+	}
+
+	// Rebuild the published articles list
+	s.rebuildArticlesList()
+
+	s.logger.Info("Published draft article", "slug", slug)
+	return nil
+}
+
+// UnpublishArticle changes a published article to draft status
+func (s *ArticleService) UnpublishArticle(slug string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	article, exists := s.cache[slug]
+	if !exists {
+		return apperrors.NewArticleError(slug, "Article not found", apperrors.ErrArticleNotFound)
+	}
+
+	if article.Draft {
+		return apperrors.NewArticleError(slug, "Article is already a draft", apperrors.ErrValidationFailed)
+	}
+
+	// Update the article's draft status
+	article.Draft = true
+	article.LastModified = time.Now()
+
+	// Update the file on disk
+	if err := s.updateArticleFile(slug, article); err != nil {
+		// Revert the in-memory change if file update fails
+		article.Draft = false
+		return apperrors.NewArticleError(slug, "Failed to update article file", err)
+	}
+
+	// Rebuild the published articles list
+	s.rebuildArticlesList()
+
+	s.logger.Info("Unpublished article to draft", "slug", slug)
+	return nil
+}
+
+// updateArticleFile updates the article's YAML frontmatter in the file
+func (s *ArticleService) updateArticleFile(slug string, article *models.Article) error {
+	// Find the article file
+	var articleFilePath string
+	err := filepath.WalkDir(s.articlesPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() || !strings.HasSuffix(d.Name(), ".markdown") {
+			return nil
+		}
+
+		// Check if this is the right file by parsing it
+		testArticle, parseErr := s.ParseArticleFile(path)
+		if parseErr == nil && testArticle.Slug == slug {
+			articleFilePath = path
+			return filepath.SkipAll // Found the file, stop walking
+		}
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if articleFilePath == "" {
+		return fmt.Errorf("article file not found for slug: %s", slug)
+	}
+
+	// Read the current file content
+	content, err := os.ReadFile(articleFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to read article file: %w", err)
+	}
+
+	// Parse the frontmatter and content
+	parts := strings.SplitN(string(content), "---", 3)
+	if len(parts) < 3 {
+		return fmt.Errorf("invalid article format: missing frontmatter")
+	}
+
+	// Parse existing frontmatter
+	var frontmatter map[string]interface{}
+	if err := yaml.Unmarshal([]byte(parts[1]), &frontmatter); err != nil {
+		return fmt.Errorf("failed to parse frontmatter: %w", err)
+	}
+
+	// Update the draft field
+	frontmatter["draft"] = article.Draft
+
+	// Convert back to YAML
+	updatedFrontmatter, err := yaml.Marshal(frontmatter)
+	if err != nil {
+		return fmt.Errorf("failed to marshal frontmatter: %w", err)
+	}
+
+	// Rebuild the file content
+	updatedContent := fmt.Sprintf("---\n%s---\n%s", string(updatedFrontmatter), parts[2])
+
+	// Write the updated content back to the file
+	if err := os.WriteFile(articleFilePath, []byte(updatedContent), 0644); err != nil {
+		return fmt.Errorf("failed to write updated article file: %w", err)
+	}
+
+	return nil
+}
+
+// rebuildArticlesList rebuilds the published articles list from cache
+func (s *ArticleService) rebuildArticlesList() {
+	var articles []*models.Article
+	for _, article := range s.cache {
+		if !article.Draft {
+			articles = append(articles, article)
+		}
+	}
+
+	// Sort articles by date (newest first)
+	sort.Slice(articles, func(i, j int) bool {
+		return articles[i].Date.After(articles[j].Date)
+	})
+
+	s.articles = articles
+}

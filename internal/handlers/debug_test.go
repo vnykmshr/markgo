@@ -106,7 +106,7 @@ func TestDebugEndpoints(t *testing.T) {
 					assert.NoError(t, err)
 					return
 				}
-				
+
 				// Different endpoints have different response structures
 				switch tt.name {
 				case "Debug Memory":

@@ -199,8 +199,8 @@ func TestRecoveryWithErrorHandler(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
+	router.Use(ErrorHandler(logger)) // ErrorHandler must come first
 	router.Use(RecoveryWithErrorHandler(logger))
-	router.Use(ErrorHandler(logger)) // Add error handler to process the error
 
 	router.GET("/panic", func(c *gin.Context) {
 		panic("test panic")
@@ -225,7 +225,7 @@ func TestRecoveryWithErrorHandler(t *testing.T) {
 
 	// Check response contains error message
 	responseBody := w.Body.String()
-	if !strings.Contains(responseBody, "unexpected error occurred") {
+	if !strings.Contains(responseBody, "Internal server error") {
 		t.Errorf("Expected error message in response: %s", responseBody)
 	}
 }

@@ -187,6 +187,13 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 			adminGroup.POST("/cache/clear", h.ClearCache)
 			adminGroup.GET("/stats", h.AdminStats)
 			adminGroup.POST("/articles/reload", h.ReloadArticles)
+
+			// Draft management endpoints
+			adminGroup.GET("/drafts", h.GetDrafts)
+			adminGroup.GET("/drafts/:slug", h.GetDraftBySlug)
+			adminGroup.GET("/drafts/:slug/preview", h.PreviewDraft)
+			adminGroup.POST("/drafts/:slug/publish", h.PublishDraft)
+			adminGroup.POST("/articles/:slug/unpublish", h.UnpublishArticle)
 		}
 	}
 
@@ -200,7 +207,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 			debugGroup.GET("/config", h.DebugConfig)
 			debugGroup.GET("/requests", h.DebugRequests)
 			debugGroup.POST("/log-level", h.SetLogLevel)
-			
+
 			// Go pprof profiling endpoints
 			pprofGroup := debugGroup.Group("/pprof")
 			{
@@ -216,7 +223,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 				pprofGroup.GET("/mutex", h.PprofMutex)
 			}
 		}
-		
+
 		logger.Info("Debug endpoints enabled", "environment", cfg.Environment)
 	}
 

@@ -239,8 +239,9 @@ func TestRateLimit(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	router := gin.New()
+	// ErrorHandler must come BEFORE RateLimit so it can process errors
+	router.Use(ErrorHandler(logger))
 	router.Use(RateLimit(2, time.Minute))
-	router.Use(ErrorHandler(logger)) // Add error handler to process rate limit errors
 	router.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "test"})
 	})
@@ -257,6 +258,7 @@ func TestRateLimit(t *testing.T) {
 	// Third request should be rate limited
 	req, _ := http.NewRequest("GET", "/test", nil)
 	req.RemoteAddr = "127.0.0.1:12345"
+	req.Header.Set("Accept", "application/json") // Request JSON response
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, req)
 	assert.Equal(t, http.StatusTooManyRequests, recorder.Code)
@@ -278,8 +280,9 @@ func TestContactRateLimit(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	router := gin.New()
+	// ErrorHandler must come BEFORE ContactRateLimit so it can process errors
+	router.Use(ErrorHandler(logger))
 	router.Use(ContactRateLimit())
-	router.Use(ErrorHandler(logger)) // Add error handler to process rate limit errors
 	router.POST("/contact", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "contact sent"})
 	})
@@ -296,6 +299,7 @@ func TestContactRateLimit(t *testing.T) {
 	// Sixth request should be rate limited
 	req, _ := http.NewRequest("POST", "/contact", nil)
 	req.RemoteAddr = "127.0.0.1:12345"
+	req.Header.Set("Accept", "application/json") // Request JSON response
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, req)
 	assert.Equal(t, http.StatusTooManyRequests, recorder.Code)

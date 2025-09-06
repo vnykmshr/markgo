@@ -1,6 +1,9 @@
 package services
 
 import (
+	"html/template"
+	"io"
+	"log/slog"
 	"time"
 
 	"github.com/vnykmshr/markgo/internal/models"
@@ -28,6 +31,13 @@ type ArticleServiceInterface interface {
 	// Statistics and management
 	GetStats() *models.Stats
 	ReloadArticles() error
+
+	// Draft operations
+	GetDraftArticles() []*models.Article
+	GetDraftBySlug(slug string) (*models.Article, error)
+	PreviewDraft(slug string) (*models.Article, error)
+	PublishDraft(slug string) error
+	UnpublishArticle(slug string) error
 }
 
 // EmailServiceInterface defines the interface for email operations
@@ -76,4 +86,37 @@ type SearchServiceInterface interface {
 
 	// Suggestions
 	GetSuggestions(articles []*models.Article, query string, limit int) []string
+}
+
+// TemplateServiceInterface defines the interface for template operations
+type TemplateServiceInterface interface {
+	// Template rendering
+	Render(w io.Writer, templateName string, data any) error
+	RenderToString(templateName string, data any) (string, error)
+
+	// Template management
+	HasTemplate(templateName string) bool
+	ListTemplates() []string
+	Reload(templatesPath string) error
+
+	// Internal access (for Gin integration)
+	GetTemplate() *template.Template
+}
+
+// LoggingServiceInterface defines the interface for logging operations
+type LoggingServiceInterface interface {
+	// Core logger access
+	GetLogger() *slog.Logger
+
+	// Contextual logging
+	WithContext(keyvals ...interface{}) *slog.Logger
+
+	// Logging methods
+	Debug(msg string, keyvals ...interface{})
+	Info(msg string, keyvals ...interface{})
+	Warn(msg string, keyvals ...interface{})
+	Error(msg string, keyvals ...interface{})
+
+	// Lifecycle management
+	Close() error
 }

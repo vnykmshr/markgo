@@ -181,6 +181,11 @@ func IsConfigurationError(err error) bool {
 		errors.Is(err, ErrConfigValidation)
 }
 
+// IsArticleNotFound checks if an error indicates an article was not found
+func IsArticleNotFound(err error) bool {
+	return errors.Is(err, ErrArticleNotFound)
+}
+
 // GetUserFriendlyMessage returns a user-friendly error message
 func GetUserFriendlyMessage(err error) string {
 	switch {

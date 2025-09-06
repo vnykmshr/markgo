@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"html/template"
+	"io"
+	"log/slog"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -87,6 +89,38 @@ func (m *MockArticleService) GetStats() *models.Stats {
 
 func (m *MockArticleService) ReloadArticles() error {
 	args := m.Called()
+	return args.Error(0)
+}
+
+// Draft operations mock methods
+func (m *MockArticleService) GetDraftArticles() []*models.Article {
+	args := m.Called()
+	return args.Get(0).([]*models.Article)
+}
+
+func (m *MockArticleService) GetDraftBySlug(slug string) (*models.Article, error) {
+	args := m.Called(slug)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Article), args.Error(1)
+}
+
+func (m *MockArticleService) PreviewDraft(slug string) (*models.Article, error) {
+	args := m.Called(slug)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Article), args.Error(1)
+}
+
+func (m *MockArticleService) PublishDraft(slug string) error {
+	args := m.Called(slug)
+	return args.Error(0)
+}
+
+func (m *MockArticleService) UnpublishArticle(slug string) error {
+	args := m.Called(slug)
 	return args.Error(0)
 }
 
@@ -213,4 +247,78 @@ func (m *MockSearchService) SearchByCategory(articles []*models.Article, categor
 func (m *MockSearchService) GetSuggestions(articles []*models.Article, query string, limit int) []string {
 	args := m.Called(articles, query, limit)
 	return args.Get(0).([]string)
+}
+
+// MockTemplateService is a mock implementation of TemplateServiceInterface
+type MockTemplateService struct {
+	mock.Mock
+}
+
+func (m *MockTemplateService) Render(w io.Writer, templateName string, data any) error {
+	args := m.Called(w, templateName, data)
+	return args.Error(0)
+}
+
+func (m *MockTemplateService) RenderToString(templateName string, data any) (string, error) {
+	args := m.Called(templateName, data)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockTemplateService) HasTemplate(templateName string) bool {
+	args := m.Called(templateName)
+	return args.Bool(0)
+}
+
+func (m *MockTemplateService) ListTemplates() []string {
+	args := m.Called()
+	return args.Get(0).([]string)
+}
+
+func (m *MockTemplateService) Reload(templatesPath string) error {
+	args := m.Called(templatesPath)
+	return args.Error(0)
+}
+
+func (m *MockTemplateService) GetTemplate() *template.Template {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil
+	}
+	return args.Get(0).(*template.Template)
+}
+
+// MockLoggingService is a mock implementation of LoggingServiceInterface
+type MockLoggingService struct {
+	mock.Mock
+}
+
+func (m *MockLoggingService) GetLogger() *slog.Logger {
+	args := m.Called()
+	return args.Get(0).(*slog.Logger)
+}
+
+func (m *MockLoggingService) WithContext(keyvals ...interface{}) *slog.Logger {
+	args := m.Called(keyvals)
+	return args.Get(0).(*slog.Logger)
+}
+
+func (m *MockLoggingService) Debug(msg string, keyvals ...interface{}) {
+	m.Called(msg, keyvals)
+}
+
+func (m *MockLoggingService) Info(msg string, keyvals ...interface{}) {
+	m.Called(msg, keyvals)
+}
+
+func (m *MockLoggingService) Warn(msg string, keyvals ...interface{}) {
+	m.Called(msg, keyvals)
+}
+
+func (m *MockLoggingService) Error(msg string, keyvals ...interface{}) {
+	m.Called(msg, keyvals)
+}
+
+func (m *MockLoggingService) Close() error {
+	args := m.Called()
+	return args.Error(0)
 }
