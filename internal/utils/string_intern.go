@@ -131,6 +131,19 @@ func GetGlobalInternerSize() int {
 	return globalInterner.Size()
 }
 
+// SavedMemory estimates bytes saved through string interning
+func (si *StringInterner) SavedMemory() int64 {
+	si.mu.RLock()
+	defer si.mu.RUnlock()
+	return si.stats.MemorySaved
+}
+
+// Compact performs string interner compaction (placeholder for future optimization)
+func (si *StringInterner) Compact() {
+	// Currently a no-op, but could implement advanced compaction logic
+	// such as removing rarely accessed strings, reorganizing hash tables, etc.
+}
+
 // TagInterner specialized interner for article tags
 type TagInterner struct {
 	*StringInterner

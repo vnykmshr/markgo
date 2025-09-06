@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -36,23 +37,25 @@ var (
 )
 
 type ArticleService struct {
-	articlesPath string
-	logger       *slog.Logger
-	cache        map[string]*models.Article
-	articles     []*models.Article
-	mutex        sync.RWMutex
-	markdown     goldmark.Markdown
-	lastReload   time.Time
-	tagInterner  *utils.TagInterner
+	articlesPath    string
+	logger          *slog.Logger
+	cache           map[string]*models.Article
+	articles        []*models.Article
+	mutex           sync.RWMutex
+	markdown        goldmark.Markdown
+	lastReload      time.Time
+	tagInterner     *utils.TagInterner
+	memoryOptimizer *ArticleMemoryOptimizer
 }
 
 func NewArticleService(articlesPath string, logger *slog.Logger) (*ArticleService, error) {
 	service := &ArticleService{
-		articlesPath: articlesPath,
-		logger:       logger,
-		cache:        make(map[string]*models.Article),
-		articles:     make([]*models.Article, 0),
-		tagInterner:  utils.NewTagInterner(),
+		articlesPath:    articlesPath,
+		logger:          logger,
+		cache:           make(map[string]*models.Article),
+		articles:        make([]*models.Article, 0),
+		tagInterner:     utils.NewTagInterner(),
+		memoryOptimizer: NewArticleMemoryOptimizer(1000), // Cache up to 1000 items
 		markdown: goldmark.New(
 			goldmark.WithExtensions(
 				extension.GFM,
@@ -119,9 +122,20 @@ func (s *ArticleService) loadArticles() error {
 		return articles[i].Date.After(articles[j].Date)
 	})
 
-	s.articles = articles
-	s.cache = cache
+	// Apply memory optimizations to articles and cache
+	optimizedArticles := s.memoryOptimizer.OptimizeArticleSlice(articles)
+	optimizedCache := make(map[string]*models.Article, len(cache))
+
+	for slug, article := range cache {
+		optimizedCache[slug] = s.memoryOptimizer.OptimizeArticle(article)
+	}
+
+	s.articles = optimizedArticles
+	s.cache = optimizedCache
 	s.lastReload = time.Now()
+
+	// Prewarm cache for frequently accessed content
+	s.memoryOptimizer.PrewarmCache(optimizedArticles)
 
 	// Log performance metrics for article loading
 	duration := time.Since(start)
@@ -919,4 +933,112 @@ func (s *ArticleService) rebuildArticlesList() {
 	})
 
 	s.articles = articles
+}
+
+// Memory optimization methods
+
+// GetOptimizedContent returns optimized content for an article
+func (s *ArticleService) GetOptimizedContent(slug string) (string, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	article, exists := s.cache[slug]
+	if !exists {
+		return "", apperrors.NewArticleError(slug, "Article not found", apperrors.ErrArticleNotFound)
+	}
+
+	// Get content using the memory optimizer
+	content := s.memoryOptimizer.GetContent(slug, article.Content)
+	return content, nil
+}
+
+// GetOptimizedProcessedContent returns optimized processed HTML content
+func (s *ArticleService) GetOptimizedProcessedContent(slug string) (string, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	article, exists := s.cache[slug]
+	if !exists {
+		return "", apperrors.NewArticleError(slug, "Article not found", apperrors.ErrArticleNotFound)
+	}
+
+	// Try to get from cache first
+	if content, found := s.memoryOptimizer.GetProcessedContent(slug); found {
+		return content, nil
+	}
+
+	// Fall back to article's processed content
+	processedContent := article.ProcessedContent()
+	s.memoryOptimizer.CacheProcessedContent(slug, processedContent)
+	return processedContent, nil
+}
+
+// GetOptimizedExcerpt returns an optimized excerpt for the article
+func (s *ArticleService) GetOptimizedExcerpt(slug string) (string, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	article, exists := s.cache[slug]
+	if !exists {
+		return "", apperrors.NewArticleError(slug, "Article not found", apperrors.ErrArticleNotFound)
+	}
+
+	// Try to get from cache first
+	if excerpt, found := s.memoryOptimizer.GetExcerpt(slug); found {
+		return excerpt, nil
+	}
+
+	// Fall back to article's excerpt
+	excerptContent := article.Excerpt()
+	s.memoryOptimizer.CacheExcerpt(slug, excerptContent)
+	return excerptContent, nil
+}
+
+// CompactMemory performs memory compaction and cache cleanup
+func (s *ArticleService) CompactMemory() {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	s.logger.Info("Starting memory compaction")
+
+	// Get stats before compaction
+	beforeStats := s.memoryOptimizer.GetStats()
+
+	// Perform compaction
+	s.memoryOptimizer.CompactMemory()
+
+	// Force garbage collection
+	runtime.GC()
+
+	// Get stats after compaction
+	afterStats := s.memoryOptimizer.GetStats()
+
+	s.logger.Info("Memory compaction completed",
+		"memory_footprint_before_mb", beforeStats.MemoryFootprintMB,
+		"memory_footprint_after_mb", afterStats.MemoryFootprintMB,
+		"compression_savings_bytes", afterStats.CompressionSavings,
+		"interner_savings_bytes", afterStats.InternerSavings,
+	)
+}
+
+// GetMemoryStats returns current memory optimization statistics
+func (s *ArticleService) GetMemoryStats() interface{} {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	optimizerStats := s.memoryOptimizer.GetStats()
+	cacheEfficiency := s.memoryOptimizer.GetCacheEfficiency()
+
+	return map[string]interface{}{
+		"articles_cached":      len(s.cache),
+		"published_articles":   len(s.articles),
+		"cache_hits":           optimizerStats.CacheHits,
+		"cache_misses":         optimizerStats.CacheMisses,
+		"cache_efficiency_pct": cacheEfficiency,
+		"compression_savings":  optimizerStats.CompressionSavings,
+		"interner_savings":     optimizerStats.InternerSavings,
+		"pool_reuses":          optimizerStats.PoolReuses,
+		"memory_footprint_mb":  optimizerStats.MemoryFootprintMB,
+		"last_optimization":    optimizerStats.LastOptimization,
+	}
 }
