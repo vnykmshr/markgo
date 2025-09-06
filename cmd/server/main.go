@@ -146,6 +146,9 @@ func main() {
 }
 
 func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, logger *slog.Logger) {
+	// Initialize validation middleware
+	validationMiddleware := middleware.NewValidationMiddleware(logger)
+
 	// Static files
 	router.Static("/static", cfg.StaticPath)
 	router.StaticFile("/favicon.ico", cfg.StaticPath+"/img/favicon.ico")
@@ -157,18 +160,40 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 
 	// Main routes
 	router.GET("/", h.Home)
-	router.GET("/articles", h.Articles)
-	router.GET("/articles/:slug", h.Article)
+
+	// Articles with pagination validation
+	router.GET("/articles", validationMiddleware.ValidatePagination(), h.Articles)
+
+	// Article by slug with slug validation
+	router.GET("/articles/:slug", validationMiddleware.ValidateSlugParam(), h.Article)
+
 	router.GET("/tags", h.Tags)
-	router.GET("/tags/:tag", h.ArticlesByTag)
+
+	// Tag filtering with tag validation and pagination
+	router.GET("/tags/:tag",
+		validationMiddleware.ValidateTagCategory(),
+		validationMiddleware.ValidatePagination(),
+		h.ArticlesByTag)
+
 	router.GET("/categories", h.Categories)
-	router.GET("/categories/:category", h.ArticlesByCategory)
-	router.GET("/search", h.Search)
+
+	// Category filtering with category validation and pagination
+	router.GET("/categories/:category",
+		validationMiddleware.ValidateTagCategory(),
+		validationMiddleware.ValidatePagination(),
+		h.ArticlesByCategory)
+
+	// Search with query validation and pagination
+	router.GET("/search",
+		validationMiddleware.ValidateSearchQuery(),
+		validationMiddleware.ValidatePagination(),
+		h.Search)
 	router.GET("/about", h.AboutArticle)
 
-	// Contact form with rate limiting
+	// Contact form with rate limiting and input validation
 	contactGroup := router.Group("/contact")
 	contactGroup.Use(middleware.RateLimit(cfg.RateLimit.Contact.Requests, cfg.RateLimit.Contact.Window))
+	contactGroup.Use(validationMiddleware.ValidateContactMessage())
 	{
 		contactGroup.GET("", h.ContactForm)
 		contactGroup.POST("", h.ContactSubmit)
@@ -190,10 +215,10 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 
 			// Draft management endpoints
 			adminGroup.GET("/drafts", h.GetDrafts)
-			adminGroup.GET("/drafts/:slug", h.GetDraftBySlug)
-			adminGroup.GET("/drafts/:slug/preview", h.PreviewDraft)
-			adminGroup.POST("/drafts/:slug/publish", h.PublishDraft)
-			adminGroup.POST("/articles/:slug/unpublish", h.UnpublishArticle)
+			adminGroup.GET("/drafts/:slug", validationMiddleware.ValidateSlugParam(), h.GetDraftBySlug)
+			adminGroup.GET("/drafts/:slug/preview", validationMiddleware.ValidateSlugParam(), h.PreviewDraft)
+			adminGroup.POST("/drafts/:slug/publish", validationMiddleware.ValidateSlugParam(), h.PublishDraft)
+			adminGroup.POST("/articles/:slug/unpublish", validationMiddleware.ValidateSlugParam(), h.UnpublishArticle)
 		}
 	}
 

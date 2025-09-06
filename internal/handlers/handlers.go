@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"html"
 	"log/slog"
 	"net/http"
 	"net/http/pprof"
@@ -360,8 +361,23 @@ func (h *Handlers) ContactSubmit(c *gin.Context) {
 		return
 	}
 
+	// Sanitize input fields to prevent XSS and other attacks
+	msg.Name = strings.TrimSpace(html.EscapeString(msg.Name))
+	msg.Email = strings.TrimSpace(html.EscapeString(msg.Email))
+	msg.Subject = strings.TrimSpace(html.EscapeString(msg.Subject))
+	msg.Message = strings.TrimSpace(html.EscapeString(msg.Message))
+	msg.CaptchaQuestion = strings.TrimSpace(msg.CaptchaQuestion)
+	msg.CaptchaAnswer = strings.TrimSpace(msg.CaptchaAnswer)
+
+	// Additional validation beyond struct tags
+	if len(msg.Message) > 5000 {
+		_ = c.Error(apperrors.NewValidationError("message", nil, "Message too long", apperrors.ErrValidationFailed))
+		c.Abort()
+		return
+	}
+
 	// Verify simple numeric captcha
-	if !h.verifyCaptcha(strings.TrimSpace(msg.CaptchaQuestion), strings.TrimSpace(msg.CaptchaAnswer)) {
+	if !h.verifyCaptcha(msg.CaptchaQuestion, msg.CaptchaAnswer) {
 		h.logger.Warn("Invalid captcha submission", "email", msg.Email)
 		_ = c.Error(apperrors.NewValidationError("captcha", msg.CaptchaAnswer, "Please solve the math problem correctly", apperrors.ErrValidationFailed))
 		c.Abort()
