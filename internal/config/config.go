@@ -1,8 +1,12 @@
 package config
 
 import (
+	"fmt"
+	"net/mail"
 	"net/url"
 	"os"
+	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -107,6 +111,20 @@ type LoggingConfig struct {
 	TimeFormat string `json:"time_format"`    // custom time format for text logs
 }
 
+// ValidationWarning represents a configuration warning that doesn't prevent startup
+type ValidationWarning struct {
+	Field   string `json:"field"`
+	Message string `json:"message"`
+	Level   string `json:"level"` // "warning", "recommendation"
+}
+
+// ValidationResult contains validation results including errors and warnings
+type ValidationResult struct {
+	Valid    bool                `json:"valid"`
+	Errors   []error             `json:"errors"`
+	Warnings []ValidationWarning `json:"warnings"`
+}
+
 func Load() (*Config, error) {
 	// Load .env file if it exists
 	_ = godotenv.Load()
@@ -205,6 +223,274 @@ func Load() (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+// ValidateWithWarnings performs comprehensive validation and returns both errors and warnings
+func (c *Config) ValidateWithWarnings() ValidationResult {
+	result := ValidationResult{
+		Valid:    true,
+		Errors:   make([]error, 0),
+		Warnings: make([]ValidationWarning, 0),
+	}
+
+	// Perform standard validation
+	if err := c.Validate(); err != nil {
+		result.Valid = false
+		result.Errors = append(result.Errors, err)
+	}
+
+	// Add warnings and recommendations
+	c.addConfigurationWarnings(&result)
+	c.addSecurityRecommendations(&result)
+	c.addPerformanceRecommendations(&result)
+	c.addProductionRecommendations(&result)
+
+	return result
+}
+
+// addConfigurationWarnings adds configuration-related warnings
+func (c *Config) addConfigurationWarnings(result *ValidationResult) {
+	// Warn about default values in production
+	if c.Environment == "production" {
+		if strings.Contains(c.BaseURL, "localhost") {
+			result.Warnings = append(result.Warnings, ValidationWarning{
+				Field:   "base_url",
+				Message: "Base URL contains 'localhost' in production environment",
+				Level:   "warning",
+			})
+		}
+
+		if strings.Contains(c.BaseURL, "yourdomain.com") {
+			result.Warnings = append(result.Warnings, ValidationWarning{
+				Field:   "base_url",
+				Message: "Base URL contains placeholder domain 'yourdomain.com'",
+				Level:   "warning",
+			})
+		}
+
+		if c.Blog.Title == "Your Blog Title" {
+			result.Warnings = append(result.Warnings, ValidationWarning{
+				Field:   "blog.title",
+				Message: "Blog title is still the default placeholder value",
+				Level:   "warning",
+			})
+		}
+
+		if c.Blog.Author == "Your Name" {
+			result.Warnings = append(result.Warnings, ValidationWarning{
+				Field:   "blog.author",
+				Message: "Blog author is still the default placeholder value",
+				Level:   "warning",
+			})
+		}
+
+		if strings.Contains(c.Blog.AuthorEmail, "example.com") {
+			result.Warnings = append(result.Warnings, ValidationWarning{
+				Field:   "blog.author_email",
+				Message: "Blog author email contains placeholder domain",
+				Level:   "warning",
+			})
+		}
+	}
+
+	// Check for insecure email configuration
+	if c.Email.Username != "" && c.Email.Port == 25 {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "email.port",
+			Message: "Using port 25 for email may be insecure, consider using 587 (STARTTLS) or 465 (SSL/TLS)",
+			Level:   "recommendation",
+		})
+	}
+
+	// Check CORS configuration
+	if c.Environment == "production" && len(c.CORS.AllowedOrigins) > 0 {
+		for _, origin := range c.CORS.AllowedOrigins {
+			if origin == "*" {
+				result.Warnings = append(result.Warnings, ValidationWarning{
+					Field:   "cors.allowed_origins",
+					Message: "Wildcard (*) in CORS allowed origins is not recommended for production",
+					Level:   "warning",
+				})
+				break
+			}
+		}
+	}
+
+	// Check for overly permissive rate limits in production
+	if c.Environment == "production" {
+		if c.RateLimit.General.Requests > 1000 {
+			result.Warnings = append(result.Warnings, ValidationWarning{
+				Field:   "rate_limit.general.requests",
+				Message: "General rate limit is very high (>1000), consider lowering for better protection",
+				Level:   "recommendation",
+			})
+		}
+
+		if c.RateLimit.Contact.Requests > 50 {
+			result.Warnings = append(result.Warnings, ValidationWarning{
+				Field:   "rate_limit.contact.requests",
+				Message: "Contact rate limit is high (>50), consider lowering to prevent spam",
+				Level:   "recommendation",
+			})
+		}
+	}
+}
+
+// addSecurityRecommendations adds security-related recommendations
+func (c *Config) addSecurityRecommendations(result *ValidationResult) {
+	// Admin security checks
+	if c.Admin.Username != "" && c.Environment == "production" {
+		// Check for weak admin usernames
+		weakUsernames := []string{"admin", "administrator", "root", "user", "test"}
+		for _, weak := range weakUsernames {
+			if strings.ToLower(c.Admin.Username) == weak {
+				result.Warnings = append(result.Warnings, ValidationWarning{
+					Field:   "admin.username",
+					Message: fmt.Sprintf("Admin username '%s' is commonly used and may be targeted by attackers", weak),
+					Level:   "recommendation",
+				})
+				break
+			}
+		}
+
+		// Check password complexity (basic check)
+		if len(c.Admin.Password) < 12 {
+			result.Warnings = append(result.Warnings, ValidationWarning{
+				Field:   "admin.password",
+				Message: "Admin password should be at least 12 characters long for better security",
+				Level:   "recommendation",
+			})
+		}
+
+		// Check for simple passwords
+		simplePasswords := []string{"password", "123456", "admin", "root"}
+		for _, simple := range simplePasswords {
+			if strings.ToLower(c.Admin.Password) == simple {
+				result.Warnings = append(result.Warnings, ValidationWarning{
+					Field:   "admin.password",
+					Message: "Admin password is too simple and easily guessable",
+					Level:   "warning",
+				})
+				break
+			}
+		}
+	}
+
+	// HTTPS recommendations
+	if c.Environment == "production" {
+		if strings.HasPrefix(c.BaseURL, "http://") && !strings.Contains(c.BaseURL, "localhost") {
+			result.Warnings = append(result.Warnings, ValidationWarning{
+				Field:   "base_url",
+				Message: "Using HTTP instead of HTTPS in production is not recommended for security",
+				Level:   "warning",
+			})
+		}
+	}
+
+	// Email security
+	if c.Email.Username != "" && !c.Email.UseSSL && c.Email.Port != 587 {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "email.use_ssl",
+			Message: "Email configuration without SSL/TLS may transmit credentials insecurely",
+			Level:   "recommendation",
+		})
+	}
+}
+
+// addPerformanceRecommendations adds performance-related recommendations
+func (c *Config) addPerformanceRecommendations(result *ValidationResult) {
+	// Cache recommendations
+	if c.Cache.TTL < 5*time.Minute {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "cache.ttl",
+			Message: "Cache TTL is very short (<5min), consider increasing for better performance",
+			Level:   "recommendation",
+		})
+	}
+
+	if c.Cache.TTL > 24*time.Hour {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "cache.ttl",
+			Message: "Cache TTL is very long (>24h), users may not see updated content promptly",
+			Level:   "recommendation",
+		})
+	}
+
+	if c.Cache.MaxSize < 100 {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "cache.max_size",
+			Message: "Cache size is very small (<100), consider increasing for better cache hit ratio",
+			Level:   "recommendation",
+		})
+	}
+
+	// Server timeout recommendations
+	if c.Server.ReadTimeout > 30*time.Second {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "server.read_timeout",
+			Message: "Read timeout is quite long (>30s), may cause resource exhaustion under load",
+			Level:   "recommendation",
+		})
+	}
+
+	if c.Server.WriteTimeout > 30*time.Second {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "server.write_timeout",
+			Message: "Write timeout is quite long (>30s), may cause resource exhaustion under load",
+			Level:   "recommendation",
+		})
+	}
+
+	// Blog performance
+	if c.Blog.PostsPerPage > 50 {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "blog.posts_per_page",
+			Message: "Posts per page is high (>50), may affect page load performance",
+			Level:   "recommendation",
+		})
+	}
+}
+
+// addProductionRecommendations adds production-specific recommendations
+func (c *Config) addProductionRecommendations(result *ValidationResult) {
+	if c.Environment != "production" {
+		return
+	}
+
+	// Logging recommendations for production
+	if c.Logging.Level == "debug" {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "logging.level",
+			Message: "Debug logging in production may impact performance and expose sensitive information",
+			Level:   "warning",
+		})
+	}
+
+	if c.Logging.Output == "stdout" && c.Logging.Level == "debug" {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "logging.output",
+			Message: "Consider using file output with log rotation for production debug logs",
+			Level:   "recommendation",
+		})
+	}
+
+	// Admin interface recommendations
+	if c.Admin.Username == "" {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "admin.username",
+			Message: "Admin interface is disabled in production, consider enabling for management tasks",
+			Level:   "recommendation",
+		})
+	}
+
+	// Email configuration check for production
+	if c.Email.Username == "" {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "email.username",
+			Message: "Email is not configured, contact form submissions will not be sent",
+			Level:   "recommendation",
+		})
+	}
 }
 
 func getEnv(key, defaultValue string) string {
@@ -308,6 +594,16 @@ func (c *Config) Validate() error {
 		return apperrors.NewConfigError("logging", c.Logging, "Invalid logging configuration", err)
 	}
 
+	// Validate comments configuration
+	if err := c.Comments.Validate(); err != nil {
+		return apperrors.NewConfigError("comments", c.Comments, "Invalid comments configuration", err)
+	}
+
+	// Validate CORS configuration
+	if err := c.CORS.Validate(); err != nil {
+		return apperrors.NewConfigError("cors", c.CORS, "Invalid CORS configuration", err)
+	}
+
 	return nil
 }
 
@@ -317,17 +613,17 @@ func (c *Config) validateBasic() error {
 		return apperrors.NewConfigError("port", c.Port, "Port must be between 1 and 65535", apperrors.ErrConfigValidation)
 	}
 
-	// Validate paths exist
-	if _, err := os.Stat(c.ArticlesPath); os.IsNotExist(err) {
-		return apperrors.NewConfigError("articles_path", c.ArticlesPath, "Articles directory does not exist", apperrors.ErrMissingConfig)
+	// Validate paths exist and are accessible
+	if err := validatePath(c.ArticlesPath, "articles_path", true, false); err != nil {
+		return err
 	}
 
-	if _, err := os.Stat(c.StaticPath); os.IsNotExist(err) {
-		return apperrors.NewConfigError("static_path", c.StaticPath, "Static files directory does not exist", apperrors.ErrMissingConfig)
+	if err := validatePath(c.StaticPath, "static_path", true, false); err != nil {
+		return err
 	}
 
-	if _, err := os.Stat(c.TemplatesPath); os.IsNotExist(err) {
-		return apperrors.NewConfigError("templates_path", c.TemplatesPath, "Templates directory does not exist", apperrors.ErrMissingConfig)
+	if err := validatePath(c.TemplatesPath, "templates_path", true, false); err != nil {
+		return err
 	}
 
 	// Validate base URL
@@ -396,6 +692,15 @@ func (e *EmailConfig) Validate() error {
 	if e.To == "" {
 		return apperrors.NewConfigError("to", e.To, "Email 'to' address cannot be empty", apperrors.ErrMissingConfig)
 	}
+
+	// Validate email addresses format
+	if _, err := mail.ParseAddress(e.From); err != nil {
+		return apperrors.NewConfigError("from", e.From, "Invalid 'from' email address format", apperrors.ErrConfigValidation)
+	}
+	if _, err := mail.ParseAddress(e.To); err != nil {
+		return apperrors.NewConfigError("to", e.To, "Invalid 'to' email address format", apperrors.ErrConfigValidation)
+	}
+
 	return nil
 }
 
@@ -432,9 +737,26 @@ func (b *BlogConfig) Validate() error {
 	if b.PostsPerPage <= 0 {
 		return apperrors.NewConfigError("posts_per_page", b.PostsPerPage, "Posts per page must be positive", apperrors.ErrConfigValidation)
 	}
+	if b.PostsPerPage > 100 {
+		return apperrors.NewConfigError("posts_per_page", b.PostsPerPage, "Posts per page should not exceed 100 for performance reasons", apperrors.ErrConfigValidation)
+	}
 	if b.Language == "" {
 		return apperrors.NewConfigError("language", b.Language, "Blog language cannot be empty", apperrors.ErrMissingConfig)
 	}
+
+	// Validate language code format (basic check)
+	langRegex := regexp.MustCompile(`^[a-z]{2}(-[A-Z]{2})?$`)
+	if !langRegex.MatchString(b.Language) {
+		return apperrors.NewConfigError("language", b.Language, "Blog language must be a valid language code (e.g., 'en', 'en-US')", apperrors.ErrConfigValidation)
+	}
+
+	// Validate author email if provided
+	if b.AuthorEmail != "" {
+		if _, err := mail.ParseAddress(b.AuthorEmail); err != nil {
+			return apperrors.NewConfigError("author_email", b.AuthorEmail, "Invalid author email address format", apperrors.ErrConfigValidation)
+		}
+	}
+
 	return nil
 }
 
@@ -484,6 +806,101 @@ func (l *LoggingConfig) Validate() error {
 	}
 	if l.MaxAge < 0 {
 		return apperrors.NewConfigError("max_age", l.MaxAge, "Log max age cannot be negative", apperrors.ErrConfigValidation)
+	}
+
+	return nil
+}
+
+// Validate comments configuration
+func (c *CommentsConfig) Validate() error {
+	if !c.Enabled {
+		return nil // Comments are disabled, skip validation
+	}
+
+	// Validate provider
+	validProviders := []string{"giscus", "disqus", "utterances"}
+	if !contains(validProviders, c.Provider) {
+		return apperrors.NewConfigError("provider", c.Provider, "Comments provider must be one of: giscus, disqus, utterances", apperrors.ErrConfigValidation)
+	}
+
+	// Validate giscus configuration if using giscus
+	if c.Provider == "giscus" {
+		if c.GiscusRepo == "" {
+			return apperrors.NewConfigError("giscus_repo", c.GiscusRepo, "Giscus repository is required when using giscus provider", apperrors.ErrMissingConfig)
+		}
+
+		// Validate repository format (owner/repo)
+		repoRegex := regexp.MustCompile(`^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$`)
+		if !repoRegex.MatchString(c.GiscusRepo) {
+			return apperrors.NewConfigError("giscus_repo", c.GiscusRepo, "Giscus repository must be in format 'owner/repo'", apperrors.ErrConfigValidation)
+		}
+
+		if c.GiscusCategory == "" {
+			return apperrors.NewConfigError("giscus_category", c.GiscusCategory, "Giscus category is required when using giscus provider", apperrors.ErrMissingConfig)
+		}
+	}
+
+	return nil
+}
+
+// Validate CORS configuration
+func (c *CORSConfig) Validate() error {
+	// Validate allowed origins
+	for _, origin := range c.AllowedOrigins {
+		if origin != "*" {
+			if _, err := url.Parse(origin); err != nil {
+				return apperrors.NewConfigError("allowed_origins", origin, "Invalid CORS allowed origin URL", apperrors.ErrConfigValidation)
+			}
+		}
+	}
+
+	// Validate allowed methods
+	validMethods := []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+	for _, method := range c.AllowedMethods {
+		if !contains(validMethods, method) {
+			return apperrors.NewConfigError("allowed_methods", method, "Invalid HTTP method in CORS allowed methods", apperrors.ErrConfigValidation)
+		}
+	}
+
+	return nil
+}
+
+// validatePath validates that a path exists and is accessible
+func validatePath(path, fieldName string, mustExist, mustBeWritable bool) error {
+	if path == "" {
+		return apperrors.NewConfigError(fieldName, path, fieldName+" cannot be empty", apperrors.ErrMissingConfig)
+	}
+
+	// Convert to absolute path for validation
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return apperrors.NewConfigError(fieldName, path, "Invalid path format", apperrors.ErrConfigValidation)
+	}
+
+	if mustExist {
+		stat, err := os.Stat(absPath)
+		if os.IsNotExist(err) {
+			return apperrors.NewConfigError(fieldName, path, fieldName+" directory does not exist", apperrors.ErrMissingConfig)
+		}
+		if err != nil {
+			return apperrors.NewConfigError(fieldName, path, fmt.Sprintf("Cannot access %s: %v", fieldName, err), apperrors.ErrConfigValidation)
+		}
+
+		// Check if it's a directory
+		if !stat.IsDir() {
+			return apperrors.NewConfigError(fieldName, path, fieldName+" must be a directory, not a file", apperrors.ErrConfigValidation)
+		}
+	}
+
+	if mustBeWritable {
+		// Test write permissions by trying to create a temporary file
+		testFile := filepath.Join(absPath, ".markgo-write-test")
+		file, err := os.Create(testFile)
+		if err != nil {
+			return apperrors.NewConfigError(fieldName, path, fmt.Sprintf("Directory %s is not writable", fieldName), apperrors.ErrConfigValidation)
+		}
+		file.Close()
+		os.Remove(testFile)
 	}
 
 	return nil
