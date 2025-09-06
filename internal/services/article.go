@@ -80,6 +80,7 @@ func NewArticleService(articlesPath string, logger *slog.Logger) (*ArticleServic
 }
 
 func (s *ArticleService) loadArticles() error {
+	start := time.Now()
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -122,7 +123,14 @@ func (s *ArticleService) loadArticles() error {
 	s.cache = cache
 	s.lastReload = time.Now()
 
-	s.logger.Info("Loaded articles", "count", len(articles), "total_with_drafts", len(cache))
+	// Log performance metrics for article loading
+	duration := time.Since(start)
+	s.logger.Info("Loaded articles",
+		"count", len(articles),
+		"total_with_drafts", len(cache),
+		"duration", duration,
+		"component", "article_service",
+		"action", "load_articles")
 	return nil
 }
 
