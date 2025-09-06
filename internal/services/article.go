@@ -855,25 +855,25 @@ func (s *ArticleService) updateArticleFile(slug string, article *models.Article)
 	}
 
 	if articleFilePath == "" {
-		return fmt.Errorf("article file not found for slug: %s", slug)
+		return apperrors.NewArticleError(slug, "Article file not found", apperrors.ErrFileNotFound)
 	}
 
 	// Read the current file content
 	content, err := os.ReadFile(articleFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to read article file: %w", err)
+		return apperrors.NewArticleError(slug, "Failed to read article file", err)
 	}
 
 	// Parse the frontmatter and content
 	parts := strings.SplitN(string(content), "---", 3)
 	if len(parts) < 3 {
-		return fmt.Errorf("invalid article format: missing frontmatter")
+		return apperrors.NewArticleError(slug, "Invalid article format: missing frontmatter", apperrors.ErrInvalidFrontMatter)
 	}
 
 	// Parse existing frontmatter
 	var frontmatter map[string]interface{}
 	if err := yaml.Unmarshal([]byte(parts[1]), &frontmatter); err != nil {
-		return fmt.Errorf("failed to parse frontmatter: %w", err)
+		return apperrors.NewArticleError(slug, "Failed to parse article frontmatter", err)
 	}
 
 	// Update the draft field
@@ -882,7 +882,7 @@ func (s *ArticleService) updateArticleFile(slug string, article *models.Article)
 	// Convert back to YAML
 	updatedFrontmatter, err := yaml.Marshal(frontmatter)
 	if err != nil {
-		return fmt.Errorf("failed to marshal frontmatter: %w", err)
+		return apperrors.NewArticleError(slug, "Failed to marshal article frontmatter", err)
 	}
 
 	// Rebuild the file content
@@ -890,7 +890,7 @@ func (s *ArticleService) updateArticleFile(slug string, article *models.Article)
 
 	// Write the updated content back to the file
 	if err := os.WriteFile(articleFilePath, []byte(updatedContent), 0644); err != nil {
-		return fmt.Errorf("failed to write updated article file: %w", err)
+		return apperrors.NewArticleError(slug, "Failed to write updated article file", err)
 	}
 
 	return nil

@@ -4,13 +4,14 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"log/slog"
 	"os"
 	"os/user"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
+
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
 )
 
 const (
@@ -40,6 +41,11 @@ var (
 )
 
 func main() {
+	// Cleanup function for any resources
+	cleanup := func() {
+		// Add any necessary cleanup here (file handles, temp files, etc.)
+	}
+
 	flag.Parse()
 
 	if *help {
@@ -73,14 +79,21 @@ func main() {
 	validation := ValidateArticleInput(*title, *description, *tags, *category, *author, *template)
 	if !validation.Valid {
 		ShowValidationErrors(validation.Errors)
-		os.Exit(1)
+		apperrors.HandleCLIError(
+			apperrors.NewCLIError("input validation", "Article input validation failed", apperrors.ErrCLIValidation, 1),
+			cleanup,
+		)
+		return
 	}
 
 	// Generate filename from title
 	slug := slugify(*title)
 	if err := ValidateSlug(slug); err != nil {
-		slog.Error("Invalid slug generated from title", "slug", slug, "error", err)
-		os.Exit(1)
+		apperrors.HandleCLIError(
+			apperrors.NewCLIError("slug generation", fmt.Sprintf("Invalid slug generated from title '%s'", *title), err, 1),
+			cleanup,
+		)
+		return
 	}
 
 	// Add date prefix if requested
@@ -94,8 +107,11 @@ func main() {
 
 	// Validate output path
 	if err := ValidateOutputPath(filepath); err != nil {
-		slog.Error("Cannot create article file", "filepath", filepath, "error", err)
-		os.Exit(1)
+		apperrors.HandleCLIError(
+			apperrors.NewCLIError("file path validation", fmt.Sprintf("Cannot create article file at '%s'", filepath), err, 1),
+			cleanup,
+		)
+		return
 	}
 
 	// Generate article content using selected template
@@ -111,8 +127,11 @@ func main() {
 
 	// Write article content
 	if err := os.WriteFile(filepath, []byte(content), 0644); err != nil {
-		slog.Error("Failed to write article file", "filepath", filepath, "error", err)
-		os.Exit(1)
+		apperrors.HandleCLIError(
+			apperrors.NewCLIError("file creation", fmt.Sprintf("Failed to write article file '%s'", filepath), err, 1),
+			cleanup,
+		)
+		return
 	}
 
 	// Show success message

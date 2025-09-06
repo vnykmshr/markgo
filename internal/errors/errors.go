@@ -3,6 +3,7 @@ package errors
 import (
 	"errors"
 	"fmt"
+	"os"
 )
 
 // Domain-specific errors for MarkGo application
@@ -47,6 +48,16 @@ var (
 	ErrValidationFailed = errors.New("validation failed")
 	ErrInvalidInput     = errors.New("invalid input")
 	ErrMissingField     = errors.New("missing required field")
+
+	// CLI errors
+	ErrCLIExecution   = errors.New("CLI execution failed")
+	ErrCLIValidation  = errors.New("CLI validation failed")
+	ErrCLIInterrupted = errors.New("CLI operation interrupted")
+
+	// Service errors
+	ErrServiceFailure     = errors.New("service operation failed")
+	ErrServiceUnavailable = errors.New("service temporarily unavailable")
+	ErrServiceTimeout     = errors.New("service operation timed out")
 )
 
 // ArticleError represents an error related to article processing
@@ -186,6 +197,68 @@ func IsArticleNotFound(err error) bool {
 	return errors.Is(err, ErrArticleNotFound)
 }
 
+// CLIError represents a CLI-specific error with operation context
+type CLIError struct {
+	Operation string
+	Message   string
+	Err       error
+	ExitCode  int
+}
+
+func (e *CLIError) Error() string {
+	if e.Operation != "" {
+		return fmt.Sprintf("CLI error during %s: %s", e.Operation, e.Message)
+	}
+	return fmt.Sprintf("CLI error: %s", e.Message)
+}
+
+func (e *CLIError) Unwrap() error {
+	return e.Err
+}
+
+// NewCLIError creates a new CLIError
+func NewCLIError(operation, message string, err error, exitCode int) *CLIError {
+	return &CLIError{
+		Operation: operation,
+		Message:   message,
+		Err:       err,
+		ExitCode:  exitCode,
+	}
+}
+
+// ServiceError represents a service-layer error with service context
+type ServiceError struct {
+	Service   string
+	Operation string
+	Message   string
+	Err       error
+	Retryable bool
+}
+
+func (e *ServiceError) Error() string {
+	return fmt.Sprintf("service error in %s.%s: %s", e.Service, e.Operation, e.Message)
+}
+
+func (e *ServiceError) Unwrap() error {
+	return e.Err
+}
+
+// NewServiceError creates a new ServiceError
+func NewServiceError(service, operation, message string, err error, retryable bool) *ServiceError {
+	return &ServiceError{
+		Service:   service,
+		Operation: operation,
+		Message:   message,
+		Err:       err,
+		Retryable: retryable,
+	}
+}
+
+// IsRetryable checks if a service error can be retried
+func (e *ServiceError) IsRetryable() bool {
+	return e.Retryable
+}
+
 // GetUserFriendlyMessage returns a user-friendly error message
 func GetUserFriendlyMessage(err error) string {
 	switch {
@@ -203,6 +276,14 @@ func GetUserFriendlyMessage(err error) string {
 		return "Invalid search query. Please try different search terms"
 	case errors.Is(err, ErrSearchTimeout):
 		return "Search took too long. Please try again with more specific terms"
+	case errors.Is(err, ErrCLIValidation):
+		return "Invalid command line arguments. Please check your input and try again"
+	case errors.Is(err, ErrCLIInterrupted):
+		return "Operation was cancelled by user"
+	case errors.Is(err, ErrServiceUnavailable):
+		return "Service is temporarily unavailable. Please try again later"
+	case errors.Is(err, ErrServiceTimeout):
+		return "Service operation timed out. Please try again"
 	case IsConfigurationError(err):
 		return "Service configuration error. Please contact administrator"
 	case IsNotFound(err):
@@ -212,4 +293,50 @@ func GetUserFriendlyMessage(err error) string {
 	default:
 		return "An unexpected error occurred. Please try again later"
 	}
+}
+
+// IsCLIError checks if an error is CLI-related
+func IsCLIError(err error) bool {
+	return errors.Is(err, ErrCLIExecution) ||
+		errors.Is(err, ErrCLIValidation) ||
+		errors.Is(err, ErrCLIInterrupted)
+}
+
+// IsServiceError checks if an error is service-related
+func IsServiceError(err error) bool {
+	return errors.Is(err, ErrServiceFailure) ||
+		errors.Is(err, ErrServiceUnavailable) ||
+		errors.Is(err, ErrServiceTimeout)
+}
+
+// GracefulExit provides a graceful way to exit CLI applications with cleanup
+func GracefulExit(exitCode int, message string, cleanup func()) {
+	if cleanup != nil {
+		cleanup()
+	}
+	if message != "" {
+		fmt.Printf("Error: %s\n", message)
+	}
+	os.Exit(exitCode)
+}
+
+// HandleCLIError handles CLI errors gracefully with optional cleanup
+func HandleCLIError(err error, cleanup func()) {
+	if err == nil {
+		return
+	}
+
+	var exitCode int = 1
+	var message string
+
+	// Check if it's a specific CLI error with custom exit code
+	var cliErr *CLIError
+	if errors.As(err, &cliErr) {
+		exitCode = cliErr.ExitCode
+		message = cliErr.Message
+	} else {
+		message = GetUserFriendlyMessage(err)
+	}
+
+	GracefulExit(exitCode, message, cleanup)
 }

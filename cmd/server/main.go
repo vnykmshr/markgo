@@ -15,34 +15,57 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/gin-gonic/gin"
 	"github.com/vnykmshr/markgo/internal/config"
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/handlers"
 	"github.com/vnykmshr/markgo/internal/middleware"
 	"github.com/vnykmshr/markgo/internal/services"
 )
 
 func main() {
+	var logger *slog.Logger
+	var server *http.Server
+
+	// Cleanup function for graceful shutdown
+	cleanup := func() {
+		if server != nil && logger != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			logger.Info("Performing graceful shutdown...")
+			if err := server.Shutdown(ctx); err != nil {
+				logger.Error("Error during shutdown", "error", err)
+			}
+		}
+	}
+
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
-		slog.Error("Failed to load configuration", "error", err)
-		os.Exit(1)
+		apperrors.HandleCLIError(
+			apperrors.NewCLIError("configuration loading", "Failed to load configuration", err, 1),
+			cleanup,
+		)
 	}
 
 	// Setup enhanced logging with configuration
 	loggingService, err := services.NewLoggingService(cfg.Logging)
 	if err != nil {
-		slog.Error("Failed to initialize logging service", "error", err)
-		os.Exit(1)
+		apperrors.HandleCLIError(
+			apperrors.NewCLIError("logging initialization", "Failed to initialize logging service", err, 1),
+			cleanup,
+		)
 	}
 
-	logger := loggingService.GetLogger()
+	logger = loggingService.GetLogger()
 	slog.SetDefault(logger)
 
 	// Initialize services
 	articleService, err := services.NewArticleService(cfg.ArticlesPath, logger)
 	if err != nil {
-		slog.Error("Failed to initialize article service", "error", err)
-		os.Exit(1)
+		apperrors.HandleCLIError(
+			apperrors.NewCLIError("article service initialization", "Failed to initialize article service", err, 1),
+			cleanup,
+		)
 	}
 
 	cacheService := services.NewCacheService(cfg.Cache.TTL, cfg.Cache.MaxSize)
@@ -59,14 +82,18 @@ func main() {
 	// Initialize template service
 	templateService, err := services.NewTemplateService(cfg.TemplatesPath, cfg)
 	if err != nil {
-		slog.Error("Failed to initialize template service", "error", err)
-		os.Exit(1)
+		apperrors.HandleCLIError(
+			apperrors.NewCLIError("template service initialization", "Failed to initialize template service", err, 1),
+			cleanup,
+		)
 	}
 
 	// Setup HTML templates
 	if err := setupTemplates(router, templateService); err != nil {
-		slog.Error("Failed to setup templates", "error", err)
-		os.Exit(1)
+		apperrors.HandleCLIError(
+			apperrors.NewCLIError("template setup", "Failed to setup templates", err, 1),
+			cleanup,
+		)
 	}
 
 	// Global middleware
@@ -107,7 +134,7 @@ func main() {
 	}
 
 	// Create HTTP server
-	server := &http.Server{
+	server = &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),
 		Handler:      router,
 		ReadTimeout:  cfg.Server.ReadTimeout,
@@ -117,13 +144,16 @@ func main() {
 
 	// Start server in a goroutine
 	go func() {
-		slog.Info("Starting MarkGo server",
+		logger.Info("Starting MarkGo server",
 			"port", cfg.Port,
 			"environment", cfg.Environment,
 			"version", "2.0.0")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("Server failed to start", "error", err)
-			os.Exit(1)
+			logger.Error("Server failed to start", "error", err)
+			apperrors.HandleCLIError(
+				apperrors.NewCLIError("server startup", "Server failed to start", err, 1),
+				cleanup,
+			)
 		}
 	}()
 
@@ -132,17 +162,20 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	slog.Info("Shutting down server...")
+	logger.Info("Shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		slog.Error("Server forced to shutdown", "error", err)
-		os.Exit(1)
+		logger.Error("Server forced to shutdown", "error", err)
+		apperrors.HandleCLIError(
+			apperrors.NewCLIError("server shutdown", "Server forced to shutdown", err, 1),
+			nil, // No additional cleanup needed here
+		)
 	}
 
-	slog.Info("Server exited gracefully")
+	logger.Info("Server exited gracefully")
 }
 
 func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, logger *slog.Logger) {
