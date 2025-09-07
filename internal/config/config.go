@@ -31,6 +31,7 @@ type Config struct {
 	Blog          BlogConfig      `json:"blog"`
 	Comments      CommentsConfig  `json:"comments"`
 	Logging       LoggingConfig   `json:"logging"`
+	Analytics     AnalyticsConfig `json:"analytics"`
 }
 
 type ServerConfig struct {
@@ -109,6 +110,15 @@ type LoggingConfig struct {
 	Compress   bool   `json:"compress"`       // compress rotated files
 	AddSource  bool   `json:"add_source"`     // add source file and line number
 	TimeFormat string `json:"time_format"`    // custom time format for text logs
+}
+
+type AnalyticsConfig struct {
+	Enabled    bool   `json:"enabled"`               // enable/disable analytics
+	Provider   string `json:"provider,omitempty"`    // google, plausible, etc.
+	TrackingID string `json:"tracking_id,omitempty"` // tracking/site ID
+	Domain     string `json:"domain,omitempty"`      // domain for analytics (plausible)
+	DataAPI    string `json:"data_api,omitempty"`    // custom API endpoint
+	CustomCode string `json:"custom_code,omitempty"` // custom analytics code
 }
 
 // ValidationWarning represents a configuration warning that doesn't prevent startup
@@ -214,6 +224,15 @@ func Load() (*Config, error) {
 			Compress:   getEnvBool("LOG_COMPRESS", true),
 			AddSource:  getEnvBool("LOG_ADD_SOURCE", false),
 			TimeFormat: getEnv("LOG_TIME_FORMAT", "2006-01-02T15:04:05Z07:00"),
+		},
+
+		Analytics: AnalyticsConfig{
+			Enabled:    getEnvBool("ANALYTICS_ENABLED", false),
+			Provider:   getEnv("ANALYTICS_PROVIDER", ""),
+			TrackingID: getEnv("ANALYTICS_TRACKING_ID", ""),
+			Domain:     getEnv("ANALYTICS_DOMAIN", ""),
+			DataAPI:    getEnv("ANALYTICS_DATA_API", ""),
+			CustomCode: getEnv("ANALYTICS_CUSTOM_CODE", ""),
 		},
 	}
 
@@ -604,6 +623,11 @@ func (c *Config) Validate() error {
 		return apperrors.NewConfigError("cors", c.CORS, "Invalid CORS configuration", err)
 	}
 
+	// Validate analytics configuration
+	if err := c.Analytics.Validate(); err != nil {
+		return apperrors.NewConfigError("analytics", c.Analytics, "Invalid analytics configuration", err)
+	}
+
 	return nil
 }
 
@@ -901,6 +925,40 @@ func validatePath(path, fieldName string, mustExist, mustBeWritable bool) error 
 		}
 		file.Close()
 		os.Remove(testFile)
+	}
+
+	return nil
+}
+
+// Validate analytics configuration
+func (a *AnalyticsConfig) Validate() error {
+	// If analytics is disabled, no validation needed
+	if !a.Enabled {
+		return nil
+	}
+
+	// If enabled, provider must be specified
+	if a.Provider == "" {
+		return apperrors.NewConfigError("provider", a.Provider, "Analytics provider must be specified when analytics is enabled", apperrors.ErrConfigValidation)
+	}
+
+	// Validate provider and required fields
+	switch a.Provider {
+	case "google":
+		if a.TrackingID == "" {
+			return apperrors.NewConfigError("tracking_id", a.TrackingID, "Google Analytics requires a tracking ID", apperrors.ErrConfigValidation)
+		}
+	case "plausible":
+		if a.Domain == "" {
+			return apperrors.NewConfigError("domain", a.Domain, "Plausible Analytics requires a domain", apperrors.ErrConfigValidation)
+		}
+	case "custom":
+		if a.CustomCode == "" {
+			return apperrors.NewConfigError("custom_code", a.CustomCode, "Custom analytics requires custom code", apperrors.ErrConfigValidation)
+		}
+	default:
+		// Allow other providers without strict validation
+		// This allows for future extensibility
 	}
 
 	return nil

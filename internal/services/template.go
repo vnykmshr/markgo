@@ -36,9 +36,9 @@ var (
 func init() {
 	// Initialize global timezone cache
 	config := obcache.NewDefaultConfig()
-	config.MaxEntries = 200     // Support many timezones
-	config.DefaultTTL = 0       // Timezones don't expire
-	
+	config.MaxEntries = 200 // Support many timezones
+	config.DefaultTTL = 0   // Timezones don't expire
+
 	cache, err := obcache.New(config)
 	if err != nil {
 		// Fallback to basic config if creation fails
@@ -46,7 +46,7 @@ func init() {
 		basicConfig.DefaultTTL = 0
 		cache, _ = obcache.New(basicConfig)
 	}
-	
+
 	timeZoneCache = cache
 }
 

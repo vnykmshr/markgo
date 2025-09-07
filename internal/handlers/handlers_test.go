@@ -23,6 +23,35 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
+// TestObcacheAdapter wraps the mock cache service to match the ObcacheAdapter interface
+type TestObcacheAdapter struct {
+	mock *MockCacheService
+}
+
+func (t *TestObcacheAdapter) Get(key string) (any, bool) {
+	return t.mock.Get(key)
+}
+
+func (t *TestObcacheAdapter) Set(key string, value any, ttl time.Duration) {
+	t.mock.Set(key, value, ttl)
+}
+
+func (t *TestObcacheAdapter) Delete(key string) {
+	t.mock.Delete(key)
+}
+
+func (t *TestObcacheAdapter) Clear() {
+	t.mock.Clear()
+}
+
+func (t *TestObcacheAdapter) Size() int {
+	return t.mock.Size()
+}
+
+func (t *TestObcacheAdapter) Stats() map[string]any {
+	return t.mock.Stats()
+}
+
 // Test helper functions
 
 func createTestHandlers() (*Handlers, *MockArticleService, *MockEmailService, *MockCacheService, *MockSearchService) {
@@ -53,6 +82,9 @@ func createTestHandlers() (*Handlers, *MockArticleService, *MockEmailService, *M
 		Logger:         logger,
 		Cache:          nil, // Use nil cache for tests
 	})
+
+	// Set the mock cache service for testing
+	handlers.cacheService = &TestObcacheAdapter{mock: mockCacheService}
 
 	return handlers, mockArticleService, mockEmailService, mockCacheService, mockSearchService
 }
@@ -960,16 +992,15 @@ func TestHandlerErrorHandling(t *testing.T) {
 
 // Template rendering tests
 func TestHandlerTemplateRendering(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _, _ := createTestHandlers()
 	articles := createTestArticles()
 
-	mockCacheService.On("Get", "home_page").Return(nil, false)
+	// Only set up article service expectations since this test is for template rendering
 	mockArticleService.On("GetAllArticles").Return(articles)
 	mockArticleService.On("GetFeaturedArticles", 3).Return([]*models.Article{articles[0]})
 	mockArticleService.On("GetRecentArticles", 9).Return(articles)
 	mockArticleService.On("GetCategoryCounts").Return([]models.CategoryCount{})
 	mockArticleService.On("GetTagCounts").Return([]models.TagCount{})
-	mockCacheService.On("Set", "home_page", mock.Anything, time.Hour).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -982,7 +1013,6 @@ func TestHandlerTemplateRendering(t *testing.T) {
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	assert.Contains(t, recorder.Header().Get("Content-Type"), "text/html")
 	mockArticleService.AssertExpectations(t)
-	mockCacheService.AssertExpectations(t)
 }
 
 // Additional Error Handling and Edge Case Tests

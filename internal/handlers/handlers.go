@@ -52,7 +52,17 @@ type Handlers struct {
 	cachedFunctions CachedHandlerFunctions
 
 	// Temporary: cache adapter for smooth migration
-	cacheService *ObcacheAdapter
+	cacheService CacheAdapter
+}
+
+// CacheAdapter provides a cache interface for handlers
+type CacheAdapter interface {
+	Get(key string) (any, bool)
+	Set(key string, value any, ttl time.Duration)
+	Delete(key string)
+	Clear()
+	Size() int
+	Stats() map[string]any
 }
 
 // Config for handler initialization
