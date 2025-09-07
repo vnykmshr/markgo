@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
-	"sync"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -30,9 +29,26 @@ import (
 )
 
 var (
-	timeZoneCache = sync.Map{}
+	timeZoneCache *obcache.Cache
 	titleCaser    = cases.Title(language.English)
 )
+
+func init() {
+	// Initialize global timezone cache
+	config := obcache.NewDefaultConfig()
+	config.MaxEntries = 200     // Support many timezones
+	config.DefaultTTL = 0       // Timezones don't expire
+	
+	cache, err := obcache.New(config)
+	if err != nil {
+		// Fallback to basic config if creation fails
+		basicConfig := obcache.NewDefaultConfig()
+		basicConfig.DefaultTTL = 0
+		cache, _ = obcache.New(basicConfig)
+	}
+	
+	timeZoneCache = cache
+}
 
 // CachedTemplateFunctions holds obcache-wrapped template operations
 type CachedTemplateFunctions struct {
@@ -230,6 +246,25 @@ func (t *TemplateService) GetCacheStats() map[string]int {
 	}
 }
 
+// GetTimezoneCacheStats returns timezone cache statistics
+func GetTimezoneCacheStats() map[string]any {
+	if timeZoneCache == nil {
+		return map[string]any{
+			"error": "timezone cache not initialized",
+		}
+	}
+
+	stats := timeZoneCache.Stats()
+	return map[string]any{
+		"timezones_cached": int(stats.KeyCount()),
+		"cache_hits":       int(stats.Hits()),
+		"cache_misses":     int(stats.Misses()),
+		"hit_ratio":        stats.HitRate() * 100,
+		"evictions":        int(stats.Evictions()),
+		"cache_type":       "obcache-go",
+	}
+}
+
 // Shutdown gracefully shuts down the template service
 func (t *TemplateService) Shutdown() {
 	if t.cancel != nil {
@@ -346,8 +381,8 @@ var templateFuncs = template.FuncMap{
 		return date.Format(format)
 	},
 	"formatDateInZone": func(date time.Time, zone, format string) string {
-		if loc, found := timeZoneCache.Load(zone); found {
-			return date.In(loc.(*time.Location)).Format(format)
+		if cachedLoc, found := timeZoneCache.Get(zone); found {
+			return date.In(cachedLoc.(*time.Location)).Format(format)
 		}
 
 		loc, err := time.LoadLocation(zone)
@@ -355,7 +390,8 @@ var templateFuncs = template.FuncMap{
 			return date.Format(format) // Fallback to original timezone
 		}
 
-		timeZoneCache.Store(zone, loc)
+		// Store timezone location in cache with no expiration
+		_ = timeZoneCache.Set(zone, loc, 0)
 		return date.In(loc).Format(format)
 	},
 	"now": func() time.Time {
