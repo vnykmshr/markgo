@@ -1,11 +1,16 @@
 package services
 
 import (
+	"context"
+	"crypto/sha256"
 	"fmt"
 	"sort"
 	"strings"
-	"sync"
 	"time"
+
+	"github.com/vnykmshr/goflow/pkg/scheduling/scheduler"
+	"github.com/vnykmshr/goflow/pkg/scheduling/workerpool"
+	"github.com/vnykmshr/obcache-go/pkg/obcache"
 
 	"github.com/vnykmshr/markgo/internal/models"
 	"github.com/vnykmshr/markgo/internal/utils"
@@ -14,41 +19,194 @@ import (
 // Ensure SearchService implements SearchServiceInterface
 var _ SearchServiceInterface = (*SearchService)(nil)
 
-// SearchResultEntry represents a cached search result with metadata
-type SearchResultEntry struct {
-	Results   []*models.SearchResult
-	Query     string
-	Timestamp time.Time
-	ExpiresAt time.Time
+// CachedSearchFunctions holds all obcache-wrapped expensive search operations
+type CachedSearchFunctions struct {
+	SearchArticles      func([]*models.Article, string, int) []*models.SearchResult
+	SearchInTitle       func([]*models.Article, string, int) []*models.SearchResult
+	ProcessContent      func(string) string
+	GenerateSuggestions func(string, []*models.Article) []string
+	CalculateScore      func(*models.Article, []string) (float64, []string)
 }
 
-// SearchCache caches processed search data and results for performance
-type SearchCache struct {
-	processedContent map[string]string             // article slug -> processed content
-	suggestions      map[string][]string           // query prefix -> suggestions
-	searchResults    map[string]*SearchResultEntry // query hash -> search results
-	mu               sync.RWMutex
-}
-
-// SearchService provides optimized search functionality
+// SearchService provides optimized search functionality with obcache and goflow
 type SearchService struct {
-	cache       *SearchCache
+	// obcache integration
+	obcache         *obcache.Cache
+	cachedFunctions CachedSearchFunctions
+
+	// goflow integration
+	scheduler  scheduler.Scheduler
+	workerPool workerpool.Pool
+	ctx        context.Context
+	cancel     context.CancelFunc
+
+	// utilities
 	stringPool  *utils.StringBuilderPool
 	slicePool   *utils.SlicePool
-	searchLimit int // Early termination optimization
+	searchLimit int
 }
 
 func NewSearchService() *SearchService {
-	return &SearchService{
-		cache: &SearchCache{
-			processedContent: make(map[string]string),
-			suggestions:      make(map[string][]string),
-			searchResults:    make(map[string]*SearchResultEntry),
-		},
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Initialize obcache for search operations
+	cacheConfig := obcache.NewDefaultConfig()
+	cacheConfig.MaxEntries = 2000
+	cacheConfig.DefaultTTL = 10 * time.Minute
+
+	obcacheInstance, err := obcache.New(cacheConfig)
+	if err != nil {
+		cancel()
+		return &SearchService{
+			stringPool:  utils.NewStringBuilderPool(),
+			slicePool:   utils.NewSlicePool(),
+			searchLimit: 1000,
+		}
+	}
+
+	// Initialize goflow components
+	goflowScheduler := scheduler.New()
+	_ = goflowScheduler.Start() // Continue even if scheduler fails to start
+
+	workerPoolConfig := workerpool.Config{
+		WorkerCount: 4,
+		QueueSize:   500,
+		TaskTimeout: 30 * time.Second,
+	}
+	goflowWorkerPool := workerpool.NewWithConfig(workerPoolConfig)
+
+	service := &SearchService{
+		obcache:     obcacheInstance,
+		scheduler:   goflowScheduler,
+		workerPool:  goflowWorkerPool,
+		ctx:         ctx,
+		cancel:      cancel,
 		stringPool:  utils.NewStringBuilderPool(),
 		slicePool:   utils.NewSlicePool(),
-		searchLimit: 1000, // Stop processing articles after finding enough results
+		searchLimit: 1000,
 	}
+
+	// Initialize cached functions
+	service.initializeCachedFunctions()
+
+	// Setup background search maintenance
+	service.setupSearchMaintenance()
+
+	return service
+}
+
+// initializeCachedFunctions initializes all obcache-wrapped functions
+func (s *SearchService) initializeCachedFunctions() {
+	if s.obcache == nil {
+		return
+	}
+
+	// Wrap expensive search operations with obcache
+	s.cachedFunctions.SearchArticles = obcache.Wrap(
+		s.obcache,
+		s.searchArticlesUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			if len(args) >= 2 {
+				if query, ok := args[1].(string); ok {
+					if limit, ok := args[2].(int); ok {
+						return fmt.Sprintf("search:%s:%d", query, limit)
+					}
+				}
+			}
+			return "search:default"
+		}),
+		obcache.WithTTL(5*time.Minute),
+	)
+
+	s.cachedFunctions.SearchInTitle = obcache.Wrap(
+		s.obcache,
+		s.searchInTitleUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			if len(args) >= 2 {
+				if query, ok := args[1].(string); ok {
+					if limit, ok := args[2].(int); ok {
+						return fmt.Sprintf("title:%s:%d", query, limit)
+					}
+				}
+			}
+			return "title:default"
+		}),
+		obcache.WithTTL(5*time.Minute),
+	)
+
+	s.cachedFunctions.ProcessContent = obcache.Wrap(
+		s.obcache,
+		s.processContentUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			if len(args) > 0 {
+				if content, ok := args[0].(string); ok {
+					hash := sha256.Sum256([]byte(content))
+					return fmt.Sprintf("content:%x", hash[:8])
+				}
+			}
+			return "content:default"
+		}),
+		obcache.WithTTL(10*time.Minute),
+	)
+
+	s.cachedFunctions.GenerateSuggestions = obcache.Wrap(
+		s.obcache,
+		s.generateSuggestionsUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			if len(args) > 0 {
+				if query, ok := args[0].(string); ok {
+					return fmt.Sprintf("suggestions:%s", query)
+				}
+			}
+			return "suggestions:default"
+		}),
+		obcache.WithTTL(10*time.Minute),
+	)
+
+	s.cachedFunctions.CalculateScore = obcache.Wrap(
+		s.obcache,
+		s.calculateScoreUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			if len(args) >= 2 {
+				if article, ok := args[0].(*models.Article); ok {
+					if terms, ok := args[1].([]string); ok {
+						return fmt.Sprintf("score:%s:%s", article.Slug, strings.Join(terms, ","))
+					}
+				}
+			}
+			return "score:default"
+		}),
+		obcache.WithTTL(5*time.Minute),
+	)
+}
+
+// setupSearchMaintenance sets up background maintenance tasks using goflow
+func (s *SearchService) setupSearchMaintenance() {
+	if s.scheduler == nil {
+		return
+	}
+
+	// Cache warming task every 30 minutes
+	cacheWarmingTask := workerpool.TaskFunc(func(ctx context.Context) error {
+		if s.obcache != nil {
+			s.obcache.Cleanup()
+		}
+		return nil
+	})
+
+	// Schedule cache warming
+	_ = s.scheduler.ScheduleCron("search-cache-warming", "*/30 * * * *", cacheWarmingTask) // Continue without cache warming if scheduling fails
+
+	// Cache cleanup task every hour - use basic cleanup instead of Evict
+	cleanupTask := workerpool.TaskFunc(func(ctx context.Context) error {
+		if s.obcache != nil {
+			s.obcache.Cleanup() // Use Cleanup instead of Evict
+		}
+		return nil
+	})
+
+	// Schedule cleanup
+	_ = s.scheduler.ScheduleCron("search-cache-cleanup", "0 * * * *", cleanupTask) // Continue without scheduled cleanup if scheduling fails
 }
 
 // Search performs an optimized full-text search across articles with caching
@@ -59,76 +217,26 @@ func (s *SearchService) Search(articles []*models.Article, query string, limit i
 
 	query = strings.ToLower(strings.TrimSpace(query))
 
-	// Check cache first for exact query matches
-	if cachedResult := s.getCachedSearchResult(query, limit); cachedResult != nil {
-		return cachedResult
+	// Use cached search function if available
+	if s.cachedFunctions.SearchArticles != nil {
+		return s.cachedFunctions.SearchArticles(articles, query, limit)
 	}
 
-	searchTerms := s.tokenizeOptimized(query)
-
-	if len(searchTerms) == 0 {
-		return []*models.SearchResult{}
-	}
-
-	// Early termination: If we only need a few results, don't process all articles
-	maxResults := limit * 3
-	if maxResults <= 0 || maxResults > 100 {
-		maxResults = 100 // Cap at reasonable number for performance
-	}
-
-	// Pre-allocate results with exact needed capacity
-	results := make([]*models.SearchResult, 0, maxResults)
-
-	// Priority-based processing: process recent/featured articles first
-	articlesToProcess := s.prioritizeArticles(articles)
-
-	for _, article := range articlesToProcess {
-		// Early termination when we have enough good results
-		if len(results) >= maxResults {
-			break
-		}
-
-		score, matchedFields := s.calculateScoreOptimized(article, searchTerms)
-		if score > 0 {
-			results = append(results, &models.SearchResult{
-				Article:       article,
-				Score:         score,
-				MatchedFields: matchedFields,
-			})
-		}
-	}
-
-	// Sort by score (highest first) using optimized sorting
-	if len(results) > 1 {
-		if limit > 0 && len(results) > limit {
-			// Use partial sort for better performance
-			s.partialSort(results, limit)
-			results = results[:limit]
-		} else {
-			sort.Slice(results, func(i, j int) bool {
-				return results[i].Score > results[j].Score
-			})
-		}
-	}
-
-	// Cache the results for future queries
-	s.cacheSearchResult(query, results, 5*time.Minute)
-
-	return results
+	// Fallback to uncached version
+	return s.searchArticlesUncached(articles, query, limit)
 }
 
 // SearchPaginated performs a paginated search with caching support
 func (s *SearchService) SearchPaginated(articles []*models.Article, query string, page, pageSize int) (*models.SearchResultPage, error) {
 	if pageSize <= 0 {
-		pageSize = 10 // Default page size
+		pageSize = 10
 	}
 	if page <= 0 {
-		page = 1 // Default to first page
+		page = 1
 	}
 
 	// Get all search results (potentially from cache)
-	allResults := s.Search(articles, query, 0) // No limit to get all results
-
+	allResults := s.Search(articles, query, 0)
 	totalResults := len(allResults)
 
 	// Calculate pagination bounds
@@ -143,14 +251,13 @@ func (s *SearchService) SearchPaginated(articles []*models.Article, query string
 		pageResults = allResults[startIdx:endIdx]
 	}
 
-	// Create pagination info
 	pagination := models.NewPagination(page, totalResults, pageSize)
 
 	return &models.SearchResultPage{
 		Results:    pageResults,
 		Pagination: pagination,
 		Query:      query,
-		TotalTime:  0, // Will be set by caller if needed
+		TotalTime:  0,
 	}, nil
 }
 
@@ -161,38 +268,14 @@ func (s *SearchService) SearchInTitle(articles []*models.Article, query string, 
 	}
 
 	query = strings.ToLower(strings.TrimSpace(query))
-	var results []*models.SearchResult
 
-	for _, article := range articles {
-		title := strings.ToLower(article.Title)
-		if strings.Contains(title, query) {
-			// Calculate simple score based on position and exactness
-			score := 10.0
-			if strings.HasPrefix(title, query) {
-				score += 5.0
-			}
-			if title == query {
-				score += 10.0
-			}
-
-			results = append(results, &models.SearchResult{
-				Article:       article,
-				Score:         score,
-				MatchedFields: []string{"title"},
-			})
-		}
+	// Use cached function if available
+	if s.cachedFunctions.SearchInTitle != nil {
+		return s.cachedFunctions.SearchInTitle(articles, query, limit)
 	}
 
-	// Sort by score
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].Score > results[j].Score
-	})
-
-	if limit > 0 && len(results) > limit {
-		results = results[:limit]
-	}
-
-	return results
+	// Fallback to uncached version
+	return s.searchInTitleUncached(articles, query, limit)
 }
 
 // SearchByTag finds articles with specific tags
@@ -236,6 +319,152 @@ func (s *SearchService) GetSuggestions(articles []*models.Article, query string,
 	}
 
 	query = strings.ToLower(strings.TrimSpace(query))
+
+	// Use cached function if available
+	if s.cachedFunctions.GenerateSuggestions != nil {
+		suggestions := s.cachedFunctions.GenerateSuggestions(query, articles)
+		if limit > 0 && len(suggestions) > limit {
+			return suggestions[:limit]
+		}
+		return suggestions
+	}
+
+	// Fallback to uncached version
+	return s.generateSuggestionsUncached(query, articles)
+}
+
+// ClearCache clears all cached search data
+func (s *SearchService) ClearCache() {
+	if s.obcache != nil {
+		_ = s.obcache.Clear()
+	}
+}
+
+// GetCacheStats returns cache statistics
+func (s *SearchService) GetCacheStats() map[string]int {
+	if s.obcache == nil {
+		return map[string]int{}
+	}
+
+	stats := s.obcache.Stats()
+	return map[string]int{
+		"key_count": int(stats.KeyCount()),
+		"hits":      int(stats.Hits()),
+		"misses":    int(stats.Misses()),
+		"evictions": int(stats.Evictions()),
+		"hit_ratio": int(stats.HitRate() * 100),
+	}
+}
+
+// Shutdown gracefully shuts down the search service
+func (s *SearchService) Shutdown() {
+	if s.cancel != nil {
+		s.cancel()
+	}
+
+	if s.scheduler != nil {
+		s.scheduler.Stop()
+	}
+
+	if s.workerPool != nil {
+		<-s.workerPool.Shutdown()
+	}
+
+	if s.obcache != nil {
+		s.obcache.Close()
+	}
+}
+
+// =====================
+// Uncached Implementations
+// =====================
+
+// searchArticlesUncached performs the actual search without caching
+func (s *SearchService) searchArticlesUncached(articles []*models.Article, query string, limit int) []*models.SearchResult {
+	searchTerms := s.tokenize(query)
+	if len(searchTerms) == 0 {
+		return []*models.SearchResult{}
+	}
+
+	maxResults := limit * 3
+	if maxResults <= 0 || maxResults > 100 {
+		maxResults = 100
+	}
+
+	results := make([]*models.SearchResult, 0, maxResults)
+	articlesToProcess := s.prioritizeArticles(articles)
+
+	for _, article := range articlesToProcess {
+		if len(results) >= maxResults {
+			break
+		}
+
+		score, matchedFields := s.calculateScore(article, searchTerms)
+		if score > 0 {
+			results = append(results, &models.SearchResult{
+				Article:       article,
+				Score:         score,
+				MatchedFields: matchedFields,
+			})
+		}
+	}
+
+	// Sort by score
+	if len(results) > 1 {
+		if limit > 0 && len(results) > limit {
+			s.partialSort(results, limit)
+			results = results[:limit]
+		} else {
+			sort.Slice(results, func(i, j int) bool {
+				return results[i].Score > results[j].Score
+			})
+		}
+	}
+
+	return results
+}
+
+// searchInTitleUncached searches only in titles without caching
+func (s *SearchService) searchInTitleUncached(articles []*models.Article, query string, limit int) []*models.SearchResult {
+	var results []*models.SearchResult
+
+	for _, article := range articles {
+		title := strings.ToLower(article.Title)
+		if strings.Contains(title, query) {
+			score := 10.0
+			if strings.HasPrefix(title, query) {
+				score += 5.0
+			}
+			if title == query {
+				score += 10.0
+			}
+
+			results = append(results, &models.SearchResult{
+				Article:       article,
+				Score:         score,
+				MatchedFields: []string{"title"},
+			})
+		}
+	}
+
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Score > results[j].Score
+	})
+
+	if limit > 0 && len(results) > limit {
+		results = results[:limit]
+	}
+
+	return results
+}
+
+// processContentUncached processes content without caching
+func (s *SearchService) processContentUncached(content string) string {
+	return strings.ToLower(s.stripHTML(content))
+}
+
+// generateSuggestionsUncached generates suggestions without caching
+func (s *SearchService) generateSuggestionsUncached(query string, articles []*models.Article) []string {
 	suggestionSet := make(map[string]bool)
 	var suggestions []string
 
@@ -251,7 +480,7 @@ func (s *SearchService) GetSuggestions(articles []*models.Article, query string,
 		}
 	}
 
-	// Search in titles (extract meaningful words)
+	// Search in titles
 	for _, article := range articles {
 		title := strings.ToLower(article.Title)
 		if strings.Contains(title, query) {
@@ -267,446 +496,16 @@ func (s *SearchService) GetSuggestions(articles []*models.Article, query string,
 		}
 	}
 
-	// Sort suggestions alphabetically
 	sort.Strings(suggestions)
-
-	if limit > 0 && len(suggestions) > limit {
-		suggestions = suggestions[:limit]
-	}
-
 	return suggestions
 }
 
-// ClearCache clears all cached search data (for memory management)
-func (s *SearchService) ClearCache() {
-	s.cache.mu.Lock()
-	defer s.cache.mu.Unlock()
-
-	s.cache.processedContent = make(map[string]string)
-	s.cache.suggestions = make(map[string][]string)
-	s.cache.searchResults = make(map[string]*SearchResultEntry)
+// calculateScoreUncached calculates article score without caching
+func (s *SearchService) calculateScoreUncached(article *models.Article, searchTerms []string) (float64, []string) {
+	return s.calculateScore(article, searchTerms)
 }
 
-// getCachedSearchResult retrieves cached search results if available and not expired
-func (s *SearchService) getCachedSearchResult(query string, limit int) []*models.SearchResult {
-	cacheKey := s.buildCacheKey(query, limit)
-
-	s.cache.mu.RLock()
-	entry, exists := s.cache.searchResults[cacheKey]
-	s.cache.mu.RUnlock()
-
-	if !exists || entry == nil {
-		return nil
-	}
-
-	// Check if cache entry has expired
-	if time.Now().After(entry.ExpiresAt) {
-		// Remove expired entry
-		s.cache.mu.Lock()
-		delete(s.cache.searchResults, cacheKey)
-		s.cache.mu.Unlock()
-		return nil
-	}
-
-	// Return cached results
-	return entry.Results
-}
-
-// cacheSearchResult stores search results in cache with expiration
-func (s *SearchService) cacheSearchResult(query string, results []*models.SearchResult, ttl time.Duration) {
-	if len(results) == 0 || ttl <= 0 {
-		return // Don't cache empty results or with invalid TTL
-	}
-
-	cacheKey := s.buildCacheKey(query, len(results))
-	now := time.Now()
-
-	entry := &SearchResultEntry{
-		Results:   results,
-		Query:     query,
-		Timestamp: now,
-		ExpiresAt: now.Add(ttl),
-	}
-
-	s.cache.mu.Lock()
-	defer s.cache.mu.Unlock()
-
-	// Prevent unbounded cache growth
-	if len(s.cache.searchResults) > 100 {
-		s.cleanupExpiredSearchResults()
-	}
-
-	s.cache.searchResults[cacheKey] = entry
-}
-
-// buildCacheKey creates a consistent cache key for query and limit
-func (s *SearchService) buildCacheKey(query string, limit int) string {
-	builder := s.stringPool.Get()
-	defer s.stringPool.Put(builder)
-
-	builder.Reset()
-	builder.WriteString(query)
-	builder.WriteString(":")
-	builder.WriteString(fmt.Sprintf("%d", limit))
-
-	return builder.String()
-}
-
-// cleanupExpiredSearchResults removes expired search result cache entries
-func (s *SearchService) cleanupExpiredSearchResults() {
-	now := time.Now()
-	expiredKeys := make([]string, 0, 20) // Pre-allocate for common case
-
-	for key, entry := range s.cache.searchResults {
-		if entry == nil || now.After(entry.ExpiresAt) {
-			expiredKeys = append(expiredKeys, key)
-		}
-	}
-
-	// Remove expired entries
-	for _, key := range expiredKeys {
-		delete(s.cache.searchResults, key)
-	}
-
-	// If still too many entries, remove oldest ones
-	if len(s.cache.searchResults) > 50 {
-		type entryInfo struct {
-			key       string
-			timestamp time.Time
-		}
-
-		var entries []entryInfo
-		for key, entry := range s.cache.searchResults {
-			if entry != nil {
-				entries = append(entries, entryInfo{key, entry.Timestamp})
-			}
-		}
-
-		// Sort by timestamp to find oldest
-		sort.Slice(entries, func(i, j int) bool {
-			return entries[i].timestamp.Before(entries[j].timestamp)
-		})
-
-		// Remove oldest 30 entries
-		removeCount := len(entries) - 50
-		for i := 0; i < removeCount && i < len(entries); i++ {
-			delete(s.cache.searchResults, entries[i].key)
-		}
-	}
-}
-
-// GetCacheStats returns cache statistics
-func (s *SearchService) GetCacheStats() map[string]int {
-	s.cache.mu.RLock()
-	defer s.cache.mu.RUnlock()
-
-	return map[string]int{
-		"processed_content": len(s.cache.processedContent),
-		"suggestions":       len(s.cache.suggestions),
-		"search_results":    len(s.cache.searchResults),
-	}
-}
-
-// tokenizeOptimized provides faster tokenization with pooled slices
-func (s *SearchService) tokenizeOptimized(text string) []string {
-	text = strings.ToLower(text)
-
-	// Use string builder pool for efficient string operations
-	builder := s.stringPool.Get()
-	defer s.stringPool.Put(builder)
-
-	// Replace common punctuation with spaces efficiently
-	builder.Reset()
-	for _, char := range text {
-		switch char {
-		case ',', '.', '!', '?', ';', ':', '(', ')', '[', ']', '{', '}', '"', '\'', '-', '_':
-			builder.WriteRune(' ')
-		default:
-			builder.WriteRune(char)
-		}
-	}
-
-	// Split by whitespace and filter
-	words := strings.Fields(builder.String())
-
-	// Use pooled slice for tokens
-	tokens := s.slicePool.GetStringSlice()
-	defer s.slicePool.PutStringSlice(tokens)
-	*tokens = (*tokens)[:0] // Clear but keep capacity
-
-	for _, word := range words {
-		word = strings.TrimSpace(word)
-		// Skip very short words and common stop words
-		if len(word) > 2 && !s.isStopWord(word) {
-			*tokens = append(*tokens, word)
-		}
-	}
-
-	// Return a copy to avoid pool contamination
-	result := make([]string, len(*tokens))
-	copy(result, *tokens)
-	return result
-}
-
-// calculateScoreOptimized provides faster scoring with caching and early exits
-func (s *SearchService) calculateScoreOptimized(article *models.Article, searchTerms []string) (float64, []string) {
-	var score float64
-	var matchedFields []string
-	matchedFieldsMap := make(map[string]bool, 6) // Pre-size for performance
-
-	// Pre-computed lowercase versions (done lazily)
-	var title, description, excerpt, content string
-	titleComputed := false
-
-	for _, term := range searchTerms {
-		termScore := 0.0
-
-		// Title matching (highest weight) - compute only once
-		if !titleComputed {
-			title = strings.ToLower(article.Title)
-			titleComputed = true
-		}
-		if titleScore := s.scoreTitleMatch(title, term); titleScore > 0 {
-			termScore += titleScore
-			if !matchedFieldsMap["title"] {
-				matchedFields = append(matchedFields, "title")
-				matchedFieldsMap["title"] = true
-			}
-		}
-
-		// Tags matching - early exit optimization (check before heavy operations)
-		if tagScore := s.scoreTagsMatch(article.Tags, term); tagScore > 0 {
-			termScore += tagScore
-			if !matchedFieldsMap["tags"] {
-				matchedFields = append(matchedFields, "tags")
-				matchedFieldsMap["tags"] = true
-			}
-		}
-
-		// Categories matching - early exit optimization
-		if catScore := s.scoreCategoriesMatch(article.Categories, term); catScore > 0 {
-			termScore += catScore
-			if !matchedFieldsMap["categories"] {
-				matchedFields = append(matchedFields, "categories")
-				matchedFieldsMap["categories"] = true
-			}
-		}
-
-		// Description matching (compute only if needed)
-		if termScore < 20.0 && article.Description != "" {
-			if description == "" {
-				description = strings.ToLower(article.Description)
-			}
-			if strings.Contains(description, term) {
-				termScore += 12.0
-				if !matchedFieldsMap["description"] {
-					matchedFields = append(matchedFields, "description")
-					matchedFieldsMap["description"] = true
-				}
-			}
-		}
-
-		// Excerpt matching (compute only if needed)
-		if termScore < 20.0 {
-			if excerpt == "" {
-				excerpt = strings.ToLower(article.GetExcerpt())
-			}
-			if strings.Contains(excerpt, term) {
-				termScore += 5.0
-				if !matchedFieldsMap["excerpt"] {
-					matchedFields = append(matchedFields, "excerpt")
-					matchedFieldsMap["excerpt"] = true
-				}
-			}
-		}
-
-		// Content matching (lowest weight) - only if we really need more matches
-		if termScore < 10.0 {
-			if content == "" {
-				content = s.getProcessedContent(article)
-			}
-			if strings.Contains(content, term) {
-				// Count occurrences efficiently with limit
-				occurrences := min(strings.Count(content, term), 10)
-				termScore += float64(occurrences) * 0.5 // Cap content score
-				if !matchedFieldsMap["content"] {
-					matchedFields = append(matchedFields, "content")
-					matchedFieldsMap["content"] = true
-				}
-			}
-		}
-
-		score += termScore
-
-		// Early exit if we have a very high score already
-		if score > 100.0 {
-			break
-		}
-	}
-
-	// Only do phrase matching if we have multiple terms and reasonable score
-	if len(searchTerms) > 1 && score > 5.0 {
-		fullQuery := strings.Join(searchTerms, " ")
-		if strings.Contains(title, fullQuery) {
-			score += 10.0
-		} else if excerpt != "" && strings.Contains(excerpt, fullQuery) {
-			score += 5.0
-		}
-	}
-
-	// Apply multipliers
-	if article.Featured {
-		score *= 1.2
-	}
-	if s.isRecent(article) {
-		score *= 1.1
-	}
-
-	return score, matchedFields
-}
-
-// getProcessedContent gets cached processed content or processes and caches it
-func (s *SearchService) getProcessedContent(article *models.Article) string {
-	s.cache.mu.RLock()
-	if content, exists := s.cache.processedContent[article.Slug]; exists {
-		s.cache.mu.RUnlock()
-		return content
-	}
-	s.cache.mu.RUnlock()
-
-	// Process content
-	content := strings.ToLower(s.stripHTMLOptimized(article.GetProcessedContent()))
-
-	// Cache the processed content with bounds checking
-	s.cache.mu.Lock()
-	// Prevent unbounded cache growth during benchmarks
-	if len(s.cache.processedContent) > 1000 {
-		// Clear half the cache to prevent memory leaks
-		for slug := range s.cache.processedContent {
-			delete(s.cache.processedContent, slug)
-			if len(s.cache.processedContent) <= 500 {
-				break
-			}
-		}
-	}
-	s.cache.processedContent[article.Slug] = content
-	s.cache.mu.Unlock()
-
-	return content
-}
-
-// scoreTitleMatch provides optimized title scoring
-func (s *SearchService) scoreTitleMatch(title, term string) float64 {
-	if !strings.Contains(title, term) {
-		return 0
-	}
-
-	if title == term {
-		return 30.0 // Exact title match
-	} else if strings.HasPrefix(title, term) {
-		return 20.0 // Title starts with term
-	} else {
-		return 15.0 // Title contains term
-	}
-}
-
-// scoreTagsMatch provides optimized tag scoring with early exit
-func (s *SearchService) scoreTagsMatch(tags []string, term string) float64 {
-	for _, tag := range tags {
-		if strings.Contains(strings.ToLower(tag), term) {
-			return 10.0
-		}
-	}
-	return 0
-}
-
-// scoreCategoriesMatch provides optimized category scoring with early exit
-func (s *SearchService) scoreCategoriesMatch(categories []string, term string) float64 {
-	for _, category := range categories {
-		if strings.Contains(strings.ToLower(category), term) {
-			return 8.0
-		}
-	}
-	return 0
-}
-
-// stripHTMLOptimized provides faster HTML stripping with string builder
-func (s *SearchService) stripHTMLOptimized(html string) string {
-	if html == "" {
-		return ""
-	}
-
-	builder := s.stringPool.Get()
-	defer s.stringPool.Put(builder)
-	builder.Reset()
-
-	inTag := false
-	for _, char := range html {
-		switch char {
-		case '<':
-			inTag = true
-		case '>':
-			inTag = false
-		default:
-			if !inTag {
-				builder.WriteRune(char)
-			}
-		}
-	}
-
-	return builder.String()
-}
-
-// partialSort performs a partial sort to get top K elements efficiently
-func (s *SearchService) partialSort(results []*models.SearchResult, k int) {
-	if k >= len(results) {
-		sort.Slice(results, func(i, j int) bool {
-			return results[i].Score > results[j].Score
-		})
-		return
-	}
-
-	// Use a heap-based approach for better performance with large datasets
-	for i := 0; i < k; i++ {
-		maxIdx := i
-		for j := i + 1; j < len(results); j++ {
-			if results[j].Score > results[maxIdx].Score {
-				maxIdx = j
-			}
-		}
-		if maxIdx != i {
-			results[i], results[maxIdx] = results[maxIdx], results[i]
-		}
-	}
-}
-
-// prioritizeArticles sorts articles to process high-priority ones first
-func (s *SearchService) prioritizeArticles(articles []*models.Article) []*models.Article {
-	if len(articles) <= 100 {
-		// For small datasets, return as-is to avoid sorting overhead
-		return articles
-	}
-
-	// Create a copy to avoid modifying the original slice
-	prioritized := make([]*models.Article, len(articles))
-	copy(prioritized, articles)
-
-	// Sort by priority: featured and recent articles first
-	sort.Slice(prioritized, func(i, j int) bool {
-		a, b := prioritized[i], prioritized[j]
-
-		// Featured articles get highest priority
-		if a.Featured != b.Featured {
-			return a.Featured
-		}
-
-		// Then by recency
-		return a.Date.After(b.Date)
-	})
-
-	return prioritized
-}
-
+// calculateScore provides scoring logic
 func (s *SearchService) calculateScore(article *models.Article, searchTerms []string) (float64, []string) {
 	var score float64
 	var matchedFields []string
@@ -715,19 +514,25 @@ func (s *SearchService) calculateScore(article *models.Article, searchTerms []st
 	title := strings.ToLower(article.Title)
 	description := strings.ToLower(article.Description)
 	excerpt := strings.ToLower(article.GetExcerpt())
-	content := strings.ToLower(s.stripHTML(article.GetProcessedContent()))
+
+	var content string
+	if s.cachedFunctions.ProcessContent != nil {
+		content = s.cachedFunctions.ProcessContent(article.GetProcessedContent())
+	} else {
+		content = s.processContentUncached(article.GetProcessedContent())
+	}
 
 	for _, term := range searchTerms {
 		termScore := 0.0
 
 		// Title matching (highest weight)
 		if strings.Contains(title, term) {
-			if strings.HasPrefix(title, term) {
-				termScore += 20.0 // Title starts with term
-			} else if title == term {
-				termScore += 30.0 // Exact title match
+			if title == term {
+				termScore += 30.0
+			} else if strings.HasPrefix(title, term) {
+				termScore += 20.0
 			} else {
-				termScore += 15.0 // Title contains term
+				termScore += 15.0
 			}
 			if !matchedFieldsMap["title"] {
 				matchedFields = append(matchedFields, "title")
@@ -779,8 +584,7 @@ func (s *SearchService) calculateScore(article *models.Article, searchTerms []st
 
 		// Content matching (lowest weight)
 		if strings.Contains(content, term) {
-			// Count occurrences in content
-			occurrences := strings.Count(content, term)
+			occurrences := min(strings.Count(content, term), 10)
 			termScore += float64(occurrences) * 0.5
 			if !matchedFieldsMap["content"] {
 				matchedFields = append(matchedFields, "content")
@@ -791,21 +595,22 @@ func (s *SearchService) calculateScore(article *models.Article, searchTerms []st
 		score += termScore
 	}
 
-	// Boost score for exact phrase matches
-	fullQuery := strings.Join(searchTerms, " ")
-	if strings.Contains(title, fullQuery) {
-		score += 10.0
-	}
-	if strings.Contains(excerpt, fullQuery) {
-		score += 5.0
+	// Boost for phrase matches
+	if len(searchTerms) > 1 {
+		fullQuery := strings.Join(searchTerms, " ")
+		if strings.Contains(title, fullQuery) {
+			score += 10.0
+		} else if strings.Contains(excerpt, fullQuery) {
+			score += 5.0
+		}
 	}
 
-	// Boost score for featured articles
+	// Boost for featured articles
 	if article.Featured {
 		score *= 1.2
 	}
 
-	// Boost score for recent articles
+	// Boost for recent articles
 	if s.isRecent(article) {
 		score *= 1.1
 	}
@@ -813,14 +618,105 @@ func (s *SearchService) calculateScore(article *models.Article, searchTerms []st
 	return score, matchedFields
 }
 
+// =====================
+// Helper Methods
+// =====================
+
 func (s *SearchService) tokenize(text string) []string {
-	// Delegate to optimized version for backward compatibility
-	return s.tokenizeOptimized(text)
+	text = strings.ToLower(text)
+
+	builder := s.stringPool.Get()
+	defer s.stringPool.Put(builder)
+
+	builder.Reset()
+	for _, char := range text {
+		switch char {
+		case ',', '.', '!', '?', ';', ':', '(', ')', '[', ']', '{', '}', '"', '\'', '-', '_':
+			builder.WriteRune(' ')
+		default:
+			builder.WriteRune(char)
+		}
+	}
+
+	words := strings.Fields(builder.String())
+	tokens := make([]string, 0, len(words))
+
+	for _, word := range words {
+		word = strings.TrimSpace(word)
+		if len(word) > 2 && !s.isStopWord(word) {
+			tokens = append(tokens, word)
+		}
+	}
+
+	return tokens
 }
 
 func (s *SearchService) stripHTML(html string) string {
-	// Delegate to optimized version for backward compatibility
-	return s.stripHTMLOptimized(html)
+	if html == "" {
+		return ""
+	}
+
+	builder := s.stringPool.Get()
+	defer s.stringPool.Put(builder)
+	builder.Reset()
+
+	inTag := false
+	for _, char := range html {
+		switch char {
+		case '<':
+			inTag = true
+		case '>':
+			inTag = false
+		default:
+			if !inTag {
+				builder.WriteRune(char)
+			}
+		}
+	}
+
+	return builder.String()
+}
+
+func (s *SearchService) partialSort(results []*models.SearchResult, k int) {
+	if k >= len(results) {
+		sort.Slice(results, func(i, j int) bool {
+			return results[i].Score > results[j].Score
+		})
+		return
+	}
+
+	for i := 0; i < k; i++ {
+		maxIdx := i
+		for j := i + 1; j < len(results); j++ {
+			if results[j].Score > results[maxIdx].Score {
+				maxIdx = j
+			}
+		}
+		if maxIdx != i {
+			results[i], results[maxIdx] = results[maxIdx], results[i]
+		}
+	}
+}
+
+func (s *SearchService) prioritizeArticles(articles []*models.Article) []*models.Article {
+	if len(articles) <= 100 {
+		return articles
+	}
+
+	prioritized := make([]*models.Article, len(articles))
+	copy(prioritized, articles)
+
+	sort.Slice(prioritized, func(i, j int) bool {
+		a, b := prioritized[i], prioritized[j]
+
+		if a.Featured != b.Featured {
+			return a.Featured
+		}
+
+		return a.Date.After(b.Date)
+	})
+
+	return prioritized
 }
 
 func (s *SearchService) isStopWord(word string) bool {
@@ -849,7 +745,6 @@ func (s *SearchService) isStopWord(word string) bool {
 }
 
 func (s *SearchService) isRecent(article *models.Article) bool {
-	// Consider articles from the last 30 days as recent
 	thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
 	return article.Date.After(thirtyDaysAgo)
 }

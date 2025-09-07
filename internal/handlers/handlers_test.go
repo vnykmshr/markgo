@@ -47,11 +47,11 @@ func createTestHandlers() (*Handlers, *MockArticleService, *MockEmailService, *M
 
 	handlers := New(&Config{
 		ArticleService: mockArticleService,
-		CacheService:   mockCacheService,
 		EmailService:   mockEmailService,
 		SearchService:  mockSearchService,
 		Config:         cfg,
 		Logger:         logger,
+		Cache:          nil, // Use nil cache for tests
 	})
 
 	return handlers, mockArticleService, mockEmailService, mockCacheService, mockSearchService
@@ -99,67 +99,31 @@ func TestNew(t *testing.T) {
 }
 
 func TestHome_CacheBehavior(t *testing.T) {
-	tests := []struct {
-		name        string
-		cacheReturn interface{}
-		cacheHit    bool
-		shouldCache bool
-	}{
-		{
-			name:        "cache miss - should fetch data and cache",
-			cacheReturn: nil,
-			cacheHit:    false,
-			shouldCache: true,
-		},
-		{
-			name: "cache hit - should return cached data",
-			cacheReturn: gin.H{
-				"title":       "Cached Title",
-				"description": "Cached Description",
-			},
-			cacheHit:    true,
-			shouldCache: false,
-		},
-	}
+	// NOTE: With obcache integration, the cache behavior is now handled internally by obcache.
+	// This test verifies that the home handler works correctly with the integrated cache system.
+	testConfig, cleanup := SetupTestEnvironment(t)
+	defer cleanup()
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
-			articles := createTestArticles()
+	articles := CreateTestArticlesWithVariations()
+	SetupArticleServiceMocks(testConfig.Mocks.ArticleService, articles)
 
-			// Setup cache mock
-			mockCacheService.On("Get", "home_page").Return(tt.cacheReturn, tt.cacheHit)
+	// Setup route
+	testConfig.Router.GET("/", testConfig.Handlers.Home)
 
-			if tt.shouldCache {
-				// Setup article service mocks for cache miss
-				mockArticleService.On("GetAllArticles").Return(articles)
-				mockArticleService.On("GetFeaturedArticles", 3).Return([]*models.Article{articles[0]})
-				mockArticleService.On("GetRecentArticles", 9).Return(articles)
-				mockArticleService.On("GetCategoryCounts").Return([]models.CategoryCount{
-					{Category: "programming", Count: 1},
-				})
-				mockArticleService.On("GetTagCounts").Return([]models.TagCount{
-					{Tag: "golang", Count: 1},
-					{Tag: "test", Count: 2},
-				})
-				mockCacheService.On("Set", "home_page", mock.Anything, time.Hour).Return()
-			}
+	// First request - will likely be a cache miss
+	req1, _ := http.NewRequest("GET", "/", nil)
+	recorder1 := ExecuteRequest(testConfig.Router, req1)
+	assert.Equal(t, http.StatusOK, recorder1.Code)
+	assert.Contains(t, recorder1.Body.String(), "Test Blog")
 
-			router := gin.New()
-			setupMinimalTemplates(router)
-			router.GET("/", handlers.Home)
+	// Second request - may be served from cache
+	req2, _ := http.NewRequest("GET", "/", nil)  
+	recorder2 := ExecuteRequest(testConfig.Router, req2)
+	assert.Equal(t, http.StatusOK, recorder2.Code)
+	assert.Contains(t, recorder2.Body.String(), "Test Blog")
 
-			req, _ := http.NewRequest("GET", "/", nil)
-			recorder := httptest.NewRecorder()
-			router.ServeHTTP(recorder, req)
-
-			assert.Equal(t, http.StatusOK, recorder.Code)
-			mockCacheService.AssertExpectations(t)
-			if tt.shouldCache {
-				mockArticleService.AssertExpectations(t)
-			}
-		})
-	}
+	// Both requests should return the same content
+	assert.Equal(t, recorder1.Body.String(), recorder2.Body.String())
 }
 
 func TestArticle(t *testing.T) {

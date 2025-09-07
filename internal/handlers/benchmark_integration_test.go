@@ -437,11 +437,11 @@ func createBenchmarkHandlers(articleCount int) (*Handlers, *MockArticleService, 
 
 	handlers := New(&Config{
 		ArticleService: mockArticleService,
-		CacheService:   mockCacheService,
 		EmailService:   mockEmailService,
 		SearchService:  mockSearchService,
 		Config:         cfg,
 		Logger:         logger,
+		Cache:          nil, // Use nil cache for benchmarks
 	})
 
 	return handlers, mockArticleService, mockEmailService, mockCacheService, mockSearchService

@@ -15,6 +15,7 @@ import (
 	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/middleware"
 	"github.com/vnykmshr/markgo/internal/models"
+	"github.com/vnykmshr/obcache-go/pkg/obcache"
 )
 
 // mockProcessor implements ArticleProcessor for testing
@@ -39,7 +40,6 @@ func (m *mockProcessor) ProcessDuplicateTitles(title, htmlContent string) string
 type TestHandlerMocks struct {
 	ArticleService *MockArticleService
 	EmailService   *MockEmailService
-	CacheService   *MockCacheService
 	SearchService  *MockSearchService
 }
 
@@ -58,7 +58,6 @@ func SetupTestEnvironment(t *testing.T) (*TestConfig, func()) {
 	mocks := &TestHandlerMocks{
 		ArticleService: &MockArticleService{},
 		EmailService:   &MockEmailService{},
-		CacheService:   &MockCacheService{},
 		SearchService:  &MockSearchService{},
 	}
 
@@ -78,14 +77,20 @@ func SetupTestEnvironment(t *testing.T) (*TestConfig, func()) {
 	// Create logger that doesn't output during tests
 	logger := slog.New(slog.NewTextHandler(bytes.NewBuffer(nil), nil))
 
+	// Create test cache
+	cacheConfig := obcache.NewDefaultConfig()
+	cacheConfig.MaxEntries = 100
+	cacheConfig.DefaultTTL = time.Hour
+	testCache, _ := obcache.New(cacheConfig)
+
 	// Create handlers
 	handlers := New(&Config{
 		ArticleService: mocks.ArticleService,
-		CacheService:   mocks.CacheService,
 		EmailService:   mocks.EmailService,
 		SearchService:  mocks.SearchService,
 		Config:         cfg,
 		Logger:         logger,
+		Cache:          testCache,
 	})
 
 	// Create router with minimal templates and error handling
@@ -106,7 +111,6 @@ func SetupTestEnvironment(t *testing.T) (*TestConfig, func()) {
 		// Reset all mocks
 		mocks.ArticleService.AssertExpectations(t)
 		mocks.EmailService.AssertExpectations(t)
-		mocks.CacheService.AssertExpectations(t)
 		mocks.SearchService.AssertExpectations(t)
 	}
 
@@ -116,8 +120,6 @@ func SetupTestEnvironment(t *testing.T) (*TestConfig, func()) {
 // SetupDefaultMocks sets up common mock expectations
 func SetupDefaultMocks(mocks *TestHandlerMocks) {
 	// Common expectations that many tests use
-	mocks.CacheService.On("Get", mock.Anything).Return(nil, false).Maybe()
-	mocks.CacheService.On("Set", mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 	mocks.ArticleService.On("GetRecentArticles", mock.Anything).Return([]*models.Article{}).Maybe()
 }
 
@@ -254,15 +256,10 @@ func ExecuteRequest(router *gin.Engine, req *http.Request) *httptest.ResponseRec
 	return recorder
 }
 
-// SetupCacheMocks sets up cache mock expectations for hit/miss scenarios
-func SetupCacheMocks(mockCache *MockCacheService, key string, hit bool, data interface{}) {
-	if hit {
-		mockCache.On("Get", key).Return(data, true)
-	} else {
-		mockCache.On("Get", key).Return(nil, false)
-		mockCache.On("Set", key, mock.Anything, mock.Anything).Return()
-	}
-}
+// SetupCacheMocks is deprecated - obcache is used directly
+// func SetupCacheMocks(mockCache *MockCacheService, key string, hit bool, data interface{}) {
+// 	// No longer needed as obcache is used directly in handlers
+// }
 
 // SetupArticleServiceMocks sets up common article service mock expectations
 func SetupArticleServiceMocks(mockArticle *MockArticleService, articles []*models.Article) {

@@ -2,6 +2,8 @@ package services
 
 import (
 	"bytes"
+	"context"
+	"crypto/sha256"
 	"fmt"
 	"html"
 	"html/template"
@@ -16,9 +18,12 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/vnykmshr/goflow/pkg/scheduling/scheduler"
+	"github.com/vnykmshr/goflow/pkg/scheduling/workerpool"
 	"github.com/vnykmshr/markgo/internal/config"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/utils"
+	"github.com/vnykmshr/obcache-go/pkg/obcache"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"golang.org/x/text/unicode/norm"
@@ -29,18 +34,60 @@ var (
 	titleCaser    = cases.Title(language.English)
 )
 
+// CachedTemplateFunctions holds obcache-wrapped template operations
+type CachedTemplateFunctions struct {
+	RenderToString func(string, any) (string, error)
+	ParseTemplate  func(string, string) (*template.Template, error)
+}
+
 type TemplateService struct {
 	templates *template.Template
 	config    *config.Config
+
+	// obcache integration
+	obcache         *obcache.Cache
+	cachedFunctions CachedTemplateFunctions
+
+	// goflow integration
+	scheduler scheduler.Scheduler
+	ctx       context.Context
+	cancel    context.CancelFunc
 }
 
 func NewTemplateService(templatesPath string, cfg *config.Config) (*TemplateService, error) {
-	service := &TemplateService{
-		config: cfg,
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Initialize obcache for template operations
+	cacheConfig := obcache.NewDefaultConfig()
+	cacheConfig.MaxEntries = 500              // Templates are smaller, fewer entries needed
+	cacheConfig.DefaultTTL = 30 * time.Minute // Templates change less frequently
+
+	obcacheInstance, err := obcache.New(cacheConfig)
+	if err != nil {
+		cancel()
+		// Continue without cache if it fails
 	}
 
+	// Initialize goflow scheduler for template maintenance
+	goflowScheduler := scheduler.New()
+	_ = goflowScheduler.Start() // Continue even if scheduler fails to start
+
+	service := &TemplateService{
+		config:    cfg,
+		obcache:   obcacheInstance,
+		scheduler: goflowScheduler,
+		ctx:       ctx,
+		cancel:    cancel,
+	}
+
+	// Initialize cached functions
+	service.initializeCachedFunctions()
+
+	// Setup background maintenance
+	service.setupTemplateMaintenance()
+
 	if err := service.loadTemplates(templatesPath); err != nil {
-		return nil, err // loadTemplates should return appropriate error types
+		return nil, err
 	}
 
 	return service, nil
@@ -75,10 +122,13 @@ func (t *TemplateService) Render(w io.Writer, templateName string, data any) err
 }
 
 func (t *TemplateService) RenderToString(templateName string, data any) (string, error) {
-	// Use pooled buffer for template rendering
-	return utils.GetGlobalBufferPool().RenderToString(func(buf *bytes.Buffer) error {
-		return t.Render(buf, templateName, data)
-	})
+	// Use cached function if available
+	if t.cachedFunctions.RenderToString != nil {
+		return t.cachedFunctions.RenderToString(templateName, data)
+	}
+
+	// Fallback to uncached version
+	return t.renderToStringUncached(templateName, data)
 }
 
 func (t *TemplateService) HasTemplate(templateName string) bool {
@@ -103,12 +153,96 @@ func (t *TemplateService) ListTemplates() []string {
 }
 
 func (t *TemplateService) Reload(templatesPath string) error {
+	// Clear cache before reloading
+	if t.obcache != nil {
+		_ = t.obcache.Clear()
+	}
 	return t.loadTemplates(templatesPath)
 }
 
 // GetTemplate returns the internal template for Gin integration
 func (t *TemplateService) GetTemplate() *template.Template {
 	return t.templates
+}
+
+// initializeCachedFunctions initializes obcache-wrapped template functions
+func (t *TemplateService) initializeCachedFunctions() {
+	if t.obcache == nil {
+		return
+	}
+
+	// Wrap template rendering with obcache
+	t.cachedFunctions.RenderToString = obcache.Wrap(
+		t.obcache,
+		t.renderToStringUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			if len(args) >= 2 {
+				if templateName, ok := args[0].(string); ok {
+					// Create hash of data for cache key
+					hash := sha256.Sum256([]byte(fmt.Sprintf("%v", args[1])))
+					dataHash := fmt.Sprintf("%x", hash[:8])
+					return fmt.Sprintf("render:%s:%s", templateName, dataHash)
+				}
+			}
+			return "render:default"
+		}),
+		obcache.WithTTL(15*time.Minute),
+	)
+}
+
+// setupTemplateMaintenance sets up background maintenance using goflow
+func (t *TemplateService) setupTemplateMaintenance() {
+	if t.scheduler == nil {
+		return
+	}
+
+	// Template cache cleanup every hour
+	cleanupTask := workerpool.TaskFunc(func(ctx context.Context) error {
+		if t.obcache != nil {
+			t.obcache.Cleanup()
+		}
+		return nil
+	})
+
+	// Schedule cleanup using proper cron format (6 fields: second, minute, hour, day, month, weekday)
+	_ = t.scheduler.ScheduleCron("template-cache-cleanup", "0 0 * * * *", cleanupTask) // Continue without scheduled cleanup if scheduling fails
+}
+
+// renderToStringUncached renders template without caching
+func (t *TemplateService) renderToStringUncached(templateName string, data any) (string, error) {
+	return utils.GetGlobalBufferPool().RenderToString(func(buf *bytes.Buffer) error {
+		return t.Render(buf, templateName, data)
+	})
+}
+
+// GetCacheStats returns template cache statistics
+func (t *TemplateService) GetCacheStats() map[string]int {
+	if t.obcache == nil {
+		return map[string]int{}
+	}
+
+	stats := t.obcache.Stats()
+	return map[string]int{
+		"templates_cached": int(stats.KeyCount()),
+		"cache_hits":       int(stats.Hits()),
+		"cache_misses":     int(stats.Misses()),
+		"hit_ratio":        int(stats.HitRate() * 100),
+	}
+}
+
+// Shutdown gracefully shuts down the template service
+func (t *TemplateService) Shutdown() {
+	if t.cancel != nil {
+		t.cancel()
+	}
+
+	if t.scheduler != nil {
+		t.scheduler.Stop()
+	}
+
+	if t.obcache != nil {
+		t.obcache.Close()
+	}
 }
 
 // GetFuncMap returns the template function map for reuse in other services

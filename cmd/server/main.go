@@ -19,6 +19,7 @@ import (
 	"github.com/vnykmshr/markgo/internal/handlers"
 	"github.com/vnykmshr/markgo/internal/middleware"
 	"github.com/vnykmshr/markgo/internal/services"
+	"github.com/vnykmshr/obcache-go/pkg/obcache"
 )
 
 func main() {
@@ -68,7 +69,17 @@ func main() {
 		)
 	}
 
-	cacheService := services.NewCacheService(cfg.Cache.TTL, cfg.Cache.MaxSize)
+	// Initialize obcache for handlers
+	cacheConfig := obcache.NewDefaultConfig()
+	cacheConfig.MaxEntries = cfg.Cache.MaxSize
+	cacheConfig.DefaultTTL = cfg.Cache.TTL
+	cache, err := obcache.New(cacheConfig)
+	if err != nil {
+		apperrors.HandleCLIError(
+			apperrors.NewCLIError("cache initialization", "Failed to initialize cache", err, 1),
+			cleanup,
+		)
+	}
 	emailService := services.NewEmailService(cfg.Email, logger)
 	searchService := services.NewSearchService()
 
@@ -120,12 +131,12 @@ func main() {
 	// Initialize handlers
 	h := handlers.New(&handlers.Config{
 		ArticleService:  articleService,
-		CacheService:    cacheService,
 		EmailService:    emailService,
 		SearchService:   searchService,
 		TemplateService: templateService,
 		Config:          cfg,
 		Logger:          logger,
+		Cache:           cache,
 	})
 
 	// Setup routes

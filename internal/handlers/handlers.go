@@ -20,86 +20,260 @@ import (
 	"github.com/vnykmshr/markgo/internal/models"
 	"github.com/vnykmshr/markgo/internal/services"
 	"github.com/vnykmshr/markgo/internal/utils"
+	"github.com/vnykmshr/obcache-go/pkg/obcache"
 )
+
+// CachedHandlerFunctions holds obcache-wrapped handler operations
+type CachedHandlerFunctions struct {
+	GetHomeData         func() (map[string]any, error)
+	GetArticleData      func(string) (map[string]any, error)
+	GetTagArticles      func(string) (map[string]any, error)
+	GetCategoryArticles func(string) (map[string]any, error)
+	GetSearchResults    func(string) (map[string]any, error)
+	GetArchiveData      func(string, string) (map[string]any, error)
+	GetStatsData        func() (map[string]any, error)
+	GetRSSFeed          func() (string, error)
+	GetJSONFeed         func() (string, error)
+	GetSitemap          func() (string, error)
+}
 
 // Handlers contains all HTTP handlers
 type Handlers struct {
 	articleService  services.ArticleServiceInterface
-	cacheService    services.CacheServiceInterface
 	emailService    services.EmailServiceInterface
 	searchService   services.SearchServiceInterface
 	templateService services.TemplateServiceInterface
 	config          *config.Config
 	logger          *slog.Logger
-	startTime       time.Time // Track server start time for uptime calculation
+	startTime       time.Time
+
+	// obcache integration
+	cache           *obcache.Cache
+	cachedFunctions CachedHandlerFunctions
+
+	// Temporary: cache adapter for smooth migration
+	cacheService *ObcacheAdapter
 }
 
 // Config for handler initialization
 type Config struct {
 	ArticleService  services.ArticleServiceInterface
-	CacheService    services.CacheServiceInterface
 	EmailService    services.EmailServiceInterface
 	SearchService   services.SearchServiceInterface
 	TemplateService services.TemplateServiceInterface
 	Config          *config.Config
 	Logger          *slog.Logger
+	Cache           *obcache.Cache // Direct obcache usage
+}
+
+// ObcacheAdapter provides CacheService-compatible interface using obcache
+type ObcacheAdapter struct {
+	cache *obcache.Cache
+}
+
+func (a *ObcacheAdapter) Get(key string) (any, bool) {
+	if a.cache == nil {
+		return nil, false
+	}
+	return a.cache.Get(key)
+}
+
+func (a *ObcacheAdapter) Set(key string, value any, ttl time.Duration) {
+	if a.cache == nil {
+		return
+	}
+	// Use the provided TTL
+	_ = a.cache.Set(key, value, ttl)
+}
+
+func (a *ObcacheAdapter) Delete(key string) {
+	if a.cache == nil {
+		return
+	}
+	_ = a.cache.Delete(key)
+}
+
+func (a *ObcacheAdapter) Clear() {
+	if a.cache == nil {
+		return
+	}
+	_ = a.cache.Clear()
+}
+
+func (a *ObcacheAdapter) Size() int {
+	if a.cache == nil {
+		return 0
+	}
+	stats := a.cache.Stats()
+	return int(stats.KeyCount())
+}
+
+func (a *ObcacheAdapter) Stats() map[string]any {
+	if a.cache == nil {
+		return map[string]any{}
+	}
+	stats := a.cache.Stats()
+	return map[string]any{
+		"hit_count":  int(stats.Hits()),
+		"miss_count": int(stats.Misses()),
+		"hit_ratio":  stats.HitRate() * 100,
+		"total_keys": int(stats.KeyCount()),
+	}
 }
 
 // New creates a new handlers instance
 func New(cfg *Config) *Handlers {
-	return &Handlers{
+	h := &Handlers{
 		articleService:  cfg.ArticleService,
-		cacheService:    cfg.CacheService,
 		emailService:    cfg.EmailService,
 		searchService:   cfg.SearchService,
 		templateService: cfg.TemplateService,
 		config:          cfg.Config,
 		logger:          cfg.Logger,
 		startTime:       time.Now(),
+		cache:           cfg.Cache,
+		cacheService:    &ObcacheAdapter{cache: cfg.Cache},
 	}
+
+	// Initialize cached functions if cache is available
+	if h.cache != nil {
+		h.initializeCachedFunctions()
+	}
+
+	return h
+}
+
+// initializeCachedFunctions initializes obcache-wrapped handler functions
+func (h *Handlers) initializeCachedFunctions() {
+	// Wrap home page data generation
+	h.cachedFunctions.GetHomeData = obcache.Wrap(
+		h.cache,
+		h.getHomeDataUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			return "home_page"
+		}),
+		obcache.WithTTL(h.config.Cache.TTL),
+	)
+
+	// Wrap article page data generation
+	h.cachedFunctions.GetArticleData = obcache.Wrap(
+		h.cache,
+		h.getArticleDataUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			if len(args) > 0 {
+				if slug, ok := args[0].(string); ok {
+					return "article_" + slug
+				}
+			}
+			return "article_default"
+		}),
+		obcache.WithTTL(h.config.Cache.TTL),
+	)
+
+	// Wrap tag articles data generation
+	h.cachedFunctions.GetTagArticles = obcache.Wrap(
+		h.cache,
+		h.getTagArticlesUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			if len(args) > 0 {
+				if tag, ok := args[0].(string); ok {
+					return "articles_tag_" + tag
+				}
+			}
+			return "articles_tag_default"
+		}),
+		obcache.WithTTL(h.config.Cache.TTL),
+	)
+
+	// Wrap category articles data generation
+	h.cachedFunctions.GetCategoryArticles = obcache.Wrap(
+		h.cache,
+		h.getCategoryArticlesUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			if len(args) > 0 {
+				if category, ok := args[0].(string); ok {
+					return "articles_category_" + category
+				}
+			}
+			return "articles_category_default"
+		}),
+		obcache.WithTTL(h.config.Cache.TTL),
+	)
+
+	// Wrap search results data generation
+	h.cachedFunctions.GetSearchResults = obcache.Wrap(
+		h.cache,
+		h.getSearchResultsUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			if len(args) > 0 {
+				if query, ok := args[0].(string); ok {
+					return "search_" + query
+				}
+			}
+			return "search_default"
+		}),
+		obcache.WithTTL(h.config.Cache.TTL),
+	)
+
+	// Wrap stats data generation
+	h.cachedFunctions.GetStatsData = obcache.Wrap(
+		h.cache,
+		h.getStatsDataUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			return "api_stats"
+		}),
+		obcache.WithTTL(30*time.Minute),
+	)
+
+	// Wrap RSS feed generation
+	h.cachedFunctions.GetRSSFeed = obcache.Wrap(
+		h.cache,
+		h.getRSSFeedUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			return "rss_feed"
+		}),
+		obcache.WithTTL(6*time.Hour),
+	)
+
+	// Wrap JSON feed generation
+	h.cachedFunctions.GetJSONFeed = obcache.Wrap(
+		h.cache,
+		h.getJSONFeedUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			return "json_feed"
+		}),
+		obcache.WithTTL(6*time.Hour),
+	)
+
+	// Wrap sitemap generation
+	h.cachedFunctions.GetSitemap = obcache.Wrap(
+		h.cache,
+		h.getSitemapUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			return "sitemap"
+		}),
+		obcache.WithTTL(24*time.Hour),
+	)
 }
 
 // Home renders the homepage
 func (h *Handlers) Home(c *gin.Context) {
-	cacheKey := "home_page"
+	// Use cached function if available
+	if h.cachedFunctions.GetHomeData != nil {
+		if data, err := h.cachedFunctions.GetHomeData(); err == nil {
+			h.renderHTML(c, http.StatusOK, "base.html", data)
+			return
+		}
+	}
 
-	if cached, found := h.cacheService.Get(cacheKey); found {
-		h.renderHTML(c, http.StatusOK, "base.html", cached)
+	// Fallback to uncached version
+	data, err := h.getHomeDataUncached()
+	if err != nil {
+		h.logger.Error("Failed to get home data", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
-	articles := h.articleService.GetAllArticles()
-
-	// Get featured articles
-	featured := h.articleService.GetFeaturedArticles(3)
-
-	// Get recent articles
-	recent := h.articleService.GetRecentArticles(9)
-
-	// Get total Categories
-	categoryCounts := h.articleService.GetCategoryCounts()
-
-	// Get popular tags
-	tagCounts := h.articleService.GetTagCounts()
-	popularTags := tagCounts
-	if len(popularTags) > 10 {
-		popularTags = popularTags[:10]
-	}
-
-	data := utils.BaseTemplateData(h.config.Blog.Title, h.config).
-		Set("description", h.config.Blog.Description).
-		Set("featured", featured).
-		Set("recent", recent).
-		Set("tags", popularTags).
-		Set("totalCount", len(articles)).
-		Set("totalCats", len(categoryCounts)).
-		Set("totalTags", len(tagCounts)).
-		Set("template", "index").
-		Set("headTemplate", "index-head").
-		Set("contentTemplate", "index-content").
-		Build()
-
-	h.cacheService.Set(cacheKey, data, h.config.Cache.TTL)
 	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
@@ -1201,4 +1375,227 @@ func (h *Handlers) UnpublishArticle(c *gin.Context) {
 		"message": "Article unpublished to draft successfully",
 		"slug":    slug,
 	})
+}
+
+// =====================
+// Uncached Data Generation Functions
+// =====================
+
+// getHomeDataUncached generates home page data without caching
+func (h *Handlers) getHomeDataUncached() (map[string]any, error) {
+	articles := h.articleService.GetAllArticles()
+	featured := h.articleService.GetFeaturedArticles(3)
+	recent := h.articleService.GetRecentArticles(9)
+	categoryCounts := h.articleService.GetCategoryCounts()
+	tagCounts := h.articleService.GetTagCounts()
+
+	popularTags := tagCounts
+	if len(popularTags) > 10 {
+		popularTags = popularTags[:10]
+	}
+
+	data := utils.BaseTemplateData(h.config.Blog.Title, h.config).
+		Set("description", h.config.Blog.Description).
+		Set("featured", featured).
+		Set("recent", recent).
+		Set("tags", popularTags).
+		Set("totalCount", len(articles)).
+		Set("totalCats", len(categoryCounts)).
+		Set("totalTags", len(tagCounts)).
+		Set("template", "index").
+		Set("headTemplate", "index-head").
+		Set("contentTemplate", "index-content").
+		Build()
+
+	return data, nil
+}
+
+// getArticleDataUncached generates article page data without caching
+func (h *Handlers) getArticleDataUncached(slug string) (map[string]any, error) {
+	article, err := h.articleService.GetArticleBySlug(slug)
+	if err != nil || article == nil {
+		return nil, fmt.Errorf("article not found: %s", slug)
+	}
+
+	data := utils.BaseTemplateData(article.Title+" - "+h.config.Blog.Title, h.config).
+		Set("description", article.Description).
+		Set("article", article).
+		Set("template", "article").
+		Set("headTemplate", "article-head").
+		Set("contentTemplate", "article-content").
+		Build()
+
+	return data, nil
+}
+
+// getTagArticlesUncached generates tag articles page data without caching
+func (h *Handlers) getTagArticlesUncached(tag string) (map[string]any, error) {
+	articles := h.articleService.GetArticlesByTag(tag)
+	allArticles := h.articleService.GetAllArticles()
+
+	data := utils.BaseTemplateData("Articles tagged with "+tag+" - "+h.config.Blog.Title, h.config).
+		Set("description", "Articles tagged with "+tag).
+		Set("articles", articles).
+		Set("tag", tag).
+		Set("totalCount", len(allArticles)).
+		Set("template", "tag").
+		Set("headTemplate", "tag-head").
+		Set("contentTemplate", "tag-content").
+		Build()
+
+	return data, nil
+}
+
+// getCategoryArticlesUncached generates category articles page data without caching
+func (h *Handlers) getCategoryArticlesUncached(category string) (map[string]any, error) {
+	articles := h.articleService.GetArticlesByCategory(category)
+	allArticles := h.articleService.GetAllArticles()
+
+	data := utils.BaseTemplateData("Articles in "+category+" - "+h.config.Blog.Title, h.config).
+		Set("description", "Articles in category "+category).
+		Set("articles", articles).
+		Set("category", category).
+		Set("totalCount", len(allArticles)).
+		Set("template", "category").
+		Set("headTemplate", "category-head").
+		Set("contentTemplate", "category-content").
+		Build()
+
+	return data, nil
+}
+
+// getSearchResultsUncached generates search results data without caching
+func (h *Handlers) getSearchResultsUncached(query string) (map[string]any, error) {
+	articles := h.articleService.GetAllArticles()
+	results := h.searchService.Search(articles, query, 20)
+
+	data := utils.BaseTemplateData("Search results for "+query+" - "+h.config.Blog.Title, h.config).
+		Set("description", "Search results for "+query).
+		Set("results", results).
+		Set("query", query).
+		Set("totalResults", len(results)).
+		Set("template", "search").
+		Set("headTemplate", "search-head").
+		Set("contentTemplate", "search-content").
+		Build()
+
+	return data, nil
+}
+
+// getStatsDataUncached generates stats data without caching
+func (h *Handlers) getStatsDataUncached() (map[string]any, error) {
+	stats := h.articleService.GetStats()
+	return map[string]any{"stats": stats}, nil
+}
+
+// getRSSFeedUncached generates RSS feed without caching
+func (h *Handlers) getRSSFeedUncached() (string, error) {
+	articles := h.articleService.GetArticlesForFeed(20)
+
+	feed := &models.Feed{
+		Title:       h.config.Blog.Title,
+		Description: h.config.Blog.Description,
+		Link:        h.config.BaseURL,
+		FeedURL:     h.config.BaseURL + "/feed.xml",
+		Language:    "en",
+		Updated:     time.Now(),
+	}
+
+	if len(articles) > 0 {
+		feed.Updated = articles[0].Date
+	}
+
+	for _, article := range articles {
+		item := models.FeedItem{
+			ID:          h.config.BaseURL + "/" + article.Slug,
+			Title:       article.Title,
+			ContentHTML: article.GetProcessedContent(),
+			URL:         h.config.BaseURL + "/" + article.Slug,
+			Summary:     article.GetExcerpt(),
+			Published:   article.Date,
+			Modified:    article.LastModified,
+			Tags:        article.Tags,
+		}
+		feed.Items = append(feed.Items, item)
+	}
+
+	xml, err := xml.MarshalIndent(feed, "", "  ")
+	if err != nil {
+		return "", err
+	}
+
+	return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + string(xml), nil
+}
+
+// getJSONFeedUncached generates JSON feed without caching
+func (h *Handlers) getJSONFeedUncached() (string, error) {
+	articles := h.articleService.GetArticlesForFeed(20)
+
+	feed := &models.Feed{
+		Title:       h.config.Blog.Title,
+		Description: h.config.Blog.Description,
+		Link:        h.config.BaseURL,
+		FeedURL:     h.config.BaseURL + "/feed.json",
+		Language:    "en",
+		Updated:     time.Now(),
+	}
+
+	if len(articles) > 0 {
+		feed.Updated = articles[0].Date
+	}
+
+	for _, article := range articles {
+		item := models.FeedItem{
+			ID:          h.config.BaseURL + "/" + article.Slug,
+			Title:       article.Title,
+			ContentHTML: article.GetProcessedContent(),
+			URL:         h.config.BaseURL + "/" + article.Slug,
+			Summary:     article.GetExcerpt(),
+			Published:   article.Date,
+			Modified:    article.LastModified,
+			Tags:        article.Tags,
+		}
+		feed.Items = append(feed.Items, item)
+	}
+
+	feedJSON, err := json.MarshalIndent(feed, "", "  ")
+	if err != nil {
+		return "", err
+	}
+
+	return string(feedJSON), nil
+}
+
+// getSitemapUncached generates sitemap without caching
+func (h *Handlers) getSitemapUncached() (string, error) {
+	articles := h.articleService.GetAllArticles()
+
+	sitemap := &models.Sitemap{
+		Xmlns: "http://www.sitemaps.org/schemas/sitemap/0.9",
+	}
+
+	// Add home page
+	sitemap.URLs = append(sitemap.URLs, models.SitemapURL{
+		Loc:        h.config.BaseURL,
+		LastMod:    time.Now(),
+		ChangeFreq: "daily",
+		Priority:   1.0,
+	})
+
+	// Add articles
+	for _, article := range articles {
+		sitemap.URLs = append(sitemap.URLs, models.SitemapURL{
+			Loc:        h.config.BaseURL + "/" + article.Slug,
+			LastMod:    article.LastModified,
+			ChangeFreq: "monthly",
+			Priority:   0.8,
+		})
+	}
+
+	sitemapXML, err := xml.MarshalIndent(sitemap, "", "  ")
+	if err != nil {
+		return "", err
+	}
+
+	return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + string(sitemapXML), nil
 }

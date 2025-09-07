@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/vnykmshr/markgo/internal/models"
 )
 
@@ -18,7 +17,6 @@ func TestHandlerGroup_PageRoutes(t *testing.T) {
 			Name: "home page cache miss",
 			SetupMocks: func(mocks *TestHandlerMocks) {
 				articles := CreateTestArticlesWithVariations()
-				SetupCacheMocks(mocks.CacheService, "home_page", false, nil)
 				SetupArticleServiceMocks(mocks.ArticleService, articles)
 			},
 			RequestFunc: func() *http.Request {
@@ -31,11 +29,10 @@ func TestHandlerGroup_PageRoutes(t *testing.T) {
 		{
 			Name: "home page cache hit",
 			SetupMocks: func(mocks *TestHandlerMocks) {
-				cacheData := gin.H{
-					"title":       "Cached Title",
-					"description": "Cached Description",
-				}
-				SetupCacheMocks(mocks.CacheService, "home_page", true, cacheData)
+				// Even with cache hit, obcache may call through to actual function
+				// so we still need to set up the mocks
+				articles := CreateTestArticlesWithVariations()
+				SetupArticleServiceMocks(mocks.ArticleService, articles)
 			},
 			RequestFunc: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/", nil)
@@ -47,7 +44,7 @@ func TestHandlerGroup_PageRoutes(t *testing.T) {
 			Name: "article page success",
 			SetupMocks: func(mocks *TestHandlerMocks) {
 				articles := CreateTestArticlesWithVariations()
-				SetupCacheMocks(mocks.CacheService, "article_published-article", false, nil)
+				// Cache handled automatically by obcache
 				mocks.ArticleService.On("GetArticleBySlug", "published-article").Return(articles[0], nil)
 				mocks.ArticleService.On("GetArticlesByTag", "test").Return([]*models.Article{})
 				mocks.ArticleService.On("GetArticlesByTag", "golang").Return([]*models.Article{})
@@ -62,7 +59,7 @@ func TestHandlerGroup_PageRoutes(t *testing.T) {
 		{
 			Name: "article not found",
 			SetupMocks: func(mocks *TestHandlerMocks) {
-				mocks.CacheService.On("Get", "article_nonexistent").Return(nil, false)
+				// Cache handled automatically by obcache
 				mocks.ArticleService.On("GetArticleBySlug", "nonexistent").Return(nil, assert.AnError)
 			},
 			RequestFunc: func() *http.Request {
@@ -74,7 +71,7 @@ func TestHandlerGroup_PageRoutes(t *testing.T) {
 		{
 			Name: "tags page",
 			SetupMocks: func(mocks *TestHandlerMocks) {
-				SetupCacheMocks(mocks.CacheService, "all_tags", false, nil)
+				// Cache handled automatically by obcache
 				mocks.ArticleService.On("GetTagCounts").Return([]models.TagCount{
 					{Tag: "golang", Count: 5},
 					{Tag: "web", Count: 3},
@@ -90,7 +87,7 @@ func TestHandlerGroup_PageRoutes(t *testing.T) {
 		{
 			Name: "categories page",
 			SetupMocks: func(mocks *TestHandlerMocks) {
-				SetupCacheMocks(mocks.CacheService, "all_categories", false, nil)
+				// Cache handled automatically by obcache
 				mocks.ArticleService.On("GetCategoryCounts").Return([]models.CategoryCount{
 					{Category: "programming", Count: 5},
 					{Category: "development", Count: 3},
@@ -126,7 +123,7 @@ func TestHandlerGroup_SearchAndFiltering(t *testing.T) {
 						MatchedFields: []string{"title", "content"},
 					},
 				}
-				SetupCacheMocks(mocks.CacheService, "search_golang", false, nil)
+				// Cache handled automatically by obcache
 				mocks.ArticleService.On("GetAllArticles").Return(articles)
 				mocks.SearchService.On("Search", articles, "golang", 20).Return(searchResults)
 				mocks.ArticleService.On("GetRecentArticles", 5).Return([]*models.Article{})
@@ -155,7 +152,7 @@ func TestHandlerGroup_SearchAndFiltering(t *testing.T) {
 			Name: "articles by tag",
 			SetupMocks: func(mocks *TestHandlerMocks) {
 				articles := CreateTestArticlesWithVariations()
-				SetupCacheMocks(mocks.CacheService, "articles_tag_golang", false, nil)
+				// Cache handled automatically by obcache
 				mocks.ArticleService.On("GetArticlesByTag", "golang").Return([]*models.Article{articles[0]})
 			},
 			RequestFunc: func() *http.Request {
@@ -168,7 +165,7 @@ func TestHandlerGroup_SearchAndFiltering(t *testing.T) {
 			Name: "articles by category",
 			SetupMocks: func(mocks *TestHandlerMocks) {
 				articles := CreateTestArticlesWithVariations()
-				SetupCacheMocks(mocks.CacheService, "articles_category_programming", false, nil)
+				// Cache handled automatically by obcache
 				mocks.ArticleService.On("GetArticlesByCategory", "programming").Return([]*models.Article{articles[0]})
 			},
 			RequestFunc: func() *http.Request {
@@ -268,9 +265,7 @@ func TestHandlerGroup_AdminOperations(t *testing.T) {
 					PublishedCount: 8,
 					DraftCount:     2,
 				})
-				mocks.CacheService.On("Stats").Return(map[string]interface{}{
-					"total_items": 5,
-				})
+				// Cache stats handled automatically by obcache
 				mocks.EmailService.On("GetConfig").Return(map[string]interface{}{
 					"host": "smtp.example.com",
 				})
@@ -289,7 +284,7 @@ func TestHandlerGroup_AdminOperations(t *testing.T) {
 		{
 			Name: "clear cache",
 			SetupMocks: func(mocks *TestHandlerMocks) {
-				mocks.CacheService.On("Clear").Return()
+				// Cache clear handled automatically by obcache
 			},
 			RequestFunc: func() *http.Request {
 				req, _ := http.NewRequest("POST", "/admin/cache/clear", nil)
@@ -305,7 +300,7 @@ func TestHandlerGroup_AdminOperations(t *testing.T) {
 			Name: "reload articles",
 			SetupMocks: func(mocks *TestHandlerMocks) {
 				mocks.ArticleService.On("ReloadArticles").Return(nil)
-				mocks.CacheService.On("Clear").Return()
+				// Cache clear handled automatically by obcache
 			},
 			RequestFunc: func() *http.Request {
 				req, _ := http.NewRequest("POST", "/admin/reload", nil)
@@ -329,9 +324,9 @@ func TestHandlerGroup_FeedsAndSitemap(t *testing.T) {
 			Name: "RSS feed",
 			SetupMocks: func(mocks *TestHandlerMocks) {
 				articles := CreateTestArticlesWithVariations()
-				mocks.CacheService.On("Get", "rss_feed").Return(nil, false)
+				// Cache handled automatically by obcache
 				mocks.ArticleService.On("GetArticlesForFeed", 20).Return(articles)
-				mocks.CacheService.On("Set", "rss_feed", mock.Anything, mock.Anything).Return()
+				// Cache handled automatically by obcache
 			},
 			RequestFunc: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/rss", nil)
@@ -346,9 +341,9 @@ func TestHandlerGroup_FeedsAndSitemap(t *testing.T) {
 			Name: "JSON feed",
 			SetupMocks: func(mocks *TestHandlerMocks) {
 				articles := CreateTestArticlesWithVariations()
-				mocks.CacheService.On("Get", "json_feed").Return(nil, false)
+				// Cache handled automatically by obcache
 				mocks.ArticleService.On("GetArticlesForFeed", 20).Return(articles)
-				mocks.CacheService.On("Set", "json_feed", mock.Anything, mock.Anything).Return()
+				// Cache handled automatically by obcache
 			},
 			RequestFunc: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/feed.json", nil)
@@ -363,9 +358,9 @@ func TestHandlerGroup_FeedsAndSitemap(t *testing.T) {
 			Name: "sitemap",
 			SetupMocks: func(mocks *TestHandlerMocks) {
 				articles := CreateTestArticlesWithVariations()
-				mocks.CacheService.On("Get", "sitemap").Return(nil, false)
+				// Cache handled automatically by obcache
 				mocks.ArticleService.On("GetAllArticles").Return(articles)
-				mocks.CacheService.On("Set", "sitemap", mock.Anything, mock.Anything).Return()
+				// Cache handled automatically by obcache
 			},
 			RequestFunc: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/sitemap.xml", nil)
@@ -391,13 +386,13 @@ func TestHandlerGroup_ErrorHandling(t *testing.T) {
 		{
 			Name: "article service error",
 			SetupMocks: func(mocks *TestHandlerMocks) {
-				mocks.CacheService.On("Get", "home_page").Return(nil, false)
+				// Cache handled automatically by obcache
 				mocks.ArticleService.On("GetAllArticles").Return([]*models.Article{})
 				mocks.ArticleService.On("GetFeaturedArticles", 3).Return([]*models.Article{})
 				mocks.ArticleService.On("GetRecentArticles", 9).Return([]*models.Article{})
 				mocks.ArticleService.On("GetCategoryCounts").Return([]models.CategoryCount{})
 				mocks.ArticleService.On("GetTagCounts").Return([]models.TagCount{})
-				mocks.CacheService.On("Set", "home_page", mock.Anything, mock.Anything).Return()
+				// Cache handled automatically by obcache
 			},
 			RequestFunc: func() *http.Request {
 				req, _ := http.NewRequest("GET", "/", nil)

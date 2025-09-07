@@ -20,6 +20,7 @@ import (
 	"github.com/vnykmshr/markgo/internal/handlers"
 	"github.com/vnykmshr/markgo/internal/models"
 	"github.com/vnykmshr/markgo/internal/services"
+	"github.com/vnykmshr/obcache-go/pkg/obcache"
 )
 
 // Helper function to create minimal templates for testing
@@ -200,19 +201,23 @@ func TestSetupRoutes(t *testing.T) {
 
 	// Create mock services
 	articleService := &MockArticleService{}
-	cacheService := services.NewCacheService(time.Hour, 100)
-	defer cacheService.Stop()
 	emailService := &MockEmailService{}
 	searchService := services.NewSearchService()
+
+	// Create cache
+	cacheConfig := obcache.NewDefaultConfig()
+	cacheConfig.MaxEntries = 100
+	cacheConfig.DefaultTTL = time.Hour
+	testCache, _ := obcache.New(cacheConfig)
 
 	// Create handlers
 	h := handlers.New(&handlers.Config{
 		ArticleService: articleService,
-		CacheService:   cacheService,
 		EmailService:   emailService,
 		SearchService:  searchService,
 		Config:         cfg,
 		Logger:         slog.New(slog.NewTextHandler(bytes.NewBuffer(nil), nil)),
+		Cache:          testCache,
 	})
 
 	// Create router
@@ -237,7 +242,7 @@ func TestSetupRoutes(t *testing.T) {
 			// Set up minimal mock expectations for endpoints that need them
 			if tc.path == "/metrics" {
 				articleService.On("GetStats").Return(&models.Stats{}).Maybe()
-				cacheService.Set("test", "value", time.Hour) // Ensure cache has some stats
+				_ = testCache.Set("test", "value", time.Hour) // Ensure cache has some stats
 			}
 
 			req, err := http.NewRequest(tc.method, tc.path, nil)
@@ -269,19 +274,23 @@ func TestSetupRoutesWithoutAdmin(t *testing.T) {
 
 	// Create mock services
 	articleService := &MockArticleService{}
-	cacheService := services.NewCacheService(time.Hour, 100)
-	defer cacheService.Stop()
 	emailService := &MockEmailService{}
 	searchService := services.NewSearchService()
+
+	// Create cache
+	cacheConfig := obcache.NewDefaultConfig()
+	cacheConfig.MaxEntries = 100
+	cacheConfig.DefaultTTL = time.Hour
+	testCache, _ := obcache.New(cacheConfig)
 
 	// Create handlers
 	h := handlers.New(&handlers.Config{
 		ArticleService: articleService,
-		CacheService:   cacheService,
 		EmailService:   emailService,
 		SearchService:  searchService,
 		Config:         cfg,
 		Logger:         slog.New(slog.NewTextHandler(bytes.NewBuffer(nil), nil)),
+		Cache:          testCache,
 	})
 
 	// Create router
@@ -413,19 +422,23 @@ func TestRouteStaticFiles(t *testing.T) {
 
 	// Create mock services
 	articleService := &MockArticleService{}
-	cacheService := services.NewCacheService(time.Hour, 100)
-	defer cacheService.Stop()
 	emailService := &MockEmailService{}
 	searchService := services.NewSearchService()
+
+	// Create cache
+	cacheConfig := obcache.NewDefaultConfig()
+	cacheConfig.MaxEntries = 100
+	cacheConfig.DefaultTTL = time.Hour
+	testCache, _ := obcache.New(cacheConfig)
 
 	// Create handlers
 	h := handlers.New(&handlers.Config{
 		ArticleService: articleService,
-		CacheService:   cacheService,
 		EmailService:   emailService,
 		SearchService:  searchService,
 		Config:         cfg,
 		Logger:         slog.New(slog.NewTextHandler(bytes.NewBuffer(nil), nil)),
+		Cache:          testCache,
 	})
 
 	// Create router
@@ -472,18 +485,22 @@ func BenchmarkSetupRoutes(b *testing.B) {
 	}
 
 	articleService := &MockArticleService{}
-	cacheService := services.NewCacheService(time.Hour, 100)
-	defer cacheService.Stop()
 	emailService := &MockEmailService{}
 	searchService := services.NewSearchService()
 
+	// Create cache
+	cacheConfig2 := obcache.NewDefaultConfig()
+	cacheConfig2.MaxEntries = 100
+	cacheConfig2.DefaultTTL = time.Hour
+	testCache2, _ := obcache.New(cacheConfig2)
+
 	h := handlers.New(&handlers.Config{
 		ArticleService: articleService,
-		CacheService:   cacheService,
 		EmailService:   emailService,
 		SearchService:  searchService,
 		Config:         cfg,
 		Logger:         slog.New(slog.NewTextHandler(bytes.NewBuffer(nil), nil)),
+		Cache:          testCache2,
 	})
 
 	for b.Loop() {
