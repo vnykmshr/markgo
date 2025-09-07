@@ -117,7 +117,7 @@ func TestHome_CacheBehavior(t *testing.T) {
 	assert.Contains(t, recorder1.Body.String(), "Test Blog")
 
 	// Second request - may be served from cache
-	req2, _ := http.NewRequest("GET", "/", nil)  
+	req2, _ := http.NewRequest("GET", "/", nil)
 	recorder2 := ExecuteRequest(testConfig.Router, req2)
 	assert.Equal(t, http.StatusOK, recorder2.Code)
 	assert.Contains(t, recorder2.Body.String(), "Test Blog")
