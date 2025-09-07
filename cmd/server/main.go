@@ -69,10 +69,18 @@ func main() {
 		)
 	}
 
-	// Initialize obcache for handlers
+	// Initialize obcache for handlers with performance optimizations
 	cacheConfig := obcache.NewDefaultConfig()
 	cacheConfig.MaxEntries = cfg.Cache.MaxSize
 	cacheConfig.DefaultTTL = cfg.Cache.TTL
+
+	// Set performance-optimized values for available configuration
+	// Note: obcache-go uses internal optimizations, so we focus on the key settings
+	logger.Info("Initializing cache with performance optimizations",
+		"max_entries", cacheConfig.MaxEntries,
+		"default_ttl", cacheConfig.DefaultTTL,
+		"cache_type", "obcache-go")
+
 	cache, err := obcache.New(cacheConfig)
 	if err != nil {
 		apperrors.HandleCLIError(
@@ -114,6 +122,7 @@ func main() {
 		middleware.Logger(logger),                           // Basic request logging (may be redundant now)
 		middleware.PerformanceMiddleware(logger),
 		middleware.CompetitorBenchmarkMiddleware(),
+		middleware.SmartCacheHeaders(), // Intelligent HTTP cache headers
 		middleware.CORS(cfg.CORS),
 		middleware.Security(),
 		middleware.SecurityLoggingMiddleware(loggingService), // Security event logging

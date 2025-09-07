@@ -14,7 +14,7 @@ import (
 func TestDebugEndpoints(t *testing.T) {
 	// Set up test environment
 	gin.SetMode(gin.TestMode)
-	handlers, _, _, _, _ := createTestHandlers()
+	handlers, _, _, _ := createTestHandlers()
 
 	// Override config for development mode
 	handlers.config.Environment = "development"
@@ -130,7 +130,7 @@ func TestDebugEndpoints(t *testing.T) {
 
 func TestDebugEndpointsProductionMode(t *testing.T) {
 	// Test that debug endpoints are restricted in production
-	handlers, _, _, _, _ := createTestHandlers()
+	handlers, _, _, _ := createTestHandlers()
 	handlers.config.Environment = "production"
 
 	restrictedEndpoints := []struct {
@@ -172,7 +172,7 @@ func TestDebugEndpointsProductionMode(t *testing.T) {
 }
 
 func TestDebugConfigResponseStructure(t *testing.T) {
-	handlers, _, _, _, _ := createTestHandlers()
+	handlers, _, _, _ := createTestHandlers()
 	handlers.config.Environment = "development"
 
 	router := gin.New()

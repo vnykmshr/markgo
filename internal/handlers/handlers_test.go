@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -23,41 +22,58 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-// TestObcacheAdapter wraps the mock cache service to match the ObcacheAdapter interface
-type TestObcacheAdapter struct {
-	mock *MockCacheService
+// TestCacheAdapter provides a simple cache adapter for testing
+type TestCacheAdapter struct {
+	data map[string]any
 }
 
-func (t *TestObcacheAdapter) Get(key string) (any, bool) {
-	return t.mock.Get(key)
+func (t *TestCacheAdapter) Get(key string) (any, bool) {
+	if t.data == nil {
+		return nil, false
+	}
+	value, found := t.data[key]
+	return value, found
 }
 
-func (t *TestObcacheAdapter) Set(key string, value any, ttl time.Duration) {
-	t.mock.Set(key, value, ttl)
+func (t *TestCacheAdapter) Set(key string, value any, ttl time.Duration) {
+	if t.data == nil {
+		t.data = make(map[string]any)
+	}
+	t.data[key] = value
 }
 
-func (t *TestObcacheAdapter) Delete(key string) {
-	t.mock.Delete(key)
+func (t *TestCacheAdapter) Delete(key string) {
+	if t.data != nil {
+		delete(t.data, key)
+	}
 }
 
-func (t *TestObcacheAdapter) Clear() {
-	t.mock.Clear()
+func (t *TestCacheAdapter) Clear() {
+	t.data = make(map[string]any)
 }
 
-func (t *TestObcacheAdapter) Size() int {
-	return t.mock.Size()
+func (t *TestCacheAdapter) Size() int {
+	if t.data == nil {
+		return 0
+	}
+	return len(t.data)
 }
 
-func (t *TestObcacheAdapter) Stats() map[string]any {
-	return t.mock.Stats()
+func (t *TestCacheAdapter) Stats() map[string]any {
+	return map[string]any{
+		"hit_count":  0,
+		"miss_count": 0,
+		"hit_ratio":  0.0,
+		"total_keys": t.Size(),
+		"cache_type": "test",
+	}
 }
 
 // Test helper functions
 
-func createTestHandlers() (*Handlers, *MockArticleService, *MockEmailService, *MockCacheService, *MockSearchService) {
+func createTestHandlers() (*Handlers, *MockArticleService, *MockEmailService, *MockSearchService) {
 	mockArticleService := &MockArticleService{}
 	mockEmailService := &MockEmailService{}
-	mockCacheService := &MockCacheService{}
 	mockSearchService := &MockSearchService{}
 
 	cfg := &config.Config{
@@ -83,10 +99,10 @@ func createTestHandlers() (*Handlers, *MockArticleService, *MockEmailService, *M
 		Cache:          nil, // Use nil cache for tests
 	})
 
-	// Set the mock cache service for testing
-	handlers.cacheService = &TestObcacheAdapter{mock: mockCacheService}
+	// Use a simple cache adapter for testing admin functions
+	handlers.cacheService = &TestCacheAdapter{}
 
-	return handlers, mockArticleService, mockEmailService, mockCacheService, mockSearchService
+	return handlers, mockArticleService, mockEmailService, mockSearchService
 }
 
 func createTestArticles() []*models.Article {
@@ -119,7 +135,7 @@ func createTestArticles() []*models.Article {
 // Handler tests
 
 func TestNew(t *testing.T) {
-	handlers, _, _, _, _ := createTestHandlers()
+	handlers, _, _, _ := createTestHandlers()
 
 	assert.NotNil(t, handlers)
 	assert.NotNil(t, handlers.articleService)
@@ -159,15 +175,13 @@ func TestHome_CacheBehavior(t *testing.T) {
 }
 
 func TestArticle(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 	article := createTestArticles()[0]
 
-	mockCacheService.On("Get", "article_test-article-1").Return(nil, false)
 	mockArticleService.On("GetArticleBySlug", "test-article-1").Return(article, nil)
 	mockArticleService.On("GetArticlesByTag", "test").Return([]*models.Article{})
 	mockArticleService.On("GetArticlesByTag", "golang").Return([]*models.Article{})
 	mockArticleService.On("GetRecentArticles", 5).Return([]*models.Article{})
-	mockCacheService.On("Set", "article_test-article-1", mock.Anything, time.Hour).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -179,13 +193,11 @@ func TestArticle(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	mockArticleService.AssertExpectations(t)
-	mockCacheService.AssertExpectations(t)
 }
 
 func TestArticleNotFound(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 
-	mockCacheService.On("Get", "article_non-existent").Return(nil, false)
 	mockArticleService.On("GetArticleBySlug", "non-existent").Return(nil, assert.AnError)
 
 	router := gin.New()
@@ -204,16 +216,13 @@ func TestArticleNotFound(t *testing.T) {
 
 	assert.Equal(t, http.StatusNotFound, recorder.Code)
 	mockArticleService.AssertExpectations(t)
-	mockCacheService.AssertExpectations(t)
 }
 
 func TestArticlesByTag(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 	articles := createTestArticles()
 
-	mockCacheService.On("Get", "articles_tag_golang").Return(nil, false)
 	mockArticleService.On("GetArticlesByTag", "golang").Return([]*models.Article{articles[0]})
-	mockCacheService.On("Set", "articles_tag_golang", mock.Anything, time.Hour).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -225,16 +234,13 @@ func TestArticlesByTag(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	mockArticleService.AssertExpectations(t)
-	mockCacheService.AssertExpectations(t)
 }
 
 func TestArticlesByCategory(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 	articles := createTestArticles()
 
-	mockCacheService.On("Get", "articles_category_programming").Return(nil, false)
 	mockArticleService.On("GetArticlesByCategory", "programming").Return([]*models.Article{articles[0]})
-	mockCacheService.On("Set", "articles_category_programming", mock.Anything, time.Hour).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -246,20 +252,17 @@ func TestArticlesByCategory(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	mockArticleService.AssertExpectations(t)
-	mockCacheService.AssertExpectations(t)
 }
 
 func TestTags(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 
-	mockCacheService.On("Get", "all_tags").Return(nil, false)
 	mockArticleService.On("GetTagCounts").Return([]models.TagCount{
 		{Tag: "golang", Count: 5},
 		{Tag: "web", Count: 3},
 		{Tag: "test", Count: 2},
 	})
 	mockArticleService.On("GetRecentArticles", 5).Return([]*models.Article{})
-	mockCacheService.On("Set", "all_tags", mock.Anything, time.Hour).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -271,18 +274,15 @@ func TestTags(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	mockArticleService.AssertExpectations(t)
-	mockCacheService.AssertExpectations(t)
 }
 
 func TestCategories(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 
-	mockCacheService.On("Get", "all_categories").Return(nil, false)
 	mockArticleService.On("GetCategoryCounts").Return([]models.CategoryCount{
 		{Category: "programming", Count: 5},
 		{Category: "development", Count: 3},
 	})
-	mockCacheService.On("Set", "all_categories", mock.Anything, time.Hour).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -294,11 +294,10 @@ func TestCategories(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	mockArticleService.AssertExpectations(t)
-	mockCacheService.AssertExpectations(t)
 }
 
 func TestSearch(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, mockSearchService := createTestHandlers()
+	handlers, mockArticleService, _, mockSearchService := createTestHandlers()
 	articles := createTestArticles()
 	searchResults := []*models.SearchResult{
 		{
@@ -308,11 +307,9 @@ func TestSearch(t *testing.T) {
 		},
 	}
 
-	mockCacheService.On("Get", "search_golang").Return(nil, false)
 	mockArticleService.On("GetAllArticles").Return(articles)
 	mockSearchService.On("Search", articles, "golang", 20).Return(searchResults)
 	mockArticleService.On("GetRecentArticles", 5).Return([]*models.Article{})
-	mockCacheService.On("Set", "search_golang", mock.Anything, 30*time.Minute).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -325,11 +322,10 @@ func TestSearch(t *testing.T) {
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	mockArticleService.AssertExpectations(t)
 	mockSearchService.AssertExpectations(t)
-	mockCacheService.AssertExpectations(t)
 }
 
 func TestSearchEmptyQuery(t *testing.T) {
-	handlers, mockArticleService, _, _, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 
 	mockArticleService.On("GetAllArticles").Return([]*models.Article{})
 	mockArticleService.On("GetTagCounts").Return([]models.TagCount{})
@@ -349,7 +345,7 @@ func TestSearchEmptyQuery(t *testing.T) {
 }
 
 func TestContactForm(t *testing.T) {
-	handlers, mockArticleService, _, _, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 
 	mockArticleService.On("GetRecentArticles", 5).Return([]*models.Article{})
 
@@ -453,7 +449,7 @@ func TestContactSubmit(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handlers, _, mockEmailService, _, _ := createTestHandlers()
+			handlers, _, mockEmailService, _ := createTestHandlers()
 			tt.setupMocks(mockEmailService)
 
 			router := gin.New()
@@ -479,7 +475,7 @@ func TestContactSubmit(t *testing.T) {
 }
 
 func TestHealth(t *testing.T) {
-	handlers, _, _, _, _ := createTestHandlers()
+	handlers, _, _, _ := createTestHandlers()
 
 	router := gin.New()
 	router.GET("/health", handlers.Health)
@@ -498,16 +494,12 @@ func TestHealth(t *testing.T) {
 }
 
 func TestMetrics(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 
 	mockArticleService.On("GetStats").Return(&models.Stats{
 		TotalArticles:  10,
 		PublishedCount: 8,
 		DraftCount:     2,
-	})
-	mockCacheService.On("Stats").Return(map[string]any{
-		"total_items": 5,
-		"max_size":    100,
 	})
 
 	router := gin.New()
@@ -525,13 +517,10 @@ func TestMetrics(t *testing.T) {
 	assert.Contains(t, response, "blog")
 	assert.Contains(t, response, "cache")
 	mockArticleService.AssertExpectations(t)
-	mockCacheService.AssertExpectations(t)
 }
 
 func TestClearCache(t *testing.T) {
-	handlers, _, _, mockCacheService, _ := createTestHandlers()
-
-	mockCacheService.On("Clear").Return()
+	handlers, _, _, _ := createTestHandlers()
 
 	router := gin.New()
 	router.POST("/admin/cache/clear", handlers.ClearCache)
@@ -546,19 +535,15 @@ func TestClearCache(t *testing.T) {
 	err := json.Unmarshal(recorder.Body.Bytes(), &response)
 	assert.NoError(t, err)
 	assert.Equal(t, "Cache cleared successfully", response["message"])
-	mockCacheService.AssertExpectations(t)
 }
 
 func TestAdminStats(t *testing.T) {
-	handlers, mockArticleService, mockEmailService, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, mockEmailService, _ := createTestHandlers()
 
 	mockArticleService.On("GetStats").Return(&models.Stats{
 		TotalArticles:  10,
 		PublishedCount: 8,
 		DraftCount:     2,
-	})
-	mockCacheService.On("Stats").Return(map[string]any{
-		"total_items": 5,
 	})
 	mockEmailService.On("GetConfig").Return(map[string]any{
 		"host": "smtp.example.com",
@@ -579,12 +564,11 @@ func TestAdminStats(t *testing.T) {
 	assert.Contains(t, response, "articles")
 	assert.Contains(t, response, "cache")
 	mockArticleService.AssertExpectations(t)
-	mockCacheService.AssertExpectations(t)
 	mockEmailService.AssertExpectations(t)
 }
 
 func TestVerifyCaptcha(t *testing.T) {
-	handlers, _, _, _, _ := createTestHandlers()
+	handlers, _, _, _ := createTestHandlers()
 
 	testCases := []struct {
 		name     string
@@ -639,10 +623,9 @@ func TestVerifyCaptcha(t *testing.T) {
 }
 
 func TestReloadArticles(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 
 	mockArticleService.On("ReloadArticles").Return(nil)
-	mockCacheService.On("Clear").Return()
 
 	router := gin.New()
 	router.POST("/admin/articles/reload", handlers.ReloadArticles)
@@ -658,11 +641,10 @@ func TestReloadArticles(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "Articles reloaded successfully", response["message"])
 	mockArticleService.AssertExpectations(t)
-	mockCacheService.AssertExpectations(t)
 }
 
 func TestReloadArticlesError(t *testing.T) {
-	handlers, mockArticleService, _, _, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 
 	mockArticleService.On("ReloadArticles").Return(assert.AnError)
 
@@ -684,7 +666,7 @@ func TestReloadArticlesError(t *testing.T) {
 }
 
 func TestNotFound(t *testing.T) {
-	handlers, _, _, _, _ := createTestHandlers()
+	handlers, _, _, _ := createTestHandlers()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -698,14 +680,10 @@ func TestNotFound(t *testing.T) {
 }
 
 func TestRSSFeed(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 	articles := createTestArticles()
 
-	mockCacheService.On("Get", "rss_feed").Return(nil, false)
 	mockArticleService.On("GetArticlesForFeed", 20).Return(articles)
-	mockCacheService.On("Set", "rss_feed", mock.MatchedBy(func(data []byte) bool {
-		return len(data) > 0 // Just verify we got some RSS data
-	}), 6*time.Hour).Return()
 
 	router := gin.New()
 	router.GET("/feed.xml", handlers.RSSFeed)
@@ -717,18 +695,13 @@ func TestRSSFeed(t *testing.T) {
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	assert.Equal(t, "application/rss+xml; charset=utf-8", recorder.Header().Get("Content-Type"))
 	mockArticleService.AssertExpectations(t)
-	mockCacheService.AssertExpectations(t)
 }
 
 func TestJSONFeed(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 	articles := createTestArticles()
 
-	mockCacheService.On("Get", "json_feed").Return(nil, false)
 	mockArticleService.On("GetArticlesForFeed", 20).Return(articles)
-	mockCacheService.On("Set", "json_feed", mock.MatchedBy(func(data []byte) bool {
-		return len(data) > 0 // Just verify we got some JSON data
-	}), 6*time.Hour).Return()
 
 	router := gin.New()
 	router.GET("/feed.json", handlers.JSONFeed)
@@ -740,18 +713,13 @@ func TestJSONFeed(t *testing.T) {
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	assert.Equal(t, "application/feed+json; charset=utf-8", recorder.Header().Get("Content-Type"))
 	mockArticleService.AssertExpectations(t)
-	mockCacheService.AssertExpectations(t)
 }
 
 func TestSitemap(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 	articles := createTestArticles()
 
-	mockCacheService.On("Get", "sitemap").Return(nil, false)
 	mockArticleService.On("GetAllArticles").Return(articles, nil)
-	mockCacheService.On("Set", "sitemap", mock.MatchedBy(func(data []byte) bool {
-		return len(data) > 0 // Just verify we got some sitemap data
-	}), 24*time.Hour).Return()
 
 	router := gin.New()
 	router.GET("/sitemap.xml", handlers.Sitemap)
@@ -763,11 +731,10 @@ func TestSitemap(t *testing.T) {
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	assert.Equal(t, "application/xml; charset=utf-8", recorder.Header().Get("Content-Type"))
 	mockArticleService.AssertExpectations(t)
-	mockCacheService.AssertExpectations(t)
 }
 
 func TestAboutArticle(t *testing.T) {
-	handlers, mockArticleService, _, _, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 	aboutArticle := &models.Article{
 		Slug:    "about",
 		Title:   "About",
@@ -791,7 +758,7 @@ func TestAboutArticle(t *testing.T) {
 }
 
 func TestAboutArticleNotFound(t *testing.T) {
-	handlers, mockArticleService, _, _, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 
 	mockArticleService.On("GetArticleBySlug", "about").Return(nil, assert.AnError)
 
@@ -814,13 +781,11 @@ func TestAboutArticleNotFound(t *testing.T) {
 }
 
 func TestArticles(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 	articles := createTestArticles()
 
-	mockCacheService.On("Get", "articles_page_1").Return(nil, false)
 	mockArticleService.On("GetAllArticles").Return(articles, nil)
 	mockArticleService.On("GetRecentArticles", 9).Return(articles)
-	mockCacheService.On("Set", "articles_page_1", mock.Anything, mock.Anything).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -835,13 +800,11 @@ func TestArticles(t *testing.T) {
 }
 
 func TestArticlesWithPagination(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 	articles := createTestArticles()
 
-	mockCacheService.On("Get", "articles_page_2").Return(nil, false)
 	mockArticleService.On("GetAllArticles").Return(articles, nil)
 	mockArticleService.On("GetRecentArticles", 9).Return(articles)
-	mockCacheService.On("Set", "articles_page_2", mock.Anything, mock.Anything).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -857,16 +820,14 @@ func TestArticlesWithPagination(t *testing.T) {
 
 // Benchmark tests
 func BenchmarkHome(b *testing.B) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 	articles := createTestArticles()
 
-	mockCacheService.On("Get", "home_page").Return(nil, false)
 	mockArticleService.On("GetAllArticles").Return(articles)
 	mockArticleService.On("GetFeaturedArticles", 3).Return([]*models.Article{articles[0]})
 	mockArticleService.On("GetRecentArticles", 5).Return(articles)
 	mockArticleService.On("GetCategoryCounts").Return([]models.CategoryCount{})
 	mockArticleService.On("GetTagCounts").Return([]models.TagCount{})
-	mockCacheService.On("Set", "home_page", mock.Anything, time.Hour).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -881,14 +842,12 @@ func BenchmarkHome(b *testing.B) {
 }
 
 func BenchmarkArticle(b *testing.B) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 	article := createTestArticles()[0]
 
-	mockCacheService.On("Get", "article_test-article-1").Return(nil, false)
 	mockArticleService.On("GetArticleBySlug", "test-article-1").Return(article, nil)
 	mockArticleService.On("GetArticlesByTag", mock.Anything).Return([]*models.Article{})
 	mockArticleService.On("GetRecentArticles", 5).Return([]*models.Article{})
-	mockCacheService.On("Set", "article_test-article-1", mock.Anything, time.Hour).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -903,14 +862,12 @@ func BenchmarkArticle(b *testing.B) {
 }
 
 func BenchmarkSearch(b *testing.B) {
-	handlers, mockArticleService, _, mockCacheService, mockSearchService := createTestHandlers()
+	handlers, mockArticleService, _, mockSearchService := createTestHandlers()
 	articles := createTestArticles()
 
-	mockCacheService.On("Get", "search_golang").Return(nil, false)
 	mockArticleService.On("GetAllArticles").Return(articles)
 	mockSearchService.On("Search", articles, "golang", 20).Return([]*models.SearchResult{})
 	mockArticleService.On("GetRecentArticles", 5).Return([]*models.Article{})
-	mockCacheService.On("Set", "search_golang", mock.Anything, 30*time.Minute).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -927,12 +884,10 @@ func BenchmarkSearch(b *testing.B) {
 // Integration tests
 func TestHandlerIntegration(t *testing.T) {
 	// Test that handlers work together in a realistic scenario
-	handlers, mockArticleService, _, mockCacheService, mockSearchService := createTestHandlers()
+	handlers, mockArticleService, _, mockSearchService := createTestHandlers()
 	articles := createTestArticles()
 
 	// Set up expectations for a typical user journey
-	mockCacheService.On("Get", mock.Anything).Return(nil, false).Maybe()
-	mockCacheService.On("Set", mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 	mockArticleService.On("GetAllArticles").Return(articles).Maybe()
 	mockArticleService.On("GetArticleBySlug", mock.Anything).Return(articles[0], nil).Maybe()
 	mockArticleService.On("GetFeaturedArticles", mock.Anything).Return([]*models.Article{articles[0]}).Maybe()
@@ -971,10 +926,9 @@ func TestHandlerIntegration(t *testing.T) {
 
 // Error handling tests
 func TestHandlerErrorHandling(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 
 	// Test when article service fails
-	mockCacheService.On("Get", "home_page").Return(nil, false)
 	mockArticleService.On("GetAllArticles").Panic("database error")
 
 	router := gin.New()
@@ -992,7 +946,7 @@ func TestHandlerErrorHandling(t *testing.T) {
 
 // Template rendering tests
 func TestHandlerTemplateRendering(t *testing.T) {
-	handlers, mockArticleService, _, _, _ := createTestHandlers()
+	handlers, mockArticleService, _, _ := createTestHandlers()
 	articles := createTestArticles()
 
 	// Only set up article service expectations since this test is for template rendering
@@ -1018,7 +972,7 @@ func TestHandlerTemplateRendering(t *testing.T) {
 // Additional Error Handling and Edge Case Tests
 
 func TestArticle_ShouldReturnError_WhenSlugEmpty(t *testing.T) {
-	handlers, _, _, _, _ := createTestHandlers()
+	handlers, _, _, _ := createTestHandlers()
 
 	// No cache expectation needed since route won't match
 
@@ -1035,19 +989,16 @@ func TestArticle_ShouldReturnError_WhenSlugEmpty(t *testing.T) {
 }
 
 func TestSearch_ShouldReturnError_WhenQueryTooLong(t *testing.T) {
-	handlers, mockArticleService, _, mockCacheService, mockSearchService := createTestHandlers()
+	handlers, mockArticleService, _, mockSearchService := createTestHandlers()
 
-	// Create a very long query string (over 1000 characters) for cache key
+	// Create a very long query string (over 1000 characters)
 	longQuery := strings.Repeat("a", 1001)
-	cacheKey := fmt.Sprintf("search_%s", longQuery)
 
-	mockCacheService.On("Get", cacheKey).Return(nil, false)
 	mockArticleService.On("GetAllArticles").Return([]*models.Article{})
 	mockSearchService.On("Search", mock.Anything, longQuery, 20).Return([]*models.SearchResult{})
 	mockArticleService.On("GetTagCounts").Return([]models.TagCount{}).Maybe()
 	mockArticleService.On("GetCategoryCounts").Return([]models.CategoryCount{}).Maybe()
 	mockArticleService.On("GetRecentArticles", 5).Return([]*models.Article{})
-	mockCacheService.On("Set", cacheKey, mock.Anything, mock.Anything).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -1064,7 +1015,7 @@ func TestSearch_ShouldReturnError_WhenQueryTooLong(t *testing.T) {
 }
 
 func TestHandlers_ShouldHandleNilInputs(t *testing.T) {
-	handlers, _, _, _, _ := createTestHandlers()
+	handlers, _, _, _ := createTestHandlers()
 
 	router := gin.New()
 	router.Use(func(c *gin.Context) {

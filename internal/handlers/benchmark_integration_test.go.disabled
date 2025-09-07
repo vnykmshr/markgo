@@ -22,17 +22,15 @@ import (
 // These benchmarks test full request flows to validate competitive performance claims
 
 func BenchmarkFullRequestFlow_Home(b *testing.B) {
-	handlers, mockArticleService, _, mockCacheService, _ := createBenchmarkHandlers(100) // 100 test articles
 	articles := createLargeArticleSet(100)
+	handlers, mockArticleService, _, _ := createBenchmarkHandlers(100)
 
 	// Setup mocks for home page
-	mockCacheService.On("Get", "home_page").Return(nil, false)
 	mockArticleService.On("GetAllArticles").Return(articles)
 	mockArticleService.On("GetFeaturedArticles", 3).Return(articles[:3])
 	mockArticleService.On("GetRecentArticles", 9).Return(articles[:9])
 	mockArticleService.On("GetCategoryCounts").Return(createCategoryCounts(20))
 	mockArticleService.On("GetTagCounts").Return(createTagCounts(50))
-	mockCacheService.On("Set", "home_page", mock.Anything, time.Hour).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -53,15 +51,12 @@ func BenchmarkFullRequestFlow_Home(b *testing.B) {
 }
 
 func BenchmarkFullRequestFlow_Article(b *testing.B) {
-	handlers, mockArticleService, _, mockCacheService, _ := createBenchmarkHandlers(100)
 	article := createLargeArticle() // Complex article with lots of content
 	relatedArticles := createLargeArticleSet(10)
 
-	mockCacheService.On("Get", "article_large-article").Return(nil, false)
 	mockArticleService.On("GetArticleBySlug", "large-article").Return(article, nil)
 	mockArticleService.On("GetArticlesByTag", mock.Anything).Return(relatedArticles[:5])
 	mockArticleService.On("GetRecentArticles", 5).Return(relatedArticles[:5])
-	mockCacheService.On("Set", "article_large-article", mock.Anything, time.Hour).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -82,15 +77,12 @@ func BenchmarkFullRequestFlow_Article(b *testing.B) {
 }
 
 func BenchmarkFullRequestFlow_Search(b *testing.B) {
-	handlers, mockArticleService, _, mockCacheService, mockSearchService := createBenchmarkHandlers(1000)
 	articles := createLargeArticleSet(1000) // Large dataset for realistic search
 	searchResults := createSearchResults(20)
 
-	mockCacheService.On("Get", "search_golang").Return(nil, false)
 	mockArticleService.On("GetAllArticles").Return(articles)
 	mockSearchService.On("Search", articles, "golang", 20).Return(searchResults)
 	mockArticleService.On("GetRecentArticles", 5).Return(articles[:5])
-	mockCacheService.On("Set", "search_golang", mock.Anything, 30*time.Minute).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -111,17 +103,14 @@ func BenchmarkFullRequestFlow_Search(b *testing.B) {
 }
 
 func BenchmarkConcurrentArticleAccess(b *testing.B) {
-	handlers, mockArticleService, _, mockCacheService, _ := createBenchmarkHandlers(50)
 	articles := createLargeArticleSet(50)
 
 	// Setup mocks for multiple articles
 	for _, article := range articles {
 		cacheKey := fmt.Sprintf("article_%s", article.Slug)
-		mockCacheService.On("Get", cacheKey).Return(nil, false)
 		mockArticleService.On("GetArticleBySlug", article.Slug).Return(article, nil)
 		mockArticleService.On("GetArticlesByTag", mock.Anything).Return([]*models.Article{})
 		mockArticleService.On("GetRecentArticles", 5).Return(articles[:5])
-		mockCacheService.On("Set", cacheKey, mock.Anything, time.Hour).Return()
 	}
 
 	router := gin.New()
@@ -149,18 +138,15 @@ func BenchmarkConcurrentArticleAccess(b *testing.B) {
 }
 
 func BenchmarkSearchWithLargeDataset(b *testing.B) {
-	handlers, mockArticleService, _, mockCacheService, mockSearchService := createBenchmarkHandlers(5000)
 	articles := createLargeArticleSet(5000) // Very large dataset
 	searchTerms := []string{"golang", "javascript", "python", "rust", "java", "performance", "web", "api", "database", "security"}
 
 	// Setup mocks for different search terms
 	for _, term := range searchTerms {
 		cacheKey := fmt.Sprintf("search_%s", term)
-		mockCacheService.On("Get", cacheKey).Return(nil, false)
 		mockArticleService.On("GetAllArticles").Return(articles).Maybe()
 		mockSearchService.On("Search", articles, term, 20).Return(createSearchResults(15)).Maybe()
 		mockArticleService.On("GetRecentArticles", 5).Return(articles[:5]).Maybe()
-		mockCacheService.On("Set", cacheKey, mock.Anything, 30*time.Minute).Return().Maybe()
 	}
 
 	router := gin.New()
@@ -185,18 +171,15 @@ func BenchmarkSearchWithLargeDataset(b *testing.B) {
 }
 
 func BenchmarkConcurrentSearchRequests(b *testing.B) {
-	handlers, mockArticleService, _, mockCacheService, mockSearchService := createBenchmarkHandlers(1000)
 	articles := createLargeArticleSet(1000)
 	searchTerms := []string{"golang", "performance", "web", "api", "database"}
 
 	// Setup mocks
 	for _, term := range searchTerms {
 		cacheKey := fmt.Sprintf("search_%s", term)
-		mockCacheService.On("Get", cacheKey).Return(nil, false)
 		mockArticleService.On("GetAllArticles").Return(articles)
 		mockSearchService.On("Search", articles, term, 20).Return(createSearchResults(10))
 		mockArticleService.On("GetRecentArticles", 5).Return(articles[:5])
-		mockCacheService.On("Set", cacheKey, mock.Anything, 30*time.Minute).Return()
 	}
 
 	router := gin.New()
@@ -225,16 +208,13 @@ func BenchmarkConcurrentSearchRequests(b *testing.B) {
 
 func BenchmarkMemoryUsageUnderLoad(b *testing.B) {
 	// This benchmark tracks memory allocation patterns under load
-	handlers, mockArticleService, _, mockCacheService, _ := createBenchmarkHandlers(200)
 	articles := createLargeArticleSet(200)
 
-	mockCacheService.On("Get", "home_page").Return(nil, false)
 	mockArticleService.On("GetAllArticles").Return(articles)
 	mockArticleService.On("GetFeaturedArticles", 3).Return(articles[:3])
 	mockArticleService.On("GetRecentArticles", 9).Return(articles[:9])
 	mockArticleService.On("GetCategoryCounts").Return(createCategoryCounts(30))
 	mockArticleService.On("GetTagCounts").Return(createTagCounts(100))
-	mockCacheService.On("Set", "home_page", mock.Anything, time.Hour).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -268,16 +248,13 @@ func BenchmarkMemoryUsageUnderLoad(b *testing.B) {
 func BenchmarkCompetitorComparison_ResponseTime(b *testing.B) {
 	// This benchmark specifically tests response time targets
 	// Target: <50ms per request (95th percentile)
-	handlers, mockArticleService, _, mockCacheService, _ := createBenchmarkHandlers(100)
 	articles := createLargeArticleSet(100)
 
-	mockCacheService.On("Get", "home_page").Return(nil, false)
 	mockArticleService.On("GetAllArticles").Return(articles)
 	mockArticleService.On("GetFeaturedArticles", 3).Return(articles[:3])
 	mockArticleService.On("GetRecentArticles", 9).Return(articles[:9])
 	mockArticleService.On("GetCategoryCounts").Return(createCategoryCounts(20))
 	mockArticleService.On("GetTagCounts").Return(createTagCounts(50))
-	mockCacheService.On("Set", "home_page", mock.Anything, time.Hour).Return()
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -336,11 +313,9 @@ func BenchmarkCompetitorComparison_ResponseTime(b *testing.B) {
 
 func BenchmarkThroughputTest(b *testing.B) {
 	// Tests sustained throughput - target >1000 req/s
-	handlers, mockArticleService, _, mockCacheService, _ := createBenchmarkHandlers(50)
 	articles := createLargeArticleSet(50)
 
 	// Setup multiple endpoints
-	setupThroughputMocks(mockArticleService, mockCacheService, articles)
 
 	router := gin.New()
 	setupMinimalTemplates(router)
@@ -415,10 +390,9 @@ func BenchmarkThroughputTest(b *testing.B) {
 
 // Helper functions for benchmark tests
 
-func createBenchmarkHandlers(articleCount int) (*Handlers, *MockArticleService, *MockEmailService, *MockCacheService, *MockSearchService) {
+func createBenchmarkHandlers(articleCount int) (*Handlers, *MockArticleService, *MockEmailService, *MockSearchService) {
 	mockArticleService := &MockArticleService{}
 	mockEmailService := &MockEmailService{}
-	mockCacheService := &MockCacheService{}
 	mockSearchService := &MockSearchService{}
 
 	cfg := &config.Config{
@@ -444,7 +418,7 @@ func createBenchmarkHandlers(articleCount int) (*Handlers, *MockArticleService, 
 		Cache:          nil, // Use nil cache for benchmarks
 	})
 
-	return handlers, mockArticleService, mockEmailService, mockCacheService, mockSearchService
+	return handlers, mockArticleService, mockEmailService, mockSearchService
 }
 
 func createLargeArticleSet(count int) []*models.Article {
@@ -580,25 +554,4 @@ func createSearchResults(count int) []*models.SearchResult {
 	}
 
 	return results
-}
-
-func setupThroughputMocks(mockArticleService *MockArticleService, mockCacheService *MockCacheService, articles []*models.Article) {
-	// Home page mocks
-	mockCacheService.On("Get", "home_page").Return(nil, false).Maybe()
-	mockArticleService.On("GetAllArticles").Return(articles).Maybe()
-	mockArticleService.On("GetFeaturedArticles", mock.Anything).Return(articles[:3]).Maybe()
-	mockArticleService.On("GetRecentArticles", mock.Anything).Return(articles[:9]).Maybe()
-	mockArticleService.On("GetCategoryCounts").Return(createCategoryCounts(10)).Maybe()
-	mockArticleService.On("GetTagCounts").Return(createTagCounts(20)).Maybe()
-	mockCacheService.On("Set", "home_page", mock.Anything, mock.Anything).Return().Maybe()
-
-	// Article page mocks
-	for _, article := range articles {
-		cacheKey := fmt.Sprintf("article_%s", article.Slug)
-		mockCacheService.On("Get", cacheKey).Return(nil, false).Maybe()
-		mockArticleService.On("GetArticleBySlug", article.Slug).Return(article, nil).Maybe()
-		mockArticleService.On("GetArticlesByTag", mock.Anything).Return([]*models.Article{}).Maybe()
-		mockArticleService.On("GetRecentArticles", 5).Return(articles[:5]).Maybe()
-		mockCacheService.On("Set", cacheKey, mock.Anything, mock.Anything).Return().Maybe()
-	}
 }

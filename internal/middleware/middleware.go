@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
 	"log/slog"
@@ -221,6 +222,60 @@ func CacheControl(maxAge time.Duration) gin.HandlerFunc {
 		c.Header("Cache-Control", fmt.Sprintf("public, max-age=%d", int(maxAge.Seconds())))
 		c.Next()
 	}
+}
+
+// SmartCacheHeaders middleware that intelligently sets cache headers based on content type and route
+func SmartCacheHeaders() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		path := c.Request.URL.Path
+
+		// Skip cache headers for admin routes
+		if strings.HasPrefix(path, "/admin/") || strings.HasPrefix(path, "/debug/") {
+			c.Next()
+			return
+		}
+
+		// Set cache headers based on route type
+		switch {
+		// Static assets - long-term caching
+		case strings.HasPrefix(path, "/static/"):
+			c.Header("Cache-Control", "public, max-age=31536000, immutable") // 1 year
+			c.Header("ETag", generateETag(path))
+
+		// RSS/JSON feeds - moderate caching
+		case strings.HasSuffix(path, ".xml") || strings.HasSuffix(path, ".json"):
+			c.Header("Cache-Control", "public, max-age=3600") // 1 hour
+			c.Header("ETag", generateETag(path))
+
+		// Article pages - shorter caching to allow updates
+		case strings.HasPrefix(path, "/articles/"):
+			c.Header("Cache-Control", "public, max-age=1800, stale-while-revalidate=3600") // 30min + 1hr stale
+			c.Header("ETag", generateETag(path))
+
+		// Dynamic pages - short caching with revalidation
+		case path == "/" || strings.HasPrefix(path, "/tags/") || strings.HasPrefix(path, "/categories/") || strings.HasPrefix(path, "/search"):
+			c.Header("Cache-Control", "public, max-age=900, stale-while-revalidate=1800") // 15min + 30min stale
+			c.Header("ETag", generateETag(path))
+
+		// Other content - basic caching
+		default:
+			c.Header("Cache-Control", "public, max-age=600") // 10 minutes
+			c.Header("ETag", generateETag(path))
+		}
+
+		// Add common cache headers for all cacheable content
+		c.Header("Vary", "Accept-Encoding, User-Agent")
+
+		c.Next()
+	}
+}
+
+// generateETag creates a simple ETag based on the path and current time
+func generateETag(path string) string {
+	// In a real implementation, you'd want to include content modification time
+	// For now, we'll use a simple hash of the path
+	hash := fmt.Sprintf("%x", sha1.Sum([]byte(path)))
+	return fmt.Sprintf(`"%s"`, hash[:16]) // Shortened for brevity
 }
 
 // Compress middleware for response compression

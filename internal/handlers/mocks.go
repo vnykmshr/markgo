@@ -4,7 +4,6 @@ import (
 	"html/template"
 	"io"
 	"log/slog"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/mock"
@@ -160,62 +159,6 @@ func (m *MockEmailService) GetConfig() map[string]any {
 }
 
 func (m *MockEmailService) Shutdown() {
-	m.Called()
-}
-
-// MockCacheService is a mock implementation of CacheServiceInterface
-type MockCacheService struct {
-	mock.Mock
-}
-
-func (m *MockCacheService) Set(key string, value any, ttl time.Duration) {
-	m.Called(key, value, ttl)
-}
-
-func (m *MockCacheService) Get(key string) (any, bool) {
-	args := m.Called(key)
-	return args.Get(0), args.Bool(1)
-}
-
-func (m *MockCacheService) Delete(key string) {
-	m.Called(key)
-}
-
-func (m *MockCacheService) Clear() {
-	m.Called()
-}
-
-func (m *MockCacheService) Size() int {
-	args := m.Called()
-	return args.Int(0)
-}
-
-func (m *MockCacheService) Keys() []string {
-	args := m.Called()
-	return args.Get(0).([]string)
-}
-
-func (m *MockCacheService) Exists(key string) bool {
-	args := m.Called(key)
-	return args.Bool(0)
-}
-
-func (m *MockCacheService) GetTTL(key string) time.Duration {
-	args := m.Called(key)
-	return args.Get(0).(time.Duration)
-}
-
-func (m *MockCacheService) Stats() map[string]any {
-	args := m.Called()
-	return args.Get(0).(map[string]any)
-}
-
-func (m *MockCacheService) GetOrSet(key string, generator func() any, ttl time.Duration) any {
-	args := m.Called(key, generator, ttl)
-	return args.Get(0)
-}
-
-func (m *MockCacheService) Stop() {
 	m.Called()
 }
 

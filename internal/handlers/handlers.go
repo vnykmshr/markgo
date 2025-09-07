@@ -27,10 +27,13 @@ import (
 type CachedHandlerFunctions struct {
 	GetHomeData         func() (map[string]any, error)
 	GetArticleData      func(string) (map[string]any, error)
+	GetArticlesPage     func(int) (map[string]any, error)
 	GetTagArticles      func(string) (map[string]any, error)
 	GetCategoryArticles func(string) (map[string]any, error)
 	GetSearchResults    func(string) (map[string]any, error)
 	GetArchiveData      func(string, string) (map[string]any, error)
+	GetTagsPage         func() (map[string]any, error)
+	GetCategoriesPage   func() (map[string]any, error)
 	GetStatsData        func() (map[string]any, error)
 	GetRSSFeed          func() (string, error)
 	GetJSONFeed         func() (string, error)
@@ -180,6 +183,21 @@ func (h *Handlers) initializeCachedFunctions() {
 		obcache.WithTTL(h.config.Cache.TTL),
 	)
 
+	// Wrap articles page data generation
+	h.cachedFunctions.GetArticlesPage = obcache.Wrap(
+		h.cache,
+		h.getArticlesPageUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			if len(args) > 0 {
+				if page, ok := args[0].(int); ok {
+					return fmt.Sprintf("articles_page_%d", page)
+				}
+			}
+			return "articles_page_1"
+		}),
+		obcache.WithTTL(h.config.Cache.TTL),
+	)
+
 	// Wrap tag articles data generation
 	h.cachedFunctions.GetTagArticles = obcache.Wrap(
 		h.cache,
@@ -221,6 +239,26 @@ func (h *Handlers) initializeCachedFunctions() {
 				}
 			}
 			return "search_default"
+		}),
+		obcache.WithTTL(h.config.Cache.TTL),
+	)
+
+	// Wrap tags page data generation
+	h.cachedFunctions.GetTagsPage = obcache.Wrap(
+		h.cache,
+		h.getTagsPageUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			return "all_tags"
+		}),
+		obcache.WithTTL(h.config.Cache.TTL),
+	)
+
+	// Wrap categories page data generation
+	h.cachedFunctions.GetCategoriesPage = obcache.Wrap(
+		h.cache,
+		h.getCategoriesPageUncached,
+		obcache.WithKeyFunc(func(args []any) string {
+			return "all_categories"
 		}),
 		obcache.WithTTL(h.config.Cache.TTL),
 	)
@@ -294,33 +332,22 @@ func (h *Handlers) Articles(c *gin.Context) {
 		page = 1
 	}
 
-	pageSize := h.config.Blog.PostsPerPage
-	cacheKey := fmt.Sprintf("articles_page_%d", page)
+	// Use cached function if available
+	if h.cachedFunctions.GetArticlesPage != nil {
+		if data, err := h.cachedFunctions.GetArticlesPage(page); err == nil {
+			h.renderHTML(c, http.StatusOK, "base.html", data)
+			return
+		}
+	}
 
-	if cached, found := h.cacheService.Get(cacheKey); found {
-		h.renderHTML(c, http.StatusOK, "base.html", cached)
+	// Fallback to uncached version
+	data, err := h.getArticlesPageUncached(page)
+	if err != nil {
+		h.logger.Error("Failed to get articles page data", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
-	allArticles := h.articleService.GetAllArticles()
-	totalArticles := len(allArticles)
-
-	// Pagination
-	pagination := models.NewPagination(page, totalArticles, pageSize)
-	start := (page - 1) * pageSize
-	end := min(start+pageSize, totalArticles)
-
-	var articles []*models.Article
-	if start < totalArticles {
-		articles = allArticles[start:end]
-	}
-
-	// Get recent articles
-	recent := h.articleService.GetRecentArticles(9)
-
-	data := utils.ListPageData("All Articles", h.config, recent, articles, pagination).Build()
-
-	h.cacheService.Set(cacheKey, data, h.config.Cache.TTL)
 	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
@@ -328,45 +355,22 @@ func (h *Handlers) Articles(c *gin.Context) {
 func (h *Handlers) Article(c *gin.Context) {
 	slug := c.Param("slug")
 
-	cacheKey := fmt.Sprintf("article_%s", slug)
-	if cached, found := h.cacheService.Get(cacheKey); found {
-		h.renderHTML(c, http.StatusOK, "base.html", cached)
-		return
+	// Use cached function if available
+	if h.cachedFunctions.GetArticleData != nil {
+		if data, err := h.cachedFunctions.GetArticleData(slug); err == nil {
+			h.renderHTML(c, http.StatusOK, "base.html", data)
+			return
+		}
 	}
 
-	article, err := h.articleService.GetArticleBySlug(slug)
+	// Fallback to uncached version
+	data, err := h.getArticleDataUncached(slug)
 	if err != nil {
 		_ = c.Error(apperrors.NewArticleError("", fmt.Sprintf("Article '%s' not found", slug), apperrors.ErrArticleNotFound))
 		c.Abort()
 		return
 	}
 
-	// Get related articles (same tags)
-	var related []*models.Article
-	if len(article.Tags) > 0 {
-		for _, tag := range article.Tags {
-			taggedArticles := h.articleService.GetArticlesByTag(tag)
-			for _, taggedArticle := range taggedArticles {
-				if taggedArticle.Slug != slug && len(related) < 3 {
-					related = append(related, taggedArticle)
-				}
-			}
-			if len(related) >= 3 {
-				break
-			}
-		}
-	}
-
-	// Get recent articles
-	recent := h.articleService.GetRecentArticles(5)
-
-	data := utils.ArticlePageData(article.Title, h.config, recent).
-		Set("article", article).
-		Set("related", related).
-		Set("template", "article").
-		Build()
-
-	h.cacheService.Set(cacheKey, data, h.config.Cache.TTL)
 	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
@@ -374,22 +378,22 @@ func (h *Handlers) Article(c *gin.Context) {
 func (h *Handlers) ArticlesByTag(c *gin.Context) {
 	tag := c.Param("tag")
 
-	cacheKey := fmt.Sprintf("articles_tag_%s", tag)
-	if cached, found := h.cacheService.Get(cacheKey); found {
-		h.renderHTML(c, http.StatusOK, "base.html", cached)
+	// Use cached function if available
+	if h.cachedFunctions.GetTagArticles != nil {
+		if data, err := h.cachedFunctions.GetTagArticles(tag); err == nil {
+			h.renderHTML(c, http.StatusOK, "base.html", data)
+			return
+		}
+	}
+
+	// Fallback to uncached version
+	data, err := h.getTagArticlesUncached(tag)
+	if err != nil {
+		h.logger.Error("Failed to get tag articles data", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
-	articles := h.articleService.GetArticlesByTag(tag)
-
-	data := utils.BaseTemplateData(fmt.Sprintf("Articles tagged with '%s'", tag), h.config).
-		Set("tag", tag).
-		Set("articles", articles).
-		Set("count", len(articles)).
-		Set("template", "articles").
-		Build()
-
-	h.cacheService.Set(cacheKey, data, h.config.Cache.TTL)
 	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
@@ -397,67 +401,64 @@ func (h *Handlers) ArticlesByTag(c *gin.Context) {
 func (h *Handlers) ArticlesByCategory(c *gin.Context) {
 	category := c.Param("category")
 
-	cacheKey := fmt.Sprintf("articles_category_%s", category)
-	if cached, found := h.cacheService.Get(cacheKey); found {
-		h.renderHTML(c, http.StatusOK, "base.html", cached)
+	// Use cached function if available
+	if h.cachedFunctions.GetCategoryArticles != nil {
+		if data, err := h.cachedFunctions.GetCategoryArticles(category); err == nil {
+			h.renderHTML(c, http.StatusOK, "base.html", data)
+			return
+		}
+	}
+
+	// Fallback to uncached version
+	data, err := h.getCategoryArticlesUncached(category)
+	if err != nil {
+		h.logger.Error("Failed to get category articles data", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
-	articles := h.articleService.GetArticlesByCategory(category)
-
-	data := utils.BaseTemplateData(fmt.Sprintf("Articles in '%s'", category), h.config).
-		Set("category", category).
-		Set("articles", articles).
-		Set("count", len(articles)).
-		Set("template", "articles").
-		Build()
-
-	h.cacheService.Set(cacheKey, data, h.config.Cache.TTL)
 	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
 // Tags renders the tags page
 func (h *Handlers) Tags(c *gin.Context) {
-	cacheKey := "all_tags"
+	// Use cached function if available
+	if h.cachedFunctions.GetTagsPage != nil {
+		if data, err := h.cachedFunctions.GetTagsPage(); err == nil {
+			h.renderHTML(c, http.StatusOK, "base.html", data)
+			return
+		}
+	}
 
-	if cached, found := h.cacheService.Get(cacheKey); found {
-		h.renderHTML(c, http.StatusOK, "base.html", cached)
+	// Fallback to uncached version
+	data, err := h.getTagsPageUncached()
+	if err != nil {
+		h.logger.Error("Failed to get tags page data", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
-	tagCounts := h.articleService.GetTagCounts()
-
-	// Get recent articles
-	recent := h.articleService.GetRecentArticles(5)
-
-	data := utils.ArticlePageData("All Tags", h.config, recent).
-		Set("tags", tagCounts).
-		Set("count", len(tagCounts)).
-		Set("template", "tags").
-		Build()
-
-	h.cacheService.Set(cacheKey, data, h.config.Cache.TTL)
 	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
 // Categories renders the categories page
 func (h *Handlers) Categories(c *gin.Context) {
-	cacheKey := "all_categories"
+	// Use cached function if available
+	if h.cachedFunctions.GetCategoriesPage != nil {
+		if data, err := h.cachedFunctions.GetCategoriesPage(); err == nil {
+			h.renderHTML(c, http.StatusOK, "base.html", data)
+			return
+		}
+	}
 
-	if cached, found := h.cacheService.Get(cacheKey); found {
-		h.renderHTML(c, http.StatusOK, "base.html", cached)
+	// Fallback to uncached version
+	data, err := h.getCategoriesPageUncached()
+	if err != nil {
+		h.logger.Error("Failed to get categories page data", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
-	categories := h.articleService.GetCategoryCounts()
-
-	data := utils.BaseTemplateData("All Categories", h.config).
-		Set("categories", categories).
-		Set("count", len(categories)).
-		Set("template", "categories").
-		Build()
-
-	h.cacheService.Set(cacheKey, data, h.config.Cache.TTL)
 	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
@@ -481,24 +482,22 @@ func (h *Handlers) Search(c *gin.Context) {
 		return
 	}
 
-	cacheKey := fmt.Sprintf("search_%s", query)
-	if cached, found := h.cacheService.Get(cacheKey); found {
-		h.renderHTML(c, http.StatusOK, "base.html", cached)
+	// Use cached function if available
+	if h.cachedFunctions.GetSearchResults != nil {
+		if data, err := h.cachedFunctions.GetSearchResults(query); err == nil {
+			h.renderHTML(c, http.StatusOK, "base.html", data)
+			return
+		}
+	}
+
+	// Fallback to uncached version
+	data, err := h.getSearchResultsUncached(query)
+	if err != nil {
+		h.logger.Error("Failed to get search results data", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
-	articles := h.articleService.GetAllArticles()
-	results := h.searchService.Search(articles, query, 20)
-	recent := h.articleService.GetRecentArticles(5)
-
-	data := utils.ArticlePageData(fmt.Sprintf("Search results for '%s'", query), h.config, recent).
-		Set("query", query).
-		Set("results", results).
-		Set("count", len(results)).
-		Set("template", "search").
-		Build()
-
-	h.cacheService.Set(cacheKey, data, 30*time.Minute)
 	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
@@ -585,67 +584,67 @@ func (h *Handlers) ContactSubmit(c *gin.Context) {
 
 // RSSFeed generates RSS feed
 func (h *Handlers) RSSFeed(c *gin.Context) {
-	cacheKey := "rss_feed"
+	// Use cached function if available
+	if h.cachedFunctions.GetRSSFeed != nil {
+		if rss, err := h.cachedFunctions.GetRSSFeed(); err == nil {
+			c.Data(http.StatusOK, "application/rss+xml; charset=utf-8", []byte(rss))
+			return
+		}
+	}
 
-	if cached, found := h.cacheService.Get(cacheKey); found {
-		c.Data(http.StatusOK, "application/rss+xml; charset=utf-8", cached.([]byte))
+	// Fallback to uncached version
+	rss, err := h.getRSSFeedUncached()
+	if err != nil {
+		h.logger.Error("Failed to generate RSS feed", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
-	articles := h.articleService.GetArticlesForFeed(20)
-	rss := h.generateRSSFeed(articles)
-
-	h.cacheService.Set(cacheKey, rss, 6*time.Hour)
-	c.Data(http.StatusOK, "application/rss+xml; charset=utf-8", rss)
+	c.Data(http.StatusOK, "application/rss+xml; charset=utf-8", []byte(rss))
 }
 
 // JSONFeed generates JSON feed
 func (h *Handlers) JSONFeed(c *gin.Context) {
-	cacheKey := "json_feed"
-
-	if cached, found := h.cacheService.Get(cacheKey); found {
-		c.Data(http.StatusOK, "application/feed+json; charset=utf-8", cached.([]byte))
-		return
+	// Use cached function if available
+	if h.cachedFunctions.GetJSONFeed != nil {
+		if feedJSON, err := h.cachedFunctions.GetJSONFeed(); err == nil {
+			c.Data(http.StatusOK, "application/feed+json; charset=utf-8", []byte(feedJSON))
+			return
+		}
 	}
 
-	articles := h.articleService.GetArticlesForFeed(20)
-	feed := h.generateJSONFeed(articles)
-
-	feedJSON, err := json.MarshalIndent(feed, "", "  ")
+	// Fallback to uncached version
+	feedJSON, err := h.getJSONFeedUncached()
 	if err != nil {
-		h.logger.Error("Failed to marshal JSON feed", "error", err)
+		h.logger.Error("Failed to generate JSON feed", "error", err)
 		_ = c.Error(apperrors.NewHTTPError(http.StatusInternalServerError, "Failed to generate JSON feed", err))
 		c.Abort()
 		return
 	}
 
-	h.cacheService.Set(cacheKey, feedJSON, 6*time.Hour)
-	c.Data(http.StatusOK, "application/feed+json; charset=utf-8", feedJSON)
+	c.Data(http.StatusOK, "application/feed+json; charset=utf-8", []byte(feedJSON))
 }
 
 // Sitemap generates XML sitemap
 func (h *Handlers) Sitemap(c *gin.Context) {
-	cacheKey := "sitemap"
-
-	if cached, found := h.cacheService.Get(cacheKey); found {
-		c.Data(http.StatusOK, "application/xml; charset=utf-8", cached.([]byte))
-		return
+	// Use cached function if available
+	if h.cachedFunctions.GetSitemap != nil {
+		if sitemapData, err := h.cachedFunctions.GetSitemap(); err == nil {
+			c.Data(http.StatusOK, "application/xml; charset=utf-8", []byte(sitemapData))
+			return
+		}
 	}
 
-	sitemap := h.generateSitemap()
-	sitemapXML, err := xml.MarshalIndent(sitemap, "", "  ")
+	// Fallback to uncached version
+	sitemapData, err := h.getSitemapUncached()
 	if err != nil {
-		h.logger.Error("Failed to marshal XML sitemap", "error", err)
+		h.logger.Error("Failed to generate sitemap", "error", err)
 		_ = c.Error(apperrors.NewHTTPError(http.StatusInternalServerError, "Failed to generate sitemap", err))
 		c.Abort()
 		return
 	}
 
-	// Add XML declaration
-	sitemapData := []byte(`<?xml version="1.0" encoding="UTF-8"?>` + "\n" + string(sitemapXML))
-
-	h.cacheService.Set(cacheKey, sitemapData, 24*time.Hour)
-	c.Data(http.StatusOK, "application/xml; charset=utf-8", sitemapData)
+	c.Data(http.StatusOK, "application/xml; charset=utf-8", []byte(sitemapData))
 }
 
 // Health check endpoint
@@ -1096,130 +1095,6 @@ func (h *Handlers) renderHTML(c *gin.Context, status int, template string, data 
 	c.HTML(status, template, data)
 }
 
-func (h *Handlers) generateRSSFeed(articles []*models.Article) []byte {
-	// Use pooled buffer for RSS feed generation
-	feedContent := utils.GetGlobalFeedBufferPool().BuildFeed(func(rss *strings.Builder) {
-		rss.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
-		rss.WriteString(`<rss version="2.0">`)
-		rss.WriteString(`<channel>`)
-		rss.WriteString(fmt.Sprintf(`<title>%s</title>`, h.config.Blog.Title))
-		rss.WriteString(fmt.Sprintf(`<description>%s</description>`, h.config.Blog.Description))
-		rss.WriteString(fmt.Sprintf(`<link>%s</link>`, h.config.BaseURL))
-		rss.WriteString(fmt.Sprintf(`<language>%s</language>`, h.config.Blog.Language))
-		rss.WriteString(fmt.Sprintf(`<lastBuildDate>%s</lastBuildDate>`, time.Now().Format(time.RFC1123Z)))
-
-		for _, article := range articles {
-			rss.WriteString(`<item>`)
-			rss.WriteString(fmt.Sprintf(`<title>%s</title>`, article.Title))
-			rss.WriteString(fmt.Sprintf(`<description>%s</description>`, article.GetExcerpt()))
-			rss.WriteString(fmt.Sprintf(`<link>%s/articles/%s</link>`, h.config.BaseURL, article.Slug))
-			rss.WriteString(fmt.Sprintf(`<guid>%s/articles/%s</guid>`, h.config.BaseURL, article.Slug))
-			rss.WriteString(fmt.Sprintf(`<pubDate>%s</pubDate>`, article.Date.Format(time.RFC1123Z)))
-			rss.WriteString(`</item>`)
-		}
-
-		rss.WriteString(`</channel>`)
-		rss.WriteString(`</rss>`)
-	})
-
-	return []byte(feedContent)
-}
-
-func (h *Handlers) generateJSONFeed(articles []*models.Article) *models.Feed {
-	var items []models.FeedItem
-
-	for _, article := range articles {
-		items = append(items, models.FeedItem{
-			ID:          fmt.Sprintf("%s/articles/%s", h.config.BaseURL, article.Slug),
-			Title:       article.Title,
-			ContentHTML: article.Content,
-			URL:         fmt.Sprintf("%s/articles/%s", h.config.BaseURL, article.Slug),
-			Summary:     article.GetExcerpt(),
-			Published:   article.Date,
-			Modified:    article.LastModified,
-			Tags:        article.Tags,
-			Author: models.Author{
-				Name:  h.config.Blog.Author,
-				Email: h.config.Blog.AuthorEmail,
-				URL:   h.config.BaseURL,
-			},
-		})
-	}
-
-	return &models.Feed{
-		Title:       h.config.Blog.Title,
-		Description: h.config.Blog.Description,
-		Link:        h.config.BaseURL,
-		FeedURL:     fmt.Sprintf("%s/feed.json", h.config.BaseURL),
-		Language:    h.config.Blog.Language,
-		Updated:     time.Now(),
-		Author: models.Author{
-			Name:  h.config.Blog.Author,
-			Email: h.config.Blog.AuthorEmail,
-			URL:   h.config.BaseURL,
-		},
-		Items: items,
-	}
-}
-
-func (h *Handlers) generateSitemap() *models.Sitemap {
-	var urls []models.SitemapURL
-
-	// Add homepage
-	urls = append(urls, models.SitemapURL{
-		Loc:        h.config.BaseURL,
-		LastMod:    time.Now(),
-		ChangeFreq: "daily",
-		Priority:   1.0,
-	})
-
-	// Add articles
-	articles := h.articleService.GetAllArticles()
-	for _, article := range articles {
-		// Handle about page specially - it uses /about route instead of /articles/about
-		if article.Slug == "about" {
-			urls = append(urls, models.SitemapURL{
-				Loc:        fmt.Sprintf("%s/about", h.config.BaseURL),
-				LastMod:    article.LastModified,
-				ChangeFreq: "monthly",
-				Priority:   0.9, // Higher priority for about page
-			})
-		} else {
-			urls = append(urls, models.SitemapURL{
-				Loc:        fmt.Sprintf("%s/articles/%s", h.config.BaseURL, article.Slug),
-				LastMod:    article.LastModified,
-				ChangeFreq: "weekly",
-				Priority:   0.8,
-			})
-		}
-	}
-
-	// Add static pages (removed /about since it's now handled as an article)
-	staticPages := []struct {
-		path     string
-		priority float32
-	}{
-		{"/articles", 0.9},
-		{"/tags", 0.7},
-		{"/categories", 0.7},
-		{"/contact", 0.6},
-	}
-
-	for _, page := range staticPages {
-		urls = append(urls, models.SitemapURL{
-			Loc:        fmt.Sprintf("%s%s", h.config.BaseURL, page.path),
-			LastMod:    time.Now(),
-			ChangeFreq: "monthly",
-			Priority:   page.priority,
-		})
-	}
-
-	return &models.Sitemap{
-		Xmlns: "http://www.sitemaps.org/schemas/sitemap/0.9",
-		URLs:  urls,
-	}
-}
-
 // Draft Management Handlers
 
 // GetDrafts returns all draft articles (admin endpoint)
@@ -1427,9 +1302,20 @@ func (h *Handlers) getArticleDataUncached(slug string) (map[string]any, error) {
 		return nil, fmt.Errorf("article not found: %s", slug)
 	}
 
-	data := utils.BaseTemplateData(article.Title+" - "+h.config.Blog.Title, h.config).
+	// Get recent articles for sidebar/navigation
+	recent := h.articleService.GetRecentArticles(5)
+
+	// Get related articles by same tags (for "related articles" section)
+	var relatedArticles []*models.Article
+	for _, tag := range article.Tags {
+		tagArticles := h.articleService.GetArticlesByTag(tag)
+		relatedArticles = append(relatedArticles, tagArticles...)
+	}
+
+	data := utils.ArticlePageData(article.Title, h.config, recent).
 		Set("description", article.Description).
 		Set("article", article).
+		Set("relatedArticles", relatedArticles).
 		Set("template", "article").
 		Set("headTemplate", "article-head").
 		Set("contentTemplate", "article-content").
@@ -1438,16 +1324,41 @@ func (h *Handlers) getArticleDataUncached(slug string) (map[string]any, error) {
 	return data, nil
 }
 
+// getArticlesPageUncached generates articles page data without caching
+func (h *Handlers) getArticlesPageUncached(page int) (map[string]any, error) {
+	if page < 1 {
+		page = 1
+	}
+
+	pageSize := h.config.Blog.PostsPerPage
+	allArticles := h.articleService.GetAllArticles()
+	totalArticles := len(allArticles)
+
+	// Pagination
+	pagination := models.NewPagination(page, totalArticles, pageSize)
+	start := (page - 1) * pageSize
+	end := min(start+pageSize, totalArticles)
+
+	var articles []*models.Article
+	if start < totalArticles {
+		articles = allArticles[start:end]
+	}
+
+	// Get recent articles
+	recent := h.articleService.GetRecentArticles(9)
+
+	return utils.ListPageData("All Articles", h.config, recent, articles, pagination).Build(), nil
+}
+
 // getTagArticlesUncached generates tag articles page data without caching
 func (h *Handlers) getTagArticlesUncached(tag string) (map[string]any, error) {
 	articles := h.articleService.GetArticlesByTag(tag)
-	allArticles := h.articleService.GetAllArticles()
 
 	data := utils.BaseTemplateData("Articles tagged with "+tag+" - "+h.config.Blog.Title, h.config).
 		Set("description", "Articles tagged with "+tag).
 		Set("articles", articles).
 		Set("tag", tag).
-		Set("totalCount", len(allArticles)).
+		Set("totalCount", len(articles)).
 		Set("template", "tag").
 		Set("headTemplate", "tag-head").
 		Set("contentTemplate", "tag-content").
@@ -1459,13 +1370,12 @@ func (h *Handlers) getTagArticlesUncached(tag string) (map[string]any, error) {
 // getCategoryArticlesUncached generates category articles page data without caching
 func (h *Handlers) getCategoryArticlesUncached(category string) (map[string]any, error) {
 	articles := h.articleService.GetArticlesByCategory(category)
-	allArticles := h.articleService.GetAllArticles()
 
 	data := utils.BaseTemplateData("Articles in "+category+" - "+h.config.Blog.Title, h.config).
 		Set("description", "Articles in category "+category).
 		Set("articles", articles).
 		Set("category", category).
-		Set("totalCount", len(allArticles)).
+		Set("totalCount", len(articles)).
 		Set("template", "category").
 		Set("headTemplate", "category-head").
 		Set("contentTemplate", "category-content").
@@ -1478,8 +1388,9 @@ func (h *Handlers) getCategoryArticlesUncached(category string) (map[string]any,
 func (h *Handlers) getSearchResultsUncached(query string) (map[string]any, error) {
 	articles := h.articleService.GetAllArticles()
 	results := h.searchService.Search(articles, query, 20)
+	recent := h.articleService.GetRecentArticles(5)
 
-	data := utils.BaseTemplateData("Search results for "+query+" - "+h.config.Blog.Title, h.config).
+	data := utils.ArticlePageData("Search results for "+query, h.config, recent).
 		Set("description", "Search results for "+query).
 		Set("results", results).
 		Set("query", query).
@@ -1496,6 +1407,29 @@ func (h *Handlers) getSearchResultsUncached(query string) (map[string]any, error
 func (h *Handlers) getStatsDataUncached() (map[string]any, error) {
 	stats := h.articleService.GetStats()
 	return map[string]any{"stats": stats}, nil
+}
+
+// getTagsPageUncached generates tags page data without caching
+func (h *Handlers) getTagsPageUncached() (map[string]any, error) {
+	tagCounts := h.articleService.GetTagCounts()
+	recent := h.articleService.GetRecentArticles(5)
+
+	return utils.ArticlePageData("All Tags", h.config, recent).
+		Set("tags", tagCounts).
+		Set("count", len(tagCounts)).
+		Set("template", "tags").
+		Build(), nil
+}
+
+// getCategoriesPageUncached generates categories page data without caching
+func (h *Handlers) getCategoriesPageUncached() (map[string]any, error) {
+	categories := h.articleService.GetCategoryCounts()
+
+	return utils.BaseTemplateData("All Categories", h.config).
+		Set("categories", categories).
+		Set("count", len(categories)).
+		Set("template", "categories").
+		Build(), nil
 }
 
 // getRSSFeedUncached generates RSS feed without caching

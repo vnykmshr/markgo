@@ -203,16 +203,16 @@ func (s *ArticleService) setupScheduledTasks() {
 	})
 
 	// Schedule tasks using cron expressions
-	if err := s.scheduler.ScheduleCron("cache_warming", "*/15 * * * *", cacheWarmingTask); err != nil {
+	if err := s.scheduler.ScheduleCron("cache_warming", "0 */15 * * * *", cacheWarmingTask); err != nil {
 		s.logger.Warn("Failed to schedule cache warming task", "error", err)
 	}
-	if err := s.scheduler.ScheduleCron("memory_compaction", "0 * * * *", memoryCompactionTask); err != nil {
+	if err := s.scheduler.ScheduleCron("memory_compaction", "0 0 * * * *", memoryCompactionTask); err != nil {
 		s.logger.Warn("Failed to schedule memory compaction task", "error", err)
 	}
-	if err := s.scheduler.ScheduleCron("reload_check", "*/5 * * * *", reloadCheckTask); err != nil {
+	if err := s.scheduler.ScheduleCron("reload_check", "0 */5 * * * *", reloadCheckTask); err != nil {
 		s.logger.Warn("Failed to schedule reload check task", "error", err)
 	}
-	if err := s.scheduler.ScheduleCron("metrics_collection", "* * * * *", metricsTask); err != nil {
+	if err := s.scheduler.ScheduleCron("metrics_collection", "0 * * * * *", metricsTask); err != nil {
 		s.logger.Warn("Failed to schedule metrics collection task", "error", err)
 	}
 }

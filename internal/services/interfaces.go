@@ -91,26 +91,6 @@ type EmailServiceInterface interface {
 	Shutdown()
 }
 
-// CacheServiceInterface defines the interface for cache operations
-type CacheServiceInterface interface {
-	// Basic cache operations
-	Set(key string, value any, ttl time.Duration)
-	Get(key string) (any, bool)
-	Delete(key string)
-	Clear()
-
-	// Cache management
-	Size() int
-	Keys() []string
-	Exists(key string) bool
-	GetTTL(key string) time.Duration
-	Stats() map[string]any
-
-	// Advanced operations
-	GetOrSet(key string, generator func() any, ttl time.Duration) any
-	Stop()
-}
-
 // SearchServiceInterface defines the interface for search operations
 type SearchServiceInterface interface {
 	// Search methods

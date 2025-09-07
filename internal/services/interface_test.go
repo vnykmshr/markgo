@@ -35,14 +35,6 @@ func TestInterfaceCompliance(t *testing.T) {
 		var _ EmailServiceInterface = service
 	})
 
-	// CacheService interface compliance
-	t.Run("CacheService implements CacheServiceInterface", func(t *testing.T) {
-		service := NewCacheService(300, 1000)
-
-		// This will fail to compile if CacheService doesn't implement the interface
-		var _ CacheServiceInterface = service
-	})
-
 	// SearchService interface compliance
 	t.Run("SearchService implements SearchServiceInterface", func(t *testing.T) {
 		service := NewSearchService()
