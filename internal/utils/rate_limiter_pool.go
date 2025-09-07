@@ -3,6 +3,8 @@ package utils
 import (
 	"sync"
 	"time"
+
+	"github.com/vnykmshr/obcache-go/pkg/obcache"
 )
 
 // CircularTimeBuffer provides a memory-efficient circular buffer for timestamps
@@ -67,9 +69,9 @@ func (c *CircularTimeBuffer) Clear() {
 	c.count = 0
 }
 
-// OptimizedRateLimiter provides memory-efficient rate limiting with circular buffers
+// OptimizedRateLimiter provides memory-efficient rate limiting with circular buffers using obcache-go
 type OptimizedRateLimiter struct {
-	requests sync.Map // map[string]*CircularTimeBuffer
+	requests *obcache.Cache
 	limit    int
 	window   time.Duration
 	bufPool  *CircularTimeBufferPool
@@ -107,16 +109,29 @@ func (p *CircularTimeBufferPool) PutBuffer(buf *CircularTimeBuffer) {
 	}
 }
 
-// NewOptimizedRateLimiter creates a new memory-optimized rate limiter
+// NewOptimizedRateLimiter creates a new memory-optimized rate limiter using obcache-go
 func NewOptimizedRateLimiter(limit int, window time.Duration) *OptimizedRateLimiter {
-	rl := &OptimizedRateLimiter{
-		limit:   limit,
-		window:  window,
-		bufPool: NewCircularTimeBufferPool(limit * 2), // Buffer size slightly larger than limit
+	// Create obcache configuration for rate limiting
+	config := obcache.NewDefaultConfig()
+	config.MaxEntries = 10000                // Support many concurrent clients
+	config.DefaultTTL = window * 2           // Keep entries longer than window for efficiency
+	config.CleanupInterval = 2 * time.Minute // Cleanup interval for expired entries
+
+	// Create obcache instance
+	requestsCache, err := obcache.New(config)
+	if err != nil {
+		// Fallback to basic config if creation fails
+		basicConfig := obcache.NewDefaultConfig()
+		basicConfig.DefaultTTL = window * 2
+		requestsCache, _ = obcache.New(basicConfig)
 	}
 
-	// Start cleanup goroutine with less frequent cleanup
-	go rl.cleanup()
+	rl := &OptimizedRateLimiter{
+		requests: requestsCache,
+		limit:    limit,
+		window:   window,
+		bufPool:  NewCircularTimeBufferPool(limit * 2), // Buffer size slightly larger than limit
+	}
 
 	return rl
 }
@@ -127,8 +142,14 @@ func (rl *OptimizedRateLimiter) IsAllowed(key string) bool {
 	windowStart := now.Add(-rl.window)
 
 	// Get or create buffer for this key
-	bufferInterface, _ := rl.requests.LoadOrStore(key, rl.bufPool.GetBuffer())
-	buffer := bufferInterface.(*CircularTimeBuffer)
+	var buffer *CircularTimeBuffer
+	if cachedBuffer, found := rl.requests.Get(key); found {
+		buffer = cachedBuffer.(*CircularTimeBuffer)
+	} else {
+		buffer = rl.bufPool.GetBuffer()
+		// Store buffer in cache with TTL equal to window duration * 2
+		_ = rl.requests.Set(key, buffer, rl.window*2)
+	}
 
 	// Count valid requests in the time window
 	validCount := buffer.CountSince(windowStart)
@@ -143,81 +164,75 @@ func (rl *OptimizedRateLimiter) IsAllowed(key string) bool {
 	return true
 }
 
-// cleanup periodically removes inactive entries to prevent memory leaks
-func (rl *OptimizedRateLimiter) cleanup() {
-	ticker := time.NewTicker(5 * time.Minute) // Less frequent cleanup
-	defer ticker.Stop()
-
-	for range ticker.C {
-		now := time.Now()
-		windowStart := now.Add(-rl.window * 2) // Keep entries a bit longer for efficiency
-
-		var keysToDelete []string
-
-		rl.requests.Range(func(key, value any) bool {
-			buffer := value.(*CircularTimeBuffer)
-
-			// Check if this key has any recent activity
-			if buffer.CountSince(windowStart) == 0 {
-				keysToDelete = append(keysToDelete, key.(string))
-				// Return buffer to pool
-				rl.bufPool.PutBuffer(buffer)
-			}
-			return true
-		})
-
-		// Delete inactive keys
-		for _, key := range keysToDelete {
-			rl.requests.Delete(key)
-		}
-	}
-}
-
 // GetStats returns statistics about the rate limiter
 func (rl *OptimizedRateLimiter) GetStats() map[string]any {
-	activeKeys := 0
-	rl.requests.Range(func(key, value any) bool {
-		activeKeys++
-		return true
-	})
+	stats := rl.requests.Stats()
 
 	return map[string]any{
-		"active_keys": activeKeys,
+		"active_keys": int(stats.KeyCount()),
 		"limit":       rl.limit,
 		"window":      rl.window.String(),
+		"hit_count":   int(stats.Hits()),
+		"miss_count":  int(stats.Misses()),
+		"hit_ratio":   stats.HitRate() * 100,
+		"evictions":   int(stats.Evictions()),
+		"cache_type":  "obcache-go",
 	}
 }
 
-// RateLimiterManager manages multiple rate limiters efficiently
+// RateLimiterManager manages multiple rate limiters efficiently using obcache-go
 type RateLimiterManager struct {
-	limiters sync.Map
+	limiters *obcache.Cache
 	bufPool  *CircularTimeBufferPool
 }
 
-// NewRateLimiterManager creates a new rate limiter manager
+// NewRateLimiterManager creates a new rate limiter manager using obcache-go
 func NewRateLimiterManager() *RateLimiterManager {
+	// Create obcache configuration for rate limiter management
+	config := obcache.NewDefaultConfig()
+	config.MaxEntries = 1000 // Support many different rate limiter configurations
+	config.DefaultTTL = 0    // Rate limiters don't expire by default
+
+	// Create obcache instance
+	limitersCache, err := obcache.New(config)
+	if err != nil {
+		// Fallback to basic config if creation fails
+		basicConfig := obcache.NewDefaultConfig()
+		basicConfig.DefaultTTL = 0 // No expiration
+		limitersCache, _ = obcache.New(basicConfig)
+	}
+
 	return &RateLimiterManager{
-		bufPool: NewCircularTimeBufferPool(100), // Default buffer size
+		limiters: limitersCache,
+		bufPool:  NewCircularTimeBufferPool(100), // Default buffer size
 	}
 }
 
 // GetLimiter gets or creates a rate limiter for the given configuration
 func (m *RateLimiterManager) GetLimiter(name string, limit int, window time.Duration) *OptimizedRateLimiter {
-	limiterInterface, _ := m.limiters.LoadOrStore(name, NewOptimizedRateLimiter(limit, window))
-	return limiterInterface.(*OptimizedRateLimiter)
+	if cachedLimiter, found := m.limiters.Get(name); found {
+		return cachedLimiter.(*OptimizedRateLimiter)
+	}
+
+	// Create new rate limiter
+	newLimiter := NewOptimizedRateLimiter(limit, window)
+	_ = m.limiters.Set(name, newLimiter, 0) // No expiration for rate limiters
+	return newLimiter
 }
 
 // GetStats returns statistics for all managed rate limiters
 func (m *RateLimiterManager) GetStats() map[string]any {
-	stats := make(map[string]any)
+	// Note: obcache doesn't support enumeration, so we return cache stats instead
+	// This is a limitation we accept for the performance benefits
+	cacheStats := m.limiters.Stats()
 
-	m.limiters.Range(func(key, value any) bool {
-		limiter := value.(*OptimizedRateLimiter)
-		stats[key.(string)] = limiter.GetStats()
-		return true
-	})
-
-	return stats
+	return map[string]any{
+		"limiter_count": int(cacheStats.KeyCount()),
+		"hit_count":     int(cacheStats.Hits()),
+		"miss_count":    int(cacheStats.Misses()),
+		"hit_ratio":     cacheStats.HitRate() * 100,
+		"cache_type":    "obcache-go",
+	}
 }
 
 // Global rate limiter manager
@@ -292,11 +307,8 @@ func GetGlobalRequestIDPool() *RequestIDPool {
 
 // Cleanup clears all active rate limiters and buffers (for memory leak prevention)
 func (m *RateLimiterManager) Cleanup() {
-	// Clear all rate limiters
-	m.limiters.Range(func(key, value interface{}) bool {
-		m.limiters.Delete(key)
-		return true
-	})
+	// Clear all rate limiters using obcache
+	_ = m.limiters.Clear()
 
 	// Reset buffer pool
 	m.bufPool = NewCircularTimeBufferPool(100)
@@ -304,37 +316,27 @@ func (m *RateLimiterManager) Cleanup() {
 
 // Cleanup clears all request buffers (for OptimizedRateLimiter)
 func (rl *OptimizedRateLimiter) Cleanup() {
-	// Clear all request tracking
-	rl.requests.Range(func(key, value interface{}) bool {
-		buffer := value.(*CircularTimeBuffer)
-		rl.bufPool.PutBuffer(buffer)
-		rl.requests.Delete(key)
-		return true
-	})
+	// Clear all request tracking using obcache
+	// Note: We can't enumerate and return buffers to pool due to obcache limitations
+	// This is acceptable as buffers will be garbage collected
+	_ = rl.requests.Clear()
 }
 
 // GetStats returns more detailed statistics for RateLimiterManager
 func (m *RateLimiterManager) GetStatsDetailed() map[string]interface{} {
-	stats := m.GetStats()
+	cacheStats := m.limiters.Stats()
 
-	totalActiveKeys := 0
-	limiterCount := 0
-
-	m.limiters.Range(func(key, value interface{}) bool {
-		limiter := value.(*OptimizedRateLimiter)
-		limiterStats := limiter.GetStats()
-		if activeKeys, ok := limiterStats["active_keys"].(int); ok {
-			totalActiveKeys += activeKeys
-		}
-		limiterCount++
-		return true
-	})
-
-	stats["total_active_keys"] = totalActiveKeys
-	stats["limiter_count"] = limiterCount
-	stats["type"] = "RateLimiterManager"
-
-	return stats
+	// Enhanced statistics with cache metrics
+	return map[string]interface{}{
+		"limiter_count":     int(cacheStats.KeyCount()),
+		"hit_count":         int(cacheStats.Hits()),
+		"miss_count":        int(cacheStats.Misses()),
+		"hit_ratio":         cacheStats.HitRate() * 100,
+		"evictions":         int(cacheStats.Evictions()),
+		"cache_type":        "obcache-go",
+		"type":              "RateLimiterManager",
+		"total_active_keys": "N/A - obcache limitation",
+	}
 }
 
 // Cleanup clears all pooled request ID buffers (for memory leak prevention)
