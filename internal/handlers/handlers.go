@@ -1543,3 +1543,27 @@ func (h *Handlers) getSitemapUncached() (string, error) {
 
 	return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + string(sitemapXML), nil
 }
+
+// =====================
+// Public Test Accessors (for testing only)
+// =====================
+
+// GetHomeDataUncached is a public accessor for testing
+func (h *Handlers) GetHomeDataUncached() (map[string]any, error) {
+	return h.getHomeDataUncached()
+}
+
+// GetArticleDataUncached is a public accessor for testing
+func (h *Handlers) GetArticleDataUncached(slug string) (map[string]any, error) {
+	return h.getArticleDataUncached(slug)
+}
+
+// GetArticlesPageUncached is a public accessor for testing
+func (h *Handlers) GetArticlesPageUncached(page int) (map[string]any, error) {
+	return h.getArticlesPageUncached(page)
+}
+
+// GetSearchResultsUncached is a public accessor for testing
+func (h *Handlers) GetSearchResultsUncached(query string) (map[string]any, error) {
+	return h.getSearchResultsUncached(query)
+}
