@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/vnykmshr/goflow/pkg/scheduling/scheduler"
+	"github.com/vnykmshr/goflow/pkg/scheduling/workerpool"
 	"github.com/vnykmshr/markgo/internal/config"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/models"
@@ -28,6 +30,9 @@ type EmailService struct {
 	mutex        sync.RWMutex
 	ctx          context.Context
 	cancel       context.CancelFunc
+
+	// goflow integration
+	scheduler scheduler.Scheduler
 }
 
 func NewEmailService(cfg config.EmailConfig, logger *slog.Logger) *EmailService {
@@ -38,6 +43,10 @@ func NewEmailService(cfg config.EmailConfig, logger *slog.Logger) *EmailService 
 
 	ctx, cancel := context.WithCancel(context.Background())
 
+	// Initialize goflow scheduler for email cleanup tasks
+	goflowScheduler := scheduler.New()
+	_ = goflowScheduler.Start() // Continue even if scheduler fails to start
+
 	es := &EmailService{
 		config:       cfg,
 		logger:       logger,
@@ -45,10 +54,11 @@ func NewEmailService(cfg config.EmailConfig, logger *slog.Logger) *EmailService 
 		recentEmails: make(map[string]time.Time),
 		ctx:          ctx,
 		cancel:       cancel,
+		scheduler:    goflowScheduler,
 	}
 
-	// Start cleanup goroutine for recent emails map
-	go es.cleanupRecentEmails()
+	// Setup scheduled cleanup using goflow instead of manual goroutine
+	es.setupEmailCleanupTasks()
 
 	return es
 }
@@ -372,20 +382,20 @@ func (e *EmailService) markEmailSent(hash string) {
 	e.recentEmails[hash] = time.Now()
 }
 
-// cleanupRecentEmails periodically cleans up old entries from the recent emails map
-func (e *EmailService) cleanupRecentEmails() {
-	ticker := time.NewTicker(10 * time.Minute)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-e.ctx.Done():
-			e.logger.Debug("Email service cleanup goroutine shutting down")
-			return
-		case <-ticker.C:
-			e.performCleanup()
-		}
+// setupEmailCleanupTasks configures background cleanup tasks using goflow scheduler
+func (e *EmailService) setupEmailCleanupTasks() {
+	if e.scheduler == nil {
+		return
 	}
+
+	// Email cleanup task
+	cleanupTask := workerpool.TaskFunc(func(ctx context.Context) error {
+		e.performCleanup()
+		return nil
+	})
+
+	// Schedule cleanup every 10 minutes using cron format (6 fields: second, minute, hour, day, month, weekday)
+	_ = e.scheduler.ScheduleCron("email-cleanup", "0 */10 * * * *", cleanupTask) // Continue without scheduled cleanup if scheduling fails
 }
 
 // performCleanup removes old entries from the recent emails cache
@@ -413,6 +423,13 @@ func (e *EmailService) performCleanup() {
 // Shutdown gracefully shuts down the email service
 func (e *EmailService) Shutdown() {
 	e.logger.Info("Shutting down email service")
+
+	// Stop goflow scheduler
+	if e.scheduler != nil {
+		e.scheduler.Stop()
+	}
+
+	// Cancel context
 	e.cancel()
 }
 
