@@ -308,8 +308,7 @@ func (h *Handlers) DebugRequests(c *gin.Context) {
 }
 
 func (h *Handlers) SetLogLevel(c *gin.Context) {
-	// Not implemented in AdminHandler, return not implemented
-	c.JSON(501, gin.H{"error": "Not implemented"})
+	h.AdminHandler.SetLogLevel(c)
 }
 
 func (h *Handlers) PprofIndex(c *gin.Context) {
@@ -333,8 +332,7 @@ func (h *Handlers) PprofGoroutine(c *gin.Context) {
 }
 
 func (h *Handlers) PprofAllocs(c *gin.Context) {
-	// Not implemented in AdminHandler, return not implemented
-	c.JSON(501, gin.H{"error": "Not implemented"})
+	h.AdminHandler.ProfileAllocs(c)
 }
 
 func (h *Handlers) PprofBlock(c *gin.Context) {

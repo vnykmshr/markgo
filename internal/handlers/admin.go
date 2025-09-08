@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -261,6 +262,63 @@ func (h *AdminHandler) ProfileMutex(c *gin.Context) {
 		return
 	}
 	pprof.Handler("mutex").ServeHTTP(c.Writer, c.Request)
+}
+
+func (h *AdminHandler) ProfileAllocs(c *gin.Context) {
+	if !h.requireDevelopmentEnv(c) {
+		return
+	}
+	pprof.Handler("allocs").ServeHTTP(c.Writer, c.Request)
+}
+
+// SetLogLevel handles dynamic log level changes
+func (h *AdminHandler) SetLogLevel(c *gin.Context) {
+	if !h.requireDevelopmentEnv(c) {
+		return
+	}
+
+	level := c.PostForm("level")
+	if level == "" {
+		level = c.Query("level")
+	}
+	
+	if level == "" {
+		c.JSON(400, gin.H{
+			"error":   "Missing log level parameter",
+			"message": "Please provide 'level' parameter with value: debug, info, warn, error",
+			"example": "POST /admin/log-level with level=debug or GET /admin/log-level?level=info",
+		})
+		return
+	}
+
+	// Validate log level
+	validLevels := map[string]bool{
+		"debug": true,
+		"info":  true,
+		"warn":  true,
+		"error": true,
+	}
+
+	level = strings.ToLower(strings.TrimSpace(level))
+	if !validLevels[level] {
+		c.JSON(400, gin.H{
+			"error":   "Invalid log level",
+			"message": "Log level must be one of: debug, info, warn, error",
+			"provided": level,
+		})
+		return
+	}
+
+	// Note: slog doesn't support runtime level changes natively
+	// This would require a more complex implementation with a custom handler
+	h.logger.Info("Log level change requested", "requested_level", level, "note", "Runtime log level changes require service restart")
+	
+	c.JSON(200, gin.H{
+		"message":        "Log level change requested",
+		"requested_level": level,
+		"note":          "Runtime log level changes are not currently supported. Please update config and restart service.",
+		"current_status": "Request logged for future implementation",
+	})
 }
 
 // Uncached data generation methods
