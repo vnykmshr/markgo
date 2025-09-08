@@ -28,11 +28,11 @@ type Repository interface {
 	GetDrafts() []*models.Article
 	GetFeatured(limit int) []*models.Article
 	GetRecent(limit int) []*models.Article
-	
+
 	// File system operations
 	Reload(ctx context.Context) error
 	GetLastModified() time.Time
-	
+
 	// Statistics
 	GetStats() *models.Stats
 }
@@ -64,7 +64,7 @@ func (r *FileSystemRepository) LoadAll(ctx context.Context) ([]*models.Article, 
 	defer r.mutex.Unlock()
 
 	r.logger.Info("Loading articles from file system", "path", r.articlesPath)
-	
+
 	var articles []*models.Article
 	cache := make(map[string]*models.Article)
 
@@ -257,7 +257,7 @@ func (r *FileSystemRepository) GetStats() *models.Stats {
 
 	for _, article := range r.articles {
 		stats.TotalArticles++
-		
+
 		if article.Draft {
 			stats.DraftCount++
 		} else {
@@ -295,7 +295,7 @@ func (r *FileSystemRepository) GetStats() *models.Stats {
 	if len(tagPairs) < maxTags {
 		maxTags = len(tagPairs)
 	}
-	
+
 	for i := 0; i < maxTags; i++ {
 		stats.PopularTags = append(stats.PopularTags, models.TagCount{
 			Tag:   tagPairs[i].tag,

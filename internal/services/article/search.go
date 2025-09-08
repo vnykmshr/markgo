@@ -16,11 +16,11 @@ type SearchService interface {
 	SearchInTitle(articles []*models.Article, query string, limit int) []*models.SearchResult
 	SearchByTag(articles []*models.Article, tag string) []*models.Article
 	SearchByCategory(articles []*models.Article, category string) []*models.Article
-	
+
 	// Advanced search
 	SearchWithFilters(articles []*models.Article, query string, filters SearchFilters) []*models.SearchResult
 	GetSuggestions(articles []*models.Article, query string, limit int) []string
-	
+
 	// Indexing and optimization
 	BuildSearchIndex(articles []*models.Article) SearchIndex
 	SearchWithIndex(index SearchIndex, query string, limit int) []*models.SearchResult
@@ -28,26 +28,26 @@ type SearchService interface {
 
 // SearchFilters defines search filtering options
 type SearchFilters struct {
-	Tags         []string
-	Categories   []string
-	DateFrom     string
-	DateTo       string
-	OnlyFeatured bool
+	Tags          []string
+	Categories    []string
+	DateFrom      string
+	DateTo        string
+	OnlyFeatured  bool
 	OnlyPublished bool
 }
 
 // SearchIndex provides fast text search capabilities
 type SearchIndex struct {
-	Articles    []*models.Article
-	TitleIndex  map[string][]*models.Article
+	Articles     []*models.Article
+	TitleIndex   map[string][]*models.Article
 	ContentIndex map[string][]*models.Article
-	TagIndex    map[string][]*models.Article
+	TagIndex     map[string][]*models.Article
 }
 
 // TextSearchService implements SearchService using text-based search algorithms
 type TextSearchService struct {
 	logger *slog.Logger
-	
+
 	// Stop words to ignore in search
 	stopWords map[string]bool
 }
@@ -212,7 +212,7 @@ func (s *TextSearchService) SearchByCategory(articles []*models.Article, categor
 func (s *TextSearchService) SearchWithFilters(articles []*models.Article, query string, filters SearchFilters) []*models.SearchResult {
 	// First, apply filters to narrow down articles
 	filtered := s.applyFilters(articles, filters)
-	
+
 	// Then perform search on filtered articles
 	return s.Search(filtered, query, 0) // No limit here, let caller handle
 }
@@ -253,7 +253,7 @@ func (s *TextSearchService) GetSuggestions(articles []*models.Article, query str
 		term  string
 		count int
 	}
-	
+
 	var suggestionList []suggestionCount
 	for term, count := range suggestions {
 		suggestionList = append(suggestionList, suggestionCount{term, count})
@@ -400,20 +400,20 @@ func (s *TextSearchService) SearchWithIndex(index SearchIndex, query string, lim
 func (s *TextSearchService) extractSearchTerms(query string) []string {
 	words := s.extractWords(query)
 	var terms []string
-	
+
 	for _, word := range words {
 		if !s.stopWords[word] && len(word) > 1 {
 			terms = append(terms, word)
 		}
 	}
-	
+
 	return terms
 }
 
 func (s *TextSearchService) extractWords(text string) []string {
 	var words []string
 	var current strings.Builder
-	
+
 	for _, r := range text {
 		if unicode.IsLetter(r) || unicode.IsNumber(r) {
 			current.WriteRune(r)
@@ -424,35 +424,35 @@ func (s *TextSearchService) extractWords(text string) []string {
 			}
 		}
 	}
-	
+
 	if current.Len() > 0 {
 		words = append(words, current.String())
 	}
-	
+
 	return words
 }
 
 func (s *TextSearchService) calculateRelevanceScore(article *models.Article, searchTerms []string) (float64, []string) {
 	var score float64
 	var matchedFields []string
-	
+
 	titleLower := strings.ToLower(article.Title)
 	contentLower := strings.ToLower(article.Content)
 	descriptionLower := strings.ToLower(article.Description)
-	
+
 	for _, term := range searchTerms {
 		// Title matches (highest weight)
 		if strings.Contains(titleLower, term) {
 			score += 10.0
 			matchedFields = append(matchedFields, "title")
 		}
-		
+
 		// Description matches (high weight)
 		if strings.Contains(descriptionLower, term) {
 			score += 5.0
 			matchedFields = append(matchedFields, "description")
 		}
-		
+
 		// Tag matches (medium weight)
 		for _, tag := range article.Tags {
 			if strings.EqualFold(tag, term) {
@@ -461,7 +461,7 @@ func (s *TextSearchService) calculateRelevanceScore(article *models.Article, sea
 				break
 			}
 		}
-		
+
 		// Category matches (medium weight)
 		for _, category := range article.Categories {
 			if strings.EqualFold(category, term) {
@@ -470,7 +470,7 @@ func (s *TextSearchService) calculateRelevanceScore(article *models.Article, sea
 				break
 			}
 		}
-		
+
 		// Content matches (lower weight, but count frequency)
 		contentMatches := strings.Count(contentLower, term)
 		score += float64(contentMatches) * 1.0
@@ -478,32 +478,32 @@ func (s *TextSearchService) calculateRelevanceScore(article *models.Article, sea
 			matchedFields = append(matchedFields, "content")
 		}
 	}
-	
+
 	// Bonus for featured articles
 	if article.Featured {
 		score *= 1.2
 	}
-	
+
 	// Remove duplicate matched fields
 	matchedFields = removeDuplicateStrings(matchedFields)
-	
+
 	return score, matchedFields
 }
 
 func (s *TextSearchService) applyFilters(articles []*models.Article, filters SearchFilters) []*models.Article {
 	var filtered []*models.Article
-	
+
 	for _, article := range articles {
 		// Skip drafts if only published requested
 		if filters.OnlyPublished && article.Draft {
 			continue
 		}
-		
+
 		// Skip non-featured if only featured requested
 		if filters.OnlyFeatured && !article.Featured {
 			continue
 		}
-		
+
 		// Tag filter
 		if len(filters.Tags) > 0 {
 			hasTag := false
@@ -522,7 +522,7 @@ func (s *TextSearchService) applyFilters(articles []*models.Article, filters Sea
 				continue
 			}
 		}
-		
+
 		// Category filter
 		if len(filters.Categories) > 0 {
 			hasCategory := false
@@ -541,26 +541,26 @@ func (s *TextSearchService) applyFilters(articles []*models.Article, filters Sea
 				continue
 			}
 		}
-		
+
 		// TODO: Add date range filters
-		
+
 		filtered = append(filtered, article)
 	}
-	
+
 	return filtered
 }
 
 func removeDuplicateStrings(slice []string) []string {
 	seen := make(map[string]bool)
 	var result []string
-	
+
 	for _, item := range slice {
 		if !seen[item] {
 			seen[item] = true
 			result = append(result, item)
 		}
 	}
-	
+
 	return result
 }
 

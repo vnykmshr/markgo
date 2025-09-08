@@ -52,7 +52,7 @@ type ArticleServiceInterface interface {
 	UnpublishArticle(slug string) error
 }
 
-// CreateLegacyCompatibleService creates a service that's compatible with the existing 
+// CreateLegacyCompatibleService creates a service that's compatible with the existing
 // ArticleServiceInterface while using the new modular architecture internally
 func (f *ServiceFactory) CreateLegacyCompatibleService(articlesPath string) (ArticleServiceInterface, error) {
 	// Create configuration
@@ -62,29 +62,29 @@ func (f *ServiceFactory) CreateLegacyCompatibleService(articlesPath string) (Art
 		CacheConfig:  DefaultCacheConfig(),
 		SearchIndex:  true,
 	}
-	
+
 	// Create service container
 	container, err := NewServiceContainer(config, f.logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create service container: %w", err)
 	}
-	
+
 	// Initialize the container
 	ctx := context.Background()
 	if err := container.Start(ctx); err != nil {
 		return nil, fmt.Errorf("failed to start service container: %w", err)
 	}
-	
+
 	// Create legacy wrapper
 	wrapper := container.CreateLegacyWrapper()
-	
+
 	// Create an adapter that implements the full legacy interface
 	adapter := &LegacyServiceAdapter{
 		wrapper:   wrapper,
 		container: container,
 		logger:    f.logger,
 	}
-	
+
 	return adapter, nil
 }
 
@@ -96,17 +96,17 @@ func (f *ServiceFactory) CreateModernService(articlesPath string) (*ServiceConta
 		CacheConfig:  DefaultCacheConfig(),
 		SearchIndex:  true,
 	}
-	
+
 	container, err := NewServiceContainer(config, f.logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create service container: %w", err)
 	}
-	
+
 	ctx := context.Background()
 	if err := container.Start(ctx); err != nil {
 		return nil, fmt.Errorf("failed to start service container: %w", err)
 	}
-	
+
 	return container, nil
 }
 

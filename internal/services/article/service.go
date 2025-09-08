@@ -23,31 +23,31 @@ type Service interface {
 	GetRecentArticles(limit int) []*models.Article
 	GetDraftArticles() []*models.Article
 	GetDraftBySlug(slug string) (*models.Article, error)
-	
+
 	// Search operations
 	SearchArticles(query string, limit int) []*models.SearchResult
 	SearchInTitle(query string, limit int) []*models.SearchResult
 	GetSearchSuggestions(query string, limit int) []string
-	
+
 	// Content processing
 	ProcessArticleContent(article *models.Article) error
-	
+
 	// Statistics and metadata
 	GetStats() *models.Stats
 	GetAllTags() []string
 	GetAllCategories() []string
 	GetTagCounts() []models.TagCount
 	GetCategoryCounts() []models.CategoryCount
-	
+
 	// Management operations
 	ReloadArticles() error
 	GetLastReloadTime() time.Time
-	
+
 	// Draft operations
 	PreviewDraft(slug string) (*models.Article, error)
 	PublishDraft(slug string) error
 	UnpublishArticle(slug string) error
-	
+
 	// Lifecycle
 	Start(ctx context.Context) error
 	Stop() error
@@ -59,18 +59,18 @@ type CompositeService struct {
 	repository       Repository
 	contentProcessor ContentProcessor
 	searchService    SearchService
-	logger          *slog.Logger
-	
+	logger           *slog.Logger
+
 	// State management
-	mutex           sync.RWMutex
-	started         bool
-	ctx             context.Context
-	cancel          context.CancelFunc
-	
+	mutex   sync.RWMutex
+	started bool
+	ctx     context.Context
+	cancel  context.CancelFunc
+
 	// Caching
-	searchIndex     SearchIndex
-	indexBuilt      bool
-	indexMutex      sync.RWMutex
+	searchIndex SearchIndex
+	indexBuilt  bool
+	indexMutex  sync.RWMutex
 }
 
 // NewCompositeService creates a new composite article service
@@ -84,7 +84,7 @@ func NewCompositeService(
 		repository:       repository,
 		contentProcessor: contentProcessor,
 		searchService:    searchService,
-		logger:          logger,
+		logger:           logger,
 	}
 }
 
@@ -92,19 +92,19 @@ func NewCompositeService(
 func (s *CompositeService) Start(ctx context.Context) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	
+
 	if s.started {
 		return fmt.Errorf("service already started")
 	}
-	
+
 	s.ctx, s.cancel = context.WithCancel(ctx)
-	
+
 	// Load articles
 	articles, err := s.repository.LoadAll(s.ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load articles: %w", err)
 	}
-	
+
 	// Process article content
 	s.logger.Info("Processing article content", "count", len(articles))
 	for _, article := range articles {
@@ -112,13 +112,13 @@ func (s *CompositeService) Start(ctx context.Context) error {
 			s.logger.Warn("Failed to process article content", "slug", article.Slug, "error", err)
 		}
 	}
-	
+
 	// Build search index
 	s.buildSearchIndex(articles)
-	
+
 	s.started = true
 	s.logger.Info("Article service started successfully", "articles_loaded", len(articles))
-	
+
 	return nil
 }
 
@@ -126,18 +126,18 @@ func (s *CompositeService) Start(ctx context.Context) error {
 func (s *CompositeService) Stop() error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	
+
 	if !s.started {
 		return nil
 	}
-	
+
 	if s.cancel != nil {
 		s.cancel()
 	}
-	
+
 	s.started = false
 	s.logger.Info("Article service stopped")
-	
+
 	return nil
 }
 
@@ -152,12 +152,12 @@ func (s *CompositeService) GetArticleBySlug(slug string) (*models.Article, error
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Skip draft articles for public access
 	if article.Draft {
 		return nil, fmt.Errorf("article not found: %s", slug)
 	}
-	
+
 	return article, nil
 }
 
@@ -197,12 +197,12 @@ func (s *CompositeService) GetDraftBySlug(slug string) (*models.Article, error) 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Only return if it's actually a draft
 	if !article.Draft {
 		return nil, fmt.Errorf("article is not a draft: %s", slug)
 	}
-	
+
 	return article, nil
 }
 
@@ -216,7 +216,7 @@ func (s *CompositeService) SearchArticles(query string, limit int) []*models.Sea
 		return results
 	}
 	s.indexMutex.RUnlock()
-	
+
 	// Fallback to direct search
 	articles := s.repository.GetPublished()
 	return s.searchService.Search(articles, query, limit)
@@ -238,11 +238,11 @@ func (s *CompositeService) GetSearchSuggestions(query string, limit int) []strin
 func (s *CompositeService) ProcessArticleContent(article *models.Article) error {
 	// Set the article processor for lazy loading
 	article.SetProcessor(s.contentProcessor)
-	
+
 	// Pre-calculate reading time and word count
 	article.ReadingTime = s.contentProcessor.CalculateReadingTime(article.Content)
 	article.WordCount = len(strings.Fields(article.Content))
-	
+
 	return nil
 }
 
@@ -255,18 +255,18 @@ func (s *CompositeService) GetStats() *models.Stats {
 func (s *CompositeService) GetAllTags() []string {
 	articles := s.repository.GetPublished()
 	tagSet := make(map[string]bool)
-	
+
 	for _, article := range articles {
 		for _, tag := range article.Tags {
 			tagSet[tag] = true
 		}
 	}
-	
+
 	var tags []string
 	for tag := range tagSet {
 		tags = append(tags, tag)
 	}
-	
+
 	return tags
 }
 
@@ -274,18 +274,18 @@ func (s *CompositeService) GetAllTags() []string {
 func (s *CompositeService) GetAllCategories() []string {
 	articles := s.repository.GetPublished()
 	categorySet := make(map[string]bool)
-	
+
 	for _, article := range articles {
 		for _, category := range article.Categories {
 			categorySet[category] = true
 		}
 	}
-	
+
 	var categories []string
 	for category := range categorySet {
 		categories = append(categories, category)
 	}
-	
+
 	return categories
 }
 
@@ -293,13 +293,13 @@ func (s *CompositeService) GetAllCategories() []string {
 func (s *CompositeService) GetTagCounts() []models.TagCount {
 	articles := s.repository.GetPublished()
 	tagCounts := make(map[string]int)
-	
+
 	for _, article := range articles {
 		for _, tag := range article.Tags {
 			tagCounts[tag]++
 		}
 	}
-	
+
 	var result []models.TagCount
 	for tag, count := range tagCounts {
 		result = append(result, models.TagCount{
@@ -307,7 +307,7 @@ func (s *CompositeService) GetTagCounts() []models.TagCount {
 			Count: count,
 		})
 	}
-	
+
 	return result
 }
 
@@ -315,13 +315,13 @@ func (s *CompositeService) GetTagCounts() []models.TagCount {
 func (s *CompositeService) GetCategoryCounts() []models.CategoryCount {
 	articles := s.repository.GetPublished()
 	categoryCounts := make(map[string]int)
-	
+
 	for _, article := range articles {
 		for _, category := range article.Categories {
 			categoryCounts[category]++
 		}
 	}
-	
+
 	var result []models.CategoryCount
 	for category, count := range categoryCounts {
 		result = append(result, models.CategoryCount{
@@ -329,25 +329,25 @@ func (s *CompositeService) GetCategoryCounts() []models.CategoryCount {
 			Count:    count,
 		})
 	}
-	
+
 	return result
 }
 
 // ReloadArticles reloads all articles from storage
 func (s *CompositeService) ReloadArticles() error {
 	s.logger.Info("Reloading articles")
-	
+
 	ctx := s.ctx
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	
+
 	err := s.repository.Reload(ctx)
 	if err != nil {
 		s.logger.Error("Failed to reload articles", "error", err)
 		return fmt.Errorf("failed to reload articles: %w", err)
 	}
-	
+
 	// Get reloaded articles and process them
 	articles := s.repository.GetPublished()
 	for _, article := range articles {
@@ -355,10 +355,10 @@ func (s *CompositeService) ReloadArticles() error {
 			s.logger.Warn("Failed to process reloaded article content", "slug", article.Slug, "error", err)
 		}
 	}
-	
+
 	// Rebuild search index
 	s.buildSearchIndex(articles)
-	
+
 	s.logger.Info("Articles reloaded successfully", "count", len(articles))
 	return nil
 }
@@ -391,16 +391,15 @@ func (s *CompositeService) UnpublishArticle(slug string) error {
 
 func (s *CompositeService) buildSearchIndex(articles []*models.Article) {
 	s.logger.Info("Building search index", "articles", len(articles))
-	
+
 	s.indexMutex.Lock()
 	defer s.indexMutex.Unlock()
-	
+
 	s.searchIndex = s.searchService.BuildSearchIndex(articles)
 	s.indexBuilt = true
-	
+
 	s.logger.Info("Search index built successfully")
 }
-
 
 // Ensure CompositeService implements Service interface
 var _ Service = (*CompositeService)(nil)

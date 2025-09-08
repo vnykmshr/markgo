@@ -14,21 +14,21 @@ import (
 
 // CacheCoordinator manages caching across all article services
 type CacheCoordinator struct {
-	obcache     *obcache.Cache
-	logger      *slog.Logger
-	mu          sync.RWMutex
-	
+	obcache *obcache.Cache
+	logger  *slog.Logger
+	mu      sync.RWMutex
+
 	// Cache settings
-	articleTTL  time.Duration
-	searchTTL   time.Duration
-	contentTTL  time.Duration
-	
+	articleTTL time.Duration
+	searchTTL  time.Duration
+	contentTTL time.Duration
+
 	// Cache keys
 	articlePrefix string
 	searchPrefix  string
 	contentPrefix string
 	statsKey      string
-	
+
 	// Cache statistics
 	hits   int64
 	misses int64
@@ -59,17 +59,17 @@ func NewCacheCoordinator(config *CacheConfig, logger *slog.Logger) (*CacheCoordi
 	if config == nil {
 		config = DefaultCacheConfig()
 	}
-	
+
 	// Initialize obcache with configuration
 	cacheConfig := obcache.NewDefaultConfig().
 		WithMaxEntries(config.MaxEntries).
 		WithDefaultTTL(config.ArticleTTL)
-	
+
 	cache, err := obcache.New(cacheConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create obcache: %w", err)
 	}
-	
+
 	coordinator := &CacheCoordinator{
 		obcache:       cache,
 		logger:        logger,
@@ -81,12 +81,12 @@ func NewCacheCoordinator(config *CacheConfig, logger *slog.Logger) (*CacheCoordi
 		contentPrefix: "content:",
 		statsKey:      "stats",
 	}
-	
+
 	// Start background cleanup if configured
 	if config.CleanupPeriod > 0 {
 		go coordinator.startCleanup(config.CleanupPeriod)
 	}
-	
+
 	return coordinator, nil
 }
 
@@ -96,21 +96,23 @@ func NewCacheCoordinator(config *CacheConfig, logger *slog.Logger) (*CacheCoordi
 func (c *CacheCoordinator) GetArticle(slug string) (*models.Article, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	key := c.articlePrefix + slug
 	value, found := c.obcache.Get(key)
 	if !found {
 		c.misses++
 		return nil, false
 	}
-	
+
 	c.hits++
 	if article, ok := value.(*models.Article); ok {
 		return article, true
 	}
-	
+
 	// Invalid type in cache, remove it
-	c.obcache.Delete(key)
+	if err := c.obcache.Delete(key); err != nil {
+		c.logger.Warn("Failed to delete invalid article from cache", "key", key, "error", err)
+	}
 	return nil, false
 }
 
@@ -119,21 +121,25 @@ func (c *CacheCoordinator) SetArticle(slug string, article *models.Article) {
 	if article == nil {
 		return
 	}
-	
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	key := c.articlePrefix + slug
-	c.obcache.Set(key, article, c.articleTTL)
+	if err := c.obcache.Set(key, article, c.articleTTL); err != nil {
+		c.logger.Warn("Failed to cache article", "key", key, "error", err)
+	}
 }
 
 // InvalidateArticle removes an article from cache
 func (c *CacheCoordinator) InvalidateArticle(slug string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	key := c.articlePrefix + slug
-	c.obcache.Delete(key)
+	if err := c.obcache.Delete(key); err != nil {
+		c.logger.Warn("Failed to delete article from cache", "key", key, "error", err)
+	}
 }
 
 // Search result caching methods
@@ -142,21 +148,23 @@ func (c *CacheCoordinator) InvalidateArticle(slug string) {
 func (c *CacheCoordinator) GetSearchResults(query string, limit int) ([]*models.SearchResult, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	key := fmt.Sprintf("%s%s:%d", c.searchPrefix, query, limit)
 	value, found := c.obcache.Get(key)
 	if !found {
 		c.misses++
 		return nil, false
 	}
-	
+
 	c.hits++
 	if results, ok := value.([]*models.SearchResult); ok {
 		return results, true
 	}
-	
+
 	// Invalid type in cache, remove it
-	c.obcache.Delete(key)
+	if err := c.obcache.Delete(key); err != nil {
+		c.logger.Warn("Failed to delete invalid search results from cache", "key", key, "error", err)
+	}
 	return nil, false
 }
 
@@ -165,23 +173,27 @@ func (c *CacheCoordinator) SetSearchResults(query string, limit int, results []*
 	if results == nil {
 		return
 	}
-	
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	key := fmt.Sprintf("%s%s:%d", c.searchPrefix, query, limit)
-	c.obcache.Set(key, results, c.searchTTL)
+	if err := c.obcache.Set(key, results, c.searchTTL); err != nil {
+		c.logger.Warn("Failed to cache search results", "key", key, "error", err)
+	}
 }
 
 // InvalidateSearchCache clears all search-related cache entries
 func (c *CacheCoordinator) InvalidateSearchCache() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	// Since obcache doesn't have prefix-based deletion, we need to clear the entire cache
 	// In a production environment, you might want to track search keys separately
 	c.logger.Debug("Invalidating search cache (clearing all)")
-	c.obcache.Clear()
+	if err := c.obcache.Clear(); err != nil {
+		c.logger.Warn("Failed to clear search cache", "error", err)
+	}
 }
 
 // Content caching methods
@@ -190,21 +202,23 @@ func (c *CacheCoordinator) InvalidateSearchCache() {
 func (c *CacheCoordinator) GetProcessedContent(contentHash string) (string, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	key := c.contentPrefix + contentHash
 	value, found := c.obcache.Get(key)
 	if !found {
 		c.misses++
 		return "", false
 	}
-	
+
 	c.hits++
 	if content, ok := value.(string); ok {
 		return content, true
 	}
-	
+
 	// Invalid type in cache, remove it
-	c.obcache.Delete(key)
+	if err := c.obcache.Delete(key); err != nil {
+		c.logger.Warn("Failed to delete invalid content from cache", "key", key, "error", err)
+	}
 	return "", false
 }
 
@@ -213,12 +227,14 @@ func (c *CacheCoordinator) SetProcessedContent(contentHash, processedContent str
 	if processedContent == "" {
 		return
 	}
-	
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	key := c.contentPrefix + contentHash
-	c.obcache.Set(key, processedContent, c.contentTTL)
+	if err := c.obcache.Set(key, processedContent, c.contentTTL); err != nil {
+		c.logger.Warn("Failed to cache processed content", "key", key, "error", err)
+	}
 }
 
 // Stats caching methods
@@ -227,20 +243,22 @@ func (c *CacheCoordinator) SetProcessedContent(contentHash, processedContent str
 func (c *CacheCoordinator) GetStats() (*models.Stats, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	value, found := c.obcache.Get(c.statsKey)
 	if !found {
 		c.misses++
 		return nil, false
 	}
-	
+
 	c.hits++
 	if stats, ok := value.(*models.Stats); ok {
 		return stats, true
 	}
-	
+
 	// Invalid type in cache, remove it
-	c.obcache.Delete(c.statsKey)
+	if err := c.obcache.Delete(c.statsKey); err != nil {
+		c.logger.Warn("Failed to delete invalid stats from cache", "error", err)
+	}
 	return nil, false
 }
 
@@ -249,11 +267,13 @@ func (c *CacheCoordinator) SetStats(stats *models.Stats) {
 	if stats == nil {
 		return
 	}
-	
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
-	c.obcache.Set(c.statsKey, stats, c.articleTTL)
+
+	if err := c.obcache.Set(c.statsKey, stats, c.articleTTL); err != nil {
+		c.logger.Warn("Failed to cache stats", "error", err)
+	}
 }
 
 // Cache management methods
@@ -262,9 +282,11 @@ func (c *CacheCoordinator) SetStats(stats *models.Stats) {
 func (c *CacheCoordinator) InvalidateAll() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	c.logger.Info("Invalidating all cached data")
-	c.obcache.Clear()
+	if err := c.obcache.Clear(); err != nil {
+		c.logger.Warn("Failed to clear all cache", "error", err)
+	}
 	c.hits = 0
 	c.misses = 0
 }
@@ -273,35 +295,37 @@ func (c *CacheCoordinator) InvalidateAll() {
 func (c *CacheCoordinator) InvalidateByTag(tag string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	// For now, clear all search cache since we can't efficiently find tag-related entries
 	// In a production system, you might want to maintain tag-to-key mappings
 	c.logger.Debug("Invalidating cache for tag", "tag", tag)
-	c.obcache.Clear() // This is aggressive but safe
+	if err := c.obcache.Clear(); err != nil { // This is aggressive but safe
+		c.logger.Warn("Failed to clear cache for tag", "tag", tag, "error", err)
+	}
 }
 
 // GetCacheStats returns cache performance statistics
 func (c *CacheCoordinator) GetCacheStats() map[string]interface{} {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	obcacheStats := c.obcache.Stats()
-	
+
 	hitRate := float64(0)
 	total := c.hits + c.misses
 	if total > 0 {
 		hitRate = float64(c.hits) / float64(total)
 	}
-	
+
 	return map[string]interface{}{
-		"hits":               c.hits,
-		"misses":            c.misses,
-		"hit_rate":          hitRate,
+		"hits":     c.hits,
+		"misses":   c.misses,
+		"hit_rate": hitRate,
 		"obcache_stats": map[string]interface{}{
-			"key_count":  obcacheStats.KeyCount(),
-			"obcache_hits":    obcacheStats.Hits(),
-			"obcache_misses":  obcacheStats.Misses(),
-			"evictions":  obcacheStats.Evictions(),
+			"key_count":        obcacheStats.KeyCount(),
+			"obcache_hits":     obcacheStats.Hits(),
+			"obcache_misses":   obcacheStats.Misses(),
+			"evictions":        obcacheStats.Evictions(),
 			"obcache_hit_rate": obcacheStats.HitRate(),
 		},
 	}
@@ -311,7 +335,7 @@ func (c *CacheCoordinator) GetCacheStats() map[string]interface{} {
 func (c *CacheCoordinator) IsHealthy() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	return c.obcache != nil
 }
 
@@ -321,7 +345,7 @@ func (c *CacheCoordinator) IsHealthy() bool {
 func (c *CacheCoordinator) startCleanup(period time.Duration) {
 	ticker := time.NewTicker(period)
 	defer ticker.Stop()
-	
+
 	for range ticker.C {
 		c.cleanup()
 	}
@@ -331,7 +355,7 @@ func (c *CacheCoordinator) startCleanup(period time.Duration) {
 func (c *CacheCoordinator) cleanup() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	c.logger.Debug("Performing cache cleanup")
 	c.obcache.Cleanup()
 }
@@ -340,13 +364,13 @@ func (c *CacheCoordinator) cleanup() {
 func (c *CacheCoordinator) Shutdown(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	c.logger.Info("Shutting down cache coordinator")
-	
+
 	if c.obcache != nil {
 		c.obcache.Close()
 	}
-	
+
 	return nil
 }
 
@@ -385,13 +409,13 @@ func (cr *CachedRepository) GetBySlug(slug string) (*models.Article, error) {
 	if article, found := cr.cache.GetArticle(slug); found {
 		return article, nil
 	}
-	
+
 	// Not in cache, get from repository
 	article, err := cr.repository.GetBySlug(slug)
 	if err == nil && article != nil {
 		cr.cache.SetArticle(slug, article)
 	}
-	
+
 	return article, err
 }
 
@@ -437,13 +461,13 @@ func (cr *CachedRepository) GetStats() *models.Stats {
 	if stats, found := cr.cache.GetStats(); found {
 		return stats
 	}
-	
+
 	// Not in cache, get from repository
 	stats := cr.repository.GetStats()
 	if stats != nil {
 		cr.cache.SetStats(stats)
 	}
-	
+
 	return stats
 }
 

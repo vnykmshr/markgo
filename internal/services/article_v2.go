@@ -17,9 +17,9 @@ func NewArticleServiceV2(articlesPath string, logger *slog.Logger) (ArticleServi
 // ArticleServiceV2Adapter provides a bridge between the old and new service architectures
 // This allows for gradual migration while maintaining compatibility
 type ArticleServiceV2Adapter struct {
-	legacyService ArticleServiceInterface // Current service
+	legacyService ArticleServiceInterface   // Current service
 	modernService *article.ServiceContainer // New modular service
-	useLegacy     bool // Flag to control which service to use
+	useLegacy     bool                      // Flag to control which service to use
 	logger        *slog.Logger
 }
 
@@ -29,14 +29,14 @@ func NewArticleServiceV2Adapter(articlesPath string, logger *slog.Logger, useLeg
 		useLegacy: useLegacy,
 		logger:    logger,
 	}
-	
+
 	// Initialize legacy service
 	legacyService, err := NewArticleService(articlesPath, logger)
 	if err != nil {
 		return nil, err
 	}
 	adapter.legacyService = legacyService
-	
+
 	// Initialize modern service
 	factory := article.NewServiceFactory(logger)
 	modernService, err := factory.CreateModernService(articlesPath)
@@ -45,7 +45,7 @@ func NewArticleServiceV2Adapter(articlesPath string, logger *slog.Logger, useLeg
 	} else {
 		adapter.modernService = modernService
 	}
-	
+
 	return adapter, nil
 }
 
@@ -57,7 +57,7 @@ func (a *ArticleServiceV2Adapter) SwitchToModern() {
 	}
 }
 
-// SwitchToLegacy switches to using the legacy service implementation  
+// SwitchToLegacy switches to using the legacy service implementation
 func (a *ArticleServiceV2Adapter) SwitchToLegacy() {
 	a.useLegacy = true
 	a.logger.Info("Switched to legacy article service implementation")
@@ -66,17 +66,17 @@ func (a *ArticleServiceV2Adapter) SwitchToLegacy() {
 // GetImplementationStatus returns which implementation is currently active
 func (a *ArticleServiceV2Adapter) GetImplementationStatus() map[string]interface{} {
 	status := map[string]interface{}{
-		"using_legacy":        a.useLegacy,
-		"legacy_available":    a.legacyService != nil,
-		"modern_available":    a.modernService != nil,
-		"implementation":      "legacy",
+		"using_legacy":     a.useLegacy,
+		"legacy_available": a.legacyService != nil,
+		"modern_available": a.modernService != nil,
+		"implementation":   "legacy",
 	}
-	
+
 	if !a.useLegacy && a.modernService != nil {
 		status["implementation"] = "modern"
 		status["modern_health"] = a.modernService.GetHealthStatus()
 	}
-	
+
 	return status
 }
 
@@ -211,18 +211,18 @@ func (a *ArticleServiceV2Adapter) UnpublishArticle(slug string) error {
 // Shutdown gracefully shuts down both services
 func (a *ArticleServiceV2Adapter) Shutdown() error {
 	var err error
-	
+
 	if a.modernService != nil {
 		if modernErr := a.modernService.Stop(); modernErr != nil {
 			a.logger.Error("Error shutting down modern service", "error", modernErr)
 			err = modernErr
 		}
 	}
-	
+
 	// If legacy service has a shutdown method, call it
 	// Note: The current ArticleService doesn't have a Shutdown method in the interface
 	// but individual implementations might have cleanup methods
-	
+
 	return err
 }
 

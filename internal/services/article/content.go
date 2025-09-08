@@ -21,12 +21,12 @@ type ContentProcessor interface {
 	ProcessMarkdown(content string) (string, error)
 	GenerateExcerpt(content string, maxLength int) string
 	ProcessDuplicateTitles(title, htmlContent string) string
-	
+
 	// Content analysis
 	CalculateReadingTime(content string) int
 	ExtractImageURLs(content string) []string
 	ExtractLinks(content string) []string
-	
+
 	// Content validation
 	ValidateContent(content string) []string
 }
@@ -35,11 +35,11 @@ type ContentProcessor interface {
 type MarkdownContentProcessor struct {
 	markdown goldmark.Markdown
 	logger   *slog.Logger
-	
+
 	// Pre-compiled regexes for performance
-	codeBlockRe    *regexp.Regexp
-	linkRe         *regexp.Regexp
-	imageRe        *regexp.Regexp
+	codeBlockRe      *regexp.Regexp
+	linkRe           *regexp.Regexp
+	imageRe          *regexp.Regexp
 	duplicateTitleRe *regexp.Regexp
 }
 
@@ -48,27 +48,27 @@ func NewMarkdownContentProcessor(logger *slog.Logger) *MarkdownContentProcessor 
 	// Configure Goldmark with extensions
 	md := goldmark.New(
 		goldmark.WithExtensions(
-			extension.GFM,              // GitHub Flavored Markdown
-			extension.Table,            // Tables
-			extension.Strikethrough,    // Strikethrough
-			extension.Linkify,          // Auto-link URLs
-			extension.TaskList,         // Task lists
-			extension.DefinitionList,   // Definition lists
+			extension.GFM,            // GitHub Flavored Markdown
+			extension.Table,          // Tables
+			extension.Strikethrough,  // Strikethrough
+			extension.Linkify,        // Auto-link URLs
+			extension.TaskList,       // Task lists
+			extension.DefinitionList, // Definition lists
 		),
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(), // Auto-generate heading IDs
 		),
 		goldmark.WithRendererOptions(
-			html.WithHardWraps(),       // Hard line breaks
-			html.WithXHTML(),           // XHTML output
-			html.WithUnsafe(),          // Allow raw HTML
+			html.WithHardWraps(), // Hard line breaks
+			html.WithXHTML(),     // XHTML output
+			html.WithUnsafe(),    // Allow raw HTML
 		),
 	)
 
 	return &MarkdownContentProcessor{
 		markdown: md,
 		logger:   logger,
-		
+
 		// Pre-compile regexes for performance
 		codeBlockRe:      regexp.MustCompile("```[\\s\\S]*?```"),
 		linkRe:           regexp.MustCompile(`\[([^\]]*)\]\([^)]*\)`),
@@ -80,7 +80,7 @@ func NewMarkdownContentProcessor(logger *slog.Logger) *MarkdownContentProcessor 
 // ProcessMarkdown converts markdown content to HTML
 func (p *MarkdownContentProcessor) ProcessMarkdown(content string) (string, error) {
 	var buf bytes.Buffer
-	
+
 	if err := p.markdown.Convert([]byte(content), &buf); err != nil {
 		p.logger.Error("Failed to process markdown", "error", err)
 		return "", fmt.Errorf("markdown processing failed: %w", err)
@@ -97,19 +97,19 @@ func (p *MarkdownContentProcessor) GenerateExcerpt(content string, maxLength int
 
 	// Remove code blocks first (they can be long and not useful in excerpts)
 	cleanContent := p.codeBlockRe.ReplaceAllString(content, " ")
-	
+
 	// Remove links but keep the link text
 	cleanContent = p.linkRe.ReplaceAllString(cleanContent, "$1")
-	
+
 	// Remove images but keep alt text
 	cleanContent = p.imageRe.ReplaceAllString(cleanContent, "$1")
-	
+
 	// Remove markdown formatting
 	cleanContent = strings.ReplaceAll(cleanContent, "**", "")
 	cleanContent = strings.ReplaceAll(cleanContent, "*", "")
 	cleanContent = strings.ReplaceAll(cleanContent, "_", "")
 	cleanContent = strings.ReplaceAll(cleanContent, "`", "")
-	
+
 	// Remove heading markers
 	lines := strings.Split(cleanContent, "\n")
 	var cleanLines []string
@@ -120,22 +120,22 @@ func (p *MarkdownContentProcessor) GenerateExcerpt(content string, maxLength int
 		}
 	}
 	cleanContent = strings.Join(cleanLines, " ")
-	
+
 	// Normalize whitespace
 	cleanContent = strings.Join(strings.Fields(cleanContent), " ")
-	
+
 	// Truncate to max length
 	if len(cleanContent) <= maxLength {
 		return cleanContent
 	}
-	
+
 	// Find the last complete word within the limit
 	truncated := cleanContent[:maxLength]
 	lastSpace := strings.LastIndex(truncated, " ")
 	if lastSpace > 0 {
 		truncated = truncated[:lastSpace]
 	}
-	
+
 	return truncated + "..."
 }
 
@@ -152,10 +152,10 @@ func (p *MarkdownContentProcessor) ProcessDuplicateTitles(title, htmlContent str
 		// Extract text from the H1 tag
 		h1Text := regexp.MustCompile(`<h1[^>]*>(.*?)</h1>`).ReplaceAllString(firstH1, "$1")
 		h1Text = strings.TrimSpace(strings.ReplaceAll(h1Text, "\n", " "))
-		
+
 		// If the H1 text closely matches the title, remove it
-		if strings.EqualFold(h1Text, title) || 
-		   strings.EqualFold(strings.ReplaceAll(h1Text, " ", ""), strings.ReplaceAll(title, " ", "")) {
+		if strings.EqualFold(h1Text, title) ||
+			strings.EqualFold(strings.ReplaceAll(h1Text, " ", ""), strings.ReplaceAll(title, " ", "")) {
 			return p.duplicateTitleRe.ReplaceAllString(htmlContent, "")
 		}
 	}
@@ -166,20 +166,20 @@ func (p *MarkdownContentProcessor) ProcessDuplicateTitles(title, htmlContent str
 // CalculateReadingTime estimates reading time based on word count
 func (p *MarkdownContentProcessor) CalculateReadingTime(content string) int {
 	const averageWordsPerMinute = 200
-	
+
 	// Remove markdown formatting for accurate word count
 	cleanContent := p.codeBlockRe.ReplaceAllString(content, " ")
 	cleanContent = p.linkRe.ReplaceAllString(cleanContent, "$1")
 	cleanContent = p.imageRe.ReplaceAllString(cleanContent, "")
-	
+
 	words := strings.Fields(cleanContent)
 	wordCount := len(words)
-	
+
 	readingTime := wordCount / averageWordsPerMinute
 	if readingTime == 0 && wordCount > 0 {
 		readingTime = 1 // Minimum 1 minute
 	}
-	
+
 	return readingTime
 }
 
@@ -187,7 +187,7 @@ func (p *MarkdownContentProcessor) CalculateReadingTime(content string) int {
 func (p *MarkdownContentProcessor) ExtractImageURLs(content string) []string {
 	matches := p.imageRe.FindAllStringSubmatch(content, -1)
 	var urls []string
-	
+
 	for _, match := range matches {
 		if len(match) > 0 {
 			// Extract URL from markdown image syntax: ![alt](url)
@@ -197,7 +197,7 @@ func (p *MarkdownContentProcessor) ExtractImageURLs(content string) []string {
 			}
 		}
 	}
-	
+
 	return urls
 }
 
@@ -205,7 +205,7 @@ func (p *MarkdownContentProcessor) ExtractImageURLs(content string) []string {
 func (p *MarkdownContentProcessor) ExtractLinks(content string) []string {
 	matches := p.linkRe.FindAllStringSubmatch(content, -1)
 	var links []string
-	
+
 	for _, match := range matches {
 		if len(match) > 0 {
 			// Extract URL from markdown link syntax: [text](url)
@@ -215,22 +215,22 @@ func (p *MarkdownContentProcessor) ExtractLinks(content string) []string {
 			}
 		}
 	}
-	
+
 	return links
 }
 
 // ValidateContent performs basic content validation
 func (p *MarkdownContentProcessor) ValidateContent(content string) []string {
 	var issues []string
-	
+
 	if content == "" {
 		issues = append(issues, "Content is empty")
 		return issues
 	}
-	
+
 	// Check for common markdown issues
 	lines := strings.Split(content, "\n")
-	
+
 	// Check for missing alt text in images
 	imageMatches := p.imageRe.FindAllString(content, -1)
 	for _, img := range imageMatches {
@@ -238,14 +238,14 @@ func (p *MarkdownContentProcessor) ValidateContent(content string) []string {
 			issues = append(issues, "Image found without alt text")
 		}
 	}
-	
+
 	// Check for very long lines (readability)
 	for i, line := range lines {
 		if len(line) > 120 && !strings.HasPrefix(line, "```") {
 			issues = append(issues, fmt.Sprintf("Line %d is very long (%d characters)", i+1, len(line)))
 		}
 	}
-	
+
 	// Check for too many consecutive headers
 	headerCount := 0
 	for _, line := range lines {
@@ -259,7 +259,7 @@ func (p *MarkdownContentProcessor) ValidateContent(content string) []string {
 			headerCount = 0
 		}
 	}
-	
+
 	return issues
 }
 
