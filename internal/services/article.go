@@ -10,5 +10,5 @@ import (
 // Built with enterprise-grade performance, caching, and modularity
 func NewArticleService(articlesPath string, logger *slog.Logger) (ArticleServiceInterface, error) {
 	factory := article.NewServiceFactory(logger)
-	return factory.CreateLegacyCompatibleService(articlesPath)
+	return factory.CreateService(articlesPath)
 }

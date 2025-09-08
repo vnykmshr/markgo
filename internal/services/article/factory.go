@@ -20,8 +20,8 @@ func NewServiceFactory(logger *slog.Logger) *ServiceFactory {
 	}
 }
 
-// ArticleServiceInterface defines the interface that external packages expect
-// This avoids the import cycle by defining the interface locally
+// ArticleServiceInterface defines the article service interface
+// Defined locally to avoid import cycles
 type ArticleServiceInterface interface {
 	// Article retrieval methods
 	GetAllArticles() []*models.Article
@@ -52,9 +52,8 @@ type ArticleServiceInterface interface {
 	UnpublishArticle(slug string) error
 }
 
-// CreateLegacyCompatibleService creates a service that's compatible with the existing
-// ArticleServiceInterface while using the new modular architecture internally
-func (f *ServiceFactory) CreateLegacyCompatibleService(articlesPath string) (ArticleServiceInterface, error) {
+// CreateService creates a new article service using the modular architecture
+func (f *ServiceFactory) CreateService(articlesPath string) (ArticleServiceInterface, error) {
 	// Create configuration
 	config := &Config{
 		ArticlesPath: articlesPath,
@@ -75,11 +74,11 @@ func (f *ServiceFactory) CreateLegacyCompatibleService(articlesPath string) (Art
 		return nil, fmt.Errorf("failed to start service container: %w", err)
 	}
 
-	// Create legacy wrapper
-	wrapper := container.CreateLegacyWrapper()
+	// Create service wrapper
+	wrapper := container.CreateServiceWrapper()
 
-	// Create an adapter that implements the full legacy interface
-	adapter := &LegacyServiceAdapter{
+	// Create service adapter that implements the ArticleServiceInterface
+	adapter := &ServiceAdapter{
 		wrapper:   wrapper,
 		container: container,
 		logger:    f.logger,
@@ -88,113 +87,92 @@ func (f *ServiceFactory) CreateLegacyCompatibleService(articlesPath string) (Art
 	return adapter, nil
 }
 
-// CreateModernService creates a service using the new modular architecture
-func (f *ServiceFactory) CreateModernService(articlesPath string) (*ServiceContainer, error) {
-	config := &Config{
-		ArticlesPath: articlesPath,
-		CacheEnabled: true,
-		CacheConfig:  DefaultCacheConfig(),
-		SearchIndex:  true,
-	}
 
-	container, err := NewServiceContainer(config, f.logger)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create service container: %w", err)
-	}
-
-	ctx := context.Background()
-	if err := container.Start(ctx); err != nil {
-		return nil, fmt.Errorf("failed to start service container: %w", err)
-	}
-
-	return container, nil
-}
-
-// LegacyServiceAdapter adapts the new service container to implement the legacy interface
-type LegacyServiceAdapter struct {
-	wrapper   *LegacyServiceWrapper
+// ServiceAdapter adapts the service container to implement the ArticleServiceInterface
+type ServiceAdapter struct {
+	wrapper   *ServiceWrapper
 	container *ServiceContainer
 	logger    *slog.Logger
 }
 
-// Ensure LegacyServiceAdapter implements ArticleServiceInterface
-var _ ArticleServiceInterface = (*LegacyServiceAdapter)(nil)
+// Ensure ServiceAdapter implements ArticleServiceInterface
+var _ ArticleServiceInterface = (*ServiceAdapter)(nil)
 
 // Implement all methods from services.ArticleServiceInterface
-func (a *LegacyServiceAdapter) GetAllArticles() []*models.Article {
+func (a *ServiceAdapter) GetAllArticles() []*models.Article {
 	return a.wrapper.GetAllArticles()
 }
 
-func (a *LegacyServiceAdapter) GetArticleBySlug(slug string) (*models.Article, error) {
+func (a *ServiceAdapter) GetArticleBySlug(slug string) (*models.Article, error) {
 	return a.wrapper.GetArticleBySlug(slug)
 }
 
-func (a *LegacyServiceAdapter) GetArticlesByTag(tag string) []*models.Article {
+func (a *ServiceAdapter) GetArticlesByTag(tag string) []*models.Article {
 	return a.wrapper.GetArticlesByTag(tag)
 }
 
-func (a *LegacyServiceAdapter) GetArticlesByCategory(category string) []*models.Article {
+func (a *ServiceAdapter) GetArticlesByCategory(category string) []*models.Article {
 	return a.wrapper.GetArticlesByCategory(category)
 }
 
-func (a *LegacyServiceAdapter) GetArticlesForFeed(limit int) []*models.Article {
+func (a *ServiceAdapter) GetArticlesForFeed(limit int) []*models.Article {
 	return a.wrapper.GetArticlesForFeed(limit)
 }
 
-func (a *LegacyServiceAdapter) GetFeaturedArticles(limit int) []*models.Article {
+func (a *ServiceAdapter) GetFeaturedArticles(limit int) []*models.Article {
 	return a.wrapper.GetFeaturedArticles(limit)
 }
 
-func (a *LegacyServiceAdapter) GetRecentArticles(limit int) []*models.Article {
+func (a *ServiceAdapter) GetRecentArticles(limit int) []*models.Article {
 	return a.wrapper.GetRecentArticles(limit)
 }
 
-func (a *LegacyServiceAdapter) GetAllTags() []string {
+func (a *ServiceAdapter) GetAllTags() []string {
 	return a.wrapper.GetAllTags()
 }
 
-func (a *LegacyServiceAdapter) GetAllCategories() []string {
+func (a *ServiceAdapter) GetAllCategories() []string {
 	return a.wrapper.GetAllCategories()
 }
 
-func (a *LegacyServiceAdapter) GetTagCounts() []models.TagCount {
+func (a *ServiceAdapter) GetTagCounts() []models.TagCount {
 	return a.wrapper.GetTagCounts()
 }
 
-func (a *LegacyServiceAdapter) GetCategoryCounts() []models.CategoryCount {
+func (a *ServiceAdapter) GetCategoryCounts() []models.CategoryCount {
 	return a.wrapper.GetCategoryCounts()
 }
 
-func (a *LegacyServiceAdapter) GetStats() *models.Stats {
+func (a *ServiceAdapter) GetStats() *models.Stats {
 	return a.wrapper.GetStats()
 }
 
-func (a *LegacyServiceAdapter) ReloadArticles() error {
+func (a *ServiceAdapter) ReloadArticles() error {
 	return a.wrapper.ReloadArticles()
 }
 
-func (a *LegacyServiceAdapter) GetDraftArticles() []*models.Article {
+func (a *ServiceAdapter) GetDraftArticles() []*models.Article {
 	return a.wrapper.GetDraftArticles()
 }
 
-func (a *LegacyServiceAdapter) GetDraftBySlug(slug string) (*models.Article, error) {
+func (a *ServiceAdapter) GetDraftBySlug(slug string) (*models.Article, error) {
 	return a.wrapper.GetDraftBySlug(slug)
 }
 
-func (a *LegacyServiceAdapter) PreviewDraft(slug string) (*models.Article, error) {
+func (a *ServiceAdapter) PreviewDraft(slug string) (*models.Article, error) {
 	return a.wrapper.PreviewDraft(slug)
 }
 
-func (a *LegacyServiceAdapter) PublishDraft(slug string) error {
+func (a *ServiceAdapter) PublishDraft(slug string) error {
 	return a.wrapper.PublishDraft(slug)
 }
 
-func (a *LegacyServiceAdapter) UnpublishArticle(slug string) error {
+func (a *ServiceAdapter) UnpublishArticle(slug string) error {
 	return a.wrapper.UnpublishArticle(slug)
 }
 
 // Shutdown gracefully shuts down the service
-func (a *LegacyServiceAdapter) Shutdown() error {
+func (a *ServiceAdapter) Shutdown() error {
 	if a.container != nil {
 		return a.container.Stop()
 	}
@@ -202,28 +180,28 @@ func (a *LegacyServiceAdapter) Shutdown() error {
 }
 
 // GetContainer provides access to the underlying container for advanced use cases
-func (a *LegacyServiceAdapter) GetContainer() *ServiceContainer {
+func (a *ServiceAdapter) GetContainer() *ServiceContainer {
 	return a.container
 }
 
 // Health check methods
-func (a *LegacyServiceAdapter) IsHealthy() bool {
+func (a *ServiceAdapter) IsHealthy() bool {
 	return a.container.IsHealthy()
 }
 
-func (a *LegacyServiceAdapter) GetHealthStatus() map[string]interface{} {
+func (a *ServiceAdapter) GetHealthStatus() map[string]interface{} {
 	return a.container.GetHealthStatus()
 }
 
 // Search functionality (these might be accessed through other interfaces)
-func (a *LegacyServiceAdapter) SearchArticles(query string, limit int) []*models.SearchResult {
+func (a *ServiceAdapter) SearchArticles(query string, limit int) []*models.SearchResult {
 	return a.wrapper.SearchArticles(query, limit)
 }
 
-func (a *LegacyServiceAdapter) SearchInTitle(query string, limit int) []*models.SearchResult {
+func (a *ServiceAdapter) SearchInTitle(query string, limit int) []*models.SearchResult {
 	return a.wrapper.SearchInTitle(query, limit)
 }
 
-func (a *LegacyServiceAdapter) GetSearchSuggestions(query string, limit int) []string {
+func (a *ServiceAdapter) GetSearchSuggestions(query string, limit int) []string {
 	return a.wrapper.GetSearchSuggestions(query, limit)
 }

@@ -211,24 +211,24 @@ func (c *ServiceContainer) GetHealthStatus() map[string]interface{} {
 	return status
 }
 
-// Utility methods for backward compatibility
+// Service wrapper utilities
 
-// CreateLegacyWrapper creates a wrapper that implements the legacy interfaces
-func (c *ServiceContainer) CreateLegacyWrapper() *LegacyServiceWrapper {
-	return &LegacyServiceWrapper{
+// CreateServiceWrapper creates a wrapper that implements service interfaces
+func (c *ServiceContainer) CreateServiceWrapper() *ServiceWrapper {
+	return &ServiceWrapper{
 		service: c.compositeService,
 		logger:  c.logger,
 	}
 }
 
-// LegacyServiceWrapper provides backward compatibility with existing interfaces
-type LegacyServiceWrapper struct {
+// ServiceWrapper provides service interface implementation
+type ServiceWrapper struct {
 	service Service
 	logger  *slog.Logger
 }
 
 // Implement legacy ArticleProcessor interface for models.Article
-func (w *LegacyServiceWrapper) ProcessMarkdown(content string) (string, error) {
+func (w *ServiceWrapper) ProcessMarkdown(content string) (string, error) {
 	if w.service == nil {
 		return "", fmt.Errorf("service not initialized")
 	}
@@ -239,7 +239,7 @@ func (w *LegacyServiceWrapper) ProcessMarkdown(content string) (string, error) {
 	return processor.ProcessMarkdown(content)
 }
 
-func (w *LegacyServiceWrapper) GenerateExcerpt(content string, maxLength int) string {
+func (w *ServiceWrapper) GenerateExcerpt(content string, maxLength int) string {
 	if w.service == nil {
 		return ""
 	}
@@ -248,7 +248,7 @@ func (w *LegacyServiceWrapper) GenerateExcerpt(content string, maxLength int) st
 	return processor.GenerateExcerpt(content, maxLength)
 }
 
-func (w *LegacyServiceWrapper) CalculateReadingTime(content string) int {
+func (w *ServiceWrapper) CalculateReadingTime(content string) int {
 	if w.service == nil {
 		return 0
 	}
@@ -258,126 +258,126 @@ func (w *LegacyServiceWrapper) CalculateReadingTime(content string) int {
 }
 
 // Forward all methods to the composite service
-func (w *LegacyServiceWrapper) GetAllArticles() []*models.Article {
+func (w *ServiceWrapper) GetAllArticles() []*models.Article {
 	if w.service == nil {
 		return []*models.Article{}
 	}
 	return w.service.GetAllArticles()
 }
 
-func (w *LegacyServiceWrapper) GetArticleBySlug(slug string) (*models.Article, error) {
+func (w *ServiceWrapper) GetArticleBySlug(slug string) (*models.Article, error) {
 	if w.service == nil {
 		return nil, fmt.Errorf("service not initialized")
 	}
 	return w.service.GetArticleBySlug(slug)
 }
 
-func (w *LegacyServiceWrapper) GetArticlesByTag(tag string) []*models.Article {
+func (w *ServiceWrapper) GetArticlesByTag(tag string) []*models.Article {
 	if w.service == nil {
 		return []*models.Article{}
 	}
 	return w.service.GetArticlesByTag(tag)
 }
 
-func (w *LegacyServiceWrapper) GetArticlesByCategory(category string) []*models.Article {
+func (w *ServiceWrapper) GetArticlesByCategory(category string) []*models.Article {
 	if w.service == nil {
 		return []*models.Article{}
 	}
 	return w.service.GetArticlesByCategory(category)
 }
 
-func (w *LegacyServiceWrapper) GetArticlesForFeed(limit int) []*models.Article {
+func (w *ServiceWrapper) GetArticlesForFeed(limit int) []*models.Article {
 	if w.service == nil {
 		return []*models.Article{}
 	}
 	return w.service.GetArticlesForFeed(limit)
 }
 
-func (w *LegacyServiceWrapper) GetFeaturedArticles(limit int) []*models.Article {
+func (w *ServiceWrapper) GetFeaturedArticles(limit int) []*models.Article {
 	if w.service == nil {
 		return []*models.Article{}
 	}
 	return w.service.GetFeaturedArticles(limit)
 }
 
-func (w *LegacyServiceWrapper) GetRecentArticles(limit int) []*models.Article {
+func (w *ServiceWrapper) GetRecentArticles(limit int) []*models.Article {
 	if w.service == nil {
 		return []*models.Article{}
 	}
 	return w.service.GetRecentArticles(limit)
 }
 
-func (w *LegacyServiceWrapper) GetAllTags() []string {
+func (w *ServiceWrapper) GetAllTags() []string {
 	if w.service == nil {
 		return []string{}
 	}
 	return w.service.GetAllTags()
 }
 
-func (w *LegacyServiceWrapper) GetAllCategories() []string {
+func (w *ServiceWrapper) GetAllCategories() []string {
 	if w.service == nil {
 		return []string{}
 	}
 	return w.service.GetAllCategories()
 }
 
-func (w *LegacyServiceWrapper) GetTagCounts() []models.TagCount {
+func (w *ServiceWrapper) GetTagCounts() []models.TagCount {
 	if w.service == nil {
 		return []models.TagCount{}
 	}
 	return w.service.GetTagCounts()
 }
 
-func (w *LegacyServiceWrapper) GetCategoryCounts() []models.CategoryCount {
+func (w *ServiceWrapper) GetCategoryCounts() []models.CategoryCount {
 	if w.service == nil {
 		return []models.CategoryCount{}
 	}
 	return w.service.GetCategoryCounts()
 }
 
-func (w *LegacyServiceWrapper) GetStats() *models.Stats {
+func (w *ServiceWrapper) GetStats() *models.Stats {
 	if w.service == nil {
 		return nil
 	}
 	return w.service.GetStats()
 }
 
-func (w *LegacyServiceWrapper) ReloadArticles() error {
+func (w *ServiceWrapper) ReloadArticles() error {
 	if w.service == nil {
 		return fmt.Errorf("service not initialized")
 	}
 	return w.service.ReloadArticles()
 }
 
-func (w *LegacyServiceWrapper) GetDraftArticles() []*models.Article {
+func (w *ServiceWrapper) GetDraftArticles() []*models.Article {
 	if w.service == nil {
 		return []*models.Article{}
 	}
 	return w.service.GetDraftArticles()
 }
 
-func (w *LegacyServiceWrapper) GetDraftBySlug(slug string) (*models.Article, error) {
+func (w *ServiceWrapper) GetDraftBySlug(slug string) (*models.Article, error) {
 	if w.service == nil {
 		return nil, fmt.Errorf("service not initialized")
 	}
 	return w.service.GetDraftBySlug(slug)
 }
 
-func (w *LegacyServiceWrapper) PreviewDraft(slug string) (*models.Article, error) {
+func (w *ServiceWrapper) PreviewDraft(slug string) (*models.Article, error) {
 	if w.service == nil {
 		return nil, fmt.Errorf("service not initialized")
 	}
 	return w.service.PreviewDraft(slug)
 }
 
-func (w *LegacyServiceWrapper) PublishDraft(slug string) error {
+func (w *ServiceWrapper) PublishDraft(slug string) error {
 	if w.service == nil {
 		return fmt.Errorf("service not initialized")
 	}
 	return w.service.PublishDraft(slug)
 }
 
-func (w *LegacyServiceWrapper) UnpublishArticle(slug string) error {
+func (w *ServiceWrapper) UnpublishArticle(slug string) error {
 	if w.service == nil {
 		return fmt.Errorf("service not initialized")
 	}
@@ -385,21 +385,21 @@ func (w *LegacyServiceWrapper) UnpublishArticle(slug string) error {
 }
 
 // Search methods
-func (w *LegacyServiceWrapper) SearchArticles(query string, limit int) []*models.SearchResult {
+func (w *ServiceWrapper) SearchArticles(query string, limit int) []*models.SearchResult {
 	if w.service == nil {
 		return []*models.SearchResult{}
 	}
 	return w.service.SearchArticles(query, limit)
 }
 
-func (w *LegacyServiceWrapper) SearchInTitle(query string, limit int) []*models.SearchResult {
+func (w *ServiceWrapper) SearchInTitle(query string, limit int) []*models.SearchResult {
 	if w.service == nil {
 		return []*models.SearchResult{}
 	}
 	return w.service.SearchInTitle(query, limit)
 }
 
-func (w *LegacyServiceWrapper) GetSearchSuggestions(query string, limit int) []string {
+func (w *ServiceWrapper) GetSearchSuggestions(query string, limit int) []string {
 	if w.service == nil {
 		return []string{}
 	}
