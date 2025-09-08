@@ -42,6 +42,10 @@ var (
 	imageRe     = regexp.MustCompile(`!\[([^\]]*)\]\([^)]*\)`)
 )
 
+// ArticleService provides legacy article service functionality (DEPRECATED)
+//
+// Deprecated: Use the new modular architecture in services/article/ package instead.
+// The new architecture provides better performance, caching, modularity and maintainability.
 type ArticleService struct {
 	articlesPath string
 	logger       *slog.Logger
@@ -75,6 +79,12 @@ type CachedFunctions struct {
 	FilterByCategory func(string, []*models.Article) []*models.Article
 }
 
+// NewArticleService creates the legacy article service (DEPRECATED)
+// Use NewArticleServiceV2() instead for the new modular architecture with enterprise-grade performance
+//
+// Deprecated: This function is deprecated and will be removed in a future version.
+// Use services.NewArticleServiceV2() for the new architecture with obcache, goflow,
+// and modular design that provides better performance, caching, and maintainability.
 func NewArticleService(articlesPath string, logger *slog.Logger) (*ArticleService, error) {
 	// Create context for lifecycle management
 	ctx, cancel := context.WithCancel(context.Background())

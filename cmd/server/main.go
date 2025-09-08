@@ -60,8 +60,8 @@ func main() {
 	logger = loggingService.GetLogger()
 	slog.SetDefault(logger)
 
-	// Initialize services
-	articleService, err := services.NewArticleService(cfg.ArticlesPath, logger)
+	// Initialize services - using new modular ArticleServiceV2
+	articleService, err := services.NewArticleServiceV2(cfg.ArticlesPath, logger)
 	if err != nil {
 		apperrors.HandleCLIError(
 			apperrors.NewCLIError("article service initialization", "Failed to initialize article service", err, 1),
