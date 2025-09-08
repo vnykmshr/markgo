@@ -87,7 +87,6 @@ func (f *ServiceFactory) CreateService(articlesPath string) (ArticleServiceInter
 	return adapter, nil
 }
 
-
 // ServiceAdapter adapts the service container to implement the ArticleServiceInterface
 type ServiceAdapter struct {
 	wrapper   *ServiceWrapper

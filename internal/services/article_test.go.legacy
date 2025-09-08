@@ -592,7 +592,7 @@ func TestArticleService_ThreadSafety(t *testing.T) {
 }
 
 // Helper function to create a test article service with sample data
-func createTestArticleService(t *testing.T) *ArticleService {
+func createTestArticleService(t *testing.T) ArticleServiceInterface {
 	tempDir := t.TempDir()
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
@@ -741,7 +741,7 @@ func BenchmarkArticleService_GetArticlesByTag(b *testing.B) {
 	}
 }
 
-func createBenchmarkArticleService(b *testing.B) *ArticleService {
+func createBenchmarkArticleService(b *testing.B) ArticleServiceInterface {
 	tempDir := b.TempDir()
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
