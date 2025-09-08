@@ -19,7 +19,7 @@ type CacheAdapter interface {
 	Stats() map[string]interface{}
 }
 
-// ObcacheAdapter provides CacheService-compatible interface using obcache
+// ObcacheAdapter provides cache interface using obcache
 type ObcacheAdapter struct {
 	cache *obcache.Cache
 }

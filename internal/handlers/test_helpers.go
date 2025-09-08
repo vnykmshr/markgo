@@ -256,10 +256,6 @@ func ExecuteRequest(router *gin.Engine, req *http.Request) *httptest.ResponseRec
 	return recorder
 }
 
-// SetupCacheMocks is deprecated - obcache is used directly
-// func SetupCacheMocks(mockCache *MockCacheService, key string, hit bool, data interface{}) {
-// 	// No longer needed as obcache is used directly in handlers
-// }
 
 // SetupArticleServiceMocks sets up common article service mock expectations
 func SetupArticleServiceMocks(mockArticle *MockArticleService, articles []*models.Article) {

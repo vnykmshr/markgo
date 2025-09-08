@@ -381,7 +381,7 @@ type CachedRepository struct {
 	logger     *slog.Logger
 }
 
-// NewCachedRepository creates a new cached repository wrapper
+// NewCachedRepository creates a new cached repository
 func NewCachedRepository(repository Repository, cache *CacheCoordinator, logger *slog.Logger) *CachedRepository {
 	return &CachedRepository{
 		repository: repository,

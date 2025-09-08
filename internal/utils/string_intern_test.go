@@ -190,10 +190,6 @@ func TestClearGlobalInterner(t *testing.T) {
 	assert.Equal(t, 0, GetGlobalInternerSize())
 }
 
-// TagInterner tests - SKIPPED due to deadlock issues in implementation
-func TestTagInterner_Skip(t *testing.T) {
-	t.Skip("TagInterner tests skipped due to deadlock issues in the implementation. The TagInterner.InternTag method calls StringInterner.Intern while holding its own lock, causing deadlocks.")
-}
 
 // Benchmark tests
 func BenchmarkStringInterner_Intern_New(b *testing.B) {
@@ -216,9 +212,6 @@ func BenchmarkStringInterner_Intern_Existing(b *testing.B) {
 	}
 }
 
-func BenchmarkTagInterner_InternTag(b *testing.B) {
-	b.Skip("TagInterner benchmark skipped due to deadlock issues")
-}
 
 func BenchmarkGlobalInterner(b *testing.B) {
 	ClearGlobalInterner()
