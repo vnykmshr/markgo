@@ -91,9 +91,20 @@ func main() {
 	emailService := services.NewEmailService(cfg.Email, logger)
 	searchService := services.NewSearchService()
 
-	// Setup Gin router
-	if cfg.Environment == "production" {
+	// Setup Gin router - ensure Gin mode matches application environment
+	switch cfg.Environment {
+	case "production":
 		gin.SetMode(gin.ReleaseMode)
+		os.Setenv("GIN_MODE", "release")
+		logger.Info("Gin router configured for production", "gin_mode", "release")
+	case "test":
+		gin.SetMode(gin.TestMode)
+		os.Setenv("GIN_MODE", "test")
+		logger.Info("Gin router configured for testing", "gin_mode", "test")
+	default: // development
+		gin.SetMode(gin.DebugMode)
+		os.Setenv("GIN_MODE", "debug")
+		logger.Info("Gin router configured for development", "gin_mode", "debug")
 	}
 
 	router := gin.New()

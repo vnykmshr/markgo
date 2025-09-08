@@ -29,6 +29,11 @@ This guide covers all configuration options available in MarkGo. Configuration i
 
 Sets the runtime environment. This affects default values for other settings and enables/disables certain features.
 
+**Environment Effects:**
+- **Production:** Enables optimizations, sets `GIN_MODE=release`, disables debug endpoints
+- **Development:** Enables debug endpoints, template hot-reload, detailed logging, sets `GIN_MODE=debug`
+- **Test:** Minimal output, sets `GIN_MODE=test`, optimized for testing
+
 #### `PORT`
 **Default:** `8080`  
 **Range:** `1-65535`
