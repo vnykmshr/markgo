@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -252,35 +253,95 @@ func (h *Handlers) PreviewDraft(c *gin.Context) {
 func (h *Handlers) PublishDraft(c *gin.Context) {
 	slug := c.Param("slug")
 	if slug == "" {
-		c.JSON(400, gin.H{"error": "Slug parameter is required"})
+		c.JSON(400, gin.H{
+			"error": "Slug parameter is required", 
+			"example": "POST /admin/drafts/my-article/publish"})
+		return
+	}
+
+	// Additional validation
+	if len(slug) > 100 {
+		c.JSON(400, gin.H{
+			"error": "Slug too long", 
+			"max_length": 100, 
+			"provided_length": len(slug)})
 		return
 	}
 
 	err := h.AdminHandler.articleService.PublishDraft(slug)
 	if err != nil {
 		h.AdminHandler.logger.Error("Failed to publish draft", "slug", slug, "error", err)
-		c.JSON(500, gin.H{"error": "Failed to publish draft", "details": err.Error()})
+		
+		// Provide different error codes based on error type
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(404, gin.H{
+				"error": "Draft not found", 
+				"slug": slug,
+				"suggestion": "Check that the draft exists and slug is correct"})
+		} else if strings.Contains(err.Error(), "not a draft") {
+			c.JSON(400, gin.H{
+				"error": "Article is already published", 
+				"slug": slug})
+		} else {
+			c.JSON(500, gin.H{
+				"error": "Failed to publish draft", 
+				"slug": slug,
+				"details": err.Error()})
+		}
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "Draft published successfully", "slug": slug})
+	c.JSON(200, gin.H{
+		"message": "Draft published successfully", 
+		"slug": slug,
+		"status": "published"})
 }
 
 func (h *Handlers) UnpublishArticle(c *gin.Context) {
 	slug := c.Param("slug")
 	if slug == "" {
-		c.JSON(400, gin.H{"error": "Slug parameter is required"})
+		c.JSON(400, gin.H{
+			"error": "Slug parameter is required",
+			"example": "POST /admin/articles/my-article/unpublish"})
+		return
+	}
+
+	// Additional validation
+	if len(slug) > 100 {
+		c.JSON(400, gin.H{
+			"error": "Slug too long", 
+			"max_length": 100, 
+			"provided_length": len(slug)})
 		return
 	}
 
 	err := h.AdminHandler.articleService.UnpublishArticle(slug)
 	if err != nil {
 		h.AdminHandler.logger.Error("Failed to unpublish article", "slug", slug, "error", err)
-		c.JSON(500, gin.H{"error": "Failed to unpublish article", "details": err.Error()})
+		
+		// Provide different error codes based on error type
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(404, gin.H{
+				"error": "Article not found", 
+				"slug": slug,
+				"suggestion": "Check that the article exists and slug is correct"})
+		} else if strings.Contains(err.Error(), "already") {
+			c.JSON(400, gin.H{
+				"error": "Article is already a draft", 
+				"slug": slug})
+		} else {
+			c.JSON(500, gin.H{
+				"error": "Failed to unpublish article", 
+				"slug": slug,
+				"details": err.Error()})
+		}
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "Article unpublished successfully", "slug": slug})
+	c.JSON(200, gin.H{
+		"message": "Article unpublished successfully", 
+		"slug": slug,
+		"status": "draft"})
 }
 
 func (h *Handlers) ClearCache(c *gin.Context) {

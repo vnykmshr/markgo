@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"sort"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/vnykmshr/markgo/internal/models"
@@ -542,7 +543,38 @@ func (s *TextSearchService) applyFilters(articles []*models.Article, filters Sea
 			}
 		}
 
-		// TODO: Add date range filters
+		// Date range filters
+		if filters.DateFrom != "" || filters.DateTo != "" {
+			articleDate := article.Date
+			
+			// Parse DateFrom if provided
+			if filters.DateFrom != "" {
+				dateFrom, err := time.Parse("2006-01-02", filters.DateFrom)
+				if err != nil {
+					// Log error but continue processing - don't fail the entire search for invalid date format
+					s.logger.Warn("Invalid DateFrom format, skipping date filter", "date", filters.DateFrom, "error", err)
+				} else {
+					if articleDate.Before(dateFrom) {
+						continue
+					}
+				}
+			}
+			
+			// Parse DateTo if provided
+			if filters.DateTo != "" {
+				dateTo, err := time.Parse("2006-01-02", filters.DateTo)
+				if err != nil {
+					// Log error but continue processing - don't fail the entire search for invalid date format
+					s.logger.Warn("Invalid DateTo format, skipping date filter", "date", filters.DateTo, "error", err)
+				} else {
+					// Add 24 hours to make DateTo inclusive (end of day)
+					dateToEndOfDay := dateTo.Add(24 * time.Hour).Add(-time.Nanosecond)
+					if articleDate.After(dateToEndOfDay) {
+						continue
+					}
+				}
+			}
+		}
 
 		filtered = append(filtered, article)
 	}

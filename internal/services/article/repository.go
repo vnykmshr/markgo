@@ -382,6 +382,16 @@ func generateSlug(title string) string {
 
 // UpdateDraftStatus updates the draft status of an article by rewriting its file
 func (r *FileSystemRepository) UpdateDraftStatus(slug string, isDraft bool) error {
+	// Input validation
+	if strings.TrimSpace(slug) == "" {
+		return fmt.Errorf("slug cannot be empty")
+	}
+	
+	// Sanitize slug to prevent path traversal attacks
+	if strings.Contains(slug, "..") || strings.Contains(slug, "/") || strings.Contains(slug, "\\") {
+		return fmt.Errorf("invalid slug format: %s", slug)
+	}
+
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -392,14 +402,29 @@ func (r *FileSystemRepository) UpdateDraftStatus(slug string, isDraft bool) erro
 	for _, article := range r.articles {
 		if article.Slug == slug {
 			targetArticle = article
-			// Construct file path (assuming .md extension)
-			filePath = filepath.Join(r.articlesPath, slug+".md")
+			// Try both .md and .markdown extensions
+			possiblePaths := []string{
+				filepath.Join(r.articlesPath, slug+".md"),
+				filepath.Join(r.articlesPath, slug+".markdown"),
+			}
+			
+			// Find the actual file
+			for _, path := range possiblePaths {
+				if _, err := os.Stat(path); err == nil {
+					filePath = path
+					break
+				}
+			}
+			
+			if filePath == "" {
+				return fmt.Errorf("article file not found for slug: %s", slug)
+			}
 			break
 		}
 	}
 
 	if targetArticle == nil {
-		return fmt.Errorf("article not found: %s", slug)
+		return fmt.Errorf("article not found in memory: %s", slug)
 	}
 
 	// Read the current file content
@@ -432,13 +457,37 @@ func (r *FileSystemRepository) UpdateDraftStatus(slug string, isDraft bool) erro
 	// Reconstruct the file content
 	newContent := fmt.Sprintf("---\n%s---\n%s", string(updatedFrontmatter), parts[2])
 
-	// Write back to file
-	if err := os.WriteFile(filePath, []byte(newContent), 0644); err != nil {
-		return fmt.Errorf("failed to write article file %s: %w", filePath, err)
+	// Create backup of original file before writing
+	backupPath := filePath + ".backup"
+	if err := os.WriteFile(backupPath, content, 0644); err != nil {
+		r.logger.Warn("Failed to create backup file", "original", filePath, "backup", backupPath, "error", err)
 	}
 
-	// Update the in-memory article
+	// Write back to file atomically by writing to temp file first
+	tempPath := filePath + ".tmp"
+	if err := os.WriteFile(tempPath, []byte(newContent), 0644); err != nil {
+		return fmt.Errorf("failed to write temporary file %s: %w", tempPath, err)
+	}
+
+	// Atomic rename
+	if err := os.Rename(tempPath, filePath); err != nil {
+		// Clean up temp file on failure
+		_ = os.Remove(tempPath)
+		return fmt.Errorf("failed to rename temporary file to %s: %w", filePath, err)
+	}
+
+	// Clean up backup file on success
+	if err := os.Remove(backupPath); err != nil {
+		r.logger.Warn("Failed to remove backup file", "backup", backupPath, "error", err)
+	}
+
+	// Update the in-memory article - only after successful file write
 	targetArticle.Draft = isDraft
+
+	r.logger.Info("Successfully updated draft status", 
+		"slug", slug, 
+		"isDraft", isDraft, 
+		"filePath", filePath)
 
 	return nil
 }
