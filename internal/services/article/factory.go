@@ -74,12 +74,9 @@ func (f *ServiceFactory) CreateService(articlesPath string) (ArticleServiceInter
 		return nil, fmt.Errorf("failed to start service container: %w", err)
 	}
 
-	// Create service wrapper
-	wrapper := container.CreateServiceWrapper()
-
 	// Create service adapter that implements the ArticleServiceInterface
 	adapter := &ServiceAdapter{
-		wrapper:   wrapper,
+		service:   container.compositeService,
 		container: container,
 		logger:    f.logger,
 	}
@@ -89,7 +86,7 @@ func (f *ServiceFactory) CreateService(articlesPath string) (ArticleServiceInter
 
 // ServiceAdapter adapts the service container to implement the ArticleServiceInterface
 type ServiceAdapter struct {
-	wrapper   *ServiceWrapper
+	service   Service
 	container *ServiceContainer
 	logger    *slog.Logger
 }
@@ -99,75 +96,75 @@ var _ ArticleServiceInterface = (*ServiceAdapter)(nil)
 
 // Implement all methods from services.ArticleServiceInterface
 func (a *ServiceAdapter) GetAllArticles() []*models.Article {
-	return a.wrapper.GetAllArticles()
+	return a.service.GetAllArticles()
 }
 
 func (a *ServiceAdapter) GetArticleBySlug(slug string) (*models.Article, error) {
-	return a.wrapper.GetArticleBySlug(slug)
+	return a.service.GetArticleBySlug(slug)
 }
 
 func (a *ServiceAdapter) GetArticlesByTag(tag string) []*models.Article {
-	return a.wrapper.GetArticlesByTag(tag)
+	return a.service.GetArticlesByTag(tag)
 }
 
 func (a *ServiceAdapter) GetArticlesByCategory(category string) []*models.Article {
-	return a.wrapper.GetArticlesByCategory(category)
+	return a.service.GetArticlesByCategory(category)
 }
 
 func (a *ServiceAdapter) GetArticlesForFeed(limit int) []*models.Article {
-	return a.wrapper.GetArticlesForFeed(limit)
+	return a.service.GetArticlesForFeed(limit)
 }
 
 func (a *ServiceAdapter) GetFeaturedArticles(limit int) []*models.Article {
-	return a.wrapper.GetFeaturedArticles(limit)
+	return a.service.GetFeaturedArticles(limit)
 }
 
 func (a *ServiceAdapter) GetRecentArticles(limit int) []*models.Article {
-	return a.wrapper.GetRecentArticles(limit)
+	return a.service.GetRecentArticles(limit)
 }
 
 func (a *ServiceAdapter) GetAllTags() []string {
-	return a.wrapper.GetAllTags()
+	return a.service.GetAllTags()
 }
 
 func (a *ServiceAdapter) GetAllCategories() []string {
-	return a.wrapper.GetAllCategories()
+	return a.service.GetAllCategories()
 }
 
 func (a *ServiceAdapter) GetTagCounts() []models.TagCount {
-	return a.wrapper.GetTagCounts()
+	return a.service.GetTagCounts()
 }
 
 func (a *ServiceAdapter) GetCategoryCounts() []models.CategoryCount {
-	return a.wrapper.GetCategoryCounts()
+	return a.service.GetCategoryCounts()
 }
 
 func (a *ServiceAdapter) GetStats() *models.Stats {
-	return a.wrapper.GetStats()
+	return a.service.GetStats()
 }
 
 func (a *ServiceAdapter) ReloadArticles() error {
-	return a.wrapper.ReloadArticles()
+	return a.service.ReloadArticles()
 }
 
 func (a *ServiceAdapter) GetDraftArticles() []*models.Article {
-	return a.wrapper.GetDraftArticles()
+	return a.service.GetDraftArticles()
 }
 
 func (a *ServiceAdapter) GetDraftBySlug(slug string) (*models.Article, error) {
-	return a.wrapper.GetDraftBySlug(slug)
+	return a.service.GetDraftBySlug(slug)
 }
 
 func (a *ServiceAdapter) PreviewDraft(slug string) (*models.Article, error) {
-	return a.wrapper.PreviewDraft(slug)
+	return a.service.PreviewDraft(slug)
 }
 
 func (a *ServiceAdapter) PublishDraft(slug string) error {
-	return a.wrapper.PublishDraft(slug)
+	return a.service.PublishDraft(slug)
 }
 
 func (a *ServiceAdapter) UnpublishArticle(slug string) error {
-	return a.wrapper.UnpublishArticle(slug)
+	return a.service.UnpublishArticle(slug)
 }
 
 // Shutdown gracefully shuts down the service
@@ -194,13 +191,13 @@ func (a *ServiceAdapter) GetHealthStatus() map[string]interface{} {
 
 // Search functionality (these might be accessed through other interfaces)
 func (a *ServiceAdapter) SearchArticles(query string, limit int) []*models.SearchResult {
-	return a.wrapper.SearchArticles(query, limit)
+	return a.service.SearchArticles(query, limit)
 }
 
 func (a *ServiceAdapter) SearchInTitle(query string, limit int) []*models.SearchResult {
-	return a.wrapper.SearchInTitle(query, limit)
+	return a.service.SearchInTitle(query, limit)
 }
 
 func (a *ServiceAdapter) GetSearchSuggestions(query string, limit int) []string {
-	return a.wrapper.GetSearchSuggestions(query, limit)
+	return a.service.GetSearchSuggestions(query, limit)
 }

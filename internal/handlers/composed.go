@@ -88,10 +88,7 @@ func New(cfg *Config) *Handlers {
 	cacheService := &ObcacheAdapter{cache: cfg.Cache}
 
 	// Initialize cached functions for each handler
-	cachedFunctions := CachedArticleFunctions{
-		// These would be populated with actual obcache.Wrap calls if needed
-		// For now, handlers work without caching wrapper functions
-	}
+	cachedFunctions := CachedArticleFunctions{}
 
 	// Create specialized handlers
 	articleHandler := NewArticleHandler(
