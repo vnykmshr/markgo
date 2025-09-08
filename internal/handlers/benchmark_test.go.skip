@@ -412,7 +412,7 @@ func BenchmarkHandlers_CachedFunctions(b *testing.B) {
 	b.Run("home_data_uncached", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			data, err := setup.handlers.getHomeDataUncached()
+			data, err := setup.handlers.ArticleHandler.getHomeDataUncached()
 			if err != nil || data == nil {
 				b.Fatal("Failed to generate home data")
 			}
@@ -423,7 +423,7 @@ func BenchmarkHandlers_CachedFunctions(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			slug := fmt.Sprintf("article-%d", i%100)
-			data, err := setup.handlers.getArticleDataUncached(slug)
+			data, err := setup.handlers.ArticleHandler.getArticleDataUncached(slug)
 			if err != nil || data == nil {
 				b.Fatalf("Failed to generate article data for %s", slug)
 			}
@@ -433,7 +433,7 @@ func BenchmarkHandlers_CachedFunctions(b *testing.B) {
 	b.Run("articles_page_uncached", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			data, err := setup.handlers.getArticlesPageUncached(1)
+			data, err := setup.handlers.ArticleHandler.getArticlesPageUncached(1)
 			if err != nil || data == nil {
 				b.Fatal("Failed to generate articles page data")
 			}
@@ -445,7 +445,7 @@ func BenchmarkHandlers_CachedFunctions(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			query := queries[i%len(queries)]
-			data, err := setup.handlers.getSearchResultsUncached(query)
+			data, err := setup.handlers.ArticleHandler.getSearchResultsUncached(query)
 			if err != nil || data == nil {
 				b.Fatalf("Failed to generate search results for %s", query)
 			}

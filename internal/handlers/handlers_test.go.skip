@@ -100,7 +100,7 @@ func NewTestSetup(t *testing.T) *TestSetup {
 
 	// Add data-only routes for testing data generation
 	router.GET("/api/home-data", func(c *gin.Context) {
-		data, err := handlers.GetHomeDataUncached()
+		data, err := handlers.ArticleHandler.getHomeDataUncached()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -110,7 +110,7 @@ func NewTestSetup(t *testing.T) *TestSetup {
 
 	router.GET("/api/article-data/:slug", func(c *gin.Context) {
 		slug := c.Param("slug")
-		data, err := handlers.GetArticleDataUncached(slug)
+		data, err := handlers.ArticleHandler.getArticleDataUncached(slug)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -125,7 +125,7 @@ func NewTestSetup(t *testing.T) *TestSetup {
 				page = p
 			}
 		}
-		data, err := handlers.GetArticlesPageUncached(page)
+		data, err := handlers.ArticleHandler.getArticlesPageUncached(page)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -139,7 +139,7 @@ func NewTestSetup(t *testing.T) *TestSetup {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "query required"})
 			return
 		}
-		data, err := handlers.GetSearchResultsUncached(query)
+		data, err := handlers.ArticleHandler.getSearchResultsUncached(query)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -258,7 +258,7 @@ func TestHandlers_CachedFunctions(t *testing.T) {
 
 	t.Run("home data generation", func(t *testing.T) {
 		// Test the uncached function directly
-		data, err := setup.handlers.GetHomeDataUncached()
+		data, err := setup.handlers.ArticleHandler.getHomeDataUncached()
 		require.NoError(t, err)
 		assert.NotNil(t, data)
 
@@ -269,7 +269,7 @@ func TestHandlers_CachedFunctions(t *testing.T) {
 	})
 
 	t.Run("article data generation", func(t *testing.T) {
-		data, err := setup.handlers.GetArticleDataUncached("test-article-1")
+		data, err := setup.handlers.ArticleHandler.getArticleDataUncached("test-article-1")
 		require.NoError(t, err)
 		assert.NotNil(t, data)
 
@@ -280,7 +280,7 @@ func TestHandlers_CachedFunctions(t *testing.T) {
 	})
 
 	t.Run("articles page data generation", func(t *testing.T) {
-		data, err := setup.handlers.GetArticlesPageUncached(1)
+		data, err := setup.handlers.ArticleHandler.getArticlesPageUncached(1)
 		require.NoError(t, err)
 		assert.NotNil(t, data)
 
@@ -626,6 +626,6 @@ func TestHandlers_ModernErrorHandling(t *testing.T) {
 	setup := NewTestSetup(t)
 
 	// Test with non-existent article
-	_, err := setup.handlers.GetArticleDataUncached("nonexistent")
+	_, err := setup.handlers.ArticleHandler.getArticleDataUncached("nonexistent")
 	assert.Error(t, err)
 }

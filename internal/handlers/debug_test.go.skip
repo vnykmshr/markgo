@@ -17,7 +17,7 @@ func TestDebugEndpoints(t *testing.T) {
 	handlers, _, _, _ := createTestHandlers()
 
 	// Override config for development mode
-	handlers.config.Environment = "development"
+	handlers.GetConfig().Environment = "development"
 
 	tests := []struct {
 		name           string

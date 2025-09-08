@@ -1,0 +1,390 @@
+package handlers
+
+import (
+	"fmt"
+	"log/slog"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/models"
+	"github.com/vnykmshr/markgo/internal/services"
+)
+
+// CachedArticleFunctions holds cached functions for article operations
+type CachedArticleFunctions struct {
+	GetHomeData         func() (map[string]any, error)
+	GetArticleData      func(string) (map[string]any, error)
+	GetArticlesPage     func(int) (map[string]any, error)
+	GetTagArticles      func(string) (map[string]any, error)
+	GetCategoryArticles func(string) (map[string]any, error)
+	GetSearchResults    func(string) (map[string]any, error)
+	GetTagsPage         func() (map[string]any, error)
+	GetCategoriesPage   func() (map[string]any, error)
+}
+
+// ArticleHandler handles article-related HTTP requests
+type ArticleHandler struct {
+	*BaseHandler
+	articleService  services.ArticleServiceInterface
+	searchService   services.SearchServiceInterface
+	cachedFunctions CachedArticleFunctions
+}
+
+// NewArticleHandler creates a new article handler
+func NewArticleHandler(
+	config *config.Config,
+	logger *slog.Logger,
+	templateService services.TemplateServiceInterface,
+	articleService services.ArticleServiceInterface,
+	searchService services.SearchServiceInterface,
+	cachedFunctions CachedArticleFunctions,
+) *ArticleHandler {
+	return &ArticleHandler{
+		BaseHandler:     NewBaseHandler(config, logger, templateService),
+		articleService:  articleService,
+		searchService:   searchService,
+		cachedFunctions: cachedFunctions,
+	}
+}
+
+// Home handles the home page request
+func (h *ArticleHandler) Home(c *gin.Context) {
+	h.withCachedFallback(c,
+		h.cachedFunctions.GetHomeData,
+		h.getHomeDataUncached,
+		"base.html",
+		"Failed to get home data")
+}
+
+// Articles handles the articles listing page
+func (h *ArticleHandler) Articles(c *gin.Context) {
+	pageStr := c.DefaultQuery("page", "1")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	cachedFunc := func() (map[string]any, error) {
+		if h.cachedFunctions.GetArticlesPage != nil {
+			return h.cachedFunctions.GetArticlesPage(page)
+		}
+		return nil, fmt.Errorf("cache not available")
+	}
+
+	uncachedFunc := func() (map[string]any, error) {
+		return h.getArticlesPageUncached(page)
+	}
+
+	h.withCachedFallback(c, cachedFunc, uncachedFunc, "base.html", "Failed to get articles page")
+}
+
+// Article handles individual article requests
+func (h *ArticleHandler) Article(c *gin.Context) {
+	slug := c.Param("slug")
+	if slug == "" {
+		h.handleError(c, fmt.Errorf("slug is required"), "Invalid article slug")
+		return
+	}
+
+	cachedFunc := func() (map[string]any, error) {
+		if h.cachedFunctions.GetArticleData != nil {
+			return h.cachedFunctions.GetArticleData(slug)
+		}
+		return nil, fmt.Errorf("cache not available")
+	}
+
+	uncachedFunc := func() (map[string]any, error) {
+		return h.getArticleDataUncached(slug)
+	}
+
+	h.withCachedFallback(c, cachedFunc, uncachedFunc, "base.html", "Failed to get article")
+}
+
+// ArticlesByTag handles articles filtered by tag
+func (h *ArticleHandler) ArticlesByTag(c *gin.Context) {
+	tag := c.Param("tag")
+	if tag == "" {
+		h.handleError(c, fmt.Errorf("tag is required"), "Invalid tag")
+		return
+	}
+
+	cachedFunc := func() (map[string]any, error) {
+		if h.cachedFunctions.GetTagArticles != nil {
+			return h.cachedFunctions.GetTagArticles(tag)
+		}
+		return nil, fmt.Errorf("cache not available")
+	}
+
+	uncachedFunc := func() (map[string]any, error) {
+		return h.getTagArticlesUncached(tag)
+	}
+
+	h.withCachedFallback(c, cachedFunc, uncachedFunc, "base.html", "Failed to get articles by tag")
+}
+
+// ArticlesByCategory handles articles filtered by category
+func (h *ArticleHandler) ArticlesByCategory(c *gin.Context) {
+	category := c.Param("category")
+	if category == "" {
+		h.handleError(c, fmt.Errorf("category is required"), "Invalid category")
+		return
+	}
+
+	cachedFunc := func() (map[string]any, error) {
+		if h.cachedFunctions.GetCategoryArticles != nil {
+			return h.cachedFunctions.GetCategoryArticles(category)
+		}
+		return nil, fmt.Errorf("cache not available")
+	}
+
+	uncachedFunc := func() (map[string]any, error) {
+		return h.getCategoryArticlesUncached(category)
+	}
+
+	h.withCachedFallback(c, cachedFunc, uncachedFunc, "base.html", "Failed to get articles by category")
+}
+
+// Tags handles the tags page
+func (h *ArticleHandler) Tags(c *gin.Context) {
+	h.withCachedFallback(c,
+		h.cachedFunctions.GetTagsPage,
+		h.getTagsPageUncached,
+		"base.html",
+		"Failed to get tags")
+}
+
+// Categories handles the categories page
+func (h *ArticleHandler) Categories(c *gin.Context) {
+	h.withCachedFallback(c,
+		h.cachedFunctions.GetCategoriesPage,
+		h.getCategoriesPageUncached,
+		"base.html",
+		"Failed to get categories")
+}
+
+// Search handles search requests
+func (h *ArticleHandler) Search(c *gin.Context) {
+	query := c.Query("q")
+	if query == "" {
+		h.handleError(c, fmt.Errorf("search query is required"), "Empty search query")
+		return
+	}
+
+	cachedFunc := func() (map[string]any, error) {
+		if h.cachedFunctions.GetSearchResults != nil {
+			return h.cachedFunctions.GetSearchResults(query)
+		}
+		return nil, fmt.Errorf("cache not available")
+	}
+
+	uncachedFunc := func() (map[string]any, error) {
+		return h.getSearchResultsUncached(query)
+	}
+
+	h.withCachedFallback(c, cachedFunc, uncachedFunc, "base.html", "Failed to perform search")
+}
+
+// Uncached data generation methods (to be extracted from original handlers.go)
+
+func (h *ArticleHandler) getHomeDataUncached() (map[string]any, error) {
+	allArticles := h.articleService.GetAllArticles()
+
+	// Get featured articles (first 5 published articles)
+	var featured []*models.Article
+	for _, article := range allArticles {
+		if !article.Draft && len(featured) < 5 {
+			featured = append(featured, article)
+		}
+	}
+
+	// Get recent articles (first 10 published articles)
+	var recent []*models.Article
+	for _, article := range allArticles {
+		if !article.Draft && len(recent) < 10 {
+			recent = append(recent, article)
+		}
+	}
+
+	tagCounts := h.articleService.GetTagCounts()
+	categoryCounts := h.articleService.GetCategoryCounts()
+
+	data := h.buildBaseTemplateData(h.config.Blog.Title).
+		Set("description", h.config.Blog.Description).
+		Set("featured", featured).
+		Set("recent", recent).
+		Set("tags", tagCounts[:min(10, len(tagCounts))]).
+		Set("categories", categoryCounts[:min(10, len(categoryCounts))]).
+		Set("template", "index").
+		Build()
+
+	return data, nil
+}
+
+func (h *ArticleHandler) getArticleDataUncached(slug string) (map[string]any, error) {
+	article, err := h.articleService.GetArticleBySlug(slug)
+	if err != nil {
+		return nil, err
+	}
+
+	if article.Draft {
+		return nil, fmt.Errorf("article not found: %s", slug)
+	}
+
+	// Get recent articles for sidebar
+	allArticles := h.articleService.GetAllArticles()
+	var recent []*models.Article
+	for _, a := range allArticles {
+		if !a.Draft && a.Slug != slug && len(recent) < 5 {
+			recent = append(recent, a)
+		}
+	}
+
+	data := h.buildArticlePageData(article.Title+" - "+h.config.Blog.Title, recent).
+		Set("article", article).
+		Set("description", article.Description).
+		Set("template", "article").
+		Build()
+
+	return data, nil
+}
+
+func (h *ArticleHandler) getArticlesPageUncached(page int) (map[string]any, error) {
+	allArticles := h.articleService.GetAllArticles()
+
+	// Filter published articles
+	var published []*models.Article
+	for _, article := range allArticles {
+		if !article.Draft {
+			published = append(published, article)
+		}
+	}
+
+	postsPerPage := h.config.Blog.PostsPerPage
+	if postsPerPage <= 0 {
+		postsPerPage = 10
+	}
+
+	totalPages := (len(published) + postsPerPage - 1) / postsPerPage
+	if page > totalPages && totalPages > 0 {
+		page = totalPages
+	}
+
+	start := (page - 1) * postsPerPage
+	end := start + postsPerPage
+	if end > len(published) {
+		end = len(published)
+	}
+
+	articles := published[start:end]
+
+	pagination := models.Pagination{
+		CurrentPage:  page,
+		TotalPages:   totalPages,
+		HasPrevious:  page > 1,
+		HasNext:      page < totalPages,
+		PreviousPage: page - 1,
+		NextPage:     page + 1,
+	}
+
+	data := h.buildBaseTemplateData("Articles - "+h.config.Blog.Title).
+		Set("description", "Articles from "+h.config.Blog.Title).
+		Set("articles", articles).
+		Set("pagination", pagination).
+		Set("template", "articles").
+		Build()
+
+	return data, nil
+}
+
+func (h *ArticleHandler) getTagArticlesUncached(tag string) (map[string]any, error) {
+	articles := h.articleService.GetArticlesByTag(tag)
+
+	// Filter published articles
+	var published []*models.Article
+	for _, article := range articles {
+		if !article.Draft {
+			published = append(published, article)
+		}
+	}
+
+	data := h.buildBaseTemplateData("Articles tagged with "+tag+" - "+h.config.Blog.Title).
+		Set("description", "Articles tagged with "+tag).
+		Set("articles", published).
+		Set("tag", tag).
+		Set("totalCount", len(published)).
+		Set("template", "tag").
+		Build()
+
+	return data, nil
+}
+
+func (h *ArticleHandler) getCategoryArticlesUncached(category string) (map[string]any, error) {
+	articles := h.articleService.GetArticlesByCategory(category)
+
+	// Filter published articles
+	var published []*models.Article
+	for _, article := range articles {
+		if !article.Draft {
+			published = append(published, article)
+		}
+	}
+
+	data := h.buildBaseTemplateData("Articles in "+category+" - "+h.config.Blog.Title).
+		Set("description", "Articles in "+category).
+		Set("articles", published).
+		Set("category", category).
+		Set("totalCount", len(published)).
+		Set("template", "category").
+		Build()
+
+	return data, nil
+}
+
+func (h *ArticleHandler) getTagsPageUncached() (map[string]any, error) {
+	tagCounts := h.articleService.GetTagCounts()
+
+	data := h.buildBaseTemplateData("Tags - "+h.config.Blog.Title).
+		Set("description", "All tags from "+h.config.Blog.Title).
+		Set("tags", tagCounts).
+		Set("template", "tags").
+		Build()
+
+	return data, nil
+}
+
+func (h *ArticleHandler) getCategoriesPageUncached() (map[string]any, error) {
+	categoryCounts := h.articleService.GetCategoryCounts()
+
+	data := h.buildBaseTemplateData("Categories - "+h.config.Blog.Title).
+		Set("description", "All categories from "+h.config.Blog.Title).
+		Set("categories", categoryCounts).
+		Set("template", "categories").
+		Build()
+
+	return data, nil
+}
+
+func (h *ArticleHandler) getSearchResultsUncached(query string) (map[string]any, error) {
+	allArticles := h.articleService.GetAllArticles()
+
+	// Filter published articles for search
+	var published []*models.Article
+	for _, article := range allArticles {
+		if !article.Draft {
+			published = append(published, article)
+		}
+	}
+
+	results := h.searchService.Search(published, query, 50)
+
+	data := h.buildBaseTemplateData("Search results for \""+query+"\" - "+h.config.Blog.Title).
+		Set("description", "Search results for \""+query+"\"").
+		Set("results", results).
+		Set("query", query).
+		Set("totalCount", len(results)).
+		Set("template", "search").
+		Build()
+
+	return data, nil
+}
