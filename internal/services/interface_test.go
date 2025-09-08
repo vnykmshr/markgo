@@ -3,8 +3,9 @@ package services
 import (
 	"testing"
 
-	"github.com/vnykmshr/markgo/internal/config"
 	"log/slog"
+
+	"github.com/vnykmshr/markgo/internal/config"
 )
 
 // TestInterfaceCompliance ensures all services properly implement their interfaces

@@ -121,12 +121,12 @@ func (a *Article) SetProcessor(processor ArticleProcessor) {
 	a.processor = processor
 }
 
-// ProcessedContent returns the processed content (for JSON serialization compatibility)
+// ProcessedContent returns the processed content
 func (a *Article) ProcessedContent() string {
 	return a.GetProcessedContent()
 }
 
-// Excerpt returns the excerpt (for JSON serialization compatibility)
+// Excerpt returns the excerpt
 func (a *Article) Excerpt() string {
 	return a.GetExcerpt()
 }
