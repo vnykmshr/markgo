@@ -208,25 +208,79 @@ func (h *Handlers) ReloadArticles(c *gin.Context) {
 	h.AdminHandler.ReloadArticles(c)
 }
 
-// Draft management - Not implemented in AdminHandler
+// Draft management
 func (h *Handlers) GetDrafts(c *gin.Context) {
-	c.JSON(501, gin.H{"error": "Draft management not implemented"})
+	drafts := h.AdminHandler.articleService.GetDraftArticles()
+	c.JSON(200, gin.H{
+		"drafts": drafts,
+		"count":  len(drafts),
+	})
 }
 
 func (h *Handlers) GetDraftBySlug(c *gin.Context) {
-	c.JSON(501, gin.H{"error": "Draft management not implemented"})
+	slug := c.Param("slug")
+	if slug == "" {
+		c.JSON(400, gin.H{"error": "Slug parameter is required"})
+		return
+	}
+
+	draft, err := h.AdminHandler.articleService.GetDraftBySlug(slug)
+	if err != nil {
+		c.JSON(404, gin.H{"error": "Draft not found", "details": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"draft": draft})
 }
 
 func (h *Handlers) PreviewDraft(c *gin.Context) {
-	c.JSON(501, gin.H{"error": "Draft management not implemented"})
+	slug := c.Param("slug")
+	if slug == "" {
+		c.JSON(400, gin.H{"error": "Slug parameter is required"})
+		return
+	}
+
+	draft, err := h.AdminHandler.articleService.PreviewDraft(slug)
+	if err != nil {
+		c.JSON(404, gin.H{"error": "Draft not found", "details": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"preview": draft})
 }
 
 func (h *Handlers) PublishDraft(c *gin.Context) {
-	c.JSON(501, gin.H{"error": "Draft management not implemented"})
+	slug := c.Param("slug")
+	if slug == "" {
+		c.JSON(400, gin.H{"error": "Slug parameter is required"})
+		return
+	}
+
+	err := h.AdminHandler.articleService.PublishDraft(slug)
+	if err != nil {
+		h.AdminHandler.logger.Error("Failed to publish draft", "slug", slug, "error", err)
+		c.JSON(500, gin.H{"error": "Failed to publish draft", "details": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Draft published successfully", "slug": slug})
 }
 
 func (h *Handlers) UnpublishArticle(c *gin.Context) {
-	c.JSON(501, gin.H{"error": "Draft management not implemented"})
+	slug := c.Param("slug")
+	if slug == "" {
+		c.JSON(400, gin.H{"error": "Slug parameter is required"})
+		return
+	}
+
+	err := h.AdminHandler.articleService.UnpublishArticle(slug)
+	if err != nil {
+		h.AdminHandler.logger.Error("Failed to unpublish article", "slug", slug, "error", err)
+		c.JSON(500, gin.H{"error": "Failed to unpublish article", "details": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Article unpublished successfully", "slug": slug})
 }
 
 func (h *Handlers) ClearCache(c *gin.Context) {

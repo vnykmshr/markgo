@@ -471,5 +471,15 @@ func (cr *CachedRepository) GetStats() *models.Stats {
 	return stats
 }
 
+func (cr *CachedRepository) UpdateDraftStatus(slug string, isDraft bool) error {
+	err := cr.repository.UpdateDraftStatus(slug, isDraft)
+	if err == nil {
+		// Invalidate cache since article status changed
+		cr.cache.InvalidateArticle(slug)
+		cr.cache.InvalidateAll() // Also invalidate lists that might include this article
+	}
+	return err
+}
+
 // Ensure CachedRepository implements Repository interface
 var _ Repository = (*CachedRepository)(nil)

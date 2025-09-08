@@ -373,18 +373,40 @@ func (s *CompositeService) PreviewDraft(slug string) (*models.Article, error) {
 	return s.GetDraftBySlug(slug)
 }
 
-// PublishDraft publishes a draft article (placeholder implementation)
+// PublishDraft publishes a draft article
 func (s *CompositeService) PublishDraft(slug string) error {
-	// This would require file system operations to update the draft flag
-	// For now, return not implemented
-	return fmt.Errorf("publish draft not implemented for file-based storage")
+	s.logger.Info("Publishing draft article", "slug", slug)
+	
+	err := s.repository.UpdateDraftStatus(slug, false)
+	if err != nil {
+		s.logger.Error("Failed to publish draft", "slug", slug, "error", err)
+		return fmt.Errorf("failed to publish draft: %w", err)
+	}
+	
+	// Rebuild search index after publishing
+	articles := s.repository.GetPublished()
+	s.buildSearchIndex(articles)
+	
+	s.logger.Info("Draft published successfully", "slug", slug)
+	return nil
 }
 
-// UnpublishArticle unpublishes an article (placeholder implementation)
+// UnpublishArticle unpublishes an article (converts to draft)
 func (s *CompositeService) UnpublishArticle(slug string) error {
-	// This would require file system operations to update the draft flag
-	// For now, return not implemented
-	return fmt.Errorf("unpublish article not implemented for file-based storage")
+	s.logger.Info("Unpublishing article", "slug", slug)
+	
+	err := s.repository.UpdateDraftStatus(slug, true)
+	if err != nil {
+		s.logger.Error("Failed to unpublish article", "slug", slug, "error", err)
+		return fmt.Errorf("failed to unpublish article: %w", err)
+	}
+	
+	// Rebuild search index after unpublishing
+	articles := s.repository.GetPublished()
+	s.buildSearchIndex(articles)
+	
+	s.logger.Info("Article unpublished successfully", "slug", slug)
+	return nil
 }
 
 // Private methods

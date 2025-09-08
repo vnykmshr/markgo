@@ -33,6 +33,9 @@ type Repository interface {
 	Reload(ctx context.Context) error
 	GetLastModified() time.Time
 
+	// Draft management
+	UpdateDraftStatus(slug string, isDraft bool) error
+
 	// Statistics
 	GetStats() *models.Stats
 }
@@ -375,4 +378,67 @@ func generateSlug(title string) string {
 		}
 	}
 	return result.String()
+}
+
+// UpdateDraftStatus updates the draft status of an article by rewriting its file
+func (r *FileSystemRepository) UpdateDraftStatus(slug string, isDraft bool) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	// Find the article
+	var targetArticle *models.Article
+	var filePath string
+	
+	for _, article := range r.articles {
+		if article.Slug == slug {
+			targetArticle = article
+			// Construct file path (assuming .md extension)
+			filePath = filepath.Join(r.articlesPath, slug+".md")
+			break
+		}
+	}
+
+	if targetArticle == nil {
+		return fmt.Errorf("article not found: %s", slug)
+	}
+
+	// Read the current file content
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read article file %s: %w", filePath, err)
+	}
+
+	// Parse and update the frontmatter
+	parts := strings.SplitN(string(content), "---", 3)
+	if len(parts) < 3 {
+		return fmt.Errorf("invalid markdown file format: missing frontmatter in %s", filePath)
+	}
+
+	// Parse frontmatter into map for easier manipulation
+	var frontmatter map[string]interface{}
+	if err := yaml.Unmarshal([]byte(parts[1]), &frontmatter); err != nil {
+		return fmt.Errorf("failed to parse frontmatter: %w", err)
+	}
+
+	// Update draft status
+	frontmatter["draft"] = isDraft
+
+	// Marshal back to YAML
+	updatedFrontmatter, err := yaml.Marshal(frontmatter)
+	if err != nil {
+		return fmt.Errorf("failed to marshal frontmatter: %w", err)
+	}
+
+	// Reconstruct the file content
+	newContent := fmt.Sprintf("---\n%s---\n%s", string(updatedFrontmatter), parts[2])
+
+	// Write back to file
+	if err := os.WriteFile(filePath, []byte(newContent), 0644); err != nil {
+		return fmt.Errorf("failed to write article file %s: %w", filePath, err)
+	}
+
+	// Update the in-memory article
+	targetArticle.Draft = isDraft
+
+	return nil
 }
