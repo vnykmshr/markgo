@@ -332,6 +332,8 @@ func (h *Handlers) GetLogger() *slog.Logger {
 
 // Additional delegated methods
 func (h *Handlers) AboutArticle(c *gin.Context) {
+	// Set the slug parameter to "about" for the Article handler
+	c.Params = append(c.Params, gin.Param{Key: "slug", Value: "about"})
 	h.ArticleHandler.Article(c)
 }
 
