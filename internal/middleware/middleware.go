@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha1"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"log/slog"
@@ -199,11 +200,66 @@ func ContactRateLimit() gin.HandlerFunc {
 	}
 }
 
-// BasicAuth middleware for admin authentication
+// BasicAuth middleware for admin authentication - completely custom implementation
 func BasicAuth(username, password string) gin.HandlerFunc {
-	return gin.BasicAuth(gin.Accounts{
-		username: password,
-	})
+	return func(c *gin.Context) {
+		// Check if Authorization header is present
+		auth := c.Request.Header.Get("Authorization")
+		if auth == "" {
+			// Send WWW-Authenticate header and abort immediately
+			c.Writer.Header().Set("WWW-Authenticate", `Basic realm="Admin Area"`)
+			c.Writer.WriteHeader(http.StatusUnauthorized)
+			c.Writer.Write([]byte("Unauthorized"))
+			c.Abort()
+			return
+		}
+
+		// Parse Basic auth header
+		const basicScheme = "Basic "
+		if len(auth) < len(basicScheme) || !strings.HasPrefix(auth, basicScheme) {
+			c.Writer.Header().Set("WWW-Authenticate", `Basic realm="Admin Area"`)
+			c.Writer.WriteHeader(http.StatusUnauthorized)
+			c.Writer.Write([]byte("Invalid Authorization header"))
+			c.Abort()
+			return
+		}
+
+		// Decode base64 credentials
+		payload, err := base64.StdEncoding.DecodeString(auth[len(basicScheme):])
+		if err != nil {
+			c.Writer.Header().Set("WWW-Authenticate", `Basic realm="Admin Area"`)
+			c.Writer.WriteHeader(http.StatusUnauthorized)
+			c.Writer.Write([]byte("Invalid base64 encoding"))
+			c.Abort()
+			return
+		}
+
+		// Split username:password
+		credentials := string(payload)
+		colonIndex := strings.Index(credentials, ":")
+		if colonIndex == -1 {
+			c.Writer.Header().Set("WWW-Authenticate", `Basic realm="Admin Area"`)
+			c.Writer.WriteHeader(http.StatusUnauthorized)
+			c.Writer.Write([]byte("Invalid credential format"))
+			c.Abort()
+			return
+		}
+
+		providedUsername := credentials[:colonIndex]
+		providedPassword := credentials[colonIndex+1:]
+
+		// Validate credentials
+		if providedUsername != username || providedPassword != password {
+			c.Writer.Header().Set("WWW-Authenticate", `Basic realm="Admin Area"`)
+			c.Writer.WriteHeader(http.StatusUnauthorized)
+			c.Writer.Write([]byte("Invalid credentials"))
+			c.Abort()
+			return
+		}
+
+		// Authentication successful, continue
+		c.Next()
+	}
 }
 
 // NoCache middleware to prevent caching
@@ -230,7 +286,7 @@ func SmartCacheHeaders() gin.HandlerFunc {
 		path := c.Request.URL.Path
 
 		// Skip cache headers for admin routes
-		if strings.HasPrefix(path, "/admin/") || strings.HasPrefix(path, "/debug/") {
+		if strings.HasPrefix(path, "/admin") || strings.HasPrefix(path, "/debug") {
 			c.Next()
 			return
 		}

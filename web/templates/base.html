@@ -154,6 +154,7 @@
     {{ if eq $tpl "about-article" }}{{ template "about-article-head" . }}{{ end }}
     {{ if eq $tpl "tags" }}{{ template "tags-head" . }}{{ end }}
     {{ if eq $tpl "categories" }}{{ template "categories-head" . }}{{ end }}
+    {{ if eq $tpl "admin_home" }}{{ template "admin_home-head" . }}{{ end }}
     {{ if eq $tpl "404" }}{{ template "404-head" . }}{{ end }}
 </head>
 <body class="{{- $tpl := .template | default "index" -}}
@@ -166,6 +167,7 @@
     {{- else if eq $tpl "about-article" -}}about-article-page
     {{- else if eq $tpl "tags" -}}tags-page
     {{- else if eq $tpl "categories" -}}categories-page
+    {{- else if eq $tpl "admin_home" -}}admin-dashboard-page
     {{- else if eq $tpl "404" -}}error-page
     {{- end -}}">
     <!-- Header -->
@@ -230,6 +232,7 @@
         {{ if eq $tpl "tag" }}{{ template "tag-content" . }}{{ end }}
         {{ if eq $tpl "categories" }}{{ template "categories-content" . }}{{ end }}
         {{ if eq $tpl "category" }}{{ template "category-content" . }}{{ end }}
+        {{ if eq $tpl "admin_home" }}{{ template "admin_home-content" . }}{{ end }}
         {{ if eq $tpl "404" }}{{ template "404-content" . }}{{ end }}
     </main>
 

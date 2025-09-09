@@ -65,12 +65,15 @@ func PerformanceMiddleware(logger *slog.Logger) gin.HandlerFunc {
 		// Update metrics
 		updateMetrics(responseTime, endpoint)
 
-		// Add basic performance headers (always include response time)
-		c.Header("X-Response-Time", responseTime.String())
-		c.Header("X-Goroutines", utils.GetGlobalHeaderValuePool().GetGoroutineCountString(runtime.NumGoroutine()))
+		// Add basic performance headers only for successful responses
+		// Skip if response is an error (401, 403, 404, 500, etc.) to avoid header conflicts
+		if c.Writer.Status() < 400 {
+			c.Header("X-Response-Time", responseTime.String())
+			c.Header("X-Goroutines", utils.GetGlobalHeaderValuePool().GetGoroutineCountString(runtime.NumGoroutine()))
+		}
 
-		// Add memory delta header only when we're tracking memory
-		if shouldTrackMemory {
+		// Add memory delta header only when we're tracking memory and response is successful
+		if shouldTrackMemory && c.Writer.Status() < 400 {
 			var memAfter runtime.MemStats
 			runtime.ReadMemStats(&memAfter)
 			c.Header("X-Memory-Delta", utils.GetGlobalHeaderValuePool().GetMemoryDeltaString(memAfter.Alloc-memBefore.Alloc))
@@ -370,29 +373,30 @@ func CompetitorBenchmarkMiddleware() gin.HandlerFunc {
 
 		responseTime := time.Since(startTime)
 
-		// Add competitive comparison headers
-		c.Header("X-MarkGo-Response-Time", responseTime.String())
+		// Add competitive comparison headers only for successful responses
+		if c.Writer.Status() < 400 {
+			c.Header("X-MarkGo-Response-Time", responseTime.String())
 
-		// Compare to competitor targets (use cached strings)
-		classCache := utils.GetGlobalPerformanceClassCache()
-		if responseTime.Milliseconds() < 50 {
-			c.Header("X-Performance-vs-Ghost", classCache.GetClass("4x faster"))      // Ghost ~200ms
-			c.Header("X-Performance-vs-WordPress", classCache.GetClass("10x faster")) // WordPress ~500ms
-		}
+			// Compare to competitor targets (use cached strings)
+			classCache := utils.GetGlobalPerformanceClassCache()
+			if responseTime.Milliseconds() < 50 {
+				c.Header("X-Performance-vs-Ghost", classCache.GetClass("4x faster"))      // Ghost ~200ms
+				c.Header("X-Performance-vs-WordPress", classCache.GetClass("10x faster")) // WordPress ~500ms
+			}
 
-		if responseTime.Milliseconds() < 30 {
-			c.Header("X-Performance-vs-Hugo", classCache.GetClass("comparable")) // Hugo ~10ms (static)
-		}
-
-		// Performance classification (use cached strings)
-		if responseTime.Milliseconds() < 10 {
-			c.Header("X-Performance-Class", classCache.GetClass("exceptional"))
-		} else if responseTime.Milliseconds() < 50 {
-			c.Header("X-Performance-Class", classCache.GetClass("excellent"))
-		} else if responseTime.Milliseconds() < 100 {
-			c.Header("X-Performance-Class", classCache.GetClass("good"))
-		} else {
-			c.Header("X-Performance-Class", classCache.GetClass("needs-optimization"))
+			if responseTime.Milliseconds() < 30 {
+				c.Header("X-Performance-vs-Hugo", classCache.GetClass("comparable")) // Hugo ~10ms (static)
+			}
+			// Performance classification (use cached strings) - only for successful responses
+			if responseTime.Milliseconds() < 10 {
+				c.Header("X-Performance-Class", classCache.GetClass("exceptional"))
+			} else if responseTime.Milliseconds() < 50 {
+				c.Header("X-Performance-Class", classCache.GetClass("excellent"))
+			} else if responseTime.Milliseconds() < 100 {
+				c.Header("X-Performance-Class", classCache.GetClass("good"))
+			} else {
+				c.Header("X-Performance-Class", classCache.GetClass("needs-optimization"))
+			}
 		}
 	}
 }

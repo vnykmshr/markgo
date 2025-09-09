@@ -202,6 +202,10 @@ func (h *Handlers) Metrics(c *gin.Context) {
 }
 
 // Admin route methods
+func (h *Handlers) AdminHome(c *gin.Context) {
+	h.AdminHandler.AdminHome(c)
+}
+
 func (h *Handlers) AdminStats(c *gin.Context) {
 	h.AdminHandler.Stats(c)
 }

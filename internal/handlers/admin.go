@@ -45,12 +45,88 @@ func NewAdminHandler(
 	}
 }
 
-// Metrics handles the metrics endpoint for performance monitoring
-func (h *AdminHandler) Metrics(c *gin.Context) {
-	if !h.requireDevelopmentEnv(c) {
+// AdminHome handles the admin dashboard/home page
+func (h *AdminHandler) AdminHome(c *gin.Context) {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	
+	uptime := time.Since(h.startTime)
+	allArticles := h.articleService.GetAllArticles()
+	
+	// Count published vs draft articles
+	var publishedCount, draftCount int
+	for _, article := range allArticles {
+		if article.Draft {
+			draftCount++
+		} else {
+			publishedCount++
+		}
+	}
+
+	adminRoutes := []map[string]any{
+		{
+			"name":        "Statistics",
+			"url":         "/admin/stats",
+			"method":      "GET",
+			"description": "View detailed blog statistics and analytics",
+			"icon":        "📊",
+		},
+		{
+			"name":        "Clear Cache",
+			"url":         "/admin/cache/clear",
+			"method":      "POST",
+			"description": "Clear all cached data to force refresh",
+			"icon":        "🗑️",
+		},
+		{
+			"name":        "Reload Articles",
+			"url":         "/admin/articles/reload",
+			"method":      "POST",
+			"description": "Reload all articles from disk",
+			"icon":        "🔄",
+		},
+		{
+			"name":        "Draft Articles",
+			"url":         "/admin/drafts",
+			"method":      "GET",
+			"description": "View and manage draft articles",
+			"icon":        "📝",
+		},
+	}
+
+	systemInfo := map[string]any{
+		"uptime":         uptime.String(),
+		"go_version":     runtime.Version(),
+		"environment":    h.config.Environment,
+		"memory_usage":   utils.FormatBytes(m.Alloc),
+		"goroutines":     runtime.NumGoroutine(),
+		"articles_total": len(allArticles),
+		"articles_published": publishedCount,
+		"articles_drafts":    draftCount,
+	}
+
+	if h.shouldReturnJSON(c) {
+		c.JSON(http.StatusOK, gin.H{
+			"title":       "MarkGo Admin",
+			"system_info": systemInfo,
+			"routes":      adminRoutes,
+			"timestamp":   time.Now().Unix(),
+		})
 		return
 	}
 
+	data := h.buildBaseTemplateData("Admin Dashboard - "+h.config.Blog.Title).
+		Set("description", "Admin dashboard for "+h.config.Blog.Title).
+		Set("system_info", systemInfo).
+		Set("admin_routes", adminRoutes).
+		Set("template", "admin_home").
+		Build()
+
+	h.renderHTML(c, http.StatusOK, "base.html", data)
+}
+
+// Metrics handles the metrics endpoint for performance monitoring
+func (h *AdminHandler) Metrics(c *gin.Context) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
@@ -78,10 +154,6 @@ func (h *AdminHandler) Metrics(c *gin.Context) {
 
 // Stats handles the stats endpoint with cached/fallback pattern
 func (h *AdminHandler) Stats(c *gin.Context) {
-	if !h.requireDevelopmentEnv(c) {
-		return
-	}
-
 	h.withCachedFallback(c,
 		h.cachedFunctions.GetStatsData,
 		h.getStatsDataUncached,

@@ -271,11 +271,17 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 	router.GET("/feed.json", h.JSONFeed)
 	router.GET("/sitemap.xml", h.Sitemap)
 
-	// Admin routes (optional)
+	// Admin routes (optional) - with minimal middleware chain to avoid header conflicts
 	if cfg.Admin.Username != "" && cfg.Admin.Password != "" {
 		adminGroup := router.Group("/admin")
-		adminGroup.Use(middleware.BasicAuth(cfg.Admin.Username, cfg.Admin.Password))
+		// Use only essential middleware for admin routes to avoid header conflicts
+		adminGroup.Use(
+			middleware.RecoveryWithErrorHandler(logger), // Recovery first
+			middleware.BasicAuth(cfg.Admin.Username, cfg.Admin.Password), // Auth second, before any header-writing middleware
+			middleware.NoCache(), // No caching for admin
+		)
 		{
+			adminGroup.GET("", h.AdminHome) // Admin dashboard/home page
 			adminGroup.POST("/cache/clear", h.ClearCache)
 			adminGroup.GET("/stats", h.AdminStats)
 			adminGroup.POST("/articles/reload", h.ReloadArticles)

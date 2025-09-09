@@ -36,7 +36,6 @@ func RequestLoggingMiddleware(loggingService services.LoggingServiceInterface) g
 		// Store request ID in context
 		c.Set(RequestIDKey, requestID)
 		c.Set(RequestStartTime, start)
-		c.Header("X-Request-ID", requestID)
 
 		// Create request context logger
 		entry := services.LogEntry{
@@ -67,6 +66,11 @@ func RequestLoggingMiddleware(loggingService services.LoggingServiceInterface) g
 		duration := time.Since(start)
 		entry.Duration = duration
 		entry.StatusCode = c.Writer.Status()
+
+		// Set request ID header only for successful responses to avoid conflicts with auth
+		if c.Writer.Status() < 400 {
+			c.Header("X-Request-ID", requestID)
+		}
 
 		// Log request completion
 		loggingService.LogHTTPRequest(c.Request.Context(), entry)
