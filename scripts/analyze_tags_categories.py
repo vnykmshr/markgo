@@ -111,7 +111,10 @@ class TagCategoryAnalyzer:
             print(f"Articles directory not found: {self.articles_dir}")
             return False
 
-        markdown_files = list(self.articles_dir.glob("*.markdown")) + list(self.articles_dir.glob("*.md"))
+        markdown_files = (list(self.articles_dir.glob("*.md")) + 
+                         list(self.articles_dir.glob("*.markdown")) + 
+                         list(self.articles_dir.glob("*.mdown")) + 
+                         list(self.articles_dir.glob("*.mkd")))
 
         if not markdown_files:
             print(f"No markdown files found in {self.articles_dir}")

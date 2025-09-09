@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  markgo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: markgo-app
+    ports:
+      - "8080:8080"
+    environment:
+      - ENVIRONMENT=production
+      - PORT=8080
+      - BLOG_TITLE=MarkGo Blog
+      - BLOG_DESCRIPTION=High-performance file-based blog engine
+      - BLOG_AUTHOR=MarkGo Team
+      - BASE_URL=http://localhost:8080
+      - CACHE_ENABLED=true
+      - CACHE_TTL=3600
+      - SEARCH_ENABLED=true
+      - RSS_ENABLED=true
+      - CONTACT_ENABLED=true
+    volumes:
+      - ./articles:/articles:ro
+      - ./web:/web:ro
+      - logs:/var/log/markgo
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/markgo", "--health-check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - markgo-network
+
+  # Optional: Redis for enhanced caching (if needed in future)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: markgo-redis
+  #   command: redis-server --appendonly yes
+  #   volumes:
+  #     - redis-data:/data
+  #   networks:
+  #     - markgo-network
+  #   restart: unless-stopped
+
+  # Optional: Nginx reverse proxy for production
+  nginx:
+    image: nginx:alpine
+    container_name: markgo-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deployments/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deployments/ssl:/etc/nginx/ssl:ro
+      - logs:/var/log/nginx
+    depends_on:
+      - markgo
+    networks:
+      - markgo-network
+    restart: unless-stopped
+    profiles:
+      - production
+
+volumes:
+  logs:
+    driver: local
+  # redis-data:
+  #   driver: local
+
+networks:
+  markgo-network:
+    driver: bridge
+
+# Development override
+---
+# docker-compose.override.yml (for development)
+version: '3.8'
+
+services:
+  markgo:
+    build:
+      target: builder  # Use multi-stage build target for development
+    environment:
+      - ENVIRONMENT=development
+      - GIN_MODE=debug
+    volumes:
+      - ./articles:/articles
+      - ./web:/web
+      - ./internal:/app/internal
+      - ./cmd:/app/cmd
+    command: go run cmd/server/main.go
+    ports:
+      - "8080:8080"
+      - "2345:2345"  # Delve debugger port
+    stdin_open: true
+    tty: true

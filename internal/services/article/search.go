@@ -546,7 +546,7 @@ func (s *TextSearchService) applyFilters(articles []*models.Article, filters Sea
 		// Date range filters
 		if filters.DateFrom != "" || filters.DateTo != "" {
 			articleDate := article.Date
-			
+
 			// Parse DateFrom if provided
 			if filters.DateFrom != "" {
 				dateFrom, err := time.Parse("2006-01-02", filters.DateFrom)
@@ -559,7 +559,7 @@ func (s *TextSearchService) applyFilters(articles []*models.Article, filters Sea
 					}
 				}
 			}
-			
+
 			// Parse DateTo if provided
 			if filters.DateTo != "" {
 				dateTo, err := time.Parse("2006-01-02", filters.DateTo)

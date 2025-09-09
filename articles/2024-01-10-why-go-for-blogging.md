@@ -158,4 +158,4 @@ Whether you're running a personal blog or a high-traffic publication, Go gives y
 
 ---
 
-*Interested in the technical details? Check out our [Architecture Guide](https://github.com/yourusername/markgo/blob/main/docs/architecture.md) to see how MarkGo is built.*
+*Interested in the technical details? Check out our [Architecture Guide](https://github.com/vnykmshr/markgo/blob/main/docs/architecture.md) to see how MarkGo is built.*

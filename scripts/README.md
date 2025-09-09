@@ -294,8 +294,10 @@ scripts/
 ../
 ├── tag-category-optimization-plan.md  # Detailed optimization strategy
 └── articles/                    # Target directory for optimization
-    ├── *.markdown              # Article files to optimize
-    └── *.md                     # Alternative markdown extension
+    ├── *.md                     # Markdown files (primary extension)
+    ├── *.markdown               # Alternative markdown extension
+    ├── *.mdown                  # Additional markdown extension
+    └── *.mkd                    # Additional markdown extension
 ```
 
 ## Support

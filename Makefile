@@ -360,11 +360,11 @@ count-articles: ## Count articles and show statistics
 	@echo "Article Statistics:"
 	@echo "=================="
 	@echo -n "Total articles: "
-	@find articles -name "*.markdown" -o -name "*.md" | wc -l
+	@find articles -name "*.md" -o -name "*.markdown" -o -name "*.mdown" -o -name "*.mkd" | wc -l
 	@echo -n "Draft articles: "
-	@grep -l "draft: true" articles/*.markdown 2>/dev/null | wc -l || echo "0"
+	@find articles -name "*.md" -o -name "*.markdown" -o -name "*.mdown" -o -name "*.mkd" -exec grep -l "draft: true" {} \; 2>/dev/null | wc -l || echo "0"
 	@echo -n "Featured articles: "
-	@grep -l "featured: true" articles/*.markdown 2>/dev/null | wc -l || echo "0"
+	@find articles -name "*.md" -o -name "*.markdown" -o -name "*.mdown" -o -name "*.mkd" -exec grep -l "featured: true" {} \; 2>/dev/null | wc -l || echo "0"
 
 backup-content: ## Backup articles and static content
 	@echo "Backing up content..."

@@ -143,4 +143,3 @@ func (si *StringInterner) Compact() {
 	// Currently a no-op, but could implement advanced compaction logic
 	// such as removing rarely accessed strings, reorganizing hash tables, etc.
 }
-

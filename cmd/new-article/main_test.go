@@ -228,9 +228,9 @@ func TestFileOperationHelpers(t *testing.T) {
 	// Test that we can generate valid filenames
 	title := "Test Article Title"
 	slug := slugify(title)
-	filename := slug + ".markdown"
+	filename := slug + ".md"
 
-	assert.True(t, strings.HasSuffix(filename, ".markdown"), "Filename should have .markdown extension")
+	assert.True(t, strings.HasSuffix(filename, ".md"), "Filename should have .md extension")
 	assert.False(t, strings.Contains(filename, " "), "Filename should not contain spaces")
 
 	// Test with date prefix

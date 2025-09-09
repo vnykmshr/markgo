@@ -97,7 +97,7 @@ func main() {
 	}
 
 	// Add date prefix if requested
-	filename := slug + ".markdown"
+	filename := slug + ".md"
 	if *datePrefix {
 		dateStr := time.Now().Format("2006-01-02")
 		filename = dateStr + "-" + filename

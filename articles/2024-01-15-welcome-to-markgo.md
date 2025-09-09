@@ -38,7 +38,7 @@ MarkGo is a modern, high-performance blog engine built with Go, designed for dev
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/markgo
+git clone https://github.com/vnykmshr/markgo
 cd markgo
 
 # Install dependencies
@@ -109,10 +109,10 @@ Production-ready Docker configuration with Nginx reverse proxy.
 
 ## Next Steps
 
-- [Configuration Guide](https://github.com/yourusername/markgo/blob/main/docs/configuration.md)
-- [Deployment Guide](https://github.com/yourusername/markgo/blob/main/docs/deployment.md)
-- [Theme Customization](https://github.com/yourusername/markgo/blob/main/docs/themes.md)
-- [Contributing](https://github.com/yourusername/markgo/blob/main/CONTRIBUTING.md)
+- [Configuration Guide](https://github.com/vnykmshr/markgo/blob/main/docs/configuration.md)
+- [Deployment Guide](https://github.com/vnykmshr/markgo/blob/main/docs/deployment.md)
+- [Theme Customization](https://github.com/vnykmshr/markgo/blob/main/docs/themes.md)
+- [Contributing](https://github.com/vnykmshr/markgo/blob/main/CONTRIBUTING.md)
 
 ---
 

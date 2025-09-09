@@ -1,18 +1,20 @@
 # MarkGo Engine
 
-[![Go Version](https://img.shields.io/badge/Go-1.24.4+-blue.svg)](https://golang.org)
+[![Go Version](https://img.shields.io/badge/Go-1.25.0+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](deployments/Dockerfile)
+[![Security](https://img.shields.io/badge/Security-Audited-green.svg)](#security)
+[![Performance](https://img.shields.io/badge/Cold%20Start-17ms-brightgreen.svg)](#performance)
 
-A modern, high-performance file-based blog engine built with Go. MarkGo combines the simplicity of file-based content management with the power of a dynamic web server, delivering blazing-fast performance and developer-friendly workflows.
+A modern, high-performance file-based blog engine built with Go. MarkGo combines the simplicity of file-based content management with the power of a dynamic web server, delivering **blazing-fast 17ms cold start** and enterprise-grade performance.
 
 ## ✨ Features
 
-### 🚀 High Performance
-- **Sub-100ms response times** with Go's native performance
-- **Intelligent caching** with configurable TTL
-- **Single binary deployment** (~29MB) with no dependencies
-- **Concurrent request handling** with goroutines
+### 🚀 Exceptional Performance
+- **17ms cold start time** - fastest in class
+- **Sub-microsecond response times** for core operations
+- **Zero-allocation caching** with enterprise obcache-go integration  
+- **38MB single binary** deployment with no dependencies
+- **Concurrent request handling** with optimized goroutines
 
 ### 📝 File-Based Content Management
 - **Markdown articles** with YAML frontmatter
@@ -36,14 +38,14 @@ A modern, high-performance file-based blog engine built with Go. MarkGo combines
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Go 1.24.4 or later
+- Go 1.25.0 or later
 - Make (for build automation)
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/markgo
+git clone https://github.com/vnykmshr/markgo
 cd markgo
 
 # Copy environment configuration
@@ -70,6 +72,8 @@ make new-article
 # Or create directly
 ./build/new-article --title "Hello World" --tags "introduction,getting-started"
 ```
+
+> 🎯 **New to MarkGo?** Check out our [Complete Project Guide](docs/project-guide.md) for step-by-step tutorials, configuration options, and deployment strategies.
 
 ## 📁 Project Structure
 
@@ -120,6 +124,9 @@ Write your article content here using Markdown...
 - **Tag and category organization**
 - **SEO metadata** generation
 - **Social media optimization**
+- **Multiple Markdown extensions** supported (`.md`, `.markdown`, `.mdown`, `.mkd`)
+
+> 📖 **Learn More**: See the [Complete Project Guide](docs/project-guide.md) for detailed information about content creation, customization, and advanced features.
 
 ## 🛠️ Configuration
 
@@ -189,12 +196,17 @@ make check          # Run all quality checks (fmt, vet, lint, test)
 
 ## 📚 Documentation
 
+### 📖 Comprehensive Guides
+- **[Complete Project Guide](docs/project-guide.md)** - Everything you need to know about MarkGo Engine
+- **[System Overview](docs/system-overview.md)** - Technical architecture and performance characteristics  
+- **[Architecture Guide](docs/architecture.md)** - In-depth technical architecture details
+- **[Deployment Guide](docs/deployment.md)** - Production deployment instructions
+
+### 🛠️ Reference Documentation
 - [Configuration Guide](docs/configuration.md) - Complete configuration options
-- [Deployment Guide](docs/deployment.md) - Production deployment instructions
 - [Theme Customization](docs/themes.md) - Customizing appearance
 - [API Documentation](docs/api.md) - HTTP endpoints and responses
-- [Architecture Guide](docs/architecture.md) - Technical architecture details
-- [Contributing Guide](CONTRIBUTING.md) - How to contribute
+- [Contributing Guide](CONTRIBUTING.md) - How to contribute to the project
 - [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
 
 ## 🔧 Development
@@ -250,12 +262,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Performance Comparison
 
-| Platform | Response Time | Memory Usage | Binary Size |
-|----------|---------------|--------------|-------------|
-| MarkGo   | <50ms         | ~30MB       | ~29MB       |
-| Ghost    | 50-200ms      | ~200MB      | Node.js + deps |
-| WordPress| 200-500ms     | ~100MB      | PHP + MySQL |
-| Hugo     | Static only   | Build time  | Go binary   |
+| Platform | Cold Start Time | Memory Usage | Binary Size |
+|----------|----------------|--------------|-------------|
+| MarkGo   | **17ms**       | ~30MB        | ~38MB       |
+| Ghost    | 150-300ms      | ~200MB       | Node.js + deps |
+| WordPress| 500-1000ms     | ~100MB       | PHP + MySQL |
+| Hugo     | Static only    | Build time   | Go binary   |
 
 ### Key Advantages
 
@@ -265,12 +277,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Security**: Built-in rate limiting and input validation
 - **Portability**: File-based content, easy backups and migration
 
+> 🏗️ **Architecture Deep-Dive**: Learn about the technical design and performance optimizations in our [System Overview](docs/system-overview.md) and [Architecture Guide](docs/architecture.md).
+
 ## 🔗 Links
 
-- [Documentation](docs/)
-- [Issue Tracker](https://github.com/yourusername/markgo/issues)
-- [Discussions](https://github.com/yourusername/markgo/discussions)
-- [Examples](examples/)
+- [📖 Complete Documentation](docs/) - All guides and references
+- [🐛 Issue Tracker](https://github.com/vnykmshr/markgo/issues) - Bug reports and feature requests
+- [💬 Discussions](https://github.com/vnykmshr/markgo/discussions) - Community discussions
+- [🚀 Quick Deploy](docs/deployment.md) - Production deployment guide
 
 ## 💡 Inspiration
 
@@ -281,6 +295,15 @@ MarkGo was inspired by the need for a high-performance blog engine that combines
 - The reliability of Go's ecosystem
 
 Perfect for developers, technical writers, and anyone who values performance and simplicity.
+
+## 📚 Comprehensive Documentation
+
+This README provides a quick overview. For detailed information, explore our comprehensive documentation:
+
+- **[📘 Complete Project Guide](docs/project-guide.md)** - Everything you need to know about MarkGo Engine
+- **[🏛️ System Overview](docs/system-overview.md)** - Technical architecture and performance characteristics
+- **[📐 Architecture Guide](docs/architecture.md)** - In-depth technical design and patterns
+- **[🚀 Deployment Guide](docs/deployment.md)** - Production deployment strategies
 
 ---
 

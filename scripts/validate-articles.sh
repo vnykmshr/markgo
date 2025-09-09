@@ -126,8 +126,8 @@ validate_article() {
     fi
     
     # Check file extension
-    if [[ ! "$filename" =~ \.(md|markdown)$ ]]; then
-        echo "  ⚠️  Unexpected file extension (should be .md or .markdown)"
+    if [[ ! "$filename" =~ \.(md|markdown|mdown|mkd)$ ]]; then
+        echo "  ⚠️  Unexpected file extension (should be .md, .markdown, .mdown, or .mkd)"
         ((WARN_COUNT++))
     fi
     
@@ -136,7 +136,7 @@ validate_article() {
 }
 
 # Find and validate all markdown files
-find "$ARTICLES_DIR" -name "*.md" -o -name "*.markdown" | while read -r file; do
+find "$ARTICLES_DIR" -name "*.md" -o -name "*.markdown" -o -name "*.mdown" -o -name "*.mkd" | while read -r file; do
     validate_article "$file"
 done
 

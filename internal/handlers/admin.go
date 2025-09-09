@@ -281,7 +281,7 @@ func (h *AdminHandler) SetLogLevel(c *gin.Context) {
 	if level == "" {
 		level = c.Query("level")
 	}
-	
+
 	if level == "" {
 		c.JSON(400, gin.H{
 			"error":   "Missing log level parameter",
@@ -302,8 +302,8 @@ func (h *AdminHandler) SetLogLevel(c *gin.Context) {
 	level = strings.ToLower(strings.TrimSpace(level))
 	if !validLevels[level] {
 		c.JSON(400, gin.H{
-			"error":   "Invalid log level",
-			"message": "Log level must be one of: debug, info, warn, error",
+			"error":    "Invalid log level",
+			"message":  "Log level must be one of: debug, info, warn, error",
 			"provided": level,
 		})
 		return
@@ -312,12 +312,12 @@ func (h *AdminHandler) SetLogLevel(c *gin.Context) {
 	// Note: slog doesn't support runtime level changes natively
 	// This would require a more complex implementation with a custom handler
 	h.logger.Info("Log level change requested", "requested_level", level, "note", "Runtime log level changes require service restart")
-	
+
 	c.JSON(200, gin.H{
-		"message":        "Log level change requested",
+		"message":         "Log level change requested",
 		"requested_level": level,
-		"note":          "Runtime log level changes are not currently supported. Please update config and restart service.",
-		"current_status": "Request logged for future implementation",
+		"note":            "Runtime log level changes are not currently supported. Please update config and restart service.",
+		"current_status":  "Request logged for future implementation",
 	})
 }
 

@@ -1,0 +1,35 @@
+version: '3.8'
+
+# Development overrides for docker-compose.yml
+# This file is automatically loaded by docker-compose
+# and overrides settings in the main docker-compose.yml
+
+services:
+  markgo:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      - ENVIRONMENT=development
+      - GIN_MODE=debug
+      - LOG_LEVEL=debug
+    volumes:
+      # Mount source code for hot reload
+      - ./articles:/articles
+      - ./web:/web
+      - ./internal:/app/internal
+      - ./cmd:/app/cmd
+      - ./go.mod:/app/go.mod
+      - ./go.sum:/app/go.sum
+    ports:
+      - "8080:8080"
+      - "2345:2345"  # Delve debugger port (if using)
+    command: ["air", "-c", ".air.toml"]  # Use Air for hot reload
+    stdin_open: true
+    tty: true
+    depends_on: []  # Remove nginx dependency for development
+
+  # Disable nginx for development
+  nginx:
+    profiles:
+      - disabled

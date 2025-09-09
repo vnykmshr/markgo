@@ -256,7 +256,6 @@ func ExecuteRequest(router *gin.Engine, req *http.Request) *httptest.ResponseRec
 	return recorder
 }
 
-
 // SetupArticleServiceMocks sets up common article service mock expectations
 func SetupArticleServiceMocks(mockArticle *MockArticleService, articles []*models.Article) {
 	mockArticle.On("GetAllArticles").Return(articles).Maybe()

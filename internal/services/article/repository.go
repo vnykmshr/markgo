@@ -17,6 +17,19 @@ import (
 	"github.com/vnykmshr/markgo/internal/models"
 )
 
+// supportedMarkdownExtensions defines all supported Markdown file extensions
+var supportedMarkdownExtensions = []string{".md", ".markdown", ".mdown", ".mkd"}
+
+// isMarkdownFile checks if a file has a supported Markdown extension
+func isMarkdownFile(filename string) bool {
+	for _, ext := range supportedMarkdownExtensions {
+		if strings.HasSuffix(filename, ext) {
+			return true
+		}
+	}
+	return false
+}
+
 // Repository defines the interface for article data access
 type Repository interface {
 	// Core CRUD operations
@@ -77,7 +90,7 @@ func (r *FileSystemRepository) LoadAll(ctx context.Context) ([]*models.Article, 
 		}
 
 		// Skip directories and non-markdown files
-		if d.IsDir() || (!strings.HasSuffix(path, ".md") && !strings.HasSuffix(path, ".markdown")) {
+		if d.IsDir() || !isMarkdownFile(path) {
 			return nil
 		}
 
@@ -386,7 +399,7 @@ func (r *FileSystemRepository) UpdateDraftStatus(slug string, isDraft bool) erro
 	if strings.TrimSpace(slug) == "" {
 		return fmt.Errorf("slug cannot be empty")
 	}
-	
+
 	// Sanitize slug to prevent path traversal attacks
 	if strings.Contains(slug, "..") || strings.Contains(slug, "/") || strings.Contains(slug, "\\") {
 		return fmt.Errorf("invalid slug format: %s", slug)
@@ -398,16 +411,16 @@ func (r *FileSystemRepository) UpdateDraftStatus(slug string, isDraft bool) erro
 	// Find the article
 	var targetArticle *models.Article
 	var filePath string
-	
+
 	for _, article := range r.articles {
 		if article.Slug == slug {
 			targetArticle = article
-			// Try both .md and .markdown extensions
-			possiblePaths := []string{
-				filepath.Join(r.articlesPath, slug+".md"),
-				filepath.Join(r.articlesPath, slug+".markdown"),
+			// Try all supported Markdown extensions
+			var possiblePaths []string
+			for _, ext := range supportedMarkdownExtensions {
+				possiblePaths = append(possiblePaths, filepath.Join(r.articlesPath, slug+ext))
 			}
-			
+
 			// Find the actual file
 			for _, path := range possiblePaths {
 				if _, err := os.Stat(path); err == nil {
@@ -415,7 +428,7 @@ func (r *FileSystemRepository) UpdateDraftStatus(slug string, isDraft bool) erro
 					break
 				}
 			}
-			
+
 			if filePath == "" {
 				return fmt.Errorf("article file not found for slug: %s", slug)
 			}
@@ -484,9 +497,9 @@ func (r *FileSystemRepository) UpdateDraftStatus(slug string, isDraft bool) erro
 	// Update the in-memory article - only after successful file write
 	targetArticle.Draft = isDraft
 
-	r.logger.Info("Successfully updated draft status", 
-		"slug", slug, 
-		"isDraft", isDraft, 
+	r.logger.Info("Successfully updated draft status",
+		"slug", slug,
+		"isDraft", isDraft,
 		"filePath", filePath)
 
 	return nil

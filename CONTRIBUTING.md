@@ -64,7 +64,7 @@ We welcome feature suggestions! Please:
 
 1. **Fork the repository** and clone your fork:
    ```bash
-   git clone https://github.com/yourusername/markgo
+   git clone https://github.com/vnykmshr/markgo
    cd markgo
    ```
 

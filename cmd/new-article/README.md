@@ -56,7 +56,7 @@ Specify arguments directly:
 ## Output
 
 Creates markdown files in `articles/` directory with format:
-- Filename: slugified title (e.g., "Hello World" → `hello-world.markdown`)
+- Filename: slugified title (e.g., "Hello World" → `hello-world.md`)
 - YAML frontmatter with metadata
 - Basic markdown template
 

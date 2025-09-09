@@ -195,7 +195,7 @@ func (s *SearchService) setupSearchMaintenance() {
 	})
 
 	// Schedule cache warming
-	_ = s.scheduler.ScheduleCron("search-cache-warming", "*/30 * * * *", cacheWarmingTask) // Continue without cache warming if scheduling fails
+	_ = s.scheduler.ScheduleCron("search-cache-warming", "0 */30 * * * *", cacheWarmingTask) // Continue without cache warming if scheduling fails
 
 	// Cache cleanup task every hour - use basic cleanup instead of Evict
 	cleanupTask := workerpool.TaskFunc(func(ctx context.Context) error {
@@ -206,7 +206,7 @@ func (s *SearchService) setupSearchMaintenance() {
 	})
 
 	// Schedule cleanup
-	_ = s.scheduler.ScheduleCron("search-cache-cleanup", "0 * * * *", cleanupTask) // Continue without scheduled cleanup if scheduling fails
+	_ = s.scheduler.ScheduleCron("search-cache-cleanup", "0 0 * * * *", cleanupTask) // Continue without scheduled cleanup if scheduling fails
 }
 
 // Search performs an optimized full-text search across articles with caching

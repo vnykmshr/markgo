@@ -300,4 +300,4 @@ Whether you're a developer wanting to blog about your projects, a team documenti
 
 ---
 
-*Ready to try file-based content management? Check out our [Getting Started Guide](https://github.com/yourusername/markgo) to set up MarkGo in minutes.*
+*Ready to try file-based content management? Check out our [Getting Started Guide](https://github.com/vnykmshr/markgo) to set up MarkGo in minutes.*
