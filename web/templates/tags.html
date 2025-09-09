@@ -16,7 +16,7 @@
             <div class="tags-grid">
                 {{ range .tags }}
                 <div class="tag-card">
-                    <a href="/tags/{{ .Tag }}" class="tag-link">
+                    <a href="/tags/{{ .Tag | urlquery }}" class="tag-link">
                         <h3 class="tag-name">{{ .Tag }}</h3>
                         <span class="tag-count"
                             >{{ .Count }} article{{ if ne .Count 1 }}s{{ end
@@ -42,7 +42,7 @@
             <div class="tags-cloud">
                 {{ range (slice .tags 0 (min (len .tags) 15)) }}
                 <a
-                    href="/tags/{{ .Tag }}"
+                    href="/tags/{{ .Tag | urlquery }}"
                     class="tag-cloud-item"
                     style="font-size: {{ add 1 (div (mul .Count 2) 10) }}em"
                 >
@@ -75,7 +75,7 @@
                     "item": {
                         "@type": "Thing",
                         "name": "{{ $tag.Tag }}",
-                        "url": "{{ $.config.BaseURL }}/tags/{{ $tag.Tag }}"
+                        "url": "{{ $.config.BaseURL }}/tags/{{ $tag.Tag | urlquery }}"
                     }
                 }
                 {{ end }}

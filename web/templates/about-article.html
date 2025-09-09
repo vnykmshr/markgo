@@ -74,7 +74,7 @@
                     <h3>Categories</h3>
                     <div class="article-categories">
                         {{ range .article.Categories }}
-                        <a href="/categories/{{ . }}" class="category">{{ . }}</a>
+                        <a href="/categories/{{ . | urlquery }}" class="category">{{ . }}</a>
                         {{ end }}
                     </div>
                 </div>

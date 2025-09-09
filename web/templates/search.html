@@ -105,7 +105,7 @@
                         {{ if .Article.Tags }}
                         <div class="result-tags">
                             {{ range .Article.Tags }}
-                            <a href="/tags/{{ . }}" class="tag">{{ . }}</a>
+                            <a href="/tags/{{ . | urlquery }}" class="tag">{{ . }}</a>
                             {{ end }}
                         </div>
                         {{ end }}

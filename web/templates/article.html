@@ -25,7 +25,7 @@
                     <div class="article-tags">
                         <span class="tags-label">Tags:</span>
                         {{ range .article.Tags }}
-                        <a href="/tags/{{ . }}" class="tag">{{ . }}</a>
+                        <a href="/tags/{{ . | urlquery }}" class="tag">{{ . }}</a>
                         {{ end }}
                     </div>
                     {{ end }}
@@ -34,7 +34,7 @@
                     <div class="article-categories">
                         <span class="categories-label">Categories:</span>
                         {{ range .article.Categories }}
-                        <a href="/categories/{{ . }}" class="category">{{ . }}</a>
+                        <a href="/categories/{{ . | urlquery }}" class="category">{{ . }}</a>
                         {{ end }}
                     </div>
                     {{ end }}

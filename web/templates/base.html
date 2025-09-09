@@ -42,10 +42,12 @@
     <meta name="twitter:image" content="{{ .config.BaseURL }}/static/img/og-default.png">
     <meta name="twitter:image:alt" content="{{ .config.Blog.Title }} - {{ .config.Blog.Description }}">
     {{ end }}
+    {{/* Twitter social meta tags disabled - Social config not implemented yet
     {{ if .config.Social.TwitterHandle }}
     <meta name="twitter:site" content="@{{ .config.Social.TwitterHandle }}">
     <meta name="twitter:creator" content="@{{ .config.Social.TwitterHandle }}">
     {{ end }}
+    */}}
 
     <!-- Article specific meta -->
     {{ if .article }}
@@ -225,7 +227,9 @@
 
         {{ if eq $tpl "about-article" }}{{ template "about-article-content" . }}{{ end }}
         {{ if eq $tpl "tags" }}{{ template "tags-content" . }}{{ end }}
+        {{ if eq $tpl "tag" }}{{ template "tag-content" . }}{{ end }}
         {{ if eq $tpl "categories" }}{{ template "categories-content" . }}{{ end }}
+        {{ if eq $tpl "category" }}{{ template "category-content" . }}{{ end }}
         {{ if eq $tpl "404" }}{{ template "404-content" . }}{{ end }}
     </main>
 

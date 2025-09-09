@@ -45,7 +45,7 @@
                     {{ if .Tags }}
                     <div class="card-tags">
                         {{ range .Tags }}
-                        <a href="/tags/{{ . }}" class="tag">{{ . }}</a>
+                        <a href="/tags/{{ . | urlquery }}" class="tag">{{ . }}</a>
                         {{ end }}
                     </div>
                     {{ end }}
@@ -53,7 +53,7 @@
                     {{ if .Categories }}
                     <div class="card-categories">
                         {{ range .Categories }}
-                        <a href="/categories/{{ . }}" class="category">{{ . }}</a>
+                        <a href="/categories/{{ . | urlquery }}" class="category">{{ . }}</a>
                         {{ end }}
                     </div>
                     {{ end }}

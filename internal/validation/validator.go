@@ -179,12 +179,18 @@ func (v *Validator) ValidateSearchQuery(query string) ValidationError {
 		}
 	}
 
-	// Check for dangerous patterns (basic SQL injection prevention)
+	// Check for dangerous patterns (XSS and injection prevention)
+	// Using more precise patterns to avoid blocking legitimate programming terms
 	dangerousPatterns := []string{
-		"'", "\"", ";", "--", "/*", "*/", "xp_", "sp_",
-		"union", "select", "insert", "update", "delete", "drop",
-		"exec", "execute", "script", "javascript:", "vbscript:",
-		"onload", "onerror", "onclick",
+		// XSS patterns
+		"javascript:", "vbscript:", "data:", "blob:",
+		"<script", "</script>", "onload=", "onerror=", "onclick=",
+		"eval(", "setTimeout(", "setInterval(",
+		"document.", "window.", "location.",
+		"alert(", "confirm(", "prompt(",
+		// SQL injection patterns - more specific to avoid blocking legitimate searches
+		"'; ", "';", "'\"", "\";", "/*", "*/", " --", "--",
+		" union ", " drop ", " delete ", " truncate ",
 	}
 
 	lowerQuery := strings.ToLower(query)

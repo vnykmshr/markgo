@@ -48,7 +48,7 @@
                             {{ if .Tags }}
                             <div class="card-tags">
                                 {{ range .Tags }}
-                                <a href="/tags/{{ . }}" class="tag">{{ . }}</a>
+                                <a href="/tags/{{ . | urlquery }}" class="tag">{{ . }}</a>
                                 {{ end }}
                             </div>
                             {{ end }}
@@ -100,13 +100,13 @@
                             {{ if .Tags }}
                             <div class="card-tags">
                                 {{ range .Tags }}
-                                <a href="/tags/{{ . }}" class="tag">{{ . }}</a>
+                                <a href="/tags/{{ . | urlquery }}" class="tag">{{ . }}</a>
                                 {{ end }}
                             </div>
                             {{ end }} {{ if .Categories }}
                             <div class="card-categories">
                                 {{ range .Categories }}
-                                <a href="/categories/{{ . }}" class="category"
+                                <a href="/categories/{{ . | urlquery }}" class="category"
                                     >{{ . }}</a
                                 >
                                 {{ end }}
@@ -133,7 +133,7 @@
                 <div class="tags-cloud">
                     {{ range .tags }}
                     <a
-                        href="/tags/{{ .Tag }}"
+                        href="/tags/{{ .Tag | urlquery }}"
                         class="tag-cloud-item"
                         data-count="{{ .Count }}"
                     >

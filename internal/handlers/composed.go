@@ -170,6 +170,7 @@ func (h *Handlers) AboutArticle(c *gin.Context) {
 func (h *Handlers) ContactForm(c *gin.Context) {
 	// Render contact form template
 	data := h.ArticleHandler.buildBaseTemplateData("Contact").
+		Set("recent", h.ArticleHandler.getRecentArticles(5)).
 		Set("template", "contact").
 		Build()
 	h.ArticleHandler.renderHTML(c, 200, "base.html", data)

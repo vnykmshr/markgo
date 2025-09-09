@@ -219,14 +219,14 @@ func (vm *ValidationMiddleware) validateTagCategory(value, fieldType string) val
 		}
 	}
 
-	// Allow letters, numbers, hyphens, and underscores
-	// More permissive than slugs to support various tag formats
+	// Allow letters, numbers, hyphens, underscores, spaces, and plus signs
+	// More permissive than slugs to support various tag/category formats
 	validFormat := true
 	for _, r := range value {
 		if !((r >= 'a' && r <= 'z') ||
 			(r >= 'A' && r <= 'Z') ||
 			(r >= '0' && r <= '9') ||
-			r == '-' || r == '_' || r == '+') {
+			r == '-' || r == '_' || r == '+' || r == ' ') {
 			validFormat = false
 			break
 		}

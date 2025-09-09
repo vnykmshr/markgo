@@ -16,7 +16,7 @@
             <div class="categories-grid">
                 {{ range .categories }}
                 <div class="category-card">
-                    <a href="/categories/{{ .Category }}" class="category-link">
+                    <a href="/categories/{{ .Category | urlquery }}" class="category-link">
                         <div class="category-icon">
                             <svg
                                 width="32"
@@ -117,7 +117,7 @@
                     "item": {
                         "@type": "Thing",
                         "name": "{{ $category.Category }}",
-                        "url": "{{ $.config.BaseURL }}/categories/{{ $category.Category }}"
+                        "url": "{{ $.config.BaseURL }}/categories/{{ $category.Category | urlquery }}"
                     }
                 }
                 {{ end }}

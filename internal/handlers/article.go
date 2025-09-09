@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"log/slog"
+	"net/url"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -109,6 +110,14 @@ func (h *ArticleHandler) ArticlesByTag(c *gin.Context) {
 		return
 	}
 
+	// Decode URL-encoded tag name
+	decodedTag, err := url.QueryUnescape(tag)
+	if err != nil {
+		h.handleError(c, fmt.Errorf("invalid tag format: %v", err), "Invalid tag")
+		return
+	}
+	tag = decodedTag
+
 	cachedFunc := func() (map[string]any, error) {
 		if h.cachedFunctions.GetTagArticles != nil {
 			return h.cachedFunctions.GetTagArticles(tag)
@@ -130,6 +139,14 @@ func (h *ArticleHandler) ArticlesByCategory(c *gin.Context) {
 		h.handleError(c, fmt.Errorf("category is required"), "Invalid category")
 		return
 	}
+
+	// Decode URL-encoded category name
+	decodedCategory, err := url.QueryUnescape(category)
+	if err != nil {
+		h.handleError(c, fmt.Errorf("invalid category format: %v", err), "Invalid category")
+		return
+	}
+	category = decodedCategory
 
 	cachedFunc := func() (map[string]any, error) {
 		if h.cachedFunctions.GetCategoryArticles != nil {
@@ -166,11 +183,8 @@ func (h *ArticleHandler) Categories(c *gin.Context) {
 // Search handles search requests
 func (h *ArticleHandler) Search(c *gin.Context) {
 	query := c.Query("q")
-	if query == "" {
-		h.handleError(c, fmt.Errorf("search query is required"), "Empty search query")
-		return
-	}
-
+	
+	// Allow empty queries for initial search page visit
 	cachedFunc := func() (map[string]any, error) {
 		if h.cachedFunctions.GetSearchResults != nil {
 			return h.cachedFunctions.GetSearchResults(query)
@@ -183,6 +197,20 @@ func (h *ArticleHandler) Search(c *gin.Context) {
 	}
 
 	h.withCachedFallback(c, cachedFunc, uncachedFunc, "base.html", "Failed to perform search")
+}
+
+// Helper methods
+
+// getRecentArticles returns the most recent published articles for footer display
+func (h *ArticleHandler) getRecentArticles(limit int) []*models.Article {
+	allArticles := h.articleService.GetAllArticles()
+	var recent []*models.Article
+	for _, article := range allArticles {
+		if !article.Draft && len(recent) < limit {
+			recent = append(recent, article)
+		}
+	}
+	return recent
 }
 
 // Uncached data generation methods (to be extracted from original handlers.go)
@@ -209,12 +237,23 @@ func (h *ArticleHandler) getHomeDataUncached() (map[string]any, error) {
 	tagCounts := h.articleService.GetTagCounts()
 	categoryCounts := h.articleService.GetCategoryCounts()
 
+	// Count published articles only for totalCount
+	publishedCount := 0
+	for _, article := range allArticles {
+		if !article.Draft {
+			publishedCount++
+		}
+	}
+
 	data := h.buildBaseTemplateData(h.config.Blog.Title).
 		Set("description", h.config.Blog.Description).
 		Set("featured", featured).
 		Set("recent", recent).
 		Set("tags", tagCounts[:min(10, len(tagCounts))]).
 		Set("categories", categoryCounts[:min(10, len(categoryCounts))]).
+		Set("totalCount", publishedCount).
+		Set("totalCats", len(categoryCounts)).
+		Set("totalTags", len(tagCounts)).
 		Set("template", "index").
 		Build()
 
@@ -281,6 +320,8 @@ func (h *ArticleHandler) getArticlesPageUncached(page int) (map[string]any, erro
 	pagination := models.Pagination{
 		CurrentPage:  page,
 		TotalPages:   totalPages,
+		TotalItems:   len(published),
+		ItemsPerPage: postsPerPage,
 		HasPrevious:  page > 1,
 		HasNext:      page < totalPages,
 		PreviousPage: page - 1,
@@ -291,6 +332,7 @@ func (h *ArticleHandler) getArticlesPageUncached(page int) (map[string]any, erro
 		Set("description", "Articles from "+h.config.Blog.Title).
 		Set("articles", articles).
 		Set("pagination", pagination).
+		Set("recent", h.getRecentArticles(5)).
 		Set("template", "articles").
 		Build()
 
@@ -313,6 +355,7 @@ func (h *ArticleHandler) getTagArticlesUncached(tag string) (map[string]any, err
 		Set("articles", published).
 		Set("tag", tag).
 		Set("totalCount", len(published)).
+		Set("recent", h.getRecentArticles(5)).
 		Set("template", "tag").
 		Build()
 
@@ -335,6 +378,7 @@ func (h *ArticleHandler) getCategoryArticlesUncached(category string) (map[strin
 		Set("articles", published).
 		Set("category", category).
 		Set("totalCount", len(published)).
+		Set("recent", h.getRecentArticles(5)).
 		Set("template", "category").
 		Build()
 
@@ -347,6 +391,8 @@ func (h *ArticleHandler) getTagsPageUncached() (map[string]any, error) {
 	data := h.buildBaseTemplateData("Tags - "+h.config.Blog.Title).
 		Set("description", "All tags from "+h.config.Blog.Title).
 		Set("tags", tagCounts).
+		Set("count", len(tagCounts)).
+		Set("recent", h.getRecentArticles(5)).
 		Set("template", "tags").
 		Build()
 
@@ -359,6 +405,8 @@ func (h *ArticleHandler) getCategoriesPageUncached() (map[string]any, error) {
 	data := h.buildBaseTemplateData("Categories - "+h.config.Blog.Title).
 		Set("description", "All categories from "+h.config.Blog.Title).
 		Set("categories", categoryCounts).
+		Set("count", len(categoryCounts)).
+		Set("recent", h.getRecentArticles(5)).
 		Set("template", "categories").
 		Build()
 
@@ -376,13 +424,28 @@ func (h *ArticleHandler) getSearchResultsUncached(query string) (map[string]any,
 		}
 	}
 
-	results := h.searchService.Search(published, query, 50)
+	var results []*models.SearchResult
+	var title, description string
 
-	data := h.buildBaseTemplateData("Search results for \""+query+"\" - "+h.config.Blog.Title).
-		Set("description", "Search results for \""+query+"\"").
+	if query == "" {
+		// Empty query - show search page without results
+		results = []*models.SearchResult{}
+		title = "Search - " + h.config.Blog.Title
+		description = "Search through articles on " + h.config.Blog.Title
+	} else {
+		// Perform search with query
+		results = h.searchService.Search(published, query, 50)
+		title = "Search results for \"" + query + "\" - " + h.config.Blog.Title
+		description = "Search results for \"" + query + "\""
+	}
+
+	data := h.buildBaseTemplateData(title).
+		Set("description", description).
 		Set("results", results).
 		Set("query", query).
-		Set("totalCount", len(results)).
+		Set("count", len(results)).
+		Set("totalCount", len(published)).
+		Set("recent", h.getRecentArticles(5)).
 		Set("template", "search").
 		Build()
 

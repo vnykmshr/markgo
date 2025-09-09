@@ -1,0 +1,75 @@
+{{ define "tag-content" }}
+<div class="tag-page">
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="container">
+            <h1 class="page-title">#{{ .tag }}</h1>
+            <p class="page-description">
+                {{ if .totalCount }}
+                    {{ if eq .totalCount 1 }}
+                        {{ .totalCount }} article tagged with {{ .tag }}
+                    {{ else }}
+                        {{ .totalCount }} articles tagged with {{ .tag }}
+                    {{ end }}
+                {{ else }}
+                    No articles found with tag {{ .tag }}
+                {{ end }}
+            </p>
+        </div>
+    </header>
+
+    <!-- Articles Content -->
+    <div class="page-content">
+        <div class="container">
+            <!-- Articles Grid -->
+        {{ if .articles }}
+        <div class="articles-grid">
+            {{ range .articles }}
+            <article class="article-card">
+                <div class="card-content">
+                    <h2 class="card-title">
+                        <a href="/articles/{{ .Slug }}">{{ .Title }}</a>
+                    </h2>
+
+                    {{ if .Description }}
+                    <p class="card-description">{{ .Description }}</p>
+                    {{ end }}
+
+                    <p class="card-excerpt">{{ .Excerpt }}</p>
+
+                    <div class="card-meta">
+                        <time class="card-date" datetime="{{ .Date.Format "2006-01-02" }}">
+                            {{ .Date.Format "January 2, 2006" }}
+                        </time>
+                        
+                        {{ if .Author }}
+                        <span class="card-author">by {{ .Author }}</span>
+                        {{ end }}
+                        
+                        {{ if .Categories }}
+                        <div class="card-categories">
+                            {{ range .Categories }}
+                            <a href="/categories/{{ . | urlquery }}" class="card-category">{{ . }}</a>
+                            {{ end }}
+                        </div>
+                        {{ end }}
+                    </div>
+                </div>
+            </article>
+            {{ end }}
+        </div>
+        {{ else }}
+        <div class="no-articles">
+            <p>No articles found with tag "{{ .tag }}" yet.</p>
+            <p><a href="/articles" class="link-button">Browse all articles</a> or <a href="/tags" class="link-button">explore other tags</a>.</p>
+        </div>
+        {{ end }}
+
+        <!-- Back to Tags -->
+        <div class="page-navigation">
+            <a href="/tags" class="back-link">← Browse all tags</a>
+        </div>
+        </div>
+    </div>
+</div>
+{{ end }}

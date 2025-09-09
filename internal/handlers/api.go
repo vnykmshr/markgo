@@ -3,12 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/vnykmshr/markgo/internal/config"
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/models"
 	"github.com/vnykmshr/markgo/internal/services"
 )
@@ -133,6 +135,16 @@ func (h *APIHandler) Contact(c *gin.Context) {
 
 	// Send email through email service
 	if err := h.emailService.SendContactMessage(contactMsg); err != nil {
+		// Handle missing email configuration gracefully
+		if errors.Is(err, apperrors.ErrEmailNotConfigured) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"error":   "Contact form temporarily unavailable",
+				"message": "Email service is not configured. Please try again later or contact us through alternative means.",
+				"status":  "unavailable",
+			})
+			return
+		}
+		
 		h.handleError(c, err, "Failed to send contact message")
 		return
 	}
