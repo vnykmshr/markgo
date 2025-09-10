@@ -169,10 +169,9 @@ func (h *Handlers) AboutArticle(c *gin.Context) {
 
 func (h *Handlers) ContactForm(c *gin.Context) {
 	// Render contact form template
-	data := h.ArticleHandler.buildBaseTemplateData("Contact").
-		Set("recent", h.ArticleHandler.getRecentArticles(5)).
-		Set("template", "contact").
-		Build()
+	data := h.ArticleHandler.buildBaseTemplateData("Contact")
+	data["recent"] = h.ArticleHandler.getRecentArticles(5)
+	data["template"] = "contact"
 	h.ArticleHandler.renderHTML(c, 200, "base.html", data)
 }
 
@@ -416,9 +415,8 @@ func (h *Handlers) Logger() *slog.Logger {
 
 // NotFound handles 404 errors
 func (h *Handlers) NotFound(c *gin.Context) {
-	data := h.ArticleHandler.buildBaseTemplateData("Page Not Found").
-		Set("template", "404").
-		Set("description", "The page you're looking for was not found").
-		Build()
+	data := h.ArticleHandler.buildBaseTemplateData("Page Not Found")
+	data["template"] = "404"
+	data["description"] = "The page you're looking for was not found"
 	h.ArticleHandler.renderHTML(c, 404, "base.html", data)
 }

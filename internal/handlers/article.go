@@ -245,17 +245,16 @@ func (h *ArticleHandler) getHomeDataUncached() (map[string]any, error) {
 		}
 	}
 
-	data := h.buildBaseTemplateData(h.config.Blog.Title).
-		Set("description", h.config.Blog.Description).
-		Set("featured", featured).
-		Set("recent", recent).
-		Set("tags", tagCounts[:min(10, len(tagCounts))]).
-		Set("categories", categoryCounts[:min(10, len(categoryCounts))]).
-		Set("totalCount", publishedCount).
-		Set("totalCats", len(categoryCounts)).
-		Set("totalTags", len(tagCounts)).
-		Set("template", "index").
-		Build()
+	data := h.buildBaseTemplateData(h.config.Blog.Title)
+	data["description"] = h.config.Blog.Description
+	data["featured"] = featured
+	data["recent"] = recent
+	data["tags"] = tagCounts[:min(10, len(tagCounts))]
+	data["categories"] = categoryCounts[:min(10, len(categoryCounts))]
+	data["totalCount"] = publishedCount
+	data["totalCats"] = len(categoryCounts)
+	data["totalTags"] = len(tagCounts)
+	data["template"] = "index"
 
 	return data, nil
 }
@@ -285,11 +284,10 @@ func (h *ArticleHandler) getArticleDataUncached(slug string) (map[string]any, er
 		templateName = "about-article"
 	}
 
-	data := h.buildArticlePageData(article.Title+" - "+h.config.Blog.Title, recent).
-		Set("article", article).
-		Set("description", article.Description).
-		Set("template", templateName).
-		Build()
+	data := h.buildArticlePageData(article.Title+" - "+h.config.Blog.Title, recent)
+	data["article"] = article
+	data["description"] = article.Description
+	data["template"] = templateName
 
 	return data, nil
 }
@@ -334,13 +332,12 @@ func (h *ArticleHandler) getArticlesPageUncached(page int) (map[string]any, erro
 		NextPage:     page + 1,
 	}
 
-	data := h.buildBaseTemplateData("Articles - "+h.config.Blog.Title).
-		Set("description", "Articles from "+h.config.Blog.Title).
-		Set("articles", articles).
-		Set("pagination", pagination).
-		Set("recent", h.getRecentArticles(5)).
-		Set("template", "articles").
-		Build()
+	data := h.buildBaseTemplateData("Articles - " + h.config.Blog.Title)
+	data["description"] = "Articles from " + h.config.Blog.Title
+	data["articles"] = articles
+	data["pagination"] = pagination
+	data["recent"] = h.getRecentArticles(5)
+	data["template"] = "articles"
 
 	return data, nil
 }
@@ -356,14 +353,13 @@ func (h *ArticleHandler) getTagArticlesUncached(tag string) (map[string]any, err
 		}
 	}
 
-	data := h.buildBaseTemplateData("Articles tagged with "+tag+" - "+h.config.Blog.Title).
-		Set("description", "Articles tagged with "+tag).
-		Set("articles", published).
-		Set("tag", tag).
-		Set("totalCount", len(published)).
-		Set("recent", h.getRecentArticles(5)).
-		Set("template", "tag").
-		Build()
+	data := h.buildBaseTemplateData("Articles tagged with " + tag + " - " + h.config.Blog.Title)
+	data["description"] = "Articles tagged with " + tag
+	data["articles"] = published
+	data["tag"] = tag
+	data["totalCount"] = len(published)
+	data["recent"] = h.getRecentArticles(5)
+	data["template"] = "tag"
 
 	return data, nil
 }
@@ -379,14 +375,13 @@ func (h *ArticleHandler) getCategoryArticlesUncached(category string) (map[strin
 		}
 	}
 
-	data := h.buildBaseTemplateData("Articles in "+category+" - "+h.config.Blog.Title).
-		Set("description", "Articles in "+category).
-		Set("articles", published).
-		Set("category", category).
-		Set("totalCount", len(published)).
-		Set("recent", h.getRecentArticles(5)).
-		Set("template", "category").
-		Build()
+	data := h.buildBaseTemplateData("Articles in " + category + " - " + h.config.Blog.Title)
+	data["description"] = "Articles in " + category
+	data["articles"] = published
+	data["category"] = category
+	data["totalCount"] = len(published)
+	data["recent"] = h.getRecentArticles(5)
+	data["template"] = "category"
 
 	return data, nil
 }
@@ -394,13 +389,12 @@ func (h *ArticleHandler) getCategoryArticlesUncached(category string) (map[strin
 func (h *ArticleHandler) getTagsPageUncached() (map[string]any, error) {
 	tagCounts := h.articleService.GetTagCounts()
 
-	data := h.buildBaseTemplateData("Tags - "+h.config.Blog.Title).
-		Set("description", "All tags from "+h.config.Blog.Title).
-		Set("tags", tagCounts).
-		Set("count", len(tagCounts)).
-		Set("recent", h.getRecentArticles(5)).
-		Set("template", "tags").
-		Build()
+	data := h.buildBaseTemplateData("Tags - " + h.config.Blog.Title)
+	data["description"] = "All tags from " + h.config.Blog.Title
+	data["tags"] = tagCounts
+	data["count"] = len(tagCounts)
+	data["recent"] = h.getRecentArticles(5)
+	data["template"] = "tags"
 
 	return data, nil
 }
@@ -408,13 +402,12 @@ func (h *ArticleHandler) getTagsPageUncached() (map[string]any, error) {
 func (h *ArticleHandler) getCategoriesPageUncached() (map[string]any, error) {
 	categoryCounts := h.articleService.GetCategoryCounts()
 
-	data := h.buildBaseTemplateData("Categories - "+h.config.Blog.Title).
-		Set("description", "All categories from "+h.config.Blog.Title).
-		Set("categories", categoryCounts).
-		Set("count", len(categoryCounts)).
-		Set("recent", h.getRecentArticles(5)).
-		Set("template", "categories").
-		Build()
+	data := h.buildBaseTemplateData("Categories - " + h.config.Blog.Title)
+	data["description"] = "All categories from " + h.config.Blog.Title
+	data["categories"] = categoryCounts
+	data["count"] = len(categoryCounts)
+	data["recent"] = h.getRecentArticles(5)
+	data["template"] = "categories"
 
 	return data, nil
 }
@@ -445,15 +438,14 @@ func (h *ArticleHandler) getSearchResultsUncached(query string) (map[string]any,
 		description = "Search results for \"" + query + "\""
 	}
 
-	data := h.buildBaseTemplateData(title).
-		Set("description", description).
-		Set("results", results).
-		Set("query", query).
-		Set("count", len(results)).
-		Set("totalCount", len(published)).
-		Set("recent", h.getRecentArticles(5)).
-		Set("template", "search").
-		Build()
+	data := h.buildBaseTemplateData(title)
+	data["description"] = description
+	data["results"] = results
+	data["query"] = query
+	data["count"] = len(results)
+	data["totalCount"] = len(published)
+	data["recent"] = h.getRecentArticles(5)
+	data["template"] = "search"
 
 	return data, nil
 }

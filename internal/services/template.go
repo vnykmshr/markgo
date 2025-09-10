@@ -344,10 +344,10 @@ var templateFuncs = template.FuncMap{
 		return a / b
 	},
 	"seq": func(start, end int) []int {
-		if start >= end {
+		if start > end {
 			return []int{}
 		}
-		seq := make([]int, end-start)
+		seq := make([]int, end-start+1)
 		for i := range seq {
 			seq[i] = start + i
 		}

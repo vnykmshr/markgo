@@ -174,12 +174,11 @@ func (h *AdminHandler) AdminHome(c *gin.Context) {
 		return
 	}
 
-	data := h.buildBaseTemplateData("Admin Dashboard - "+h.config.Blog.Title).
-		Set("description", "Admin dashboard for "+h.config.Blog.Title).
-		Set("system_info", systemInfo).
-		Set("admin_routes", adminRoutes).
-		Set("template", "admin_home").
-		Build()
+	data := h.buildBaseTemplateData("Admin Dashboard - " + h.config.Blog.Title)
+	data["description"] = "Admin dashboard for " + h.config.Blog.Title
+	data["system_info"] = systemInfo
+	data["admin_routes"] = adminRoutes
+	data["template"] = "admin_home"
 
 	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
@@ -268,10 +267,9 @@ func (h *AdminHandler) Debug(c *gin.Context) {
 		return
 	}
 
-	data := h.buildBaseTemplateData("Debug Information").
-		Set("debug", debugInfo).
-		Set("template", "debug").
-		Build()
+	data := h.buildBaseTemplateData("Debug Information")
+	data["debug"] = debugInfo
+	data["template"] = "debug"
 
 	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
