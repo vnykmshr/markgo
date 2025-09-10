@@ -495,91 +495,113 @@ func (s *TextSearchService) applyFilters(articles []*models.Article, filters Sea
 	var filtered []*models.Article
 
 	for _, article := range articles {
-		// Skip drafts if only published requested
-		if filters.OnlyPublished && article.Draft {
+		if !s.matchesPublishedFilter(article, filters) {
 			continue
 		}
 
-		// Skip non-featured if only featured requested
-		if filters.OnlyFeatured && !article.Featured {
+		if !s.matchesFeaturedFilter(article, filters) {
 			continue
 		}
 
-		// Tag filter
-		if len(filters.Tags) > 0 {
-			hasTag := false
-			for _, filterTag := range filters.Tags {
-				for _, articleTag := range article.Tags {
-					if strings.EqualFold(articleTag, filterTag) {
-						hasTag = true
-						break
-					}
-				}
-				if hasTag {
-					break
-				}
-			}
-			if !hasTag {
-				continue
-			}
+		if !s.matchesTagFilter(article, filters) {
+			continue
 		}
 
-		// Category filter
-		if len(filters.Categories) > 0 {
-			hasCategory := false
-			for _, filterCategory := range filters.Categories {
-				for _, articleCategory := range article.Categories {
-					if strings.EqualFold(articleCategory, filterCategory) {
-						hasCategory = true
-						break
-					}
-				}
-				if hasCategory {
-					break
-				}
-			}
-			if !hasCategory {
-				continue
-			}
+		if !s.matchesCategoryFilter(article, filters) {
+			continue
 		}
 
-		// Date range filters
-		if filters.DateFrom != "" || filters.DateTo != "" {
-			articleDate := article.Date
-
-			// Parse DateFrom if provided
-			if filters.DateFrom != "" {
-				dateFrom, err := time.Parse("2006-01-02", filters.DateFrom)
-				if err != nil {
-					// Log error but continue processing - don't fail the entire search for invalid date format
-					s.logger.Warn("Invalid DateFrom format, skipping date filter", "date", filters.DateFrom, "error", err)
-				} else {
-					if articleDate.Before(dateFrom) {
-						continue
-					}
-				}
-			}
-
-			// Parse DateTo if provided
-			if filters.DateTo != "" {
-				dateTo, err := time.Parse("2006-01-02", filters.DateTo)
-				if err != nil {
-					// Log error but continue processing - don't fail the entire search for invalid date format
-					s.logger.Warn("Invalid DateTo format, skipping date filter", "date", filters.DateTo, "error", err)
-				} else {
-					// Add 24 hours to make DateTo inclusive (end of day)
-					dateToEndOfDay := dateTo.Add(24 * time.Hour).Add(-time.Nanosecond)
-					if articleDate.After(dateToEndOfDay) {
-						continue
-					}
-				}
-			}
+		if !s.matchesDateFilter(article, filters) {
+			continue
 		}
 
 		filtered = append(filtered, article)
 	}
 
 	return filtered
+}
+
+// matchesPublishedFilter checks if article matches the published status filter
+func (s *TextSearchService) matchesPublishedFilter(article *models.Article, filters SearchFilters) bool {
+	if filters.OnlyPublished && article.Draft {
+		return false
+	}
+	return true
+}
+
+// matchesFeaturedFilter checks if article matches the featured status filter
+func (s *TextSearchService) matchesFeaturedFilter(article *models.Article, filters SearchFilters) bool {
+	if filters.OnlyFeatured && !article.Featured {
+		return false
+	}
+	return true
+}
+
+// matchesTagFilter checks if article matches any of the specified tags
+func (s *TextSearchService) matchesTagFilter(article *models.Article, filters SearchFilters) bool {
+	if len(filters.Tags) == 0 {
+		return true // No tag filter specified
+	}
+
+	for _, filterTag := range filters.Tags {
+		for _, articleTag := range article.Tags {
+			if strings.EqualFold(articleTag, filterTag) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// matchesCategoryFilter checks if article matches any of the specified categories
+func (s *TextSearchService) matchesCategoryFilter(article *models.Article, filters SearchFilters) bool {
+	if len(filters.Categories) == 0 {
+		return true // No category filter specified
+	}
+
+	for _, filterCategory := range filters.Categories {
+		for _, articleCategory := range article.Categories {
+			if strings.EqualFold(articleCategory, filterCategory) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// matchesDateFilter checks if article falls within the specified date range
+func (s *TextSearchService) matchesDateFilter(article *models.Article, filters SearchFilters) bool {
+	if filters.DateFrom == "" && filters.DateTo == "" {
+		return true // No date filter specified
+	}
+
+	articleDate := article.Date
+
+	// Check DateFrom constraint
+	if filters.DateFrom != "" {
+		dateFrom, err := time.Parse("2006-01-02", filters.DateFrom)
+		if err != nil {
+			s.logger.Warn("Invalid DateFrom format, skipping date filter", "date", filters.DateFrom, "error", err)
+		} else if articleDate.Before(dateFrom) {
+			return false
+		}
+	}
+
+	// Check DateTo constraint
+	if filters.DateTo != "" {
+		dateTo, err := time.Parse("2006-01-02", filters.DateTo)
+		if err != nil {
+			s.logger.Warn("Invalid DateTo format, skipping date filter", "date", filters.DateTo, "error", err)
+		} else {
+			// Add 24 hours to make DateTo inclusive (end of day)
+			dateToEndOfDay := dateTo.Add(24 * time.Hour).Add(-time.Nanosecond)
+			if articleDate.After(dateToEndOfDay) {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 func removeDuplicateStrings(slice []string) []string {

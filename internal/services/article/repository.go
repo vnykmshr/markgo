@@ -407,7 +407,44 @@ func generateSlug(title string) string {
 
 // UpdateDraftStatus updates the draft status of an article by rewriting its file
 func (r *FileSystemRepository) UpdateDraftStatus(slug string, isDraft bool) error {
-	// Input validation
+	// Validate and sanitize input
+	if err := r.validateSlug(slug); err != nil {
+		return err
+	}
+
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	// Find article and its file path
+	targetArticle, filePath, err := r.findArticleFile(slug)
+	if err != nil {
+		return err
+	}
+
+	// Read and update the file content
+	newContent, err := r.updateArticleDraftStatus(filePath, isDraft)
+	if err != nil {
+		return err
+	}
+
+	// Write the updated content atomically
+	if err := r.writeFileAtomically(filePath, newContent); err != nil {
+		return err
+	}
+
+	// Update the in-memory article - only after successful file write
+	targetArticle.Draft = isDraft
+
+	r.logger.Info("Successfully updated draft status",
+		"slug", slug,
+		"isDraft", isDraft,
+		"filePath", filePath)
+
+	return nil
+}
+
+// validateSlug performs input validation and sanitization on the slug
+func (r *FileSystemRepository) validateSlug(slug string) error {
 	if strings.TrimSpace(slug) == "" {
 		return fmt.Errorf("slug cannot be empty")
 	}
@@ -417,57 +454,60 @@ func (r *FileSystemRepository) UpdateDraftStatus(slug string, isDraft bool) erro
 		return fmt.Errorf("invalid slug format: %s", slug)
 	}
 
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	return nil
+}
 
-	// Find the article
-	var targetArticle *models.Article
-	var filePath string
-
+// findArticleFile finds the article and its file path for the given slug
+func (r *FileSystemRepository) findArticleFile(slug string) (*models.Article, string, error) {
 	for _, article := range r.articles {
 		if article.Slug == slug {
-			targetArticle = article
-			// Try all supported Markdown extensions
-			var possiblePaths []string
-			for _, ext := range supportedMarkdownExtensions {
-				possiblePaths = append(possiblePaths, filepath.Join(r.articlesPath, slug+ext))
+			filePath, err := r.resolveArticleFilePath(slug)
+			if err != nil {
+				return nil, "", err
 			}
-
-			// Find the actual file
-			for _, path := range possiblePaths {
-				if _, err := os.Stat(path); err == nil {
-					filePath = path
-					break
-				}
-			}
-
-			if filePath == "" {
-				return fmt.Errorf("article file not found for slug: %s", slug)
-			}
-			break
+			return article, filePath, nil
 		}
 	}
 
-	if targetArticle == nil {
-		return fmt.Errorf("article not found in memory: %s", slug)
+	return nil, "", fmt.Errorf("article not found in memory: %s", slug)
+}
+
+// resolveArticleFilePath finds the actual file path for an article with the given slug
+func (r *FileSystemRepository) resolveArticleFilePath(slug string) (string, error) {
+	// Try all supported Markdown extensions
+	for _, ext := range supportedMarkdownExtensions {
+		path := filepath.Join(r.articlesPath, slug+ext)
+		if _, err := os.Stat(path); err == nil {
+			return path, nil
+		}
 	}
 
+	return "", fmt.Errorf("article file not found for slug: %s", slug)
+}
+
+// updateArticleDraftStatus reads the file, updates the draft status in frontmatter, and returns new content
+func (r *FileSystemRepository) updateArticleDraftStatus(filePath string, isDraft bool) (string, error) {
 	// Read the current file content
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		return fmt.Errorf("failed to read article file %s: %w", filePath, err)
+		return "", fmt.Errorf("failed to read article file %s: %w", filePath, err)
 	}
 
+	return r.updateFrontmatterDraftStatus(string(content), isDraft)
+}
+
+// updateFrontmatterDraftStatus parses frontmatter, updates draft status, and reconstructs content
+func (r *FileSystemRepository) updateFrontmatterDraftStatus(content string, isDraft bool) (string, error) {
 	// Parse and update the frontmatter
-	parts := strings.SplitN(string(content), "---", 3)
+	parts := strings.SplitN(content, "---", 3)
 	if len(parts) < 3 {
-		return fmt.Errorf("invalid markdown file format: missing frontmatter in %s", filePath)
+		return "", fmt.Errorf("invalid markdown file format: missing frontmatter")
 	}
 
 	// Parse frontmatter into map for easier manipulation
 	var frontmatter map[string]interface{}
 	if err := yaml.Unmarshal([]byte(parts[1]), &frontmatter); err != nil {
-		return fmt.Errorf("failed to parse frontmatter: %w", err)
+		return "", fmt.Errorf("failed to parse frontmatter: %w", err)
 	}
 
 	// Update draft status
@@ -476,21 +516,31 @@ func (r *FileSystemRepository) UpdateDraftStatus(slug string, isDraft bool) erro
 	// Marshal back to YAML
 	updatedFrontmatter, err := yaml.Marshal(frontmatter)
 	if err != nil {
-		return fmt.Errorf("failed to marshal frontmatter: %w", err)
+		return "", fmt.Errorf("failed to marshal frontmatter: %w", err)
 	}
 
 	// Reconstruct the file content
 	newContent := fmt.Sprintf("---\n%s---\n%s", string(updatedFrontmatter), parts[2])
+	return newContent, nil
+}
+
+// writeFileAtomically writes content to file using atomic operations with backup
+func (r *FileSystemRepository) writeFileAtomically(filePath, content string) error {
+	// Read original content for backup
+	originalContent, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read original file %s: %w", filePath, err)
+	}
 
 	// Create backup of original file before writing
 	backupPath := filePath + ".backup"
-	if err := os.WriteFile(backupPath, content, 0644); err != nil {
+	if err := os.WriteFile(backupPath, originalContent, 0644); err != nil {
 		r.logger.Warn("Failed to create backup file", "original", filePath, "backup", backupPath, "error", err)
 	}
 
-	// Write back to file atomically by writing to temp file first
+	// Write to temporary file first
 	tempPath := filePath + ".tmp"
-	if err := os.WriteFile(tempPath, []byte(newContent), 0644); err != nil {
+	if err := os.WriteFile(tempPath, []byte(content), 0644); err != nil {
 		return fmt.Errorf("failed to write temporary file %s: %w", tempPath, err)
 	}
 
@@ -505,14 +555,6 @@ func (r *FileSystemRepository) UpdateDraftStatus(slug string, isDraft bool) erro
 	if err := os.Remove(backupPath); err != nil {
 		r.logger.Warn("Failed to remove backup file", "backup", backupPath, "error", err)
 	}
-
-	// Update the in-memory article - only after successful file write
-	targetArticle.Draft = isDraft
-
-	r.logger.Info("Successfully updated draft status",
-		"slug", slug,
-		"isDraft", isDraft,
-		"filePath", filePath)
 
 	return nil
 }
