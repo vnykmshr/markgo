@@ -278,6 +278,24 @@
     letter-spacing: 0.5px;
 }
 
+.stat-link {
+    text-decoration: none;
+    color: var(--color-text-muted);
+    transition: color var(--transition-fast), transform var(--transition-fast);
+    display: inline-block;
+}
+
+.stat-link:hover {
+    color: var(--color-primary);
+    transform: translateY(-1px);
+}
+
+.stat-link:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: var(--border-radius-sm);
+}
+
 .search-tips-expanded {
     margin-bottom: var(--spacing-16);
 }

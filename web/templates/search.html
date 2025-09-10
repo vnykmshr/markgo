@@ -146,15 +146,15 @@
             <div class="search-stats">
                 <div class="stat-item">
                     <span class="stat-number">{{ .totalCount | default "50+" }}</span>
-                    <span class="stat-label">Articles</span>
+                    <a href="/articles" class="stat-label stat-link">Articles</a>
                 </div>
                 <div class="stat-item">
                     <span class="stat-number">{{ len .tags | default "20+" }}</span>
-                    <span class="stat-label">Tags</span>
+                    <a href="/tags" class="stat-label stat-link">Tags</a>
                 </div>
                 <div class="stat-item">
                     <span class="stat-number">{{ len .categories | default "10+" }}</span>
-                    <span class="stat-label">Categories</span>
+                    <a href="/categories" class="stat-label stat-link">Categories</a>
                 </div>
             </div>
 
