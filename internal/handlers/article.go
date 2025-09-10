@@ -279,10 +279,16 @@ func (h *ArticleHandler) getArticleDataUncached(slug string) (map[string]any, er
 		}
 	}
 
+	// Use special template for about page
+	templateName := "article"
+	if slug == "about" {
+		templateName = "about-article"
+	}
+
 	data := h.buildArticlePageData(article.Title+" - "+h.config.Blog.Title, recent).
 		Set("article", article).
 		Set("description", article.Description).
-		Set("template", "article").
+		Set("template", templateName).
 		Build()
 
 	return data, nil

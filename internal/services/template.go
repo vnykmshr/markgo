@@ -562,6 +562,23 @@ var templateFuncs = template.FuncMap{
 		}
 		return falseVal
 	},
+	"initials": func(s string) string {
+		words := strings.Fields(strings.TrimSpace(s))
+		if len(words) == 0 {
+			return ""
+		}
+		
+		initials := ""
+		for i, word := range words {
+			if i >= 2 { // Only take first 2 initials
+				break
+			}
+			if len(word) > 0 {
+				initials += strings.ToUpper(string([]rune(word)[0]))
+			}
+		}
+		return initials
+	},
 }
 
 // Helper function
