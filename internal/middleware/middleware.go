@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -97,12 +98,16 @@ func Compress() gin.HandlerFunc {
 
 // RateLimit provides basic rate limiting
 func RateLimit(requests int, window time.Duration) gin.HandlerFunc {
-	// Simple in-memory rate limiter
+	// Simple in-memory rate limiter with mutex for thread safety
 	clients := make(map[string][]time.Time)
+	var mu sync.RWMutex
 
 	return func(c *gin.Context) {
 		ip := c.ClientIP()
 		now := time.Now()
+
+		mu.Lock()
+		defer mu.Unlock()
 
 		// Clean old entries
 		if times, exists := clients[ip]; exists {
