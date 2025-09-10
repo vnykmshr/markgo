@@ -226,10 +226,10 @@ func (h *ArticleHandler) getHomeDataUncached() (map[string]any, error) {
 		}
 	}
 
-	// Get recent articles (first 10 published articles)
+	// Get recent articles (first 12 published articles)
 	var recent []*models.Article
 	for _, article := range allArticles {
-		if !article.Draft && len(recent) < 10 {
+		if !article.Draft && len(recent) < 12 {
 			recent = append(recent, article)
 		}
 	}
