@@ -1,6 +1,6 @@
-# Blog Optimization Scripts
+# MarkGo Scripts
 
-This directory contains automation scripts for optimizing tags and categories across the markgo platform. These tools help consolidate redundant tags, standardize naming conventions, and create a more maintainable content taxonomy.
+This directory contains utility scripts for MarkGo development, testing, and content optimization. These tools help with article generation, performance testing, and maintaining a clean content taxonomy.
 
 ## Overview
 
@@ -51,7 +51,64 @@ The blog optimization project addresses several key issues:
 
 ## Scripts
 
-### 1. analyze_tags_categories.py
+### 1. generate_articles.py
+
+**Purpose**: Generate varied articles for testing MarkGo's performance, pagination, search functionality, and admin features.
+
+**Usage**:
+```bash
+# Generate 500 articles in temp_articles directory (default)
+python3 scripts/generate_articles.py
+
+# Generate 100 articles in custom directory
+python3 scripts/generate_articles.py 100 test_content
+
+# Generate 1000 articles in temp_articles
+python3 scripts/generate_articles.py 1000
+```
+
+**Features**:
+- **Realistic Content**: Generated articles with proper technical terminology and structure
+- **25+ Categories**: Technology, Programming, DevOps, AI, etc.
+- **44+ Technologies**: JavaScript, Python, Go, Docker, Kubernetes, AWS, etc.
+- **Article Types**: Tutorials, reviews, opinions, guides, analysis, comparisons
+- **Code Snippets**: JavaScript, Python, Go, and Bash examples
+- **SEO Ready**: Complete frontmatter with meta tags and descriptions
+- **Varied Dates**: Articles span 3+ years for realistic timeline testing
+- **Performance Testing**: Generate thousands of articles to test MarkGo's performance
+
+**Generated Article Structure**:
+```yaml
+---
+title: "Advanced React Techniques Every Developer Should Know"
+description: "Master advanced react techniques with this detailed tutorial and examples."
+date: 2024-03-15T14:30:00Z
+tags: ['react', 'javascript', 'frontend', 'tutorial', 'guide']
+categories: ["Web Development"]
+featured: false
+draft: false
+author: "Sarah Johnson"
+reading_time: 12 min
+seo_title: "Advanced React Techniques - Complete Guide"
+seo_description: "Learn advanced react techniques with practical examples..."
+---
+```
+
+**Content Quality**:
+- **2,500+ words** average per article
+- **Professional writing** with technical depth
+- **Code examples** with syntax highlighting
+- **Structured sections** with headers and subheadings
+- **Realistic frontmatter** with proper metadata
+
+**Use Cases**:
+1. **Performance Testing**: Generate 10,000+ articles to test MarkGo's limits
+2. **Search Testing**: Test search functionality across diverse content
+3. **Pagination Testing**: Verify article listing and pagination
+4. **Admin Dashboard**: Test draft management with realistic content
+5. **Development**: Local testing without manually creating content
+
+### 2. analyze_tags_categories.py
 
 **Purpose**: Analyze current state of tags and categories across all articles.
 
@@ -89,7 +146,7 @@ python scripts/analyze_tags_categories.py --sort alphabetical
 - Articles with most/least tags
 - Potential redundancies
 
-### 2. migrate_tags_categories.py
+### 3. migrate_tags_categories.py
 
 **Purpose**: Automatically migrate and consolidate tags and categories according to the optimization plan.
 
@@ -288,6 +345,7 @@ UnicodeDecodeError: ...
 ```
 scripts/
 ├── README.md                    # This file
+├── generate_articles.py         # Article generation for testing
 ├── analyze_tags_categories.py   # Analysis tool
 └── migrate_tags_categories.py   # Migration tool
 
