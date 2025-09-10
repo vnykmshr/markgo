@@ -68,11 +68,9 @@ build-darwin: ## Build for macOS
 	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) $(BUILD_FLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 $(MAIN_PATH)
 
-buildall: build new-article stress-test ## Build all cmd tools
+build-all: build new-article stress-test ## Build all cmd tools
 
-build-all: build-linux build-windows build-darwin ## Build for all platforms
-
-
+build-dist: build-linux build-windows build-darwin ## Build for all platforms
 
 # Development targets
 run: ## Run the application
@@ -91,8 +89,6 @@ dev: ## Run with hot reload (requires air)
 install: ## Install the application
 	@echo "Installing $(BINARY_NAME)..."
 	$(GOCMD) install $(LDFLAGS) $(MAIN_PATH)
-
-
 
 # Testing targets
 test: ## Run tests
@@ -286,7 +282,7 @@ docker-dev: ## Run Docker container in development mode with volume mounts
 		$(DOCKER_IMAGE):$(DOCKER_TAG)
 
 # Deployment targets
-release: clean build-all ## Create release builds
+release: clean build-all build-dist ## Create release builds
 	@echo "Creating release..."
 	@mkdir -p $(BUILD_DIR)/release
 	@cp $(BUILD_DIR)/$(BINARY_NAME)-* $(BUILD_DIR)/release/
@@ -396,7 +392,7 @@ backup-content: ## Backup articles and static content
 	@tar -czf backups/content-backup-$(shell date +%Y%m%d-%H%M%S).tar.gz articles/ web/static/ || true
 	@echo "Content backed up to backups/ directory"
 
-# Documentation targets  
+# Documentation targets
 docs: ## Generate project documentation
 	@echo "Generating documentation..."
 	@mkdir -p docs
@@ -463,6 +459,8 @@ dead-code: ## Find dead/unused code
 		deadcode ./...; \
 	fi
 
+audit: security-scan audit-deps code-complexity dead-code ## Run all security checks
+
 # Development Workflow targets
 pre-commit: ## Run pre-commit checks (format, lint, test)
 	@echo "Running pre-commit checks..."
@@ -508,7 +506,7 @@ profile-cpu: ## Profile CPU usage (requires running server)
 	@mkdir -p profiles
 	@go tool pprof -http=:8080 http://localhost:3000/debug/pprof/profile?seconds=30
 
-profile-memory: ## Profile memory usage (requires running server)  
+profile-memory: ## Profile memory usage (requires running server)
 	@echo "Profiling memory usage..."
 	@mkdir -p profiles
 	@go tool pprof -http=:8080 http://localhost:3000/debug/pprof/heap
@@ -522,7 +520,7 @@ profile-trace: ## Generate execution trace (requires running server)
 quick-setup: ## Quick development setup (deps + tools + git hooks)
 	@echo "Quick development setup..."
 	@$(MAKE) deps
-	@$(MAKE) install-dev-tools  
+	@$(MAKE) install-dev-tools
 	@$(MAKE) git-hooks
 	@$(MAKE) setup
 	@echo "Quick setup complete! Run 'make dev' to start development server."
