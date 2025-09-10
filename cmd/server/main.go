@@ -126,6 +126,15 @@ func main() {
 		)
 	}
 
+	// Log rate limiting configuration
+	logger.Info("Rate limiting configuration",
+		"environment", cfg.Environment,
+		"general_requests", cfg.RateLimit.General.Requests,
+		"general_window", cfg.RateLimit.General.Window,
+		"general_rate_per_sec", float64(cfg.RateLimit.General.Requests)/(cfg.RateLimit.General.Window.Minutes()*60),
+		"contact_requests", cfg.RateLimit.Contact.Requests,
+		"contact_window", cfg.RateLimit.Contact.Window)
+
 	// Global middleware
 	router.Use(
 		middleware.RequestLoggingMiddleware(loggingService), // Enhanced request logging with structured data

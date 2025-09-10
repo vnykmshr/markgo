@@ -13,6 +13,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/vnykmshr/goflow/pkg/ratelimit/bucket"
 )
 
 type StressTesterConfig struct {
@@ -22,6 +24,7 @@ type StressTesterConfig struct {
 	UserAgent      string
 	FollowLinks    bool
 	MaxDepth       int
+	RequestsPerSec float64
 	Logger         *slog.Logger
 }
 
@@ -33,6 +36,7 @@ type StressTester struct {
 	discoveredURLs sync.Map
 	urlPattern     *regexp.Regexp
 	baseURLParsed  *url.URL
+	rateLimiter    bucket.Limiter
 }
 
 type URLTask struct {
@@ -95,6 +99,25 @@ func NewStressTester(config StressTesterConfig) *StressTester {
 		panic(fmt.Sprintf("Invalid base URL: %v", err))
 	}
 
+	// Create token bucket rate limiter using goflow
+	var rateLimiter bucket.Limiter
+	if config.RequestsPerSec > 0 {
+		// Create token bucket with burst capacity of 2x the rate per second
+		// This allows some burst traffic while maintaining overall rate limit
+		burst := int(config.RequestsPerSec * 2)
+		if burst < 1 {
+			burst = 1
+		}
+
+		// Create rate limiter with safe constructor
+		var err error
+		rateLimiter, err = bucket.NewSafe(bucket.Limit(config.RequestsPerSec), burst)
+		if err != nil {
+			config.Logger.Error("Failed to create rate limiter", "error", err)
+			rateLimiter = nil
+		}
+	}
+
 	return &StressTester{
 		config:        config,
 		client:        &http.Client{Timeout: config.RequestTimeout},
@@ -102,6 +125,7 @@ func NewStressTester(config StressTesterConfig) *StressTester {
 		results:       &TestResults{URLValidations: make([]URLValidation, 0)},
 		urlPattern:    regexp.MustCompile(`href=["']([^"']+)["']`),
 		baseURLParsed: baseURL,
+		rateLimiter:   rateLimiter,
 	}
 }
 
@@ -157,6 +181,16 @@ func (st *StressTester) worker(ctx context.Context, wg *sync.WaitGroup) {
 }
 
 func (st *StressTester) processURL(ctx context.Context, task URLTask) {
+	// Apply rate limiting using goflow's token bucket
+	if st.rateLimiter != nil {
+		if err := st.rateLimiter.Wait(ctx); err != nil {
+			// Context was cancelled or deadline exceeded
+			st.recordError(task.URL, fmt.Sprintf("rate limiter wait cancelled: %v", err), task.Depth)
+			atomic.AddInt64(&st.results.FailedRequests, 1)
+			return
+		}
+	}
+
 	startTime := time.Now()
 	atomic.AddInt64(&st.results.TotalRequests, 1)
 

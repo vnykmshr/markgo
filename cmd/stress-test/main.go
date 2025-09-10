@@ -14,30 +14,32 @@ import (
 )
 
 type StressTestConfig struct {
-	BaseURL     string `json:"base_url"`
-	Concurrency int    `json:"concurrency"`
-	Duration    string `json:"duration"`
-	Timeout     string `json:"timeout"`
-	UserAgent   string `json:"user_agent"`
-	FollowLinks bool   `json:"follow_links"`
-	MaxDepth    int    `json:"max_depth"`
-	OutputFile  string `json:"output_file"`
-	Verbose     bool   `json:"verbose"`
+	BaseURL        string  `json:"base_url"`
+	Concurrency    int     `json:"concurrency"`
+	Duration       string  `json:"duration"`
+	Timeout        string  `json:"timeout"`
+	UserAgent      string  `json:"user_agent"`
+	FollowLinks    bool    `json:"follow_links"`
+	MaxDepth       int     `json:"max_depth"`
+	OutputFile     string  `json:"output_file"`
+	Verbose        bool    `json:"verbose"`
+	RequestsPerSec float64 `json:"requests_per_sec"`
 }
 
 func main() {
 	var (
-		configPath  = flag.String("config", "", "Path to stress test configuration file")
-		baseURL     = flag.String("url", "http://localhost:3000", "Base URL to test")
-		concurrency = flag.Int("concurrency", 10, "Number of concurrent requests")
-		duration    = flag.String("duration", "2m", "Duration to run tests")
-		timeout     = flag.String("timeout", "30s", "Request timeout")
-		userAgent   = flag.String("user-agent", "MarkGo-StressTester/1.0", "User agent string")
-		followLinks = flag.Bool("follow-links", true, "Follow links found in pages")
-		maxDepth    = flag.Int("max-depth", 3, "Maximum crawl depth")
-		outputFile  = flag.String("output", "", "Output file for results (JSON)")
-		verbose     = flag.Bool("verbose", false, "Verbose output")
-		help        = flag.Bool("help", false, "Show help message")
+		configPath     = flag.String("config", "", "Path to stress test configuration file")
+		baseURL        = flag.String("url", "http://localhost:3000", "Base URL to test")
+		concurrency    = flag.Int("concurrency", 5, "Number of concurrent requests")
+		duration       = flag.String("duration", "2m", "Duration to run tests")
+		timeout        = flag.String("timeout", "30s", "Request timeout")
+		userAgent      = flag.String("user-agent", "MarkGo-StressTester/1.0", "User agent string")
+		followLinks    = flag.Bool("follow-links", true, "Follow links found in pages")
+		maxDepth       = flag.Int("max-depth", 3, "Maximum crawl depth")
+		outputFile     = flag.String("output", "", "Output file for results (JSON)")
+		verbose        = flag.Bool("verbose", false, "Verbose output")
+		requestsPerSec = flag.Float64("rate", 2.0, "Requests per second limit (respects server rate limits)")
+		help           = flag.Bool("help", false, "Show help message")
 	)
 	flag.Parse()
 
@@ -54,15 +56,16 @@ func main() {
 		}
 	} else {
 		testConfig = StressTestConfig{
-			BaseURL:     *baseURL,
-			Concurrency: *concurrency,
-			Duration:    *duration,
-			Timeout:     *timeout,
-			UserAgent:   *userAgent,
-			FollowLinks: *followLinks,
-			MaxDepth:    *maxDepth,
-			OutputFile:  *outputFile,
-			Verbose:     *verbose,
+			BaseURL:        *baseURL,
+			Concurrency:    *concurrency,
+			Duration:       *duration,
+			Timeout:        *timeout,
+			UserAgent:      *userAgent,
+			FollowLinks:    *followLinks,
+			MaxDepth:       *maxDepth,
+			OutputFile:     *outputFile,
+			Verbose:        *verbose,
+			RequestsPerSec: *requestsPerSec,
 		}
 	}
 
@@ -100,6 +103,7 @@ func main() {
 		UserAgent:      testConfig.UserAgent,
 		FollowLinks:    testConfig.FollowLinks,
 		MaxDepth:       testConfig.MaxDepth,
+		RequestsPerSec: testConfig.RequestsPerSec,
 		Logger:         logger,
 	})
 
@@ -108,6 +112,7 @@ func main() {
 		"base_url", testConfig.BaseURL,
 		"concurrency", testConfig.Concurrency,
 		"duration", testConfig.Duration,
+		"requests_per_sec", testConfig.RequestsPerSec,
 		"follow_links", testConfig.FollowLinks,
 		"max_depth", testConfig.MaxDepth)
 
@@ -151,11 +156,13 @@ OPTIONS:
     -url string
         Base URL to test (default: http://localhost:3000)
     -concurrency int
-        Number of concurrent requests (default: 10)
+        Number of concurrent requests (default: 5)
     -duration string
         Duration to run tests (default: 2m)
     -timeout string
         Request timeout (default: 30s)
+    -rate float
+        Requests per second limit - respects server rate limits (default: 2.0)
     -user-agent string
         User agent string (default: MarkGo-StressTester/1.0)
     -follow-links
@@ -170,11 +177,14 @@ OPTIONS:
         Show this help message
 
 EXAMPLES:
-    # Basic stress test
+    # Basic stress test (respects rate limits)
     go run cmd/stress-test/main.go -url http://localhost:3000
 
-    # High concurrency test with custom duration
-    go run cmd/stress-test/main.go -url http://localhost:3000 -concurrency 50 -duration 5m
+    # Test with higher rate for development environment
+    go run cmd/stress-test/main.go -url http://localhost:3000 -rate 2.5 -duration 30s
+
+    # Conservative production test
+    go run cmd/stress-test/main.go -url http://localhost:3000 -rate 0.1 -concurrency 2
 
     # Test with link following disabled
     go run cmd/stress-test/main.go -url http://localhost:3000 -follow-links=false
@@ -188,15 +198,22 @@ EXAMPLES:
 CONFIGURATION FILE EXAMPLE:
     {
         "base_url": "http://localhost:3000",
-        "concurrency": 20,
+        "concurrency": 5,
         "duration": "3m",
         "timeout": "30s",
+        "requests_per_sec": 2.0,
         "user_agent": "MarkGo-StressTester/1.0",
         "follow_links": true,
         "max_depth": 3,
         "output_file": "stress_test_results.json",
         "verbose": true
-    }`)
+    }
+
+RATE LIMIT GUIDELINES:
+    - Development: 2.0-3.0 req/sec (server allows 3000/15min = ~3.3/sec)
+    - Test environment: 4.0-5.0 req/sec (server allows 5000/15min = ~5.5/sec)  
+    - Production: 0.1-0.2 req/sec (server allows 100/15min = ~0.11/sec)
+    - Use lower concurrency (2-5) with appropriate rate limits`)
 }
 
 func loadConfig(path string, config *StressTestConfig) error {

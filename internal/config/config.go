@@ -139,8 +139,30 @@ func Load() (*Config, error) {
 	// Load .env file if it exists
 	_ = godotenv.Load()
 
+	// Get environment first to determine appropriate defaults
+	environment := getEnv("ENVIRONMENT", "development")
+
+	// Set environment-aware rate limit defaults
+	var generalRequestsDefault int
+	var contactRequestsDefault int
+
+	switch environment {
+	case "production":
+		// Conservative limits for production
+		generalRequestsDefault = 100 // 100 requests per 15 min = ~0.11 req/sec
+		contactRequestsDefault = 5   // 5 contact submissions per hour
+	case "test":
+		// Higher limits for automated testing
+		generalRequestsDefault = 5000 // 5000 requests per 15 min = ~5.5 req/sec
+		contactRequestsDefault = 50   // 50 contact submissions per hour for test suites
+	default: // development
+		// Permissive limits for development and manual testing
+		generalRequestsDefault = 3000 // 3000 requests per 15 min = ~3.3 req/sec
+		contactRequestsDefault = 20   // 20 contact submissions per hour
+	}
+
 	cfg := &Config{
-		Environment:   getEnv("ENVIRONMENT", "development"),
+		Environment:   environment,
 		Port:          getEnvInt("PORT", 3000),
 		ArticlesPath:  getEnv("ARTICLES_PATH", "./articles"),
 		StaticPath:    getEnv("STATIC_PATH", "./web/static"),
@@ -171,11 +193,11 @@ func Load() (*Config, error) {
 
 		RateLimit: RateLimitConfig{
 			General: RateLimit{
-				Requests: getEnvInt("RATE_LIMIT_GENERAL_REQUESTS", 100),
+				Requests: getEnvInt("RATE_LIMIT_GENERAL_REQUESTS", generalRequestsDefault),
 				Window:   getEnvDuration("RATE_LIMIT_GENERAL_WINDOW", 15*time.Minute),
 			},
 			Contact: RateLimit{
-				Requests: getEnvInt("RATE_LIMIT_CONTACT_REQUESTS", 5),
+				Requests: getEnvInt("RATE_LIMIT_CONTACT_REQUESTS", contactRequestsDefault),
 				Window:   getEnvDuration("RATE_LIMIT_CONTACT_WINDOW", 1*time.Hour),
 			},
 		},

@@ -47,10 +47,10 @@ func TestLoad(t *testing.T) {
 	assert.Equal(t, "your.email@example.com", cfg.Email.To)
 	assert.True(t, cfg.Email.UseSSL)
 
-	// Test rate limit defaults
-	assert.Equal(t, 100, cfg.RateLimit.General.Requests)
+	// Test rate limit defaults (development environment)
+	assert.Equal(t, 3000, cfg.RateLimit.General.Requests) // Development default
 	assert.Equal(t, 15*time.Minute, cfg.RateLimit.General.Window)
-	assert.Equal(t, 5, cfg.RateLimit.Contact.Requests)
+	assert.Equal(t, 20, cfg.RateLimit.Contact.Requests) // Development default
 	assert.Equal(t, 1*time.Hour, cfg.RateLimit.Contact.Window)
 
 	// Test CORS defaults
@@ -373,5 +373,59 @@ func BenchmarkSplitString(b *testing.B) {
 
 	for b.Loop() {
 		splitString(input, ",")
+	}
+}
+
+// TestEnvironmentAwareRateLimiting tests that different environments get different rate limiting defaults
+func TestEnvironmentAwareRateLimiting(t *testing.T) {
+	tests := []struct {
+		name                    string
+		environment             string
+		expectedGeneralRequests int
+		expectedContactRequests int
+	}{
+		{
+			name:                    "production environment",
+			environment:             "production",
+			expectedGeneralRequests: 100,
+			expectedContactRequests: 5,
+		},
+		{
+			name:                    "development environment",
+			environment:             "development",
+			expectedGeneralRequests: 3000,
+			expectedContactRequests: 20,
+		},
+		{
+			name:                    "test environment",
+			environment:             "test",
+			expectedGeneralRequests: 5000,
+			expectedContactRequests: 50,
+		},
+		{
+			name:                    "development environment (explicit)",
+			environment:             "development",
+			expectedGeneralRequests: 3000,
+			expectedContactRequests: 20,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set environment
+			os.Setenv("ENVIRONMENT", tt.environment)
+			defer os.Unsetenv("ENVIRONMENT")
+
+			// Load config
+			cfg, err := Load()
+			assert.NoError(t, err)
+			assert.NotNil(t, cfg)
+
+			// Check environment-specific rate limits
+			assert.Equal(t, tt.expectedGeneralRequests, cfg.RateLimit.General.Requests)
+			assert.Equal(t, tt.expectedContactRequests, cfg.RateLimit.Contact.Requests)
+			assert.Equal(t, 15*time.Minute, cfg.RateLimit.General.Window)
+			assert.Equal(t, 1*time.Hour, cfg.RateLimit.Contact.Window)
+		})
 	}
 }
