@@ -221,53 +221,7 @@
 {{ end }}
 
 {{ define "scripts" }}
-<script>
-// Auto-refresh functionality
-let refreshInterval = null;
-let isRefreshing = false;
-
-function startAutoRefresh() {
-    refreshInterval = setInterval(() => {
-        if (!isRefreshing) {
-            refreshPage();
-        }
-    }, 30000); // Refresh every 30 seconds
-}
-
-function stopAutoRefresh() {
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
-        refreshInterval = null;
-    }
-}
-
-function refreshPage() {
-    isRefreshing = true;
-    window.location.reload();
-}
-
-// Start auto-refresh on page load
-document.addEventListener('DOMContentLoaded', () => {
-    startAutoRefresh();
-    
-    // Show refresh indicator
-    const refreshIndicator = document.createElement('div');
-    refreshIndicator.className = 'refresh-indicator';
-    refreshIndicator.innerHTML = `
-        <div class="refresh-content">
-            <div class="refresh-spinner"></div>
-            <span>Auto-refreshing every 30s</span>
-            <button onclick="stopAutoRefresh(); this.parentElement.parentElement.style.display='none';" class="refresh-close">×</button>
-        </div>
-    `;
-    document.body.appendChild(refreshIndicator);
-});
-
-// Cleanup on page unload
-window.addEventListener('beforeunload', () => {
-    stopAutoRefresh();
-});
-</script>
+<script src="/static/js/debug.js"></script>
 {{ end }}
 
 {{ define "body-class" }}admin-page debug-page{{ end }}

@@ -58,13 +58,13 @@
                     <p class="action-description">{{ .description }}</p>
                     <div class="action-buttons">
                         {{ if eq .method "GET" }}
-                        <a href="{{ .url }}" class="btn btn-primary">View</a>
+                        <button type="button" class="btn btn-primary admin-get-btn" data-url="{{ .url }}" data-name="{{ .name }}">
+                            View
+                        </button>
                         {{ else }}
-                        <form method="POST" action="{{ .url }}" class="inline-form">
-                            <button type="submit" class="btn btn-secondary" onclick="return confirm('Are you sure you want to perform this action?')">
-                                Execute
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-secondary admin-action-btn" data-url="{{ .url }}" data-name="{{ .name }}">
+                            Execute
+                        </button>
                         {{ end }}
                     </div>
                 </div>
@@ -116,6 +116,26 @@
                     <span class="link-text">Statistics</span>
                 </a>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Container -->
+<div id="notification-container" class="notification-container"></div>
+
+<!-- Modal for displaying action results -->
+<div id="result-modal" class="modal modal-hidden">
+    <div class="modal-content">
+        <div class="modal-header modal-header-default">
+            <h3 id="modal-title">Action Result</h3>
+            <span class="modal-close" id="modal-close-btn">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="modal-message"></div>
+            <pre id="modal-data" class="modal-data-hidden"></pre>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" id="modal-close-footer">Close</button>
         </div>
     </div>
 </div>
@@ -182,6 +202,419 @@
     margin-bottom: 20px;
     padding-bottom: 10px;
     border-bottom: 2px solid #eee;
+}
+
+/* Dark theme support for better contrast */
+@media (prefers-color-scheme: dark) {
+    .admin-actions h2, .admin-system-info h2, .admin-quick-links h2 {
+        color: #ffffff;
+        border-bottom-color: #444;
+    }
+    
+    .admin-title {
+        color: #ffffff;
+    }
+    
+    .admin-subtitle {
+        color: #cccccc;
+    }
+    
+    .action-name {
+        color: #ffffff;
+    }
+    
+    .action-description {
+        color: #cccccc;
+    }
+    
+    .info-label {
+        color: #ffffff;
+    }
+    
+    .info-value {
+        color: #cccccc;
+    }
+    
+    .quick-link {
+        color: #ffffff;
+        background: #2a2a2a;
+    }
+    
+    .quick-link:hover {
+        background: #3a3a3a;
+        color: #ffffff;
+    }
+    
+    .action-card {
+        background: #2a2a2a;
+        border-color: #444;
+    }
+    
+    .info-item {
+        background: #2a2a2a;
+    }
+    
+    .admin-dashboard {
+        background: #1a1a1a;
+        color: #ffffff;
+    }
+}
+
+/* Hide footer on admin pages */
+.admin-dashboard-page .site-footer {
+    display: none;
+}
+
+/* Notification styles */
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.notification {
+    background: #fff;
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-left: 4px solid #2196f3;
+    min-width: 300px;
+    animation: slideInRight 0.3s ease-out;
+}
+
+.notification.success {
+    border-left-color: #4caf50;
+}
+
+.notification.error {
+    border-left-color: #f44336;
+}
+
+.notification.warning {
+    border-left-color: #ff9800;
+}
+
+.notification-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.notification-message {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.notification-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #999;
+}
+
+.notification-close:hover {
+    color: #333;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .notification {
+        background: #2a2a2a;
+        color: #ffffff;
+    }
+    
+    .notification-title {
+        color: #ffffff;
+    }
+    
+    .notification-message {
+        color: #cccccc;
+    }
+    
+    .notification-close {
+        color: #cccccc;
+    }
+    
+    .notification-close:hover {
+        color: #ffffff;
+    }
+}
+
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.modal-close {
+    color: white;
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    opacity: 0.7;
+}
+
+.modal-body {
+    padding: 20px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.modal-body pre {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 0.9rem;
+    max-height: 300px;
+    border: 1px solid #dee2e6;
+}
+
+.modal-footer {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    text-align: right;
+    border-top: 1px solid #dee2e6;
+}
+
+.modal-footer .btn {
+    min-width: 80px;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .modal-content {
+        background-color: #2a2a2a;
+        color: #ffffff;
+    }
+    
+    .modal-body pre {
+        background: #1a1a1a;
+        color: #ffffff;
+        border-color: #444;
+    }
+    
+    .modal-footer {
+        background: #333;
+        border-top-color: #444;
+    }
+    
+    /* Dark mode support for tables in modals */
+    .modal-body table th {
+        background: #333 !important;
+        color: #ffffff !important;
+        border-color: #555 !important;
+    }
+    
+    .modal-body table td {
+        border-color: #555 !important;
+        color: #ffffff !important;
+    }
+    
+    .modal-body table tr:nth-child(even) {
+        background-color: #333 !important;
+    }
+}
+
+/* Draft articles table styles */
+.draft-table-container {
+    max-height: 300px;
+    overflow-y: auto;
+    margin: 10px 0;
+}
+
+.draft-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.draft-table thead tr {
+    background: #f8f9fa;
+    position: sticky;
+    top: 0;
+}
+
+.draft-table th,
+.draft-table td {
+    border: 1px solid #dee2e6;
+    padding: 8px;
+    text-align: left;
+}
+
+.draft-table th {
+    font-weight: 600;
+}
+
+.draft-table tbody tr {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.draft-table .title-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.draft-table .date-cell {
+    white-space: nowrap;
+}
+
+.draft-table .categories-cell {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (prefers-color-scheme: dark) {
+    .draft-table thead tr {
+        background: #333;
+    }
+    
+    .draft-table th,
+    .draft-table td {
+        border-color: #555;
+        color: #ffffff;
+    }
+    
+    .draft-table tbody tr:nth-child(even) {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+}
+
+/* Modal state classes */
+.modal-hidden {
+    display: none;
+}
+
+.modal-visible {
+    display: block;
+}
+
+.body-modal-open {
+    overflow: hidden;
+}
+
+.body-modal-closed {
+    overflow: auto;
+}
+
+/* Modal header color variants */
+.modal-header-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.modal-header-error {
+    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+}
+
+.modal-header-default {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Status indicators */
+.status-healthy {
+    color: #28a745;
+}
+
+/* Data display states */
+.modal-data-visible {
+    display: block;
+}
+
+.modal-data-hidden {
+    display: none;
+}
+
+/* Animation classes */
+.notification-slide-out {
+    animation: slideOutRight 0.3s ease-out;
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
 }
 
 .actions-grid {
@@ -350,11 +783,17 @@
     }
 }
 </style>
+
 {{ end }}
 
 {{ define "admin_home-head" }}
 <meta name="description" content="Admin dashboard for {{ .config.Blog.Title }}">
 <meta name="robots" content="noindex, nofollow">
+<script src="/static/js/admin.js" defer></script>
+{{ end }}
+
+{{ define "scripts" }}
+<!-- Admin page: Minimal scripts only to avoid CSP issues -->
 {{ end }}
 
 {{ define "body-class" }}admin-dashboard-page{{ end }}

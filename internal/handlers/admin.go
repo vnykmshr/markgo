@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"log/slog"
+	"math"
 	"net/http"
 	"net/http/pprof"
 	"runtime"
@@ -45,23 +46,44 @@ func NewAdminHandler(
 	}
 }
 
+// formatDuration formats a time duration into human-readable string
+func formatDuration(d time.Duration) string {
+	days := int(d.Hours()) / 24
+	hours := int(d.Hours()) % 24
+	minutes := int(d.Minutes()) % 60
+	seconds := math.Mod(d.Seconds(), 60)
+
+	if days > 0 {
+		return fmt.Sprintf("%dd %dh %dm %.0fs", days, hours, minutes, seconds)
+	}
+	if hours > 0 {
+		return fmt.Sprintf("%dh %dm %.0fs", hours, minutes, seconds)
+	}
+	if minutes > 0 {
+		return fmt.Sprintf("%dm %.2fs", minutes, seconds)
+	}
+	return fmt.Sprintf("%.2fs", seconds)
+}
+
 // AdminHome handles the admin dashboard/home page
 func (h *AdminHandler) AdminHome(c *gin.Context) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	
 	uptime := time.Since(h.startTime)
-	allArticles := h.articleService.GetAllArticles()
 	
-	// Count published vs draft articles
-	var publishedCount, draftCount int
-	for _, article := range allArticles {
-		if article.Draft {
-			draftCount++
-		} else {
-			publishedCount++
-		}
-	}
+	// Get both published and draft articles for accurate counting
+	publishedArticles := h.articleService.GetAllArticles()
+	draftArticles := h.articleService.GetDraftArticles()
+	
+	publishedCount := len(publishedArticles)
+	draftCount := len(draftArticles)
+	totalArticles := publishedCount + draftCount
+	
+	h.logger.Debug("Article counts", 
+		"published", publishedCount, 
+		"drafts", draftCount, 
+		"total", totalArticles)
 
 	adminRoutes := []map[string]any{
 		{
@@ -73,7 +95,7 @@ func (h *AdminHandler) AdminHome(c *gin.Context) {
 		},
 		{
 			"name":        "Clear Cache",
-			"url":         "/admin/cache/clear",
+			"url":         "/admin/cache/clear", 
 			"method":      "POST",
 			"description": "Clear all cached data to force refresh",
 			"icon":        "🗑️",
@@ -81,7 +103,7 @@ func (h *AdminHandler) AdminHome(c *gin.Context) {
 		{
 			"name":        "Reload Articles",
 			"url":         "/admin/articles/reload",
-			"method":      "POST",
+			"method":      "POST", 
 			"description": "Reload all articles from disk",
 			"icon":        "🔄",
 		},
@@ -92,17 +114,41 @@ func (h *AdminHandler) AdminHome(c *gin.Context) {
 			"description": "View and manage draft articles",
 			"icon":        "📝",
 		},
+		{
+			"name":        "System Metrics",
+			"url":         "/metrics",
+			"method":      "GET",
+			"description": "View system performance metrics",
+			"icon":        "⚡",
+		},
+		{
+			"name":        "Health Check",
+			"url":         "/health",
+			"method":      "GET", 
+			"description": "Check application health status",
+			"icon":        "❤️",
+		},
 	}
 
+	// Get tag and category counts for additional metrics
+	tagCounts := h.articleService.GetTagCounts()
+	categoryCounts := h.articleService.GetCategoryCounts()
+
 	systemInfo := map[string]any{
-		"uptime":         uptime.String(),
-		"go_version":     runtime.Version(),
-		"environment":    h.config.Environment,
-		"memory_usage":   utils.FormatBytes(m.Alloc),
-		"goroutines":     runtime.NumGoroutine(),
-		"articles_total": len(allArticles),
+		"uptime":             formatDuration(uptime),
+		"uptime_seconds":     int64(uptime.Seconds()),
+		"go_version":         runtime.Version(),
+		"environment":        h.config.Environment,
+		"memory_usage":       utils.FormatBytes(m.Alloc),
+		"memory_sys":         utils.FormatBytes(m.Sys),
+		"goroutines":         runtime.NumGoroutine(),
+		"articles_total":     totalArticles,
 		"articles_published": publishedCount,
 		"articles_drafts":    draftCount,
+		"tags_total":         len(tagCounts),
+		"categories_total":   len(categoryCounts),
+		"gc_runs":           m.NumGC,
+		"cpu_count":         runtime.NumCPU(),
 	}
 
 	if h.shouldReturnJSON(c) {
