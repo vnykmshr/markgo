@@ -282,11 +282,61 @@ docker-dev: ## Run Docker container in development mode with volume mounts
 		$(DOCKER_IMAGE):$(DOCKER_TAG)
 
 # Deployment targets
-release: clean build-all build-dist ## Create release builds
-	@echo "Creating release..."
+release: clean build-release-dist ## Create comprehensive release packages
+	@echo "Creating release packages with archives and checksums..."
 	@mkdir -p $(BUILD_DIR)/release
-	@cp $(BUILD_DIR)/$(BINARY_NAME)-* $(BUILD_DIR)/release/
-	@echo "Release builds created in $(BUILD_DIR)/release/"
+	
+	# Create release archives for each platform
+	@cd $(BUILD_DIR) && \
+	for binary in $(BINARY_NAME)-*; do \
+		if [ -f "$$binary" ]; then \
+			platform=$$(echo $$binary | sed 's/$(BINARY_NAME)-//'); \
+			archive_name="markgo-v$$(git describe --tags --always --dirty)-$$platform"; \
+			if [[ "$$platform" == *"windows"* ]]; then \
+				zip -j "release/$$archive_name.zip" "$$binary" ../README.md ../CHANGELOG.md ../LICENSE 2>/dev/null || \
+				zip -j "release/$$archive_name.zip" "$$binary" 2>/dev/null; \
+			else \
+				tar -czf "release/$$archive_name.tar.gz" -C . "$$binary" -C .. README.md CHANGELOG.md LICENSE 2>/dev/null || \
+				tar -czf "release/$$archive_name.tar.gz" -C . "$$binary" 2>/dev/null; \
+			fi; \
+			echo "Created archive: $$archive_name"; \
+		fi; \
+	done
+	
+	# Create checksums
+	@cd $(BUILD_DIR)/release && \
+	if command -v sha256sum > /dev/null; then \
+		sha256sum * > checksums.txt; \
+	elif command -v shasum > /dev/null; then \
+		shasum -a 256 * > checksums.txt; \
+	else \
+		echo "Warning: No checksum utility found"; \
+	fi
+	
+	@echo "✅ Release packages created in $(BUILD_DIR)/release/"
+	@echo "📦 Contents:"
+	@ls -la $(BUILD_DIR)/release/
+
+# Enhanced build targets for release
+build-release-dist: build-release-linux build-release-windows build-release-darwin ## Build release binaries for all platforms
+
+build-release-linux: ## Build complete Linux release binaries
+	@echo "Building Linux release binaries..."
+	@mkdir -p $(BUILD_DIR)
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) $(BUILD_FLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-amd64 $(MAIN_PATH)
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) $(BUILD_FLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-arm64 $(MAIN_PATH)
+
+build-release-windows: ## Build complete Windows release binaries  
+	@echo "Building Windows release binaries..."
+	@mkdir -p $(BUILD_DIR)
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GOBUILD) $(BUILD_FLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-windows-amd64.exe $(MAIN_PATH)
+	CGO_ENABLED=0 GOOS=windows GOARCH=arm64 $(GOBUILD) $(BUILD_FLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-windows-arm64.exe $(MAIN_PATH)
+
+build-release-darwin: ## Build complete macOS release binaries
+	@echo "Building macOS release binaries..."
+	@mkdir -p $(BUILD_DIR)  
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) $(BUILD_FLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 $(MAIN_PATH)
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) $(BUILD_FLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-arm64 $(MAIN_PATH)
 
 # Utility targets
 clean: ## Clean build artifacts

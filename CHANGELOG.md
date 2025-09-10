@@ -5,6 +5,86 @@ All notable changes to MarkGo Engine will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.0] - 2025-01-17
+
+### 🎉 Major Features
+
+#### Environment-Aware Rate Limiting
+- **NEW**: Automatic rate limit configuration based on environment (development/test/production)
+- **Production**: 100 requests/15min (~0.11/sec) for security
+- **Development**: 3000 requests/15min (~3.3/sec) for productivity  
+- **Test**: 5000 requests/15min (~5.5/sec) for automated testing
+- **Integration**: Uses goflow token bucket rate limiter for precise control
+
+#### Comprehensive Stress Testing Suite
+- **NEW**: Complete stress testing solution with `cmd/stress-test/`
+- **Features**: URL discovery, concurrent testing, response time analysis
+- **Reporting**: Detailed JSON/console reports with performance metrics
+- **Rate-aware**: Respects server rate limits (100% success rate vs 80% failures)
+- **Documentation**: Comprehensive README with usage examples
+
+### 🔧 Performance & Code Quality
+
+#### Massive Codebase Cleanup
+- **Removed**: 6,000+ lines of over-engineered AI-generated code
+- **Eliminated**: Complex object pools, memory profilers, unnecessary abstractions  
+- **Simplified**: Handler architecture and middleware stack
+- **Result**: Cleaner, more maintainable codebase
+
+#### Code Complexity Reduction  
+- **Refactored**: High-complexity functions (Priority 1 issues)
+- **applyFilters**: Complexity 26 → <10 (extracted 5 filter methods)
+- **UpdateDraftStatus**: Complexity 20 → <10 (extracted 6 helper methods)
+- **Benefits**: Better maintainability, testability, and readability
+
+#### Dead Code Elimination
+- **Removed**: 585 lines of unused test infrastructure
+- **Cleaned**: Mock services and test helpers with no references
+- **Preserved**: All functionality (178 tests still pass)
+
+### 🐛 Bug Fixes
+
+- **Fixed**: Race condition in RateLimit middleware with proper mutex protection
+- **Fixed**: About page sidebar display issues  
+- **Fixed**: Template service initialization errors
+- **Fixed**: Search page stats label clickability
+
+### 🎨 UI/UX Improvements
+
+- **Enhanced**: About page with creative infographic sidebar (446 lines of CSS)
+- **Improved**: Search page with clickable stats labels
+- **Updated**: Home page to display 12 articles in 3-column grid layout
+
+### 🛠️ Development Tools
+
+- **NEW**: Article generation script (`scripts/generate_articles.py`) with 606 lines
+- **Enhanced**: Makefile with stress testing targets
+- **Updated**: Documentation and README files
+- **Improved**: Build and test targets
+
+### 📊 Statistics
+
+- **Total commits**: 17 commits since v1.0.0
+- **Lines added**: ~2,500 lines (new features, tests, docs)
+- **Lines removed**: ~10,000+ lines (cleanup, dead code removal)  
+- **Net change**: Significantly cleaner and more focused codebase
+- **Test coverage**: All 178 tests passing
+
+### 💡 Technical Improvements
+
+- **Environment Detection**: Automatic development/production configuration
+- **Rate Limiting**: Token bucket algorithm with burst capacity
+- **Concurrency**: Thread-safe operations with proper synchronization
+- **Error Handling**: Simplified and more robust error handling
+- **Testing**: Maintained comprehensive test coverage throughout cleanup
+
+### 🔄 Breaking Changes
+
+- **None**: This is a backward-compatible release
+- **Migration**: No action required for existing deployments
+
+---
+
 ## [1.0.0] - 2025-01-15
 
 ### 🎉 Initial Release
