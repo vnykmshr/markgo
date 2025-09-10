@@ -22,11 +22,12 @@ GOLINT=golangci-lint
 LDFLAGS=-ldflags "-s -w -X main.version=$(shell git describe --tags --always --dirty)"
 BUILD_FLAGS=-trimpath
 
-.PHONY: help build clean test coverage lint fmt vet deps tidy run dev docker docker-build docker-run install new-article \
+.PHONY: help build buildall clean test coverage lint fmt vet deps tidy run dev docker docker-build docker-run install new-article stress-test \
 	generate-article validate-articles preview-articles count-articles backup-content \
 	docs docs-serve changelog security-scan audit-deps code-complexity dead-code \
 	pre-commit commit-check git-hooks health-check metrics monitor \
-	profile-cpu profile-memory profile-trace quick-setup dev-reset full-test
+	profile-cpu profile-memory profile-trace quick-setup dev-reset full-test \
+	stress-test-run stress-test-quick stress-test-full
 
 # Default target
 help: ## Show this help message
@@ -46,6 +47,12 @@ new-article: ## Build the new-article CLI tool
 	CGO_ENABLED=0 $(GOBUILD) $(BUILD_FLAGS) -o $(BUILD_DIR)/new-article ./cmd/new-article
 	@echo "Build complete: $(BUILD_DIR)/new-article"
 
+stress-test: ## Build the stress-test CLI tool
+	@echo "Building stress-test..."
+	@mkdir -p $(BUILD_DIR)
+	CGO_ENABLED=0 $(GOBUILD) $(BUILD_FLAGS) -o $(BUILD_DIR)/stress-test ./cmd/stress-test
+	@echo "Build complete: $(BUILD_DIR)/stress-test"
+
 build-linux: ## Build for Linux
 	@echo "Building for Linux..."
 	@mkdir -p $(BUILD_DIR)
@@ -60,6 +67,8 @@ build-darwin: ## Build for macOS
 	@echo "Building for macOS..."
 	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) $(BUILD_FLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 $(MAIN_PATH)
+
+buildall: build new-article stress-test ## Build all cmd tools
 
 build-all: build-linux build-windows build-darwin ## Build for all platforms
 
@@ -119,6 +128,21 @@ load-test-quick: ## Run quick load test (10 users, 10s)
 load-test-stress: ## Run stress test (100 users, 60s)
 	@echo "Running stress test..."
 	@CONCURRENT_USERS=100 DURATION=60s ./scripts/load-test.sh
+
+stress-test-run: ## Run the stress test tool against running server
+	@echo "Running stress test against http://localhost:3000..."
+	@if [ ! -f $(BUILD_DIR)/stress-test ]; then $(MAKE) stress-test; fi
+	@$(BUILD_DIR)/stress-test -url http://localhost:3000 -duration 1m -concurrency 10
+
+stress-test-quick: ## Run quick stress test (30s, 5 concurrent users)
+	@echo "Running quick stress test..."
+	@if [ ! -f $(BUILD_DIR)/stress-test ]; then $(MAKE) stress-test; fi
+	@$(BUILD_DIR)/stress-test -url http://localhost:3000 -duration 30s -concurrency 5 -output $(BUILD_DIR)/stress-test-results.json
+
+stress-test-full: ## Run comprehensive stress test with report generation
+	@echo "Running comprehensive stress test..."
+	@if [ ! -f $(BUILD_DIR)/stress-test ]; then $(MAKE) stress-test; fi
+	@$(BUILD_DIR)/stress-test -url http://localhost:3000 -duration 2m -concurrency 20 -output $(BUILD_DIR)/stress-test-results.json -verbose
 
 benchmark-integration: ## Run integration benchmarks
 	@echo "Running integration benchmarks..."

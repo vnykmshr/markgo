@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"html"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -289,7 +290,9 @@ func (st *StressTester) extractLinks(body, baseURL string) []string {
 			link := strings.TrimSpace(match[1])
 			if link != "" && !strings.HasPrefix(link, "javascript:") && 
 				!strings.HasPrefix(link, "mailto:") && !strings.HasPrefix(link, "#") {
-				links = append(links, link)
+				// Decode HTML entities (e.g., &amp; -> &, &quot; -> ")
+				decodedLink := html.UnescapeString(link)
+				links = append(links, decodedLink)
 			}
 		}
 	}
