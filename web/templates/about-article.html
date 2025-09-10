@@ -53,7 +53,7 @@
                 <div class="sidebar-card profile-card">
                     <div class="profile-header">
                         <div class="profile-avatar">
-                            <div class="avatar-initials">{{ substr .config.Blog.Author 0 2 | upper }}</div>
+                            <div class="avatar-initials">{{ .config.Blog.Author | truncate 2 | upper }}</div>
                             <div class="avatar-status"></div>
                         </div>
                         <div class="profile-info">
