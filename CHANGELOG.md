@@ -5,14 +5,14 @@ All notable changes to MarkGo Engine will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.1.0] - 2025-01-17
+## [v1.1.0] - 2025-09-10
 
 ### 🎉 Major Features
 
 #### Environment-Aware Rate Limiting
 - **NEW**: Automatic rate limit configuration based on environment (development/test/production)
 - **Production**: 100 requests/15min (~0.11/sec) for security
-- **Development**: 3000 requests/15min (~3.3/sec) for productivity  
+- **Development**: 3000 requests/15min (~3.3/sec) for productivity
 - **Test**: 5000 requests/15min (~5.5/sec) for automated testing
 - **Integration**: Uses goflow token bucket rate limiter for precise control
 
@@ -27,11 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Massive Codebase Cleanup
 - **Removed**: 6,000+ lines of over-engineered AI-generated code
-- **Eliminated**: Complex object pools, memory profilers, unnecessary abstractions  
+- **Eliminated**: Complex object pools, memory profilers, unnecessary abstractions
 - **Simplified**: Handler architecture and middleware stack
 - **Result**: Cleaner, more maintainable codebase
 
-#### Code Complexity Reduction  
+#### Code Complexity Reduction
 - **Refactored**: High-complexity functions (Priority 1 issues)
 - **applyFilters**: Complexity 26 → <10 (extracted 5 filter methods)
 - **UpdateDraftStatus**: Complexity 20 → <10 (extracted 6 helper methods)
@@ -45,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🐛 Bug Fixes
 
 - **Fixed**: Race condition in RateLimit middleware with proper mutex protection
-- **Fixed**: About page sidebar display issues  
+- **Fixed**: About page sidebar display issues
 - **Fixed**: Template service initialization errors
 - **Fixed**: Search page stats label clickability
 
@@ -66,7 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Total commits**: 17 commits since v1.0.0
 - **Lines added**: ~2,500 lines (new features, tests, docs)
-- **Lines removed**: ~10,000+ lines (cleanup, dead code removal)  
+- **Lines removed**: ~10,000+ lines (cleanup, dead code removal)
 - **Net change**: Significantly cleaner and more focused codebase
 - **Test coverage**: All 178 tests passing
 
@@ -85,7 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.0] - 2025-01-15
+## [1.0.0] - 2025-09-09
 
 ### 🎉 Initial Release
 
@@ -117,7 +117,7 @@ MarkGo Engine v1.0.0 represents a production-ready, high-performance file-based 
 #### Security & Production
 - **Security-audited** with zero known vulnerabilities (govulncheck)
 - **Rate limiting** with configurable limits per endpoint
-- **CORS protection** with customizable policies  
+- **CORS protection** with customizable policies
 - **Input validation** middleware for all user inputs
 - **Security logging** for audit trails
 - **Recovery middleware** with graceful error handling
@@ -189,12 +189,12 @@ MarkGo Engine v1.0.0 represents a production-ready, high-performance file-based 
 ### Performance Metrics
 - **Cold Start Time**: 17ms (measured)
 - **Response Time**: <1ms for cached content
-- **Memory Usage**: ~30MB runtime footprint  
+- **Memory Usage**: ~30MB runtime footprint
 - **Binary Size**: 38MB (single executable)
 - **Test Coverage**: 85%+
 - **Security Vulnerabilities**: 0 (verified with govulncheck)
 
-### Codebase Metrics  
+### Codebase Metrics
 - **Lines of Code**: ~15,000+ (excluding tests)
 - **Test Files**: 25+ comprehensive test suites
 - **Dependencies**: 18 direct, all security-audited
@@ -202,7 +202,7 @@ MarkGo Engine v1.0.0 represents a production-ready, high-performance file-based 
 
 ### Supported Platforms
 - **Linux** (amd64, arm64)
-- **macOS** (amd64, arm64)  
+- **macOS** (amd64, arm64)
 - **Windows** (amd64)
 - **Docker** (multi-arch support)
 
