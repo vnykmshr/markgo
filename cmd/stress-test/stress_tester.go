@@ -26,13 +26,13 @@ type StressTesterConfig struct {
 }
 
 type StressTester struct {
-	config       StressTesterConfig
-	client       *http.Client
-	urlQueue     chan URLTask
-	results      *TestResults
+	config         StressTesterConfig
+	client         *http.Client
+	urlQueue       chan URLTask
+	results        *TestResults
 	discoveredURLs sync.Map
-	urlPattern   *regexp.Regexp
-	baseURLParsed *url.URL
+	urlPattern     *regexp.Regexp
+	baseURLParsed  *url.URL
 }
 
 type URLTask struct {
@@ -41,32 +41,32 @@ type URLTask struct {
 }
 
 type TestResults struct {
-	Duration            string                `json:"duration"`
-	URLsDiscovered      int                   `json:"urls_discovered"`
-	TotalRequests       int64                 `json:"total_requests"`
-	SuccessfulRequests  int64                 `json:"successful_requests"`
-	FailedRequests      int64                 `json:"failed_requests"`
-	AverageResponseTime string                `json:"average_response_time"`
-	MinResponseTime     string                `json:"min_response_time"`
-	MaxResponseTime     string                `json:"max_response_time"`
-	RequestsPerSecond   float64               `json:"requests_per_second"`
-	SuccessRate         float64               `json:"success_rate"`
-	URLValidations      []URLValidation       `json:"url_validations"`
-	Errors              []ErrorInfo           `json:"errors"`
-	SlowRequests        []SlowRequest         `json:"slow_requests"`
-	ResponseTimes       []ResponseTimeEntry   `json:"response_times"`
+	Duration            string              `json:"duration"`
+	URLsDiscovered      int                 `json:"urls_discovered"`
+	TotalRequests       int64               `json:"total_requests"`
+	SuccessfulRequests  int64               `json:"successful_requests"`
+	FailedRequests      int64               `json:"failed_requests"`
+	AverageResponseTime string              `json:"average_response_time"`
+	MinResponseTime     string              `json:"min_response_time"`
+	MaxResponseTime     string              `json:"max_response_time"`
+	RequestsPerSecond   float64             `json:"requests_per_second"`
+	SuccessRate         float64             `json:"success_rate"`
+	URLValidations      []URLValidation     `json:"url_validations"`
+	Errors              []ErrorInfo         `json:"errors"`
+	SlowRequests        []SlowRequest       `json:"slow_requests"`
+	ResponseTimes       []ResponseTimeEntry `json:"response_times"`
 }
 
 type URLValidation struct {
-	URL            string        `json:"url"`
-	StatusCode     int           `json:"status_code"`
-	ResponseTime   time.Duration `json:"response_time"`
-	ContentLength  int64         `json:"content_length"`
-	ContentType    string        `json:"content_type"`
-	LinksFound     int           `json:"links_found"`
-	Depth          int           `json:"depth"`
-	Error          string        `json:"error,omitempty"`
-	IsValid        bool          `json:"is_valid"`
+	URL           string        `json:"url"`
+	StatusCode    int           `json:"status_code"`
+	ResponseTime  time.Duration `json:"response_time"`
+	ContentLength int64         `json:"content_length"`
+	ContentType   string        `json:"content_type"`
+	LinksFound    int           `json:"links_found"`
+	Depth         int           `json:"depth"`
+	Error         string        `json:"error,omitempty"`
+	IsValid       bool          `json:"is_valid"`
 }
 
 type ErrorInfo struct {
@@ -107,42 +107,42 @@ func NewStressTester(config StressTesterConfig) *StressTester {
 
 func (st *StressTester) Run(ctx context.Context) (*TestResults, error) {
 	startTime := time.Now()
-	
+
 	// Initialize results
 	st.results.ResponseTimes = make([]ResponseTimeEntry, 0)
 	st.results.Errors = make([]ErrorInfo, 0)
 	st.results.SlowRequests = make([]SlowRequest, 0)
-	
+
 	var wg sync.WaitGroup
-	
+
 	// Start workers
 	for i := 0; i < st.config.Concurrency; i++ {
 		wg.Add(1)
 		go st.worker(ctx, &wg)
 	}
-	
+
 	// Start URL discovery with the base URL
 	st.addURL(st.config.BaseURL, 0)
-	
+
 	// Start monitoring
 	go st.monitor(ctx)
-	
+
 	// Wait for context cancellation or completion
 	<-ctx.Done()
-	
+
 	// Close URL queue and wait for workers to finish
 	close(st.urlQueue)
 	wg.Wait()
-	
+
 	// Calculate final results
 	st.calculateResults(time.Since(startTime))
-	
+
 	return st.results, nil
 }
 
 func (st *StressTester) worker(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
-	
+
 	for {
 		select {
 		case task, ok := <-st.urlQueue:
@@ -159,7 +159,7 @@ func (st *StressTester) worker(ctx context.Context, wg *sync.WaitGroup) {
 func (st *StressTester) processURL(ctx context.Context, task URLTask) {
 	startTime := time.Now()
 	atomic.AddInt64(&st.results.TotalRequests, 1)
-	
+
 	// Create request
 	req, err := http.NewRequestWithContext(ctx, "GET", task.URL, nil)
 	if err != nil {
@@ -167,11 +167,11 @@ func (st *StressTester) processURL(ctx context.Context, task URLTask) {
 		atomic.AddInt64(&st.results.FailedRequests, 1)
 		return
 	}
-	
+
 	// Set user agent
 	req.Header.Set("User-Agent", st.config.UserAgent)
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-	
+
 	// Make request
 	resp, err := st.client.Do(req)
 	if err != nil {
@@ -180,13 +180,13 @@ func (st *StressTester) processURL(ctx context.Context, task URLTask) {
 		return
 	}
 	defer resp.Body.Close()
-	
+
 	responseTime := time.Since(startTime)
 	atomic.AddInt64(&st.results.SuccessfulRequests, 1)
-	
+
 	// Record response time
 	st.recordResponseTime(task.URL, responseTime)
-	
+
 	// Create validation record
 	validation := URLValidation{
 		URL:           task.URL,
@@ -197,15 +197,15 @@ func (st *StressTester) processURL(ctx context.Context, task URLTask) {
 		Depth:         task.Depth,
 		IsValid:       resp.StatusCode >= 200 && resp.StatusCode < 400,
 	}
-	
+
 	// Process response body for link discovery
-	if st.config.FollowLinks && task.Depth < st.config.MaxDepth && 
+	if st.config.FollowLinks && task.Depth < st.config.MaxDepth &&
 		strings.Contains(resp.Header.Get("Content-Type"), "text/html") {
-		
+
 		body := make([]byte, 0, 64*1024) // Limit to 64KB for link extraction
 		buffer := make([]byte, 4096)
 		totalRead := 0
-		
+
 		for totalRead < 64*1024 {
 			n, err := resp.Body.Read(buffer)
 			if n > 0 {
@@ -220,24 +220,24 @@ func (st *StressTester) processURL(ctx context.Context, task URLTask) {
 				break
 			}
 		}
-		
+
 		links := st.extractLinks(string(body), task.URL)
 		validation.LinksFound = len(links)
-		
+
 		// Add new URLs to queue
 		for _, link := range links {
 			st.addURL(link, task.Depth+1)
 		}
 	}
-	
+
 	// Record slow requests (>2 seconds)
 	if responseTime > 2*time.Second {
 		st.recordSlowRequest(task.URL, responseTime, resp.StatusCode)
 	}
-	
+
 	// Add validation to results (thread-safe)
 	st.addValidation(validation)
-	
+
 	st.config.Logger.Debug("URL processed",
 		"url", task.URL,
 		"status", resp.StatusCode,
@@ -252,26 +252,26 @@ func (st *StressTester) addURL(rawURL string, depth int) {
 	if err != nil {
 		return
 	}
-	
+
 	// Make relative URLs absolute
 	if !parsedURL.IsAbs() {
 		parsedURL = st.baseURLParsed.ResolveReference(parsedURL)
 	}
-	
+
 	// Only process URLs from the same host
 	if parsedURL.Host != st.baseURLParsed.Host {
 		return
 	}
-	
+
 	// Clean URL (remove fragment, normalize)
 	parsedURL.Fragment = ""
 	cleanURL := parsedURL.String()
-	
+
 	// Check if already discovered
 	if _, exists := st.discoveredURLs.LoadOrStore(cleanURL, true); exists {
 		return
 	}
-	
+
 	// Add to queue
 	select {
 	case st.urlQueue <- URLTask{URL: cleanURL, Depth: depth}:
@@ -284,11 +284,11 @@ func (st *StressTester) addURL(rawURL string, depth int) {
 func (st *StressTester) extractLinks(body, baseURL string) []string {
 	matches := st.urlPattern.FindAllStringSubmatch(body, -1)
 	links := make([]string, 0, len(matches))
-	
+
 	for _, match := range matches {
 		if len(match) > 1 {
 			link := strings.TrimSpace(match[1])
-			if link != "" && !strings.HasPrefix(link, "javascript:") && 
+			if link != "" && !strings.HasPrefix(link, "javascript:") &&
 				!strings.HasPrefix(link, "mailto:") && !strings.HasPrefix(link, "#") {
 				// Decode HTML entities (e.g., &amp; -> &, &quot; -> ")
 				decodedLink := html.UnescapeString(link)
@@ -296,7 +296,7 @@ func (st *StressTester) extractLinks(body, baseURL string) []string {
 			}
 		}
 	}
-	
+
 	return links
 }
 
@@ -307,7 +307,7 @@ func (st *StressTester) recordError(url, error string, depth int) {
 		Timestamp: time.Now(),
 		Depth:     depth,
 	}
-	
+
 	// Thread-safe append
 	st.addError(errorInfo)
 }
@@ -318,7 +318,7 @@ func (st *StressTester) recordResponseTime(url string, responseTime time.Duratio
 		ResponseTime: responseTime,
 		Timestamp:    time.Now(),
 	}
-	
+
 	// Thread-safe append
 	st.addResponseTime(entry)
 }
@@ -329,17 +329,17 @@ func (st *StressTester) recordSlowRequest(url string, responseTime time.Duration
 		ResponseTime: responseTime,
 		StatusCode:   statusCode,
 	}
-	
+
 	// Thread-safe append
 	st.addSlowRequest(slowReq)
 }
 
 // Thread-safe methods for adding to slices
 var (
-	validationsMutex    sync.Mutex
-	errorsMutex         sync.Mutex
-	responseTimesMutex  sync.Mutex
-	slowRequestsMutex   sync.Mutex
+	validationsMutex   sync.Mutex
+	errorsMutex        sync.Mutex
+	responseTimesMutex sync.Mutex
+	slowRequestsMutex  sync.Mutex
 )
 
 func (st *StressTester) addValidation(validation URLValidation) {
@@ -369,7 +369,7 @@ func (st *StressTester) addSlowRequest(req SlowRequest) {
 func (st *StressTester) monitor(ctx context.Context) {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
-	
+
 	for {
 		select {
 		case <-ticker.C:
@@ -377,7 +377,7 @@ func (st *StressTester) monitor(ctx context.Context) {
 			successful := atomic.LoadInt64(&st.results.SuccessfulRequests)
 			failed := atomic.LoadInt64(&st.results.FailedRequests)
 			discovered := st.results.URLsDiscovered
-			
+
 			st.config.Logger.Info("Progress update",
 				"total_requests", total,
 				"successful_requests", successful,
@@ -392,7 +392,7 @@ func (st *StressTester) monitor(ctx context.Context) {
 
 func (st *StressTester) calculateResults(duration time.Duration) {
 	st.results.Duration = duration.String()
-	
+
 	// Calculate response time statistics
 	responseTimesMutex.Lock()
 	responseTimes := make([]time.Duration, len(st.results.ResponseTimes))
@@ -400,15 +400,15 @@ func (st *StressTester) calculateResults(duration time.Duration) {
 		responseTimes[i] = entry.ResponseTime
 	}
 	responseTimesMutex.Unlock()
-	
+
 	if len(responseTimes) > 0 {
 		sort.Slice(responseTimes, func(i, j int) bool {
 			return responseTimes[i] < responseTimes[j]
 		})
-		
+
 		st.results.MinResponseTime = responseTimes[0].String()
 		st.results.MaxResponseTime = responseTimes[len(responseTimes)-1].String()
-		
+
 		// Calculate average
 		var total time.Duration
 		for _, rt := range responseTimes {
@@ -416,16 +416,16 @@ func (st *StressTester) calculateResults(duration time.Duration) {
 		}
 		st.results.AverageResponseTime = (total / time.Duration(len(responseTimes))).String()
 	}
-	
+
 	// Calculate rates
 	if duration.Seconds() > 0 {
 		st.results.RequestsPerSecond = float64(st.results.TotalRequests) / duration.Seconds()
 	}
-	
+
 	if st.results.TotalRequests > 0 {
 		st.results.SuccessRate = (float64(st.results.SuccessfulRequests) / float64(st.results.TotalRequests)) * 100
 	}
-	
+
 	// Sort slow requests by response time
 	slowRequestsMutex.Lock()
 	sort.Slice(st.results.SlowRequests, func(i, j int) bool {

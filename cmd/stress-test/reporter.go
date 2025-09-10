@@ -352,10 +352,10 @@ func (rg *ReportGenerator) prepareTemplateData() map[string]interface{} {
 		}
 
 		statusDistribution = append(statusDistribution, map[string]interface{}{
-			"StatusCode":   status,
-			"Count":        count,
-			"Percentage":   percentage,
-			"StatusGroup":  statusGroup,
+			"StatusCode":  status,
+			"Count":       count,
+			"Percentage":  percentage,
+			"StatusGroup": statusGroup,
 		})
 	}
 

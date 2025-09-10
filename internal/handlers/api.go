@@ -144,7 +144,7 @@ func (h *APIHandler) Contact(c *gin.Context) {
 			})
 			return
 		}
-		
+
 		h.handleError(c, err, "Failed to send contact message")
 		return
 	}

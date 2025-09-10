@@ -183,7 +183,7 @@ func (h *ArticleHandler) Categories(c *gin.Context) {
 // Search handles search requests
 func (h *ArticleHandler) Search(c *gin.Context) {
 	query := c.Query("q")
-	
+
 	// Allow empty queries for initial search page visit
 	cachedFunc := func() (map[string]any, error) {
 		if h.cachedFunctions.GetSearchResults != nil {

@@ -2,6 +2,8 @@ package middleware
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"log/slog"
 	"strings"
 	"time"
@@ -9,6 +11,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/vnykmshr/markgo/internal/services"
 )
+
+func generateRequestID() string {
+	bytes := make([]byte, 8)
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
+}
 
 const (
 	RequestIDKey     = "request_id"

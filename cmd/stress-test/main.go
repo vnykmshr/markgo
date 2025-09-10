@@ -71,7 +71,7 @@ func main() {
 	if testConfig.Verbose {
 		logLevel = slog.LevelDebug
 	}
-	
+
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: logLevel,
 	}))
@@ -104,7 +104,7 @@ func main() {
 	})
 
 	// Run stress test
-	logger.Info("Starting stress test", 
+	logger.Info("Starting stress test",
 		"base_url", testConfig.BaseURL,
 		"concurrency", testConfig.Concurrency,
 		"duration", testConfig.Duration,
@@ -122,7 +122,7 @@ func main() {
 			log.Fatalf("Failed to save results: %v", err)
 		}
 		logger.Info("Results saved", "file", testConfig.OutputFile)
-		
+
 		// Generate HTML report
 		htmlFile := strings.TrimSuffix(testConfig.OutputFile, filepath.Ext(testConfig.OutputFile)) + ".html"
 		reporter := NewReportGenerator(results)
@@ -264,7 +264,7 @@ func printSummary(results *TestResults) {
 	for _, validation := range results.URLValidations {
 		statusCounts[validation.StatusCode]++
 	}
-	
+
 	for status, count := range statusCounts {
 		fmt.Printf("HTTP %d: %d URLs\n", status, count)
 	}

@@ -276,7 +276,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 		adminGroup := router.Group("/admin")
 		// Use only essential middleware for admin routes to avoid header conflicts
 		adminGroup.Use(
-			middleware.RecoveryWithErrorHandler(logger), // Recovery first
+			middleware.RecoveryWithErrorHandler(logger),                  // Recovery first
 			middleware.BasicAuth(cfg.Admin.Username, cfg.Admin.Password), // Auth second, before any header-writing middleware
 			middleware.NoCache(), // No caching for admin
 		)

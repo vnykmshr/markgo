@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
-	"github.com/vnykmshr/markgo/internal/utils"
 )
 
 // ErrorHandler provides centralized error handling for HTTP requests
@@ -71,17 +70,17 @@ func ErrorHandler(logger *slog.Logger) gin.HandlerFunc {
 				"timestamp":  time.Now().Unix(),
 			})
 		} else {
-			// HTML response for web pages - use template data
-			data := utils.GetTemplateData()
-			data["error"] = getErrorTitle(statusCode)
-			data["message"] = userMessage
-			data["request_id"] = requestID
-			data["status_code"] = statusCode
+			// HTML response for web pages
+			data := map[string]any{
+				"error":       getErrorTitle(statusCode),
+				"message":     userMessage,
+				"request_id":  requestID,
+				"status_code": statusCode,
+			}
 
 			// Use appropriate template based on status code
 			template := getErrorTemplate(statusCode)
 			c.HTML(statusCode, template, data)
-			utils.PutTemplateData(data)
 		}
 	}
 }

@@ -383,7 +383,7 @@ func generateSlug(title string) string {
 	// Simple slug generation - convert to lowercase, replace spaces with hyphens
 	slug := strings.ToLower(title)
 	slug = strings.ReplaceAll(slug, " ", "-")
-	
+
 	// Remove non-alphanumeric characters except hyphens
 	result := strings.Builder{}
 	for _, r := range slug {
@@ -391,17 +391,17 @@ func generateSlug(title string) string {
 			result.WriteRune(r)
 		}
 	}
-	
+
 	slug = result.String()
-	
+
 	// Remove consecutive hyphens
 	for strings.Contains(slug, "--") {
 		slug = strings.ReplaceAll(slug, "--", "-")
 	}
-	
+
 	// Remove leading and trailing hyphens
 	slug = strings.Trim(slug, "-")
-	
+
 	return slug
 }
 

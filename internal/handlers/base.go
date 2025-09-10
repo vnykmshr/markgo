@@ -9,7 +9,6 @@ import (
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/models"
 	"github.com/vnykmshr/markgo/internal/services"
-	"github.com/vnykmshr/markgo/internal/utils"
 )
 
 // BaseHandler provides common functionality for all handlers
@@ -170,24 +169,18 @@ func (h *BaseHandler) requireDevelopmentEnv(c *gin.Context) bool {
 }
 
 // buildBaseTemplateData creates common template data that most pages need
-func (h *BaseHandler) buildBaseTemplateData(title string) *utils.TemplateDataBuilder {
-	return utils.BaseTemplateData(title, h.config)
+func (h *BaseHandler) buildBaseTemplateData(title string) map[string]any {
+	return map[string]any{"title": title, "config": h.config}
 }
 
 // buildArticlePageData creates template data for article pages
-func (h *BaseHandler) buildArticlePageData(title string, recentArticles []*models.Article) *utils.TemplateDataBuilder {
-	return utils.ArticlePageData(title, h.config, recentArticles)
+func (h *BaseHandler) buildArticlePageData(title string, recentArticles []*models.Article) map[string]any {
+	return map[string]any{"title": title, "config": h.config, "recent_articles": recentArticles}
 }
 
 // respondWithJSON provides pooled JSON response handling
 func (h *BaseHandler) respondWithJSON(c *gin.Context, status int, dataBuilder func() map[string]any) {
-	data := utils.GetTemplateData()
-	defer utils.PutTemplateData(data)
-
-	populatedData := dataBuilder()
-	for k, v := range populatedData {
-		data[k] = v
-	}
+	data := dataBuilder()
 
 	c.JSON(status, data)
 }

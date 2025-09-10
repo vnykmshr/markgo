@@ -13,8 +13,21 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/services"
-	"github.com/vnykmshr/markgo/internal/utils"
 )
+
+func formatBytes(bytes uint64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	div, exp := uint64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	units := []string{"KB", "MB", "GB", "TB"}
+	return fmt.Sprintf("%.1f %s", float64(bytes)/float64(div), units[exp])
+}
 
 // CachedAdminFunctions holds cached functions for admin operations
 type CachedAdminFunctions struct {
@@ -69,20 +82,20 @@ func formatDuration(d time.Duration) string {
 func (h *AdminHandler) AdminHome(c *gin.Context) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	
+
 	uptime := time.Since(h.startTime)
-	
+
 	// Get both published and draft articles for accurate counting
 	publishedArticles := h.articleService.GetAllArticles()
 	draftArticles := h.articleService.GetDraftArticles()
-	
+
 	publishedCount := len(publishedArticles)
 	draftCount := len(draftArticles)
 	totalArticles := publishedCount + draftCount
-	
-	h.logger.Debug("Article counts", 
-		"published", publishedCount, 
-		"drafts", draftCount, 
+
+	h.logger.Debug("Article counts",
+		"published", publishedCount,
+		"drafts", draftCount,
 		"total", totalArticles)
 
 	adminRoutes := []map[string]any{
@@ -95,7 +108,7 @@ func (h *AdminHandler) AdminHome(c *gin.Context) {
 		},
 		{
 			"name":        "Clear Cache",
-			"url":         "/admin/cache/clear", 
+			"url":         "/admin/cache/clear",
 			"method":      "POST",
 			"description": "Clear all cached data to force refresh",
 			"icon":        "🗑️",
@@ -103,7 +116,7 @@ func (h *AdminHandler) AdminHome(c *gin.Context) {
 		{
 			"name":        "Reload Articles",
 			"url":         "/admin/articles/reload",
-			"method":      "POST", 
+			"method":      "POST",
 			"description": "Reload all articles from disk",
 			"icon":        "🔄",
 		},
@@ -124,7 +137,7 @@ func (h *AdminHandler) AdminHome(c *gin.Context) {
 		{
 			"name":        "Health Check",
 			"url":         "/health",
-			"method":      "GET", 
+			"method":      "GET",
 			"description": "Check application health status",
 			"icon":        "❤️",
 		},
@@ -139,16 +152,16 @@ func (h *AdminHandler) AdminHome(c *gin.Context) {
 		"uptime_seconds":     int64(uptime.Seconds()),
 		"go_version":         runtime.Version(),
 		"environment":        h.config.Environment,
-		"memory_usage":       utils.FormatBytes(m.Alloc),
-		"memory_sys":         utils.FormatBytes(m.Sys),
+		"memory_usage":       formatBytes(m.Alloc),
+		"memory_sys":         formatBytes(m.Sys),
 		"goroutines":         runtime.NumGoroutine(),
 		"articles_total":     totalArticles,
 		"articles_published": publishedCount,
 		"articles_drafts":    draftCount,
 		"tags_total":         len(tagCounts),
 		"categories_total":   len(categoryCounts),
-		"gc_runs":           m.NumGC,
-		"cpu_count":         runtime.NumCPU(),
+		"gc_runs":            m.NumGC,
+		"cpu_count":          runtime.NumCPU(),
 	}
 
 	if h.shouldReturnJSON(c) {
@@ -226,17 +239,17 @@ func (h *AdminHandler) Debug(c *gin.Context) {
 			"os":            runtime.GOOS,
 		},
 		"memory": map[string]any{
-			"alloc":           utils.FormatBytes(m.Alloc),
-			"total_alloc":     utils.FormatBytes(m.TotalAlloc),
-			"sys":             utils.FormatBytes(m.Sys),
-			"heap_alloc":      utils.FormatBytes(m.HeapAlloc),
-			"heap_sys":        utils.FormatBytes(m.HeapSys),
-			"heap_idle":       utils.FormatBytes(m.HeapIdle),
-			"heap_inuse":      utils.FormatBytes(m.HeapInuse),
-			"heap_released":   utils.FormatBytes(m.HeapReleased),
+			"alloc":           formatBytes(m.Alloc),
+			"total_alloc":     formatBytes(m.TotalAlloc),
+			"sys":             formatBytes(m.Sys),
+			"heap_alloc":      formatBytes(m.HeapAlloc),
+			"heap_sys":        formatBytes(m.HeapSys),
+			"heap_idle":       formatBytes(m.HeapIdle),
+			"heap_inuse":      formatBytes(m.HeapInuse),
+			"heap_released":   formatBytes(m.HeapReleased),
 			"heap_objects":    m.HeapObjects,
-			"stack_inuse":     utils.FormatBytes(m.StackInuse),
-			"stack_sys":       utils.FormatBytes(m.StackSys),
+			"stack_inuse":     formatBytes(m.StackInuse),
+			"stack_sys":       formatBytes(m.StackSys),
 			"num_gc":          m.NumGC,
 			"gc_cpu_fraction": m.GCCPUFraction,
 		},
@@ -310,9 +323,9 @@ func (h *AdminHandler) CompactMemory(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Memory compaction completed",
 		"memory": map[string]any{
-			"before_alloc": utils.FormatBytes(before.Alloc),
-			"after_alloc":  utils.FormatBytes(after.Alloc),
-			"freed":        utils.FormatBytes(before.Alloc - after.Alloc),
+			"before_alloc": formatBytes(before.Alloc),
+			"after_alloc":  formatBytes(after.Alloc),
+			"freed":        formatBytes(before.Alloc - after.Alloc),
 		},
 		"timestamp": time.Now().Unix(),
 	})
@@ -461,8 +474,8 @@ func (h *AdminHandler) getStatsDataUncached() (map[string]any, error) {
 		"system": map[string]any{
 			"uptime":       time.Since(h.startTime).String(),
 			"goroutines":   runtime.NumGoroutine(),
-			"memory_alloc": utils.FormatBytes(m.Alloc),
-			"memory_sys":   utils.FormatBytes(m.Sys),
+			"memory_alloc": formatBytes(m.Alloc),
+			"memory_sys":   formatBytes(m.Sys),
 		},
 		"config": map[string]any{
 			"environment":   h.config.Environment,
