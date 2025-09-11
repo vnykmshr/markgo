@@ -35,45 +35,43 @@ A modern, high-performance file-based blog engine built with Go. MarkGo combines
 - **Configuration-driven** behavior via environment variables
 - **Extensive documentation** and examples
 
-## 🚀 Quick Start
+## 🚀 Quick Start (5 Minutes)
 
-### Prerequisites
-- Go 1.25.0 or later
-- Make (for build automation)
+### Option 1: Download Release (Recommended)
 
-### Installation
+1. **Download**: Visit [Releases](https://github.com/vnykmshr/markgo/releases) and download for your platform
+2. **Initialize**: `markgo init --quick`
+3. **Start**: `markgo`
+4. **Visit**: http://localhost:3000
+
+### Option 2: Build from Source
 
 ```bash
-# Clone the repository
+# Clone and build
 git clone https://github.com/vnykmshr/markgo
 cd markgo
+make build-all
 
-# Copy environment configuration
-cp .env.example .env
+# Initialize your blog
+./build/init --quick
 
-# Install dependencies
-make deps
-
-# Start development server with hot reload
-make dev
+# Start your blog
+./build/markgo
 ```
-
-Visit `http://localhost:8080` to see your blog!
 
 ### Create Your First Article
 
 ```bash
-# Build the CLI tool
-make new-article
+# Interactive creation
+markgo new-article
 
-# Create an article interactively
-./build/new-article --interactive
-
-# Or create directly
-./build/new-article --title "Hello World" --tags "introduction,getting-started"
+# Quick creation
+markgo new-article --title "Hello World" --tags "introduction,getting-started"
 ```
 
-> 🎯 **New to MarkGo?** Check out our [Complete Project Guide](docs/project-guide.md) for step-by-step tutorials, configuration options, and deployment strategies.
+🎉 **Your blog is now running at http://localhost:3000!**
+
+> 📖 **New to MarkGo?** Read our [Getting Started Guide](docs/GETTING-STARTED.md) for the complete 5-minute setup tutorial.
 
 ## 📁 Project Structure
 

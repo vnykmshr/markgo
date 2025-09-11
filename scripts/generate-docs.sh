@@ -18,6 +18,7 @@ PACKAGES=(
     "cmd/server:cmd-server-package.md"
     "cmd/new-article:cmd-new-article-package.md"
     "cmd/stress-test:stress-test-package.md"
+    "cmd/init:cmd-init-package.md"
 )
 
 # Generate package documentation
@@ -76,6 +77,9 @@ Main web server application with HTTP configuration and graceful shutdown.
 #### [New Article Tool](./cmd-new-article-package.md)
 Interactive article creation CLI tool with templates and validation.
 
+#### [Init Tool](./cmd-init-package.md)
+Quick blog initialization tool with interactive setup wizard.
+
 #### [Stress Test Tool](./stress-test-package.md)
 Performance testing tool with automatic URL discovery and validation.
 
@@ -115,6 +119,7 @@ Complete documentation for the MarkGo high-performance blog engine.
 |------|---------|---------------|
 | **Server** | Main MarkGo web server | [cmd-server-package.md](./cmd-server-package.md) |
 | **New Article** | Interactive article creation tool | [cmd-new-article-package.md](./cmd-new-article-package.md) |
+| **Init** | Quick blog initialization wizard | [cmd-init-package.md](./cmd-init-package.md) |
 | **Stress Test** | Performance testing and validation | [stress-test-package.md](./stress-test-package.md) |
 
 ## Documentation Generation

@@ -19,6 +19,7 @@ Complete documentation for the MarkGo high-performance blog engine.
 |------|---------|---------------|
 | **Server** | Main MarkGo web server | [cmd-server-package.md](./cmd-server-package.md) |
 | **New Article** | Interactive article creation tool | [cmd-new-article-package.md](./cmd-new-article-package.md) |
+| **Init** | Quick blog initialization wizard | [cmd-init-package.md](./cmd-init-package.md) |
 | **Stress Test** | Performance testing and validation | [stress-test-package.md](./stress-test-package.md) |
 
 ## Documentation Generation
@@ -31,4 +32,4 @@ make docs
 make docs-serve
 ```
 
-*Generated on: Thu Sep 11 07:04:04 +0545 2025*
+*Generated on: Thu Sep 11 07:35:12 +0545 2025*

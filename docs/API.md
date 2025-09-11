@@ -1,5 +1,5 @@
 # MarkGo API Documentation
-Generated on: Thu Sep 11 07:04:04 +0545 2025
+Generated on: Thu Sep 11 07:35:12 +0545 2025
 
 ## Overview
 
@@ -44,6 +44,9 @@ Main web server application with HTTP configuration and graceful shutdown.
 
 #### [New Article Tool](./cmd-new-article-package.md)
 Interactive article creation CLI tool with templates and validation.
+
+#### [Init Tool](./cmd-init-package.md)
+Quick blog initialization tool with interactive setup wizard.
 
 #### [Stress Test Tool](./stress-test-package.md)
 Performance testing tool with automatic URL discovery and validation.

@@ -53,6 +53,12 @@ stress-test: ## Build the stress-test CLI tool
 	CGO_ENABLED=0 $(GOBUILD) $(BUILD_FLAGS) -o $(BUILD_DIR)/stress-test ./cmd/stress-test
 	@echo "Build complete: $(BUILD_DIR)/stress-test"
 
+init: ## Build the init CLI tool
+	@echo "Building init..."
+	@mkdir -p $(BUILD_DIR)
+	CGO_ENABLED=0 $(GOBUILD) $(BUILD_FLAGS) -o $(BUILD_DIR)/init ./cmd/init
+	@echo "Build complete: $(BUILD_DIR)/init"
+
 build-linux: ## Build for Linux
 	@echo "Building for Linux..."
 	@mkdir -p $(BUILD_DIR)
@@ -68,7 +74,7 @@ build-darwin: ## Build for macOS
 	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) $(BUILD_FLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 $(MAIN_PATH)
 
-build-all: build new-article stress-test ## Build all cmd tools
+build-all: build new-article stress-test init ## Build all cmd tools
 
 build-dist: build-linux build-windows build-darwin ## Build for all platforms
 
