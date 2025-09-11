@@ -431,14 +431,9 @@ backup-content: ## Backup articles and static content
 	@echo "Content backed up to backups/ directory"
 
 # Documentation targets
-docs: ## Generate project documentation
-	@echo "Generating documentation..."
+docs: ## Generate comprehensive project documentation from Go source code
 	@mkdir -p docs
-	@echo "# MarkGo API Documentation" > docs/API.md
-	@echo "Generated on: $(shell date)" >> docs/API.md
-	@echo "" >> docs/API.md
-	@grep -r "// @" . --include="*.go" | head -20 >> docs/API.md || echo "No API annotations found"
-	@echo "Documentation generated in docs/"
+	@./scripts/generate-docs.sh
 
 docs-serve: ## Serve documentation locally (requires godoc)
 	@echo "Serving documentation on http://localhost:6060"
