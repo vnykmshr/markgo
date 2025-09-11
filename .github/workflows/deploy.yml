@@ -1,0 +1,282 @@
+name: Deploy Static Blog to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.25'
+        
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Build export tool
+      run: go build -o markgo-export ./cmd/export
+
+    - name: Setup demo blog content
+      run: |
+        # Create articles directory if it doesn't exist
+        mkdir -p articles
+        
+        # Create sample content if articles directory is empty
+        if [ -z "$(ls -A articles)" ]; then
+          echo "Creating demo blog content..."
+          
+          # Create welcome article
+          cat > articles/welcome.md << 'EOF'
+        ---
+        title: "Welcome to MarkGo"
+        description: "Welcome to your new MarkGo blog - fast, simple, and powerful"
+        date: 2024-01-15T10:00:00Z
+        published: true
+        tags: ["welcome", "getting-started", "markgo"]
+        categories: ["General"]
+        author: "MarkGo Team"
+        ---
+
+        # Welcome to MarkGo!
+
+        This is your new MarkGo blog, successfully deployed as a static site on GitHub Pages.
+
+        ## What is MarkGo?
+
+        MarkGo is a modern, high-performance file-based blog engine built with Go that combines:
+
+        - **17ms cold start time** - blazing fast performance
+        - **File-based content** - write in Markdown with Git workflow
+        - **Static export** - deploy anywhere, including GitHub Pages
+        - **Zero dependencies** - single binary deployment
+
+        ## Getting Started
+
+        1. **Write articles** in Markdown with YAML frontmatter
+        2. **Commit to Git** - your content is version controlled
+        3. **Auto-deploy** - GitHub Actions builds and deploys your site
+
+        ## Features
+
+        - Full-text search across all content
+        - RSS and JSON feeds
+        - SEO optimized with sitemaps
+        - Tag and category organization
+        - Responsive design
+        - Fast static site generation
+
+        ## Next Steps
+
+        Edit the articles in the `articles/` directory and push to GitHub. Your site will automatically rebuild and deploy!
+
+        ---
+
+        **Made with ❤️ and Go**
+        EOF
+
+          # Create about article
+          cat > articles/about.md << 'EOF'
+        ---
+        title: "About This Blog"
+        description: "Learn more about this MarkGo-powered blog"
+        date: 2024-01-15T09:00:00Z
+        published: true
+        tags: ["about", "markgo"]
+        categories: ["Meta"]
+        author: "MarkGo Team"
+        slug: "about"
+        ---
+
+        # About This Blog
+
+        This blog is powered by [MarkGo](https://github.com/vnykmshr/markgo), a modern file-based blog engine built with Go.
+
+        ## Technical Details
+
+        - **Generator**: MarkGo Engine
+        - **Deployment**: GitHub Pages
+        - **Source**: GitHub Repository
+        - **Build Time**: ~2-3 seconds
+        - **Performance**: 17ms cold start
+
+        ## Features Demonstrated
+
+        This demo site showcases MarkGo's key features:
+
+        ### Content Management
+        - Markdown articles with YAML frontmatter
+        - Git-based workflow
+        - Automatic URL generation from titles
+
+        ### Performance
+        - Static site generation
+        - Optimized HTML output
+        - Compressed assets
+
+        ### SEO & Discovery
+        - XML sitemaps
+        - RSS and JSON feeds
+        - Meta tags and structured data
+
+        ## Repository Structure
+
+        ```
+        /
+        ├── articles/           # Your blog posts
+        ├── web/
+        │   ├── static/        # CSS, JS, images  
+        │   └── templates/     # HTML templates
+        ├── cmd/export/        # Static export tool
+        └── .github/workflows/ # GitHub Actions
+        ```
+
+        ## Customization
+
+        You can customize this blog by:
+
+        1. **Adding content** - Create new `.md` files in `articles/`
+        2. **Styling** - Edit CSS in `web/static/css/`
+        3. **Templates** - Modify HTML in `web/templates/`
+        4. **Configuration** - Update settings in `.env`
+
+        Ready to get started? Check out the [MarkGo documentation](https://github.com/vnykmshr/markgo) for more details!
+        EOF
+
+          # Create first blog post
+          cat > articles/first-post.md << 'EOF'
+        ---
+        title: "My First Blog Post"
+        description: "This is my first post on my new MarkGo blog"
+        date: 2024-01-16T14:30:00Z
+        published: true
+        tags: ["first-post", "blogging", "markdown"]
+        categories: ["Personal"]
+        author: "Blog Author"
+        ---
+
+        # My First Blog Post
+
+        Welcome to my new blog! This is my first post written in Markdown and published with MarkGo.
+
+        ## Why MarkGo?
+
+        I chose MarkGo for several reasons:
+
+        1. **Simple workflow** - Just write Markdown and push to Git
+        2. **Fast performance** - Static sites load instantly
+        3. **Easy deployment** - GitHub Actions handles everything
+        4. **No database** - All content is in files
+        5. **Version control** - Full history of all changes
+
+        ## Writing Process
+
+        Creating this post was as simple as:
+
+        ```bash
+        # Create new article
+        touch articles/first-post.md
+
+        # Write content in your favorite editor
+        vim articles/first-post.md
+
+        # Commit and push
+        git add articles/first-post.md
+        git commit -m "Add first blog post"
+        git push
+        ```
+
+        That's it! GitHub Actions automatically rebuilds and deploys the site.
+
+        ## What's Next?
+
+        I'm planning to write about:
+
+        - Web development tutorials
+        - Go programming tips
+        - Open source projects
+        - Tech industry insights
+
+        Stay tuned for more content!
+
+        ---
+
+        *This post was written in Markdown and automatically converted to HTML by MarkGo.*
+        EOF
+
+          echo "Demo content created successfully"
+        else
+          echo "Articles directory already contains content"
+        fi
+
+    - name: Create environment configuration
+      run: |
+        cat > .env << 'EOF'
+        # Blog Configuration
+        BLOG_TITLE=Code & Coffee
+        BLOG_DESCRIPTION=A developer's journey through modern programming languages, tools, and best practices
+        BLOG_AUTHOR=Sam Mitchell
+        BASE_URL=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+        
+        # Paths
+        ARTICLES_PATH=./articles
+        TEMPLATES_PATH=./web/templates
+        STATIC_PATH=./web/static
+        
+        # Features
+        SEARCH_ENABLED=true
+        RSS_ENABLED=true
+        CONTACT_ENABLED=true
+        
+        # Performance
+        CACHE_ENABLED=false
+        EOF
+
+    - name: Export static site
+      run: |
+        ./markgo-export \
+          --output ./dist \
+          --base-url "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}" \
+          --verbose
+
+    - name: Upload Pages artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

@@ -74,7 +74,13 @@ build-darwin: ## Build for macOS
 	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) $(BUILD_FLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 $(MAIN_PATH)
 
-build-all: build new-article stress-test init ## Build all cmd tools
+export: ## Build the export CLI tool
+	@echo "Building export..."
+	@mkdir -p $(BUILD_DIR)
+	CGO_ENABLED=0 $(GOBUILD) $(BUILD_FLAGS) -o $(BUILD_DIR)/export ./cmd/export
+	@echo "Build complete: $(BUILD_DIR)/export"
+
+build-all: build new-article stress-test init export ## Build all cmd tools
 
 build-dist: build-linux build-windows build-darwin ## Build for all platforms
 
@@ -435,6 +441,22 @@ backup-content: ## Backup articles and static content
 	@mkdir -p backups
 	@tar -czf backups/content-backup-$(shell date +%Y%m%d-%H%M%S).tar.gz articles/ web/static/ || true
 	@echo "Content backed up to backups/ directory"
+
+export-static: ## Export static site for hosting
+	@echo "Exporting static site..."
+	@if [ ! -f $(BUILD_DIR)/export ]; then $(MAKE) export; fi
+	@$(BUILD_DIR)/export --output ./dist --verbose
+	@echo "✅ Static site exported to ./dist/"
+	@echo "📁 Ready for deployment to GitHub Pages, Netlify, or any static host"
+
+export-github-pages: ## Export static site optimized for GitHub Pages
+	@echo "Exporting for GitHub Pages..."
+	@if [ ! -f $(BUILD_DIR)/export ]; then $(MAKE) export; fi
+	@$(BUILD_DIR)/export \
+		--output ./dist \
+		--base-url "https://$(shell git config --get remote.origin.url | sed 's/.*github.com[/:]//; s/.git$$//' | sed 's|/|.github.io/|')" \
+		--verbose
+	@echo "✅ Static site exported for GitHub Pages: ./dist/"
 
 # Documentation targets
 docs: ## Generate comprehensive project documentation from Go source code
