@@ -45,20 +45,21 @@ type URLTask struct {
 }
 
 type TestResults struct {
-	Duration            string              `json:"duration"`
-	URLsDiscovered      int                 `json:"urls_discovered"`
-	TotalRequests       int64               `json:"total_requests"`
-	SuccessfulRequests  int64               `json:"successful_requests"`
-	FailedRequests      int64               `json:"failed_requests"`
-	AverageResponseTime string              `json:"average_response_time"`
-	MinResponseTime     string              `json:"min_response_time"`
-	MaxResponseTime     string              `json:"max_response_time"`
-	RequestsPerSecond   float64             `json:"requests_per_second"`
-	SuccessRate         float64             `json:"success_rate"`
-	URLValidations      []URLValidation     `json:"url_validations"`
-	Errors              []ErrorInfo         `json:"errors"`
-	SlowRequests        []SlowRequest       `json:"slow_requests"`
-	ResponseTimes       []ResponseTimeEntry `json:"response_times"`
+	Duration              string                 `json:"duration"`
+	URLsDiscovered        int                    `json:"urls_discovered"`
+	TotalRequests         int64                  `json:"total_requests"`
+	SuccessfulRequests    int64                  `json:"successful_requests"`
+	FailedRequests        int64                  `json:"failed_requests"`
+	AverageResponseTime   string                 `json:"average_response_time"`
+	MinResponseTime       string                 `json:"min_response_time"`
+	MaxResponseTime       string                 `json:"max_response_time"`
+	RequestsPerSecond     float64                `json:"requests_per_second"`
+	SuccessRate           float64                `json:"success_rate"`
+	URLValidations        []URLValidation        `json:"url_validations"`
+	Errors                []ErrorInfo            `json:"errors"`
+	SlowRequests          []SlowRequest          `json:"slow_requests"`
+	ResponseTimes         []ResponseTimeEntry    `json:"response_times"`
+	PerformanceValidation map[string]interface{} `json:"performance_validation,omitempty"`
 }
 
 type URLValidation struct {

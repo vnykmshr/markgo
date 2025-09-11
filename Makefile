@@ -113,18 +113,6 @@ benchmark: ## Run benchmarks
 	@echo "Running benchmarks..."
 	$(GOTEST) -bench=. -benchmem ./...
 
-load-test: ## Run load test against running server
-	@echo "Running load test..."
-	@./scripts/load-test.sh
-
-load-test-quick: ## Run quick load test (10 users, 10s)
-	@echo "Running quick load test..."
-	@CONCURRENT_USERS=10 DURATION=10s ./scripts/load-test.sh
-
-load-test-stress: ## Run stress test (100 users, 60s)
-	@echo "Running stress test..."
-	@CONCURRENT_USERS=100 DURATION=60s ./scripts/load-test.sh
-
 stress-test-run: ## Run the stress test tool against running server
 	@echo "Running stress test against http://localhost:3000..."
 	@if [ ! -f $(BUILD_DIR)/stress-test ]; then $(MAKE) stress-test; fi
