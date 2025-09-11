@@ -124,12 +124,12 @@ func main() {
 	// Validate performance targets
 	validator := NewPerformanceValidator()
 	validator.ValidateResults(results)
-	
+
 	// Output results
 	if testConfig.OutputFile != "" {
 		// Add validation data to results
 		results.PerformanceValidation = validator.GetValidationSummary()
-		
+
 		if err := saveResults(testConfig.OutputFile, results); err != nil {
 			log.Fatalf("Failed to save results: %v", err)
 		}

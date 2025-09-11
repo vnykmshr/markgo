@@ -59,14 +59,14 @@ func (pv *PerformanceValidator) ValidateResults(results *TestResults) {
 
 			p95Index := int(float64(len(responseTimes)) * 0.95)
 			p99Index := int(float64(len(responseTimes)) * 0.99)
-			
+
 			if p95Index >= len(responseTimes) {
 				p95Index = len(responseTimes) - 1
 			}
 			if p99Index >= len(responseTimes) {
 				p99Index = len(responseTimes) - 1
 			}
-			
+
 			p95ResponseTime = responseTimes[p95Index]
 			p99ResponseTime = responseTimes[p99Index]
 		}
