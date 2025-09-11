@@ -239,7 +239,7 @@ jobs:
         # Blog Configuration
         BLOG_TITLE=Code & Coffee
         BLOG_DESCRIPTION=A developer's journey through modern programming languages, tools, and best practices
-        BLOG_AUTHOR=Sam Mitchell
+        BLOG_AUTHOR=Gopher Mark
         BASE_URL=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
         
         # Paths
