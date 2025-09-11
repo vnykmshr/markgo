@@ -4,8 +4,11 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Security](https://img.shields.io/badge/Security-Audited-green.svg)](#security)
 [![Performance](https://img.shields.io/badge/Cold%20Start-17ms-brightgreen.svg)](#performance)
+[![Demo](https://img.shields.io/badge/Demo-Live%20Site-blue.svg)](https://vnykmshr.github.io/markgo/)
 
 A modern, high-performance file-based blog engine built with Go. MarkGo combines the simplicity of file-based content management with the power of a dynamic web server, delivering **blazing-fast 17ms cold start** and enterprise-grade performance.
+
+🌐 **[Live Demo](https://vnykmshr.github.io/markgo/)** - See MarkGo in action with automatic GitHub Pages deployment
 
 ## ✨ Features
 
@@ -24,6 +27,7 @@ A modern, high-performance file-based blog engine built with Go. MarkGo combines
 
 ### 🔧 Production Ready
 - **Docker deployment** with comprehensive configuration
+- **Static site export** for GitHub Pages, Netlify, Vercel deployment
 - **Built-in security** with rate limiting, CORS, and input validation
 - **SEO optimized** with sitemaps, structured data, and meta tags
 - **Full-text search** across all content
@@ -70,6 +74,13 @@ markgo new-article --title "Hello World" --tags "introduction,getting-started"
 ```
 
 🎉 **Your blog is now running at http://localhost:3000!**
+
+### Option 3: Deploy to GitHub Pages (Static)
+
+1. **Fork this repository** or use as template
+2. **Enable GitHub Pages** in Settings > Pages > Source: GitHub Actions  
+3. **Push changes** - site auto-deploys at `https://yourusername.github.io/markgo`
+4. **See it live**: [Demo Site](https://vnykmshr.github.io/markgo/)
 
 > 📖 **New to MarkGo?** Read our [Getting Started Guide](docs/GETTING-STARTED.md) for the complete 5-minute setup tutorial.
 
@@ -151,6 +162,23 @@ See [Configuration Guide](docs/configuration.md) for complete options.
 
 ## 🚀 Deployment
 
+### Static Sites (GitHub Pages, Netlify, Vercel)
+
+```bash
+# Export for GitHub Pages (auto-detects repo URL)
+make export-github-pages
+
+# Export for any static host
+make export-static
+
+# Custom export with options
+./build/export --output ./public --base-url https://yourdomain.com
+```
+
+**Live Example**: [vnykmshr.github.io/markgo](https://vnykmshr.github.io/markgo/) - Auto-deployed via GitHub Actions
+
+See [Static Export Guide](docs/static-export.md) for complete hosting options.
+
 ### Docker (Recommended)
 
 ```bash
@@ -178,7 +206,9 @@ sudo systemctl start markgo
 ```bash
 make build          # Build for current platform
 make build-linux    # Build for Linux
-make build-all      # Build for all platforms
+make build-all      # Build all tools (server, export, new-article, etc.)
+make export         # Build static export tool
+make export-static  # Export site to ./dist/
 make docker         # Build and run Docker container
 ```
 
@@ -271,6 +301,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Developer Workflow**: Git-based content management
 - **Performance**: Go's native speed and efficiency
+- **Deployment Flexibility**: Dynamic server OR static site export
 - **Simplicity**: Single binary, no external dependencies
 - **Security**: Built-in rate limiting and input validation
 - **Portability**: File-based content, easy backups and migration
@@ -279,7 +310,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔗 Links
 
+- [🌐 **Live Demo**](https://vnykmshr.github.io/markgo/) - See MarkGo in action
 - [📖 Complete Documentation](docs/) - All guides and references
+- [📄 Static Export Guide](docs/static-export.md) - GitHub Pages deployment
 - [🐛 Issue Tracker](https://github.com/vnykmshr/markgo/issues) - Bug reports and feature requests
 - [💬 Discussions](https://github.com/vnykmshr/markgo/discussions) - Community discussions
 - [🚀 Quick Deploy](docs/deployment.md) - Production deployment guide
