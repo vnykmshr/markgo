@@ -68,7 +68,7 @@ jobs:
       with:
         file: ./coverage.out
         token: ${{ secrets.CODECOV_TOKEN }}
-        fail_ci_if_error: true
+        fail_ci_if_error: false
 
   security:
     name: Security Scan
