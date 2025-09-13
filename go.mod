@@ -50,7 +50,6 @@ require (
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/redis/go-redis/v9 v9.12.1 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
-	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.0 // indirect
 	go.opentelemetry.io/otel v1.37.0 // indirect
