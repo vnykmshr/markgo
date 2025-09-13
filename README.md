@@ -1,5 +1,6 @@
 # MarkGo Engine
 
+[![CI/CD Pipeline](https://github.com/vnykmshr/markgo/actions/workflows/ci.yml/badge.svg)](https://github.com/vnykmshr/markgo/actions/workflows/ci.yml)
 [![Go Version](https://img.shields.io/badge/Go-1.25.0+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Security](https://img.shields.io/badge/Security-Audited-green.svg)](#security)
