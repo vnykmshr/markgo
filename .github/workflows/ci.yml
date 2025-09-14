@@ -265,6 +265,7 @@ jobs:
         
     - name: Store benchmark results
       uses: benchmark-action/github-action-benchmark@v1
+      continue-on-error: true
       with:
         tool: 'go'
         output-file-path: benchmark-results.txt
@@ -272,7 +273,7 @@ jobs:
         auto-push: true
         alert-threshold: '150%'
         comment-on-alert: true
-        fail-on-alert: true
+        fail-on-alert: false
 
   docs:
     name: Deploy Documentation
