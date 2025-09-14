@@ -91,8 +91,15 @@ jobs:
         
     - name: Run gosec
       run: |
-        echo "Gosec scan temporarily disabled due to action compatibility issues"
-        echo "Security scanning will be re-enabled in a future update"
+        go install github.com/securego/gosec/v2/cmd/gosec@latest
+        gosec -fmt sarif -out results.sarif ./...
+
+    - name: Upload gosec results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      continue-on-error: true
+      with:
+        sarif_file: results.sarif
 
   build:
     name: Build Binaries
