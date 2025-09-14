@@ -1,6 +1,6 @@
 # MarkGo Engine
 
-[![CI](https://github.com/vnykmshr/markgo/workflows/CI/badge.svg?branch=main)](https://github.com/vnykmshr/markgo/actions/workflows/ci.yml)
+[![CI](https://github.com/vnykmshr/markgo/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/vnykmshr/markgo/actions/workflows/ci.yml)
 [![Go Version](https://img.shields.io/badge/Go-1.25.0+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Security](https://img.shields.io/badge/Security-Audited-green.svg)](#security)
