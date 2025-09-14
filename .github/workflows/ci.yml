@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI
 
 on:
   push:
@@ -9,301 +9,115 @@ on:
 
 env:
   GO_VERSION: '1.25'
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   test:
-    name: Test Suite
+    name: Test & Build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ['1.25']
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: ${{ matrix.go-version }}
-        
-    - name: Cache Go modules
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-${{ matrix.go-version }}-
-          
-    - name: Download dependencies
-      run: go mod download
-      
-    - name: Verify dependencies
-      run: go mod verify
-      
-    - name: Run go vet
-      run: go vet ./...
-      
-    - name: Run go fmt
+        go-version: ${{ env.GO_VERSION }}
+        cache: true
+
+    - name: Quality checks
       run: |
+        go mod verify
+        go vet ./...
         if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
           echo "Code is not formatted:"
           gofmt -s -l .
           exit 1
         fi
-        
+
     - name: Run tests
       run: go test -v -race -coverprofile=coverage.out ./...
-      
-    - name: Run benchmarks
-      run: go test -bench=. -benchmem ./...
-      
-    - name: Upload coverage to Codecov
-      if: matrix.go-version == '1.25'
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.out
-        token: ${{ secrets.CODECOV_TOKEN }}
-        fail_ci_if_error: false
 
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    needs: test
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ env.GO_VERSION }}
-        
-    - name: Run govulncheck
+    - name: Security scan
       run: |
         go install golang.org/x/vuln/cmd/govulncheck@latest
         govulncheck ./...
-        
-    - name: Run gosec
-      run: |
-        go install github.com/securego/gosec/v2/cmd/gosec@latest
-        gosec -fmt sarif -out results.sarif ./... || true
 
-    - name: Upload gosec results
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
+    - name: Build
+      run: go build -ldflags="-w -s" ./cmd/server
+
+    - name: Upload coverage
+      uses: codecov/codecov-action@v4
       continue-on-error: true
       with:
-        sarif_file: results.sarif
+        file: ./coverage.out
+        token: ${{ secrets.CODECOV_TOKEN }}
 
-  build:
-    name: Build Binaries
+  build-artifacts:
+    name: Build Artifacts
     runs-on: ubuntu-latest
-    needs: [test, security]
+    needs: test
+    if: github.event_name == 'push'
     strategy:
       matrix:
         target:
-          - { goos: linux, goarch: amd64, suffix: linux-amd64 }
-          - { goos: linux, goarch: arm64, suffix: linux-arm64 }
-          - { goos: darwin, goarch: amd64, suffix: darwin-amd64 }
-          - { goos: darwin, goarch: arm64, suffix: darwin-arm64 }
-          - { goos: windows, goarch: amd64, suffix: windows-amd64.exe }
-          
+          - { goos: linux, goarch: amd64 }
+          - { goos: darwin, goarch: amd64 }
+          - { goos: windows, goarch: amd64 }
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
         go-version: ${{ env.GO_VERSION }}
-        
-    - name: Cache Go modules
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-        
+        cache: true
+
     - name: Build binary
       env:
         GOOS: ${{ matrix.target.goos }}
         GOARCH: ${{ matrix.target.goarch }}
         CGO_ENABLED: 0
       run: |
-        mkdir -p build
+        EXT=""
+        if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
         go build -ldflags="-w -s -X main.version=${{ github.ref_name || 'dev' }}" \
-          -o build/markgo-${{ matrix.target.suffix }} \
+          -o markgo-${{ matrix.target.goos }}-${{ matrix.target.goarch }}${EXT} \
           ./cmd/server
-          
-    - name: Upload build artifacts
+
+    - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: markgo-${{ matrix.target.suffix }}
-        path: build/markgo-${{ matrix.target.suffix }}
-        retention-days: 30
-
-  docker:
-    name: Build Docker Image
-    runs-on: ubuntu-latest
-    needs: [test, security]
-    if: github.event_name == 'push'
-    continue-on-error: true
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      
-    - name: Log in to Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=raw,value=latest,enable={{is_default_branch}}
-          
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: true
-        platforms: linux/amd64,linux/arm64
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        name: markgo-${{ matrix.target.goos }}-${{ matrix.target.goarch }}
+        path: markgo-*
+        retention-days: 7
 
   release:
-    name: Create Release
+    name: Release
     runs-on: ubuntu-latest
-    needs: [build, docker]
+    needs: build-artifacts
     if: startsWith(github.ref, 'refs/tags/v')
-    
     permissions:
       contents: write
-      
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        
-    - name: Download all artifacts
+
+    - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
         path: artifacts
-        
-    - name: Prepare release assets
+
+    - name: Prepare release
       run: |
         mkdir -p release
         find artifacts -name "markgo-*" -type f -exec cp {} release/ \;
-        ls -la release/
-        
-    - name: Generate changelog
-      id: changelog
-      run: |
-        if [ -f CHANGELOG.md ]; then
-          # Extract version-specific changelog
-          sed -n "/## \[${GITHUB_REF_NAME#v}\]/,/## \[/p" CHANGELOG.md | \
-            sed '$d' > release-notes.md
-        else
-          echo "Release ${{ github.ref_name }}" > release-notes.md
-          echo "" >> release-notes.md
-          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$(git describe --tags --abbrev=0 HEAD^)...${{ github.ref_name }}" >> release-notes.md
-        fi
-        
-    - name: Create GitHub Release
+
+    - name: Create release
       uses: softprops/action-gh-release@v1
       with:
-        body_path: release-notes.md
-        files: |
-          release/*
-        draft: false
-        prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+        files: release/*
         generate_release_notes: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  performance:
-    name: Performance Benchmarks
-    runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ env.GO_VERSION }}
-        
-    - name: Run performance benchmarks
-      run: |
-        go test -bench=. -benchmem -count=5 ./... | tee benchmark-results.txt
-        
-    - name: Store benchmark results
-      uses: benchmark-action/github-action-benchmark@v1
-      continue-on-error: true
-      with:
-        tool: 'go'
-        output-file-path: benchmark-results.txt
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        auto-push: true
-        alert-threshold: '150%'
-        comment-on-alert: true
-        fail-on-alert: false
-
-  docs:
-    name: Deploy Documentation
-    runs-on: ubuntu-latest
-    needs: [test, security]
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        
-    - name: Generate API documentation
-      run: |
-        # This would generate API docs if we had a docs generator
-        echo "API documentation would be generated here"
-        mkdir -p docs-output
-        cp *.md docs-output/
-        
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      if: github.ref == 'refs/heads/main'
-      continue-on-error: true
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs-output
-        user_name: 'github-actions[bot]'
-        user_email: 'github-actions[bot]@users.noreply.github.com'
