@@ -14,15 +14,13 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/vnykmshr/markgo/internal/constants"
 	"github.com/vnykmshr/markgo/internal/models"
 )
 
-// supportedMarkdownExtensions defines all supported Markdown file extensions
-var supportedMarkdownExtensions = []string{".md", ".markdown", ".mdown", ".mkd"}
-
 // isMarkdownFile checks if a file has a supported Markdown extension
 func isMarkdownFile(filename string) bool {
-	for _, ext := range supportedMarkdownExtensions {
+	for _, ext := range constants.SupportedMarkdownExtensions {
 		if strings.HasSuffix(filename, ext) {
 			return true
 		}
@@ -475,7 +473,7 @@ func (r *FileSystemRepository) findArticleFile(slug string) (*models.Article, st
 // resolveArticleFilePath finds the actual file path for an article with the given slug
 func (r *FileSystemRepository) resolveArticleFilePath(slug string) (string, error) {
 	// Try all supported Markdown extensions
-	for _, ext := range supportedMarkdownExtensions {
+	for _, ext := range constants.SupportedMarkdownExtensions {
 		path := filepath.Join(r.articlesPath, slug+ext)
 		if _, err := os.Stat(path); err == nil {
 			return path, nil
