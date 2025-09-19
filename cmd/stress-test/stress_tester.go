@@ -236,7 +236,6 @@ func (st *StressTester) processURL(ctx context.Context, task URLTask) {
 	// Process response body for link discovery
 	if st.config.FollowLinks && task.Depth < st.config.MaxDepth &&
 		strings.Contains(resp.Header.Get("Content-Type"), "text/html") {
-
 		body := make([]byte, 0, 64*1024) // Limit to 64KB for link extraction
 		buffer := make([]byte, 4096)
 		totalRead := 0

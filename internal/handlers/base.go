@@ -137,7 +137,7 @@ func (h *BaseHandler) handleError(c *gin.Context, err error, defaultMsg string) 
 	}
 
 	// For HTML responses, use the error handler middleware
-	_ = c.Error(apperrors.NewHTTPError(httpStatus, message, err)) // Ignore error: error handling is non-critical
+	_ = c.Error(apperrors.NewHTTPError(httpStatus, message, err)) // Ignore error: adding to gin context errors is non-critical
 	c.Abort()
 }
 

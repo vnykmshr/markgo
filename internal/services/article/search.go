@@ -210,7 +210,11 @@ func (s *TextSearchService) SearchByCategory(articles []*models.Article, categor
 }
 
 // SearchWithFilters performs search with additional filtering
-func (s *TextSearchService) SearchWithFilters(articles []*models.Article, query string, filters *SearchFilters) []*models.SearchResult {
+func (s *TextSearchService) SearchWithFilters(
+	articles []*models.Article,
+	query string,
+	filters *SearchFilters,
+) []*models.SearchResult {
 	// First, apply filters to narrow down articles
 	filtered := s.applyFilters(articles, filters)
 

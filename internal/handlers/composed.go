@@ -293,20 +293,22 @@ func (h *Handlers) PublishDraft(c *gin.Context) {
 		h.AdminHandler.logger.Error("Failed to publish draft", "slug", slug, "error", err)
 
 		// Provide different error codes based on error type
-		if strings.Contains(err.Error(), "not found") {
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "not found"):
 			c.JSON(404, gin.H{
 				"error":      "Draft not found",
 				"slug":       slug,
 				"suggestion": "Check that the draft exists and slug is correct"})
-		} else if strings.Contains(err.Error(), "not a draft") {
+		case strings.Contains(errMsg, "not a draft"):
 			c.JSON(400, gin.H{
 				"error": "Article is already published",
 				"slug":  slug})
-		} else {
+		default:
 			c.JSON(500, gin.H{
 				"error":   "Failed to publish draft",
 				"slug":    slug,
-				"details": err.Error()})
+				"details": errMsg})
 		}
 		return
 	}
@@ -340,20 +342,22 @@ func (h *Handlers) UnpublishArticle(c *gin.Context) {
 		h.AdminHandler.logger.Error("Failed to unpublish article", "slug", slug, "error", err)
 
 		// Provide different error codes based on error type
-		if strings.Contains(err.Error(), "not found") {
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "not found"):
 			c.JSON(404, gin.H{
 				"error":      "Article not found",
 				"slug":       slug,
 				"suggestion": "Check that the article exists and slug is correct"})
-		} else if strings.Contains(err.Error(), "already") {
+		case strings.Contains(errMsg, "already"):
 			c.JSON(400, gin.H{
 				"error": "Article is already a draft",
 				"slug":  slug})
-		} else {
+		default:
 			c.JSON(500, gin.H{
 				"error":   "Failed to unpublish article",
 				"slug":    slug,
-				"details": err.Error()})
+				"details": errMsg})
 		}
 		return
 	}

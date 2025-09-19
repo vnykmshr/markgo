@@ -331,7 +331,7 @@ func (r *FileSystemRepository) GetStats() *models.Stats {
 
 // parseArticleFile parses a markdown file into an Article model
 func (r *FileSystemRepository) parseArticleFile(filePath string) (*models.Article, error) {
-	content, err := os.ReadFile(filePath)
+	content, err := os.ReadFile(filePath) // #nosec G304 -- filePath is controlled, reading from article directory
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
 	}
@@ -486,7 +486,7 @@ func (r *FileSystemRepository) resolveArticleFilePath(slug string) (string, erro
 // updateArticleDraftStatus reads the file, updates the draft status in frontmatter, and returns new content
 func (r *FileSystemRepository) updateArticleDraftStatus(filePath string, isDraft bool) (string, error) {
 	// Read the current file content
-	content, err := os.ReadFile(filePath)
+	content, err := os.ReadFile(filePath) // #nosec G304 -- filePath is controlled, reading from article directory
 	if err != nil {
 		return "", fmt.Errorf("failed to read article file %s: %w", filePath, err)
 	}
@@ -525,7 +525,7 @@ func (r *FileSystemRepository) updateFrontmatterDraftStatus(content string, isDr
 // writeFileAtomically writes content to file using atomic operations with backup
 func (r *FileSystemRepository) writeFileAtomically(filePath, content string) error {
 	// Read original content for backup
-	originalContent, err := os.ReadFile(filePath)
+	originalContent, err := os.ReadFile(filePath) // #nosec G304 -- filePath is controlled, reading from article directory
 	if err != nil {
 		return fmt.Errorf("failed to read original file %s: %w", filePath, err)
 	}

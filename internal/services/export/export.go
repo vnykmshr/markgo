@@ -161,7 +161,7 @@ func (s *StaticExportService) copyFile(src, dst string) error {
 	return err
 }
 
-func (s *StaticExportService) generatePages(ctx context.Context) error {
+func (s *StaticExportService) generatePages(_ context.Context) error {
 	// Setup a test server to capture HTML responses
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -337,7 +337,7 @@ func (s *StaticExportService) setupRoutes(router *gin.Engine, h *handlers.Handle
 	router.GET("/sitemap.xml", h.Sitemap)
 }
 
-func (s *StaticExportService) generateFeeds(ctx context.Context) error {
+func (s *StaticExportService) generateFeeds(_ context.Context) error {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 

@@ -361,7 +361,7 @@ func (c *CacheCoordinator) cleanup() {
 }
 
 // Shutdown gracefully shuts down the cache coordinator
-func (c *CacheCoordinator) Shutdown(ctx context.Context) error {
+func (c *CacheCoordinator) Shutdown(_ context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

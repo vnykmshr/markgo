@@ -164,7 +164,6 @@ func (s *SearchService) GetSuggestions(articles []*models.Article, query string,
 }
 
 func (s *SearchService) calculateScore(article *models.Article, terms []string) (score float64, fields []string) {
-
 	title := strings.ToLower(article.Title)
 	content := strings.ToLower(article.Content)
 

@@ -163,7 +163,7 @@ func (ls *LoggingService) WithContext(keyvals ...interface{}) *slog.Logger {
 }
 
 // WithRequestContext creates a logger with request-specific context
-func (ls *LoggingService) WithRequestContext(ctx context.Context, entry *LogEntry) *slog.Logger {
+func (ls *LoggingService) WithRequestContext(_ context.Context, entry *LogEntry) *slog.Logger {
 	args := make([]interface{}, 0, 16)
 
 	if entry.RequestID != "" {

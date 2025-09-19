@@ -45,7 +45,7 @@ func NewEmailService(cfg *config.EmailConfig, logger *slog.Logger) *EmailService
 
 	// Initialize goflow scheduler for email cleanup tasks
 	goflowScheduler := scheduler.New()
-	_ = goflowScheduler.Start() // Continue even if scheduler fails to start
+	_ = goflowScheduler.Start() // Ignore error: email service should continue even if scheduler fails to start
 
 	es := &EmailService{
 		config:       *cfg,
@@ -173,7 +173,10 @@ func (e *EmailService) generateContactEmailBody(msg *models.ContactMessage) (str
         .label { font-weight: bold; color: #555; }
         .value { margin-top: 5px; padding: 10px; background: #f9f9f9; border-radius: 3px; }
         .message { white-space: pre-wrap; }
-        .footer { margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 5px; font-size: 12px; color: #666; }
+        .footer {
+            margin-top: 20px; padding: 15px; background: #f4f4f4;
+            border-radius: 5px; font-size: 12px; color: #666;
+        }
     </style>
 </head>
 <body>
@@ -389,13 +392,13 @@ func (e *EmailService) setupEmailCleanupTasks() {
 	}
 
 	// Email cleanup task
-	cleanupTask := workerpool.TaskFunc(func(ctx context.Context) error {
+	cleanupTask := workerpool.TaskFunc(func(_ context.Context) error {
 		e.performCleanup()
 		return nil
 	})
 
 	// Schedule cleanup every 10 minutes using cron format (6 fields: second, minute, hour, day, month, weekday)
-	_ = e.scheduler.ScheduleCron("email-cleanup", "0 */10 * * * *", cleanupTask) // Continue without scheduled cleanup if scheduling fails
+	_ = e.scheduler.ScheduleCron("email-cleanup", "0 */10 * * * *", cleanupTask) // Ignore error: email service should continue even if cleanup scheduling fails
 }
 
 // performCleanup removes old entries from the recent emails cache
