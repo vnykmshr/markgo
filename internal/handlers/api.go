@@ -58,7 +58,7 @@ func (h *APIHandler) Health(c *gin.Context) {
 		"status":      "healthy",
 		"timestamp":   time.Now().Unix(),
 		"uptime":      uptime.String(),
-		"version":     "1.0.0", // This could come from build info
+		"version":     "v1.4.0", // This could come from build info
 		"environment": h.config.Environment,
 		"services": map[string]any{
 			"articles": "healthy", // Could check article service health
