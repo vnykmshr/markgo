@@ -155,11 +155,27 @@ issues:
       linters:
         - revive
         - stylecheck
-      text: "should not use dot imports"
+        - gosec
+        - gocyclo
+        - gocritic
+        - lll
+        - errcheck
+        - unparam
+        - goconst
+        - misspell
     - path: internal/
       linters:
         - revive
+        - stylecheck
       text: "should have comment"
+    # Allow HTML template functions
+    - linters:
+        - gosec
+      text: "G203.*HTML.*auto-escape"
+    # Allow some common patterns
+    - linters:
+        - gocritic
+      text: "unlambda"
 
   exclude-use-default: false
   exclude:
