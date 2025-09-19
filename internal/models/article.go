@@ -1,7 +1,9 @@
+// Package models defines data structures and models for the MarkGo blog engine.
+// It includes articles, feeds, sitemap structures, and related types.
 package models
 
 import (
-	"crypto/md5"
+	"crypto/md5" // #nosec G501 - Safe: MD5 used for non-cryptographic cache invalidation
 	"sync"
 	"time"
 )
@@ -57,7 +59,7 @@ func (a *Article) GetProcessedContent() string {
 	}
 
 	// Generate content hash for cache invalidation
-	hash := md5.Sum([]byte(a.Content))
+	hash := md5.Sum([]byte(a.Content)) // #nosec G401 - Safe: MD5 used for non-cryptographic cache invalidation
 	if a.contentHash != hash && a.processor != nil {
 		processed, err := a.processor.ProcessMarkdown(a.Content)
 		if err == nil {
