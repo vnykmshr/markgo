@@ -29,7 +29,7 @@ type ObcacheAdapter struct {
 
 func (a *ObcacheAdapter) Clear() {
 	if a.cache != nil {
-		_ = a.cache.Clear()
+		_ = a.cache.Clear() // Ignore error: cache clear is non-critical
 	}
 }
 
@@ -42,13 +42,13 @@ func (a *ObcacheAdapter) Get(key string) (interface{}, bool) {
 
 func (a *ObcacheAdapter) Set(key string, value interface{}, ttl time.Duration) {
 	if a.cache != nil {
-		_ = a.cache.Set(key, value, ttl)
+		_ = a.cache.Set(key, value, ttl) // Ignore error: cache set is non-critical
 	}
 }
 
 func (a *ObcacheAdapter) Delete(key string) {
 	if a.cache != nil {
-		_ = a.cache.Delete(key)
+		_ = a.cache.Delete(key) // Ignore error: cache delete is non-critical
 	}
 }
 

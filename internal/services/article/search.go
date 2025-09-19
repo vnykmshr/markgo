@@ -255,7 +255,7 @@ func (s *TextSearchService) GetSuggestions(articles []*models.Article, query str
 		count int
 	}
 
-	var suggestionList []suggestionCount
+	suggestionList := make([]suggestionCount, 0, len(suggestions))
 	for term, count := range suggestions {
 		suggestionList = append(suggestionList, suggestionCount{term, count})
 	}
@@ -266,7 +266,7 @@ func (s *TextSearchService) GetSuggestions(articles []*models.Article, query str
 	})
 
 	// Extract terms and apply limit
-	var result []string
+	result := make([]string, 0, len(suggestionList))
 	for _, item := range suggestionList {
 		result = append(result, item.term)
 		if limit > 0 && len(result) >= limit {
@@ -379,7 +379,7 @@ func (s *TextSearchService) SearchWithIndex(index SearchIndex, query string, lim
 	}
 
 	// Convert to slice and sort
-	var results []*models.SearchResult
+	results := make([]*models.SearchResult, 0, len(articleScores))
 	for _, result := range articleScores {
 		results = append(results, result)
 	}
@@ -492,7 +492,7 @@ func (s *TextSearchService) calculateRelevanceScore(article *models.Article, sea
 }
 
 func (s *TextSearchService) applyFilters(articles []*models.Article, filters *SearchFilters) []*models.Article {
-	var filtered []*models.Article
+	filtered := make([]*models.Article, 0, len(articles))
 
 	for _, article := range articles {
 		if !s.matchesPublishedFilter(article, filters) {

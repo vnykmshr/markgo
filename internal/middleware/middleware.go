@@ -179,7 +179,7 @@ func SmartCacheHeaders() gin.HandlerFunc {
 }
 
 // RequestTracker adds request tracking
-func RequestTracker(logger *slog.Logger, environment string) gin.HandlerFunc {
+func RequestTracker(_ *slog.Logger, _ string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		requestID := generateRequestID()
 		c.Header("X-Request-ID", requestID)
@@ -227,21 +227,21 @@ func ErrorHandler(logger *slog.Logger) gin.HandlerFunc {
 }
 
 // RequestLoggingMiddleware provides enhanced request logging
-func RequestLoggingMiddleware(loggingService interface{}) gin.HandlerFunc {
+func RequestLoggingMiddleware(_ interface{}) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 	}
 }
 
 // SecurityLoggingMiddleware provides security event logging
-func SecurityLoggingMiddleware(loggingService interface{}) gin.HandlerFunc {
+func SecurityLoggingMiddleware(_ interface{}) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 	}
 }
 
 // PerformanceLoggingMiddleware provides detailed performance logging
-func PerformanceLoggingMiddleware(loggingService interface{}) gin.HandlerFunc {
+func PerformanceLoggingMiddleware(_ interface{}) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 	}

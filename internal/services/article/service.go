@@ -264,7 +264,7 @@ func (s *CompositeService) GetAllTags() []string {
 		}
 	}
 
-	var tags []string
+	tags := make([]string, 0, len(tagSet))
 	for tag := range tagSet {
 		tags = append(tags, tag)
 	}
@@ -283,7 +283,7 @@ func (s *CompositeService) GetAllCategories() []string {
 		}
 	}
 
-	var categories []string
+	categories := make([]string, 0, len(categorySet))
 	for category := range categorySet {
 		categories = append(categories, category)
 	}
@@ -302,7 +302,7 @@ func (s *CompositeService) GetTagCounts() []models.TagCount {
 		}
 	}
 
-	var result []models.TagCount
+	result := make([]models.TagCount, 0, len(tagCounts))
 	for tag, count := range tagCounts {
 		result = append(result, models.TagCount{
 			Tag:   tag,
@@ -324,7 +324,7 @@ func (s *CompositeService) GetCategoryCounts() []models.CategoryCount {
 		}
 	}
 
-	var result []models.CategoryCount
+	result := make([]models.CategoryCount, 0, len(categoryCounts))
 	for category, count := range categoryCounts {
 		result = append(result, models.CategoryCount{
 			Category: category,

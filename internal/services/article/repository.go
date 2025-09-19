@@ -297,7 +297,7 @@ func (r *FileSystemRepository) GetStats() *models.Stats {
 		tag   string
 		count int
 	}
-	var tagPairs []tagCountPair
+	tagPairs := make([]tagCountPair, 0, len(tagCount))
 	for tag, count := range tagCount {
 		tagPairs = append(tagPairs, tagCountPair{tag, count})
 	}
