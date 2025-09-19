@@ -1,0 +1,179 @@
+# MarkGo Engine - GolangCI-Lint Configuration
+# Production-grade static analysis for Go code
+
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: true
+  skip-dirs:
+    - vendor
+    - tmp
+    - todos
+  skip-files:
+    - ".*_test.go"
+  modules-download-mode: readonly
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+  uniq-by-line: true
+  sort-results: true
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - commentedOutCode
+      - whyNoLint
+
+  gocyclo:
+    min-complexity: 15
+
+  godot:
+    scope: declarations
+    exclude:
+      - "check interfaces"
+
+  gofmt:
+    simplify: true
+
+  goimports:
+    local-prefixes: github.com/vnykmshr/markgo
+
+  golint:
+    min-confidence: 0.8
+
+  gomodguard:
+    blocked:
+      modules:
+        - golang.org/x/exp:
+            recommendations:
+              - "use stable alternatives"
+
+  govet:
+    check-shadowing: true
+    settings:
+      printf:
+        funcs:
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
+
+  lll:
+    line-length: 120
+
+  maligned:
+    suggest-new: true
+
+  misspell:
+    locale: US
+
+  nakedret:
+    max-func-lines: 30
+
+  prealloc:
+    simple: true
+    range-loops: true
+    for-loops: false
+
+  unparam:
+    check-exported: false
+
+  unused:
+    check-exported: false
+
+  whitespace:
+    multi-if: false
+    multi-func: false
+
+linters:
+  disable-all: true
+  enable:
+    # Core linters
+    - errcheck      # Check for unchecked errors
+    - gosimple      # Suggest code simplifications
+    - govet         # Go vet tool
+    - ineffassign   # Detect ineffectual assignments
+    - staticcheck   # Static analysis checks
+    - typecheck     # Type checking
+    - unused        # Find unused variables/functions
+
+    # Style and formatting
+    - gofmt         # Format checker
+    - goimports     # Import grouping and formatting
+    - revive        # Replacement for golint
+    - stylecheck    # Style checks
+
+    # Performance
+    - prealloc      # Suggest slice preallocation
+    - bodyclose     # Check for unclosed HTTP response bodies
+
+    # Security
+    - gosec         # Security audit
+    - gas           # Security audit (alias for gosec)
+
+    # Code quality
+    - gocyclo       # Cyclomatic complexity
+    - goconst       # Find repeated strings that could be constants
+    - gocritic      # Comprehensive code analysis
+    - misspell      # Spell checking
+    - unparam       # Find unused function parameters
+    - nakedret      # Check for naked returns
+    - whitespace    # Whitespace issues
+    - lll           # Line length checker
+
+    # Potential bugs
+    - rowserrcheck  # Check for errors from Rows.Err
+    - sqlclosecheck # Check for SQL statement close calls
+    - nilerr        # Check for nil error returns
+
+issues:
+  exclude-rules:
+    # Exclude known false positives
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+    - path: cmd/
+      linters:
+        - revive
+        - stylecheck
+      text: "should not use dot imports"
+    - path: internal/
+      linters:
+        - revive
+      text: "should have comment"
+
+  exclude-use-default: false
+  exclude:
+    # Standard Go patterns that are acceptable
+    - "Error return value of .((os\\.)?std(out|err)\\..*|.*Close|.*Flush|os\\.Remove(All)?|.*printf?|os\\.(Un)?Setenv). is not checked"
+
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  new: false
+
+severity:
+  default-severity: error
+  rules:
+    - linters:
+        - revive
+        - stylecheck
+      severity: warning

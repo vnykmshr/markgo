@@ -1,0 +1,133 @@
+# MarkGo Engine - Pre-commit Configuration
+# Ensures code quality, security, and consistency across commits
+#
+# Installation:
+#   pip install pre-commit
+#   pre-commit install
+#
+# Manual run:
+#   pre-commit run --all-files
+
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.md$
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: ['--unsafe']
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # Go formatting and imports
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      - id: go-fmt
+      - id: go-imports
+      - id: go-mod-tidy
+      - id: go-vet-mod
+      - id: go-unit-tests-mod
+        args: [-timeout=60s, -race]
+      - id: go-build-mod
+      - id: go-cyclo
+        args: [-over=15]
+
+  # Security scanning
+  - repo: https://github.com/securecodewarrior/github-action-add-sarif
+    rev: v1
+    hooks:
+      - id: gosec
+        name: gosec (security audit)
+        entry: gosec
+        language: golang
+        pass_filenames: false
+        args: [-fmt=json, -out=gosec-report.json, -stdout, -verbose=text, ./...]
+
+  # Static analysis
+  - repo: local
+    hooks:
+      - id: golangci-lint
+        name: golangci-lint
+        entry: golangci-lint
+        language: golang
+        types: [go]
+        require_serial: true
+        args: [run, --fix]
+        pass_filenames: false
+
+      # Ensure no debug prints
+      - id: no-go-debugging
+        name: Check for debugging statements
+        entry: sh -c 'if grep -r "fmt\.Print\|log\.Print\|println" --include="*.go" --exclude-dir=cmd .; then echo "Found debugging statements in non-CLI code"; exit 1; fi'
+        language: system
+        files: \.go$
+
+      # Check for TODO/FIXME in production
+      - id: no-todos-in-prod
+        name: Check for TODOs/FIXMEs
+        entry: sh -c 'if grep -r "TODO\|FIXME\|XXX\|HACK" --include="*.go" .; then echo "Found TODO/FIXME comments - resolve before commit"; exit 1; fi'
+        language: system
+        files: \.go$
+
+      # Version consistency check
+      - id: version-consistency
+        name: Check version consistency
+        entry: scripts/check-version-consistency.sh
+        language: script
+        files: (constants\.go|main\.go)$
+
+      # Build verification
+      - id: build-all
+        name: Build all binaries
+        entry: make
+        args: [build-all]
+        language: system
+        pass_filenames: false
+        files: \.go$
+
+      # Test coverage check
+      - id: test-coverage
+        name: Test coverage check
+        entry: sh -c 'make coverage && if [ -f coverage.out ]; then COVERAGE=$(go tool cover -func=coverage.out | grep total | grep -o "[0-9.]*%"); echo "Coverage: $COVERAGE"; if [ ${COVERAGE%.*} -lt 80 ]; then echo "Coverage below 80%: $COVERAGE"; exit 1; fi; fi'
+        language: system
+        pass_filenames: false
+        files: \.go$
+
+  # Commit message validation
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.2.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [optional-scope]
+
+  # Documentation checks
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.41.0
+    hooks:
+      - id: markdownlint
+        args: [--config=.markdownlint.yaml, --fix]
+
+# Configuration
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit.com hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: [golangci-lint, build-all, test-coverage]
+  submodules: false

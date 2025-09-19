@@ -602,5 +602,65 @@ full-test: ## Run comprehensive test suite
 	@$(MAKE) security-scan
 	@echo "Full test suite completed"
 
+# ============================================================================
+# Pre-commit Hooks
+# ============================================================================
+
+pre-commit-install: ## Install pre-commit hooks
+	@echo "Installing pre-commit hooks..."
+	@if ! command -v pre-commit >/dev/null 2>&1; then \
+		echo "❌ pre-commit not found. Install with: pip install pre-commit"; \
+		exit 1; \
+	fi
+	@pre-commit install
+	@pre-commit install --hook-type commit-msg
+	@echo "✅ Pre-commit hooks installed"
+
+pre-commit-update: ## Update pre-commit hooks to latest versions
+	@echo "Updating pre-commit hooks..."
+	@pre-commit autoupdate
+	@echo "✅ Pre-commit hooks updated"
+
+pre-commit-run: ## Run pre-commit hooks on all files
+	@echo "Running pre-commit hooks on all files..."
+	@pre-commit run --all-files
+
+pre-commit-clean: ## Clean and reinstall pre-commit hooks
+	@echo "Cleaning pre-commit hooks..."
+	@pre-commit clean
+	@pre-commit install --install-hooks
+	@echo "✅ Pre-commit hooks cleaned and reinstalled"
+
+check-version-consistency: ## Check version consistency across codebase
+	@echo "Checking version consistency..."
+	@./scripts/check-version-consistency.sh
+
+install-dev-tools-extended: ## Install extended development tools including pre-commit
+	@echo "Installing extended development tools..."
+	@$(MAKE) install-dev-tools
+	@echo "Installing pre-commit framework..."
+	@if ! command -v pip >/dev/null 2>&1; then \
+		echo "❌ pip not found. Please install Python and pip"; \
+		exit 1; \
+	fi
+	@pip install pre-commit
+	@if ! command -v npm >/dev/null 2>&1; then \
+		echo "⚠️  npm not found. Markdown linting will be limited"; \
+	else \
+		npm install -g markdownlint-cli; \
+	fi
+	@echo "Installing Go security tools..."
+	@go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+	@$(MAKE) pre-commit-install
+	@echo "✅ Extended development tools installed"
+
+dev-setup-complete: ## Complete development environment setup with pre-commit
+	@echo "Setting up complete development environment..."
+	@$(MAKE) setup
+	@$(MAKE) deps
+	@$(MAKE) install-dev-tools-extended
+	@$(MAKE) pre-commit-run
+	@echo "🎉 Complete development environment ready!"
+
 # Help is default
 .DEFAULT_GOAL := help
