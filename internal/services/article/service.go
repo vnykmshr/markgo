@@ -1,3 +1,5 @@
+// Package article provides article management services for the MarkGo blog engine.
+// It handles reading, parsing, and managing markdown articles and metadata.
 package article
 
 import (

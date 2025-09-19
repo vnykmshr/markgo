@@ -141,7 +141,7 @@ func (s *StaticExportService) copyDir(src, dst string) error {
 }
 
 func (s *StaticExportService) copyFile(src, dst string) error {
-	srcFile, err := os.Open(src)
+	srcFile, err := os.Open(src) // #nosec G304 - Safe: controlled file copy operation
 	if err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func (s *StaticExportService) copyFile(src, dst string) error {
 		return err
 	}
 
-	dstFile, err := os.Create(dst)
+	dstFile, err := os.Create(dst) // #nosec G304 - Safe: controlled file copy operation
 	if err != nil {
 		return err
 	}

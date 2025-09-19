@@ -203,12 +203,14 @@ func (h *ArticleHandler) Search(c *gin.Context) {
 
 // Helper methods
 
+const recentArticlesLimit = 5
+
 // getRecentArticles returns the most recent published articles for footer display
-func (h *ArticleHandler) getRecentArticles(limit int) []*models.Article {
+func (h *ArticleHandler) getRecentArticles() []*models.Article {
 	allArticles := h.articleService.GetAllArticles()
 	var recent []*models.Article
 	for _, article := range allArticles {
-		if !article.Draft && len(recent) < limit {
+		if !article.Draft && len(recent) < recentArticlesLimit {
 			recent = append(recent, article)
 		}
 	}
@@ -338,7 +340,7 @@ func (h *ArticleHandler) getArticlesPageUncached(page int) (map[string]any, erro
 	data["description"] = "Articles from " + h.config.Blog.Title
 	data["articles"] = articles
 	data["pagination"] = pagination
-	data["recent"] = h.getRecentArticles(5)
+	data["recent"] = h.getRecentArticles()
 	data["template"] = "articles"
 
 	return data, nil
@@ -360,7 +362,7 @@ func (h *ArticleHandler) getTagArticlesUncached(tag string) (map[string]any, err
 	data["articles"] = published
 	data["tag"] = tag
 	data["totalCount"] = len(published)
-	data["recent"] = h.getRecentArticles(5)
+	data["recent"] = h.getRecentArticles()
 	data["template"] = "tag"
 
 	return data, nil
@@ -382,7 +384,7 @@ func (h *ArticleHandler) getCategoryArticlesUncached(category string) (map[strin
 	data["articles"] = published
 	data["category"] = category
 	data["totalCount"] = len(published)
-	data["recent"] = h.getRecentArticles(5)
+	data["recent"] = h.getRecentArticles()
 	data["template"] = "category"
 
 	return data, nil
@@ -395,7 +397,7 @@ func (h *ArticleHandler) getTagsPageUncached() (map[string]any, error) {
 	data["description"] = "All tags from " + h.config.Blog.Title
 	data["tags"] = tagCounts
 	data["count"] = len(tagCounts)
-	data["recent"] = h.getRecentArticles(5)
+	data["recent"] = h.getRecentArticles()
 	data["template"] = "tags"
 
 	return data, nil
@@ -408,7 +410,7 @@ func (h *ArticleHandler) getCategoriesPageUncached() (map[string]any, error) {
 	data["description"] = "All categories from " + h.config.Blog.Title
 	data["categories"] = categoryCounts
 	data["count"] = len(categoryCounts)
-	data["recent"] = h.getRecentArticles(5)
+	data["recent"] = h.getRecentArticles()
 	data["template"] = "categories"
 
 	return data, nil
@@ -446,7 +448,7 @@ func (h *ArticleHandler) getSearchResultsUncached(query string) (map[string]any,
 	data["query"] = query
 	data["count"] = len(results)
 	data["totalCount"] = len(published)
-	data["recent"] = h.getRecentArticles(5)
+	data["recent"] = h.getRecentArticles()
 	data["template"] = "search"
 
 	return data, nil

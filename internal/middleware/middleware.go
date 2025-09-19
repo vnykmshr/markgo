@@ -1,3 +1,5 @@
+// Package middleware provides HTTP middleware for the MarkGo blog engine.
+// It includes security, logging, CORS, rate limiting, and request tracking middleware.
 package middleware
 
 import (

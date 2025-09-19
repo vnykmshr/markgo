@@ -1165,18 +1165,18 @@ func TestValidatePath(t *testing.T) {
 	require.NoError(t, os.MkdirAll(validPath, 0o750))
 
 	t.Run("valid existing path", func(t *testing.T) {
-		err := validatePath(validPath, "test_field", true, false)
+		err := validatePath(validPath, "test_field")
 		assert.NoError(t, err)
 	})
 
 	t.Run("non-existent path", func(t *testing.T) {
-		err := validatePath("/nonexistent/path", "test_field", true, false)
+		err := validatePath("/nonexistent/path", "test_field")
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "test_field directory does not exist")
 	})
 
 	t.Run("empty path", func(t *testing.T) {
-		err := validatePath("", "test_field", true, false)
+		err := validatePath("", "test_field")
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "test_field cannot be empty")
 	})
@@ -1186,7 +1186,7 @@ func TestValidatePath(t *testing.T) {
 		filePath := tmpDir + "/file.txt"
 		require.NoError(t, os.WriteFile(filePath, []byte("test"), 0o600))
 
-		err := validatePath(filePath, "test_field", true, false)
+		err := validatePath(filePath, "test_field")
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "test_field must be a directory")
 	})

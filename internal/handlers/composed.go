@@ -144,7 +144,7 @@ func New(cfg *Config) *Handlers {
 	}
 }
 
-// Article route methods
+// Home handles the home page route
 func (h *Handlers) Home(c *gin.Context) {
 	h.ArticleHandler.Home(c)
 }
@@ -186,7 +186,7 @@ func (h *Handlers) AboutArticle(c *gin.Context) {
 func (h *Handlers) ContactForm(c *gin.Context) {
 	// Render contact form template
 	data := h.ArticleHandler.buildBaseTemplateData("Contact")
-	data["recent"] = h.ArticleHandler.getRecentArticles(5)
+	data["recent"] = h.ArticleHandler.getRecentArticles()
 	data["template"] = "contact"
 	h.ArticleHandler.renderHTML(c, 200, "base.html", data)
 }
@@ -195,7 +195,7 @@ func (h *Handlers) ContactSubmit(c *gin.Context) {
 	h.APIHandler.Contact(c)
 }
 
-// API route methods
+// RSSFeed handles RSS feed generation
 func (h *Handlers) RSSFeed(c *gin.Context) {
 	h.APIHandler.RSS(c)
 }
@@ -216,7 +216,7 @@ func (h *Handlers) Metrics(c *gin.Context) {
 	h.AdminHandler.Metrics(c)
 }
 
-// Admin route methods
+// AdminHome handles the admin dashboard route
 func (h *Handlers) AdminHome(c *gin.Context) {
 	h.AdminHandler.AdminHome(c)
 }
@@ -229,7 +229,7 @@ func (h *Handlers) ReloadArticles(c *gin.Context) {
 	h.AdminHandler.ReloadArticles(c)
 }
 
-// Draft management
+// GetDrafts handles retrieving draft articles
 func (h *Handlers) GetDrafts(c *gin.Context) {
 	drafts := h.AdminHandler.articleService.GetDraftArticles()
 	c.JSON(200, gin.H{
@@ -371,7 +371,7 @@ func (h *Handlers) ClearCache(c *gin.Context) {
 	c.JSON(200, gin.H{"message": "Cache cleared"})
 }
 
-// Debug route methods
+// DebugMemory handles memory debug requests
 func (h *Handlers) DebugMemory(c *gin.Context) {
 	h.AdminHandler.Debug(c)
 }

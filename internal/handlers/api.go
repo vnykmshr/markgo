@@ -204,7 +204,8 @@ func (h *APIHandler) getRSSFeedUncached() (string, error) {
 <description>` + feed.Description + `</description>
 <language>` + h.config.Blog.Language + `</language>
 `
-	for _, item := range feed.Items {
+	for i := range feed.Items {
+		item := &feed.Items[i]
 		rssXML += `<item>
 <title>` + item.Title + `</title>
 <link>` + item.URL + `</link>

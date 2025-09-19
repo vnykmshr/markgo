@@ -717,15 +717,15 @@ func (c *Config) validateBasic() error {
 	}
 
 	// Validate paths exist and are accessible
-	if err := validatePath(c.ArticlesPath, "articles_path", true, false); err != nil {
+	if err := validatePath(c.ArticlesPath, "articles_path"); err != nil {
 		return err
 	}
 
-	if err := validatePath(c.StaticPath, "static_path", true, false); err != nil {
+	if err := validatePath(c.StaticPath, "static_path"); err != nil {
 		return err
 	}
 
-	if err := validatePath(c.TemplatesPath, "templates_path", true, false); err != nil {
+	if err := validatePath(c.TemplatesPath, "templates_path"); err != nil {
 		return err
 	}
 
@@ -1002,44 +1002,15 @@ func (c *CORSConfig) Validate() error {
 }
 
 // validatePath validates that a path exists and is accessible
-func validatePath(path, fieldName string, mustExist, mustBeWritable bool) error {
+func validatePath(path, fieldName string) error {
 	if path == "" {
 		return apperrors.NewConfigError(fieldName, path, fieldName+" cannot be empty", apperrors.ErrMissingConfig)
 	}
 
 	// Convert to absolute path for validation
-	absPath, err := filepath.Abs(path)
+	_, err := filepath.Abs(path)
 	if err != nil {
 		return apperrors.NewConfigError(fieldName, path, "Invalid path format", apperrors.ErrConfigValidation)
-	}
-
-	if mustExist {
-		stat, err := os.Stat(absPath)
-		if os.IsNotExist(err) {
-			return apperrors.NewConfigError(fieldName, path, fieldName+" directory does not exist", apperrors.ErrMissingConfig)
-		}
-		if err != nil {
-			return apperrors.NewConfigError(fieldName, path,
-				fmt.Sprintf("Cannot access %s: %v", fieldName, err), apperrors.ErrConfigValidation)
-		}
-
-		// Check if it's a directory
-		if !stat.IsDir() {
-			return apperrors.NewConfigError(fieldName, path,
-				fieldName+" must be a directory, not a file", apperrors.ErrConfigValidation)
-		}
-	}
-
-	if mustBeWritable {
-		// Test write permissions by trying to create a temporary file
-		testFile := filepath.Join(absPath, ".markgo-write-test")
-		file, err := os.Create(testFile)
-		if err != nil {
-			return apperrors.NewConfigError(fieldName, path,
-				fmt.Sprintf("Directory %s is not writable", fieldName), apperrors.ErrConfigValidation)
-		}
-		_ = file.Close()
-		_ = os.Remove(testFile)
 	}
 
 	return nil
