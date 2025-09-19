@@ -331,7 +331,7 @@ func (c *CacheCoordinator) GetCacheStats() map[string]interface{} {
 	}
 }
 
-// Health check method
+// IsHealthy checks if the cache coordinator is in a healthy state
 func (c *CacheCoordinator) IsHealthy() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()

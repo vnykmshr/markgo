@@ -422,11 +422,9 @@ func (s *TextSearchService) extractWords(text string) []string {
 	for _, r := range text {
 		if unicode.IsLetter(r) || unicode.IsNumber(r) {
 			current.WriteRune(r)
-		} else {
-			if current.Len() > 0 {
-				words = append(words, current.String())
-				current.Reset()
-			}
+		} else if current.Len() > 0 {
+			words = append(words, current.String())
+			current.Reset()
 		}
 	}
 
@@ -437,9 +435,7 @@ func (s *TextSearchService) extractWords(text string) []string {
 	return words
 }
 
-func (s *TextSearchService) calculateRelevanceScore(article *models.Article, searchTerms []string) (float64, []string) {
-	var score float64
-	var matchedFields []string
+func (s *TextSearchService) calculateRelevanceScore(article *models.Article, searchTerms []string) (score float64, matchedFields []string) {
 
 	titleLower := strings.ToLower(article.Title)
 	contentLower := strings.ToLower(article.Content)

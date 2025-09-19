@@ -255,7 +255,7 @@ func (s *StaticExportService) getPagesToGenerate() []Page {
 
 func (s *StaticExportService) generatePage(router *gin.Engine, page Page) error {
 	// Create HTTP request
-	req := httptest.NewRequest("GET", page.Path, nil)
+	req := httptest.NewRequest("GET", page.Path, http.NoBody)
 	req.Host = s.getHostFromBaseURL()
 
 	// Create response recorder
@@ -366,7 +366,7 @@ func (s *StaticExportService) generateFeeds(_ context.Context) error {
 	}
 
 	for _, feed := range feeds {
-		req := httptest.NewRequest("GET", feed.path, nil)
+		req := httptest.NewRequest("GET", feed.path, http.NoBody)
 		req.Host = s.getHostFromBaseURL()
 		w := httptest.NewRecorder()
 

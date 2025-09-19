@@ -345,6 +345,7 @@ func (ls *LoggingService) LogSlowOperation(
 func (ls *LoggingService) GetMemoryStats() (alloc, sys int64, mallocs uint64) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
+	// #nosec G115 -- Memory stats are system values, conversion is safe within practical limits
 	return int64(m.Alloc), int64(m.Sys), m.Mallocs
 }
 

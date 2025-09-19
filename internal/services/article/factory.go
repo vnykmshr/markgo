@@ -94,7 +94,7 @@ type ServiceAdapter struct {
 // Ensure ServiceAdapter implements ArticleServiceInterface
 var _ ArticleServiceInterface = (*ServiceAdapter)(nil)
 
-// Implement all methods from services.ArticleServiceInterface
+// GetAllArticles returns all articles from the underlying service
 func (a *ServiceAdapter) GetAllArticles() []*models.Article {
 	return a.service.GetAllArticles()
 }
@@ -180,7 +180,7 @@ func (a *ServiceAdapter) GetContainer() *ServiceContainer {
 	return a.container
 }
 
-// Health check methods
+// IsHealthy returns the health status of the service adapter
 func (a *ServiceAdapter) IsHealthy() bool {
 	return a.container.IsHealthy()
 }
@@ -189,7 +189,7 @@ func (a *ServiceAdapter) GetHealthStatus() map[string]interface{} {
 	return a.container.GetHealthStatus()
 }
 
-// Search functionality (these might be accessed through other interfaces)
+// SearchArticles performs article search using the underlying service
 func (a *ServiceAdapter) SearchArticles(query string, limit int) []*models.SearchResult {
 	return a.service.SearchArticles(query, limit)
 }

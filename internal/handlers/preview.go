@@ -51,15 +51,17 @@ func (h *PreviewHandler) CreatePreviewSession(c *gin.Context) {
 			"article_slug", req.ArticleSlug,
 			"error", err)
 
-		if strings.Contains(err.Error(), "not found") {
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "not found"):
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": "Article not found",
 			})
-		} else if strings.Contains(err.Error(), "maximum") {
+		case strings.Contains(errMsg, "maximum"):
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"error": "Maximum preview sessions exceeded",
 			})
-		} else {
+		default:
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to create preview session",
 			})
