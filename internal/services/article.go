@@ -1,3 +1,6 @@
+// Package services provides business logic layer for MarkGo blog engine.
+// It includes article management, email handling, search functionality, template rendering,
+// and preview services for the blog application.
 package services
 
 import (

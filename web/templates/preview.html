@@ -1,0 +1,336 @@
+{{ define "preview-content" }}
+<div class="preview-page">
+    <!-- Preview Banner -->
+    <div class="preview-banner">
+        <div class="container">
+            <div class="preview-info">
+                <span class="preview-label">PREVIEW MODE</span>
+                <span class="preview-session">Session: {{ .session.ID }}</span>
+                <span class="preview-time">Created: {{ .session.CreatedAt.Format "15:04:05" }}</span>
+                <div class="preview-status">
+                    <span class="status-indicator" id="connectionStatus">●</span>
+                    <span id="connectionText">Connecting...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <article class="article-detail preview-article">
+        <div class="container">
+            <!-- Article Header -->
+            <header class="article-header">
+                <div class="article-meta">
+                    <time class="article-date" datetime="{{ .article.Date.Format "2006-01-02T15:04:05Z07:00" }}">
+                        {{ .article.Date.Format "January 2, 2006" }}
+                    </time>
+                    <span class="article-reading-time">{{ .article.ReadingTime }} min read</span>
+                    {{ if .article.WordCount }}
+                    <span class="article-word-count">{{ .article.WordCount }} words</span>
+                    {{ end }}
+                    <span class="draft-badge">DRAFT</span>
+                </div>
+
+                <h1 class="article-title">{{ .article.Title }}</h1>
+
+                {{ if .article.Description }}
+                <p class="article-description">{{ .article.Description }}</p>
+                {{ end }}
+
+                <div class="article-tags-categories">
+                    {{ if .article.Tags }}
+                    <div class="article-tags">
+                        <span class="tags-label">Tags:</span>
+                        {{ range .article.Tags }}
+                        <span class="tag">{{ . }}</span>
+                        {{ end }}
+                    </div>
+                    {{ end }}
+
+                    {{ if .article.Categories }}
+                    <div class="article-categories">
+                        <span class="categories-label">Categories:</span>
+                        {{ range .article.Categories }}
+                        <span class="category">{{ . }}</span>
+                        {{ end }}
+                    </div>
+                    {{ end }}
+                </div>
+
+                {{ if .article.Author }}
+                <div class="article-author">
+                    <span class="author-label">By</span>
+                    <span class="author-name">{{ .article.Author }}</span>
+                </div>
+                {{ end }}
+            </header>
+
+            <!-- Article Content -->
+            <div class="article-content" id="articleContent">
+                {{ if .article.ProcessedContent }}
+                    {{ .article.ProcessedContent | safeHTML }}
+                {{ else }}
+                    {{ .article.Content | safeHTML }}
+                {{ end }}
+            </div>
+
+            <!-- Article Footer -->
+            <footer class="article-footer">
+                <div class="article-meta-footer">
+                    {{ if .article.LastModified }}
+                    <p class="last-modified">
+                        Last updated: <time datetime="{{ .article.LastModified.Format "2006-01-02T15:04:05Z07:00" }}">
+                            {{ .article.LastModified.Format "January 2, 2006" }}
+                        </time>
+                    </p>
+                    {{ end }}
+                </div>
+
+                <!-- Preview Navigation -->
+                <nav class="preview-navigation">
+                    <div class="preview-actions">
+                        <button class="btn btn-primary" onclick="refreshPreview()">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                            </svg>
+                            Refresh
+                        </button>
+                        <button class="btn btn-secondary" onclick="window.close()">
+                            Close Preview
+                        </button>
+                    </div>
+                </nav>
+            </footer>
+        </div>
+    </article>
+</div>
+
+<style>
+.preview-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.preview-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 14px;
+}
+
+.preview-label {
+    font-weight: bold;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.preview-session {
+    font-family: monospace;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.preview-time {
+    opacity: 0.8;
+}
+
+.preview-status {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+}
+
+.status-indicator {
+    font-size: 12px;
+    transition: color 0.3s ease;
+}
+
+.status-indicator.connected {
+    color: #4ade80;
+}
+
+.status-indicator.disconnected {
+    color: #f87171;
+}
+
+.status-indicator.connecting {
+    color: #fbbf24;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.draft-badge {
+    background: #f59e0b;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.preview-article {
+    margin-top: 20px;
+}
+
+.preview-navigation {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 20px;
+    margin-top: 20px;
+}
+
+.preview-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+}
+
+.article-tags .tag,
+.article-categories .category {
+    background: #f3f4f6;
+    color: #374151;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-right: 8px;
+    display: inline-block;
+}
+</style>
+
+<script>
+let ws = null;
+let reconnectAttempts = 0;
+const maxReconnectAttempts = 5;
+
+function initWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}{{ .wsURL }}`;
+
+    updateConnectionStatus('connecting', 'Connecting...');
+
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = function() {
+        console.log('WebSocket connected');
+        reconnectAttempts = 0;
+        updateConnectionStatus('connected', 'Connected');
+    };
+
+    ws.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            handleWebSocketMessage(data);
+        } catch (e) {
+            console.error('Error parsing WebSocket message:', e);
+        }
+    };
+
+    ws.onclose = function() {
+        console.log('WebSocket disconnected');
+        updateConnectionStatus('disconnected', 'Disconnected');
+
+        // Attempt reconnection
+        if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            setTimeout(initWebSocket, 2000 * reconnectAttempts);
+        }
+    };
+
+    ws.onerror = function(error) {
+        console.error('WebSocket error:', error);
+        updateConnectionStatus('disconnected', 'Connection Error');
+    };
+}
+
+function handleWebSocketMessage(data) {
+    switch (data.type) {
+        case 'reload':
+            console.log('Received reload signal');
+            window.location.reload();
+            break;
+        case 'connected':
+            console.log('Connection confirmed');
+            break;
+        case 'echo':
+            console.log('Echo received:', data.message);
+            break;
+        default:
+            console.log('Unknown message type:', data.type);
+    }
+}
+
+function updateConnectionStatus(status, text) {
+    const indicator = document.getElementById('connectionStatus');
+    const statusText = document.getElementById('connectionText');
+
+    indicator.className = `status-indicator ${status}`;
+    statusText.textContent = text;
+}
+
+function refreshPreview() {
+    window.location.reload();
+}
+
+// Initialize WebSocket connection when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initWebSocket();
+});
+
+// Send ping every 30 seconds to keep connection alive
+setInterval(function() {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'ping' }));
+    }
+}, 30000);
+</script>
+{{ end }}
+
+{{ define "preview-head" }}
+<meta name="description" content="{{ if .article.Description }}{{ .article.Description }}{{ else }}Preview of {{ .article.Title }}{{ end }}">
+<meta name="robots" content="noindex, nofollow">
+<title>Preview: {{ .article.Title }}</title>
+{{ end }}
+
+{{ define "body-class" }}preview-page{{ end }}

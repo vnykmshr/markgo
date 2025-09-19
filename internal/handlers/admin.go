@@ -128,6 +128,13 @@ func (h *AdminHandler) AdminHome(c *gin.Context) {
 			"icon":        "📝",
 		},
 		{
+			"name":        "Preview Sessions",
+			"url":         "/api/preview/sessions",
+			"method":      "GET",
+			"description": "View active preview sessions and statistics",
+			"icon":        "👁️",
+		},
+		{
 			"name":        "System Metrics",
 			"url":         "/metrics",
 			"method":      "GET",

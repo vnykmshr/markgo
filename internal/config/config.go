@@ -1,3 +1,6 @@
+// Package config provides configuration management for MarkGo blog engine.
+// It handles environment variable parsing, validation, and structured configuration
+// for all application components including server, cache, email, and preview services.
 package config
 
 import (
@@ -32,6 +35,7 @@ type Config struct {
 	Comments      CommentsConfig  `json:"comments"`
 	Logging       LoggingConfig   `json:"logging"`
 	Analytics     AnalyticsConfig `json:"analytics"`
+	Preview       PreviewConfig   `json:"preview"`
 }
 
 type ServerConfig struct {
@@ -91,9 +95,9 @@ type CommentsConfig struct {
 	Enabled          bool   `json:"enabled"`
 	Provider         string `json:"provider"`
 	GiscusRepo       string `json:"giscus_repo"`
-	GiscusRepoId     string `json:"giscus_repo_id"`
+	GiscusRepoID     string `json:"giscus_repo_id"`
 	GiscusCategory   string `json:"giscus_category"`
-	GiscusCategoryId string `json:"giscus_category_id"`
+	GiscusCategoryID string `json:"giscus_category_id"`
 	Theme            string `json:"theme"`
 	Language         string `json:"language"`
 	ReactionsEnabled bool   `json:"reactions_enabled"`
@@ -121,6 +125,15 @@ type AnalyticsConfig struct {
 	CustomCode string `json:"custom_code,omitempty"` // custom analytics code
 }
 
+type PreviewConfig struct {
+	Enabled        bool          `json:"enabled"`
+	Port           int           `json:"port"`
+	BaseURL        string        `json:"base_url"`
+	AuthToken      string        `json:"auth_token"`
+	SessionTimeout time.Duration `json:"session_timeout"`
+	MaxSessions    int           `json:"max_sessions"`
+}
+
 // ValidationWarning represents a configuration warning that doesn't prevent startup
 type ValidationWarning struct {
 	Field   string `json:"field"`
@@ -136,8 +149,10 @@ type ValidationResult struct {
 }
 
 func Load() (*Config, error) {
-	// Load .env file if it exists
-	_ = godotenv.Load()
+	// Load .env file if it exists (ignore errors as it's optional)
+	if err := godotenv.Load(); err != nil {
+		// Silently ignore .env file loading errors as it's optional
+	}
 
 	// Get environment first to determine appropriate defaults
 	environment := getEnv("ENVIRONMENT", "development")
@@ -227,9 +242,9 @@ func Load() (*Config, error) {
 			Enabled:          getEnvBool("COMMENTS_ENABLED", true),
 			Provider:         getEnv("COMMENTS_PROVIDER", "giscus"),
 			GiscusRepo:       getEnv("GISCUS_REPO", "yourusername/blog-comments"),
-			GiscusRepoId:     getEnv("GISCUS_REPO_ID", ""),
+			GiscusRepoID:     getEnv("GISCUS_REPO_ID", ""),
 			GiscusCategory:   getEnv("GISCUS_CATEGORY", "General"),
-			GiscusCategoryId: getEnv("GISCUS_CATEGORY_ID", ""),
+			GiscusCategoryID: getEnv("GISCUS_CATEGORY_ID", ""),
 			Theme:            getEnv("GISCUS_THEME", "preferred_color_scheme"),
 			Language:         getEnv("GISCUS_LANGUAGE", "en"),
 			ReactionsEnabled: getEnvBool("GISCUS_REACTIONS_ENABLED", true),
@@ -255,6 +270,15 @@ func Load() (*Config, error) {
 			Domain:     getEnv("ANALYTICS_DOMAIN", ""),
 			DataAPI:    getEnv("ANALYTICS_DATA_API", ""),
 			CustomCode: getEnv("ANALYTICS_CUSTOM_CODE", ""),
+		},
+
+		Preview: PreviewConfig{
+			Enabled:        getEnvBool("PREVIEW_ENABLED", false),
+			Port:           getEnvInt("PREVIEW_PORT", 3001),
+			BaseURL:        getEnv("PREVIEW_BASE_URL", ""),
+			AuthToken:      getEnv("PREVIEW_AUTH_TOKEN", ""),
+			SessionTimeout: getEnvDuration("PREVIEW_SESSION_TIMEOUT", 2*time.Hour),
+			MaxSessions:    getEnvInt("PREVIEW_MAX_SESSIONS", 50),
 		},
 	}
 
@@ -650,6 +674,11 @@ func (c *Config) Validate() error {
 		return apperrors.NewConfigError("analytics", c.Analytics, "Invalid analytics configuration", err)
 	}
 
+	// Validate preview configuration
+	if err := c.Preview.Validate(); err != nil {
+		return apperrors.NewConfigError("preview", c.Preview, "Invalid preview configuration", err)
+	}
+
 	return nil
 }
 
@@ -684,7 +713,8 @@ func (c *Config) validateBasic() error {
 	// Validate environment
 	validEnvs := []string{"development", "production", "test"}
 	if !contains(validEnvs, c.Environment) {
-		return apperrors.NewConfigError("environment", c.Environment, "Environment must be one of: development, production, test", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("environment", c.Environment,
+			"Environment must be one of: development, production, test", apperrors.ErrConfigValidation)
 	}
 
 	return nil
@@ -693,7 +723,8 @@ func (c *Config) validateBasic() error {
 // Validate server configuration
 func (s *ServerConfig) Validate() error {
 	if s.ReadTimeout <= 0 {
-		return apperrors.NewConfigError("read_timeout", s.ReadTimeout, "Read timeout must be positive", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("read_timeout", s.ReadTimeout,
+			"Read timeout must be positive", apperrors.ErrConfigValidation)
 	}
 	if s.WriteTimeout <= 0 {
 		return apperrors.NewConfigError("write_timeout", s.WriteTimeout, "Write timeout must be positive", apperrors.ErrConfigValidation)
@@ -981,6 +1012,30 @@ func (a *AnalyticsConfig) Validate() error {
 	default:
 		// Allow other providers without strict validation
 		// This allows for future extensibility
+	}
+
+	return nil
+}
+
+func (p *PreviewConfig) Validate() error {
+	// If preview is disabled, no validation needed
+	if !p.Enabled {
+		return nil
+	}
+
+	// Validate port range
+	if p.Port < 1 || p.Port > 65535 {
+		return apperrors.NewConfigError("port", p.Port, "Preview port must be between 1 and 65535", apperrors.ErrConfigValidation)
+	}
+
+	// Validate session timeout
+	if p.SessionTimeout < time.Minute {
+		return apperrors.NewConfigError("session_timeout", p.SessionTimeout, "Preview session timeout must be at least 1 minute", apperrors.ErrConfigValidation)
+	}
+
+	// Validate max sessions
+	if p.MaxSessions < 1 || p.MaxSessions > 1000 {
+		return apperrors.NewConfigError("max_sessions", p.MaxSessions, "Preview max sessions must be between 1 and 1000", apperrors.ErrConfigValidation)
 	}
 
 	return nil

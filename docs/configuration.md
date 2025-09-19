@@ -341,6 +341,37 @@ Analytics service provider.
 - `ANALYTICS_DATA_API` - Custom API endpoint
 - `ANALYTICS_CUSTOM_CODE` - Custom tracking code
 
+### Preview Service Configuration
+
+#### `PREVIEW_ENABLED`
+**Default:** `false`
+
+Enable/disable the live preview service for drafts. When enabled, allows real-time preview of articles during editing.
+
+#### `PREVIEW_PORT`
+**Default:** `8081`
+**Range:** `1-65535`
+
+Port for the preview service WebSocket connections.
+
+#### `PREVIEW_BASE_URL`
+**Default:** (auto-generated from BASE_URL)
+**Format:** Full URL with protocol
+
+Base URL for preview sessions. If not specified, automatically derived from BASE_URL.
+
+#### `PREVIEW_MAX_SESSIONS`
+**Default:** `10`
+**Range:** `1-100`
+
+Maximum number of concurrent preview sessions allowed.
+
+#### `PREVIEW_SESSION_TIMEOUT`
+**Default:** `30m`
+**Format:** Duration (e.g., `30m`, `1h`, `2h30m`)
+
+How long preview sessions remain active without activity before cleanup.
+
 ### Development Settings
 
 #### `TEMPLATE_HOT_RELOAD`
