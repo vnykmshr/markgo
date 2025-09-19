@@ -81,7 +81,7 @@ func TestNewLoggingService(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, err := NewLoggingService(tt.cfg)
+			service, err := NewLoggingService(&tt.cfg)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -115,7 +115,7 @@ func TestLoggingServiceFileOutput(t *testing.T) {
 		AddSource:  false,
 	}
 
-	service, err := NewLoggingService(cfg)
+	service, err := NewLoggingService(&cfg)
 	require.NoError(t, err)
 	require.NotNil(t, service)
 
@@ -223,7 +223,7 @@ func TestLoggingServiceWithContext(t *testing.T) {
 		MaxSize: 100,
 	}
 
-	service, err := NewLoggingService(cfg)
+	service, err := NewLoggingService(&cfg)
 	require.NoError(t, err)
 
 	// Test context logging
@@ -366,7 +366,7 @@ func TestLoggingServiceClose(t *testing.T) {
 		MaxSize: 100,
 	}
 
-	service, err := NewLoggingService(cfg)
+	service, err := NewLoggingService(&cfg)
 	require.NoError(t, err)
 
 	// Test close doesn't error
@@ -391,7 +391,7 @@ func TestEnvironmentLogLevelOverride(t *testing.T) {
 		cfg.Level = "debug" // Override to debug for development
 	}
 
-	service, err := NewLoggingService(cfg)
+	service, err := NewLoggingService(&cfg)
 	require.NoError(t, err)
 
 	logger := service.GetLogger()

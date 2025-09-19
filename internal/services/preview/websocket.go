@@ -1,3 +1,6 @@
+// Package preview provides WebSocket functionality for real-time blog preview updates.
+// It manages WebSocket connections, session handling, and broadcast functionality
+// for live preview features in the MarkGo blog engine.
 package preview
 
 import (
@@ -85,7 +88,9 @@ func (s *Service) registerWebSocketClientImpl(sessionID string, w http.ResponseW
 
 func (s *Service) handleWebSocketClient(sessionID string, conn *websocket.Conn) {
 	defer func() {
-		conn.Close()
+		if err := conn.Close(); err != nil {
+			s.logger.Debug("Failed to close WebSocket connection", "error", err)
+		}
 		s.removeWebSocketClient(sessionID, conn)
 	}()
 
@@ -116,7 +121,7 @@ func (s *Service) handleWebSocketClient(sessionID string, conn *websocket.Conn) 
 		case websocket.PingMessage:
 			if err := conn.WriteMessage(websocket.PongMessage, nil); err != nil {
 				s.logger.Debug("Failed to send pong", "error", err)
-				break
+				return // Exit the function instead of just breaking the switch
 			}
 		}
 	}

@@ -14,9 +14,9 @@ import (
 func TestConfig_Validate(t *testing.T) {
 	// Create temporary directories for testing
 	tmpDir := t.TempDir()
-	require.NoError(t, os.MkdirAll(tmpDir+"/articles", 0755))
-	require.NoError(t, os.MkdirAll(tmpDir+"/static", 0755))
-	require.NoError(t, os.MkdirAll(tmpDir+"/templates", 0755))
+	require.NoError(t, os.MkdirAll(tmpDir+"/articles", 0o750))
+	require.NoError(t, os.MkdirAll(tmpDir+"/static", 0o750))
+	require.NoError(t, os.MkdirAll(tmpDir+"/templates", 0o750))
 
 	t.Run("valid configuration", func(t *testing.T) {
 		cfg := &Config{
@@ -678,9 +678,9 @@ func TestLoadWithValidationFailures(t *testing.T) {
 	t.Run("load with invalid port", func(t *testing.T) {
 		// Create temporary directories
 		tmpDir := t.TempDir()
-		require.NoError(t, os.MkdirAll(tmpDir+"/articles", 0755))
-		require.NoError(t, os.MkdirAll(tmpDir+"/static", 0755))
-		require.NoError(t, os.MkdirAll(tmpDir+"/templates", 0755))
+		require.NoError(t, os.MkdirAll(tmpDir+"/articles", 0o750))
+		require.NoError(t, os.MkdirAll(tmpDir+"/static", 0o750))
+		require.NoError(t, os.MkdirAll(tmpDir+"/templates", 0o750))
 
 		os.Setenv("ARTICLES_PATH", tmpDir+"/articles")
 		os.Setenv("STATIC_PATH", tmpDir+"/static")
@@ -703,9 +703,9 @@ func TestLoadWithValidationFailures(t *testing.T) {
 	t.Run("load with invalid environment", func(t *testing.T) {
 		// Create temporary directories
 		tmpDir := t.TempDir()
-		require.NoError(t, os.MkdirAll(tmpDir+"/articles", 0755))
-		require.NoError(t, os.MkdirAll(tmpDir+"/static", 0755))
-		require.NoError(t, os.MkdirAll(tmpDir+"/templates", 0755))
+		require.NoError(t, os.MkdirAll(tmpDir+"/articles", 0o750))
+		require.NoError(t, os.MkdirAll(tmpDir+"/static", 0o750))
+		require.NoError(t, os.MkdirAll(tmpDir+"/templates", 0o750))
 
 		os.Setenv("ARTICLES_PATH", tmpDir+"/articles")
 		os.Setenv("STATIC_PATH", tmpDir+"/static")
@@ -728,9 +728,9 @@ func TestLoadWithValidationFailures(t *testing.T) {
 func TestConfig_ValidateWithWarnings(t *testing.T) {
 	// Create temporary directories
 	tmpDir := t.TempDir()
-	require.NoError(t, os.MkdirAll(tmpDir+"/articles", 0755))
-	require.NoError(t, os.MkdirAll(tmpDir+"/static", 0755))
-	require.NoError(t, os.MkdirAll(tmpDir+"/templates", 0755))
+	require.NoError(t, os.MkdirAll(tmpDir+"/articles", 0o750))
+	require.NoError(t, os.MkdirAll(tmpDir+"/static", 0o750))
+	require.NoError(t, os.MkdirAll(tmpDir+"/templates", 0o750))
 
 	t.Run("debug warnings output", func(t *testing.T) {
 		cfg := &Config{
@@ -1162,7 +1162,7 @@ func TestValidatePath(t *testing.T) {
 	// Create temporary directories for testing
 	tmpDir := t.TempDir()
 	validPath := tmpDir + "/valid"
-	require.NoError(t, os.MkdirAll(validPath, 0755))
+	require.NoError(t, os.MkdirAll(validPath, 0o750))
 
 	t.Run("valid existing path", func(t *testing.T) {
 		err := validatePath(validPath, "test_field", true, false)
@@ -1184,7 +1184,7 @@ func TestValidatePath(t *testing.T) {
 	t.Run("path is file not directory", func(t *testing.T) {
 		// Create a file instead of directory
 		filePath := tmpDir + "/file.txt"
-		require.NoError(t, os.WriteFile(filePath, []byte("test"), 0644))
+		require.NoError(t, os.WriteFile(filePath, []byte("test"), 0o600))
 
 		err := validatePath(filePath, "test_field", true, false)
 		assert.Error(t, err)

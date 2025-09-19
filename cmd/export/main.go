@@ -32,7 +32,7 @@ func main() {
 	}
 
 	// Setup logging
-	loggingService, err := services.NewLoggingService(cfg.Logging)
+	loggingService, err := services.NewLoggingService(&cfg.Logging)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error initializing logging: %v\n", err)
 		os.Exit(1)

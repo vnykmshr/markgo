@@ -30,7 +30,7 @@ func TestInterfaceCompliance(t *testing.T) {
 			Port: 587,
 		}
 		logger := slog.Default()
-		service := NewEmailService(cfg, logger)
+		service := NewEmailService(&cfg, logger)
 
 		// This will fail to compile if EmailService doesn't implement the interface
 		var _ EmailServiceInterface = service
@@ -71,7 +71,7 @@ func TestInterfaceCompliance(t *testing.T) {
 			Format: "text",
 			Output: "stdout", // Add required output field
 		}
-		service, err := NewLoggingService(cfg)
+		service, err := NewLoggingService(&cfg)
 		if err != nil {
 			t.Fatalf("Failed to create LoggingService: %v", err)
 		}

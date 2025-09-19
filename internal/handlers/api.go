@@ -1,3 +1,5 @@
+// Package handlers provides HTTP request handlers for the MarkGo blog engine.
+// It includes handlers for admin operations, article management, API endpoints, and more.
 package handlers
 
 import (

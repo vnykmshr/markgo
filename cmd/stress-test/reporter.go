@@ -326,7 +326,7 @@ func (rg *ReportGenerator) GenerateJSONReport(outputPath string) error {
 		return fmt.Errorf("marshaling JSON: %w", err)
 	}
 
-	if err := os.WriteFile(outputPath, data, 0644); err != nil {
+	if err := os.WriteFile(outputPath, data, 0o600); err != nil {
 		return fmt.Errorf("writing JSON file: %w", err)
 	}
 
@@ -340,7 +340,7 @@ func (rg *ReportGenerator) prepareTemplateData() map[string]interface{} {
 		statusCounts[validation.StatusCode]++
 	}
 
-	var statusDistribution []map[string]interface{}
+	statusDistribution := make([]map[string]interface{}, 0, len(statusCounts))
 	totalValidations := len(rg.results.URLValidations)
 	for status, count := range statusCounts {
 		percentage := float64(count) / float64(totalValidations) * 100
@@ -365,7 +365,7 @@ func (rg *ReportGenerator) prepareTemplateData() map[string]interface{} {
 	})
 
 	// Prepare URL validations with status groups
-	var urlValidations []map[string]interface{}
+	urlValidations := make([]map[string]interface{}, 0, len(rg.results.URLValidations))
 	for _, validation := range rg.results.URLValidations {
 		statusGroup := "200"
 		if validation.StatusCode >= 300 && validation.StatusCode < 400 {
@@ -386,7 +386,7 @@ func (rg *ReportGenerator) prepareTemplateData() map[string]interface{} {
 	}
 
 	// Prepare slow requests
-	var slowRequests []map[string]interface{}
+	slowRequests := make([]map[string]interface{}, 0, len(rg.results.SlowRequests))
 	for _, req := range rg.results.SlowRequests {
 		statusGroup := "200"
 		if req.StatusCode >= 300 && req.StatusCode < 400 {
@@ -404,7 +404,7 @@ func (rg *ReportGenerator) prepareTemplateData() map[string]interface{} {
 	}
 
 	// Convert response times to milliseconds for charting
-	var responseTimesMs []float64
+	responseTimesMs := make([]float64, 0, len(rg.results.ResponseTimes))
 	for _, entry := range rg.results.ResponseTimes {
 		responseTimesMs = append(responseTimesMs, float64(entry.ResponseTime.Nanoseconds())/1000000)
 	}

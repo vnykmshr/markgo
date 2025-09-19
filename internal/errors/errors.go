@@ -1,3 +1,5 @@
+// Package errors provides custom error types and error handling utilities for the MarkGo blog engine.
+// It includes HTTP errors, configuration errors, CLI errors, and comprehensive error handling functions.
 package errors
 
 import (
@@ -279,7 +281,7 @@ func GetUserFriendlyMessage(err error) string {
 	case errors.Is(err, ErrCLIValidation):
 		return "Invalid command line arguments. Please check your input and try again"
 	case errors.Is(err, ErrCLIInterrupted):
-		return "Operation was cancelled by user"
+		return "Operation was canceled by user"
 	case errors.Is(err, ErrServiceUnavailable):
 		return "Service is temporarily unavailable. Please try again later"
 	case errors.Is(err, ErrServiceTimeout):
@@ -326,7 +328,7 @@ func HandleCLIError(err error, cleanup func()) {
 		return
 	}
 
-	var exitCode int = 1
+	var exitCode = 1
 	var message string
 
 	// Check if it's a specific CLI error with custom exit code

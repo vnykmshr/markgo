@@ -18,6 +18,13 @@ import (
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
 )
 
+// Environment constants
+const (
+	DevelopmentEnvironment = "development"
+	ProductionEnvironment  = "production"
+	TestEnvironment        = "test"
+)
+
 type Config struct {
 	Environment   string          `json:"environment"`
 	Port          int             `json:"port"`
@@ -152,6 +159,8 @@ func Load() (*Config, error) {
 	// Load .env file if it exists (ignore errors as it's optional)
 	if err := godotenv.Load(); err != nil {
 		// Silently ignore .env file loading errors as it's optional
+		// This is intentional behavior - .env files are not required
+		_ = err // Explicitly acknowledge the ignored error
 	}
 
 	// Get environment first to determine appropriate defaults
@@ -162,11 +171,11 @@ func Load() (*Config, error) {
 	var contactRequestsDefault int
 
 	switch environment {
-	case "production":
+	case ProductionEnvironment:
 		// Conservative limits for production
 		generalRequestsDefault = 100 // 100 requests per 15 min = ~0.11 req/sec
 		contactRequestsDefault = 5   // 5 contact submissions per hour
-	case "test":
+	case TestEnvironment:
 		// Higher limits for automated testing
 		generalRequestsDefault = 5000 // 5000 requests per 15 min = ~5.5 req/sec
 		contactRequestsDefault = 50   // 50 contact submissions per hour for test suites
@@ -315,50 +324,61 @@ func (c *Config) ValidateWithWarnings() ValidationResult {
 
 // addConfigurationWarnings adds configuration-related warnings
 func (c *Config) addConfigurationWarnings(result *ValidationResult) {
-	// Warn about default values in production
-	if c.Environment == "production" {
-		if strings.Contains(c.BaseURL, "localhost") {
-			result.Warnings = append(result.Warnings, ValidationWarning{
-				Field:   "base_url",
-				Message: "Base URL contains 'localhost' in production environment",
-				Level:   "warning",
-			})
-		}
+	c.addProductionPlaceholderWarnings(result)
+	c.addEmailConfigurationWarnings(result)
+	c.addCORSConfigurationWarnings(result)
+	c.addRateLimitWarnings(result)
+}
 
-		if strings.Contains(c.BaseURL, "yourdomain.com") {
-			result.Warnings = append(result.Warnings, ValidationWarning{
-				Field:   "base_url",
-				Message: "Base URL contains placeholder domain 'yourdomain.com'",
-				Level:   "warning",
-			})
-		}
-
-		if c.Blog.Title == "Your Blog Title" {
-			result.Warnings = append(result.Warnings, ValidationWarning{
-				Field:   "blog.title",
-				Message: "Blog title is still the default placeholder value",
-				Level:   "warning",
-			})
-		}
-
-		if c.Blog.Author == "Your Name" {
-			result.Warnings = append(result.Warnings, ValidationWarning{
-				Field:   "blog.author",
-				Message: "Blog author is still the default placeholder value",
-				Level:   "warning",
-			})
-		}
-
-		if strings.Contains(c.Blog.AuthorEmail, "example.com") {
-			result.Warnings = append(result.Warnings, ValidationWarning{
-				Field:   "blog.author_email",
-				Message: "Blog author email contains placeholder domain",
-				Level:   "warning",
-			})
-		}
+// addProductionPlaceholderWarnings checks for placeholder values in production
+func (c *Config) addProductionPlaceholderWarnings(result *ValidationResult) {
+	if c.Environment != ProductionEnvironment {
+		return
 	}
 
-	// Check for insecure email configuration
+	if strings.Contains(c.BaseURL, "localhost") {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "base_url",
+			Message: "Base URL contains 'localhost' in production environment",
+			Level:   "warning",
+		})
+	}
+
+	if strings.Contains(c.BaseURL, "yourdomain.com") {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "base_url",
+			Message: "Base URL contains placeholder domain 'yourdomain.com'",
+			Level:   "warning",
+		})
+	}
+
+	if c.Blog.Title == "Your Blog Title" {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "blog.title",
+			Message: "Blog title is still the default placeholder value",
+			Level:   "warning",
+		})
+	}
+
+	if c.Blog.Author == "Your Name" {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "blog.author",
+			Message: "Blog author is still the default placeholder value",
+			Level:   "warning",
+		})
+	}
+
+	if strings.Contains(c.Blog.AuthorEmail, "example.com") {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "blog.author_email",
+			Message: "Blog author email contains placeholder domain",
+			Level:   "warning",
+		})
+	}
+}
+
+// addEmailConfigurationWarnings checks for email security issues
+func (c *Config) addEmailConfigurationWarnings(result *ValidationResult) {
 	if c.Email.Username != "" && c.Email.Port == 25 {
 		result.Warnings = append(result.Warnings, ValidationWarning{
 			Field:   "email.port",
@@ -366,49 +386,57 @@ func (c *Config) addConfigurationWarnings(result *ValidationResult) {
 			Level:   "recommendation",
 		})
 	}
+}
 
-	// Check CORS configuration
-	if c.Environment == "production" && len(c.CORS.AllowedOrigins) > 0 {
-		for _, origin := range c.CORS.AllowedOrigins {
-			if origin == "*" {
-				result.Warnings = append(result.Warnings, ValidationWarning{
-					Field:   "cors.allowed_origins",
-					Message: "Wildcard (*) in CORS allowed origins is not recommended for production",
-					Level:   "warning",
-				})
-				break
-			}
-		}
+// addCORSConfigurationWarnings checks for CORS security issues
+func (c *Config) addCORSConfigurationWarnings(result *ValidationResult) {
+	if c.Environment != ProductionEnvironment || len(c.CORS.AllowedOrigins) == 0 {
+		return
 	}
 
-	// Check for overly permissive rate limits in production
-	if c.Environment == "production" {
-		if c.RateLimit.General.Requests > 1000 {
+	for _, origin := range c.CORS.AllowedOrigins {
+		if origin == "*" {
 			result.Warnings = append(result.Warnings, ValidationWarning{
-				Field:   "rate_limit.general.requests",
-				Message: "General rate limit is very high (>1000), consider lowering for better protection",
-				Level:   "recommendation",
+				Field:   "cors.allowed_origins",
+				Message: "Wildcard (*) in CORS allowed origins is not recommended for production",
+				Level:   "warning",
 			})
+			break
 		}
+	}
+}
 
-		if c.RateLimit.Contact.Requests > 50 {
-			result.Warnings = append(result.Warnings, ValidationWarning{
-				Field:   "rate_limit.contact.requests",
-				Message: "Contact rate limit is high (>50), consider lowering to prevent spam",
-				Level:   "recommendation",
-			})
-		}
+// addRateLimitWarnings checks for overly permissive rate limits
+func (c *Config) addRateLimitWarnings(result *ValidationResult) {
+	if c.Environment != ProductionEnvironment {
+		return
+	}
+
+	if c.RateLimit.General.Requests > 1000 {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "rate_limit.general.requests",
+			Message: "General rate limit is very high (>1000), consider lowering for better protection",
+			Level:   "recommendation",
+		})
+	}
+
+	if c.RateLimit.Contact.Requests > 50 {
+		result.Warnings = append(result.Warnings, ValidationWarning{
+			Field:   "rate_limit.contact.requests",
+			Message: "Contact rate limit is high (>50), consider lowering to prevent spam",
+			Level:   "recommendation",
+		})
 	}
 }
 
 // addSecurityRecommendations adds security-related recommendations
 func (c *Config) addSecurityRecommendations(result *ValidationResult) {
 	// Admin security checks
-	if c.Admin.Username != "" && c.Environment == "production" {
+	if c.Admin.Username != "" && c.Environment == ProductionEnvironment {
 		// Check for weak admin usernames
 		weakUsernames := []string{"admin", "administrator", "root", "user", "test"}
 		for _, weak := range weakUsernames {
-			if strings.ToLower(c.Admin.Username) == weak {
+			if strings.EqualFold(c.Admin.Username, weak) {
 				result.Warnings = append(result.Warnings, ValidationWarning{
 					Field:   "admin.username",
 					Message: fmt.Sprintf("Admin username '%s' is commonly used and may be targeted by attackers", weak),
@@ -430,7 +458,7 @@ func (c *Config) addSecurityRecommendations(result *ValidationResult) {
 		// Check for simple passwords
 		simplePasswords := []string{"password", "123456", "admin", "root"}
 		for _, simple := range simplePasswords {
-			if strings.ToLower(c.Admin.Password) == simple {
+			if strings.EqualFold(c.Admin.Password, simple) {
 				result.Warnings = append(result.Warnings, ValidationWarning{
 					Field:   "admin.password",
 					Message: "Admin password is too simple and easily guessable",
@@ -442,7 +470,7 @@ func (c *Config) addSecurityRecommendations(result *ValidationResult) {
 	}
 
 	// HTTPS recommendations
-	if c.Environment == "production" {
+	if c.Environment == ProductionEnvironment {
 		if strings.HasPrefix(c.BaseURL, "http://") && !strings.Contains(c.BaseURL, "localhost") {
 			result.Warnings = append(result.Warnings, ValidationWarning{
 				Field:   "base_url",
@@ -518,7 +546,7 @@ func (c *Config) addPerformanceRecommendations(result *ValidationResult) {
 
 // addProductionRecommendations adds production-specific recommendations
 func (c *Config) addProductionRecommendations(result *ValidationResult) {
-	if c.Environment != "production" {
+	if c.Environment != ProductionEnvironment {
 		return
 	}
 
@@ -711,7 +739,7 @@ func (c *Config) validateBasic() error {
 	}
 
 	// Validate environment
-	validEnvs := []string{"development", "production", "test"}
+	validEnvs := []string{DevelopmentEnvironment, ProductionEnvironment, TestEnvironment}
 	if !contains(validEnvs, c.Environment) {
 		return apperrors.NewConfigError("environment", c.Environment,
 			"Environment must be one of: development, production, test", apperrors.ErrConfigValidation)
@@ -727,10 +755,12 @@ func (s *ServerConfig) Validate() error {
 			"Read timeout must be positive", apperrors.ErrConfigValidation)
 	}
 	if s.WriteTimeout <= 0 {
-		return apperrors.NewConfigError("write_timeout", s.WriteTimeout, "Write timeout must be positive", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("write_timeout", s.WriteTimeout,
+			"Write timeout must be positive", apperrors.ErrConfigValidation)
 	}
 	if s.IdleTimeout <= 0 {
-		return apperrors.NewConfigError("idle_timeout", s.IdleTimeout, "Idle timeout must be positive", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("idle_timeout", s.IdleTimeout,
+			"Idle timeout must be positive", apperrors.ErrConfigValidation)
 	}
 	return nil
 }
@@ -741,10 +771,12 @@ func (c *CacheConfig) Validate() error {
 		return apperrors.NewConfigError("ttl", c.TTL, "Cache TTL must be positive", apperrors.ErrConfigValidation)
 	}
 	if c.MaxSize <= 0 {
-		return apperrors.NewConfigError("max_size", c.MaxSize, "Cache max size must be positive", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("max_size", c.MaxSize,
+			"Cache max size must be positive", apperrors.ErrConfigValidation)
 	}
 	if c.CleanupInterval <= 0 {
-		return apperrors.NewConfigError("cleanup_interval", c.CleanupInterval, "Cleanup interval must be positive", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("cleanup_interval", c.CleanupInterval,
+			"Cleanup interval must be positive", apperrors.ErrConfigValidation)
 	}
 	return nil
 }
@@ -755,13 +787,16 @@ func (e *EmailConfig) Validate() error {
 		return apperrors.NewConfigError("host", e.Host, "Email host cannot be empty", apperrors.ErrMissingConfig)
 	}
 	if e.Port <= 0 || e.Port > 65535 {
-		return apperrors.NewConfigError("port", e.Port, "Email port must be between 1 and 65535", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("port", e.Port,
+			"Email port must be between 1 and 65535", apperrors.ErrConfigValidation)
 	}
 	if e.Username == "" {
-		return apperrors.NewConfigError("username", e.Username, "Email username cannot be empty when email is configured", apperrors.ErrMissingConfig)
+		return apperrors.NewConfigError("username", e.Username,
+			"Email username cannot be empty when email is configured", apperrors.ErrMissingConfig)
 	}
 	if e.Password == "" {
-		return apperrors.NewConfigError("password", "***", "Email password cannot be empty when email is configured", apperrors.ErrMissingConfig)
+		return apperrors.NewConfigError("password", "***",
+			"Email password cannot be empty when email is configured", apperrors.ErrMissingConfig)
 	}
 	if e.From == "" {
 		return apperrors.NewConfigError("from", e.From, "Email 'from' address cannot be empty", apperrors.ErrMissingConfig)
@@ -795,10 +830,12 @@ func (r *RateLimitConfig) Validate() error {
 // Validate individual rate limit
 func (r *RateLimit) Validate(name string) error {
 	if r.Requests <= 0 {
-		return apperrors.NewConfigError("requests", r.Requests, name+" rate limit requests must be positive", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("requests", r.Requests,
+			name+" rate limit requests must be positive", apperrors.ErrConfigValidation)
 	}
 	if r.Window <= 0 {
-		return apperrors.NewConfigError("window", r.Window, name+" rate limit window must be positive", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("window", r.Window,
+			name+" rate limit window must be positive", apperrors.ErrConfigValidation)
 	}
 	return nil
 }
@@ -812,10 +849,13 @@ func (b *BlogConfig) Validate() error {
 		return apperrors.NewConfigError("author", b.Author, "Blog author cannot be empty", apperrors.ErrMissingConfig)
 	}
 	if b.PostsPerPage <= 0 {
-		return apperrors.NewConfigError("posts_per_page", b.PostsPerPage, "Posts per page must be positive", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("posts_per_page", b.PostsPerPage,
+			"Posts per page must be positive", apperrors.ErrConfigValidation)
 	}
 	if b.PostsPerPage > 100 {
-		return apperrors.NewConfigError("posts_per_page", b.PostsPerPage, "Posts per page should not exceed 100 for performance reasons", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("posts_per_page", b.PostsPerPage,
+			"Posts per page should not exceed 100 for performance reasons",
+			apperrors.ErrConfigValidation)
 	}
 	if b.Language == "" {
 		return apperrors.NewConfigError("language", b.Language, "Blog language cannot be empty", apperrors.ErrMissingConfig)
@@ -824,13 +864,16 @@ func (b *BlogConfig) Validate() error {
 	// Validate language code format (basic check)
 	langRegex := regexp.MustCompile(`^[a-z]{2}(-[A-Z]{2})?$`)
 	if !langRegex.MatchString(b.Language) {
-		return apperrors.NewConfigError("language", b.Language, "Blog language must be a valid language code (e.g., 'en', 'en-US')", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("language", b.Language,
+			"Blog language must be a valid language code (e.g., 'en', 'en-US')",
+			apperrors.ErrConfigValidation)
 	}
 
 	// Validate author email if provided
 	if b.AuthorEmail != "" {
 		if _, err := mail.ParseAddress(b.AuthorEmail); err != nil {
-			return apperrors.NewConfigError("author_email", b.AuthorEmail, "Invalid author email address format", apperrors.ErrConfigValidation)
+			return apperrors.NewConfigError("author_email", b.AuthorEmail,
+				"Invalid author email address format", apperrors.ErrConfigValidation)
 		}
 	}
 
@@ -841,10 +884,12 @@ func (b *BlogConfig) Validate() error {
 func (a *AdminConfig) Validate() error {
 	// Admin config is optional, but if username is provided, password must also be provided
 	if a.Username != "" && a.Password == "" {
-		return apperrors.NewConfigError("password", "***", "Admin password is required when username is provided", apperrors.ErrMissingConfig)
+		return apperrors.NewConfigError("password", "***",
+			"Admin password is required when username is provided", apperrors.ErrMissingConfig)
 	}
 	if a.Username != "" && a.Password == "changeme" {
-		return apperrors.NewConfigError("password", "***", "Admin password must be changed from default value", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("password", "***",
+			"Admin password must be changed from default value", apperrors.ErrConfigValidation)
 	}
 	return nil
 }
@@ -854,24 +899,28 @@ func (l *LoggingConfig) Validate() error {
 	// Validate log level
 	validLevels := []string{"debug", "info", "warn", "error"}
 	if !contains(validLevels, l.Level) {
-		return apperrors.NewConfigError("level", l.Level, "Log level must be one of: debug, info, warn, error", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("level", l.Level,
+			"Log level must be one of: debug, info, warn, error", apperrors.ErrConfigValidation)
 	}
 
 	// Validate log format
 	validFormats := []string{"json", "text"}
 	if !contains(validFormats, l.Format) {
-		return apperrors.NewConfigError("format", l.Format, "Log format must be one of: json, text", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("format", l.Format,
+			"Log format must be one of: json, text", apperrors.ErrConfigValidation)
 	}
 
 	// Validate log output
 	validOutputs := []string{"stdout", "stderr", "file"}
 	if !contains(validOutputs, l.Output) {
-		return apperrors.NewConfigError("output", l.Output, "Log output must be one of: stdout, stderr, file", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("output", l.Output,
+			"Log output must be one of: stdout, stderr, file", apperrors.ErrConfigValidation)
 	}
 
 	// If output is file, file path is required
 	if l.Output == "file" && l.File == "" {
-		return apperrors.NewConfigError("file", l.File, "Log file path is required when output is 'file'", apperrors.ErrMissingConfig)
+		return apperrors.NewConfigError("file", l.File,
+			"Log file path is required when output is 'file'", apperrors.ErrMissingConfig)
 	}
 
 	// Validate rotation settings
@@ -879,7 +928,8 @@ func (l *LoggingConfig) Validate() error {
 		return apperrors.NewConfigError("max_size", l.MaxSize, "Log max size must be positive", apperrors.ErrConfigValidation)
 	}
 	if l.MaxBackups < 0 {
-		return apperrors.NewConfigError("max_backups", l.MaxBackups, "Log max backups cannot be negative", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("max_backups", l.MaxBackups,
+			"Log max backups cannot be negative", apperrors.ErrConfigValidation)
 	}
 	if l.MaxAge < 0 {
 		return apperrors.NewConfigError("max_age", l.MaxAge, "Log max age cannot be negative", apperrors.ErrConfigValidation)
@@ -897,23 +947,30 @@ func (c *CommentsConfig) Validate() error {
 	// Validate provider
 	validProviders := []string{"giscus", "disqus", "utterances"}
 	if !contains(validProviders, c.Provider) {
-		return apperrors.NewConfigError("provider", c.Provider, "Comments provider must be one of: giscus, disqus, utterances", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("provider", c.Provider,
+			"Comments provider must be one of: giscus, disqus, utterances",
+			apperrors.ErrConfigValidation)
 	}
 
 	// Validate giscus configuration if using giscus
 	if c.Provider == "giscus" {
 		if c.GiscusRepo == "" {
-			return apperrors.NewConfigError("giscus_repo", c.GiscusRepo, "Giscus repository is required when using giscus provider", apperrors.ErrMissingConfig)
+			return apperrors.NewConfigError("giscus_repo", c.GiscusRepo,
+				"Giscus repository is required when using giscus provider",
+				apperrors.ErrMissingConfig)
 		}
 
 		// Validate repository format (owner/repo)
 		repoRegex := regexp.MustCompile(`^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$`)
 		if !repoRegex.MatchString(c.GiscusRepo) {
-			return apperrors.NewConfigError("giscus_repo", c.GiscusRepo, "Giscus repository must be in format 'owner/repo'", apperrors.ErrConfigValidation)
+			return apperrors.NewConfigError("giscus_repo", c.GiscusRepo,
+				"Giscus repository must be in format 'owner/repo'",
+				apperrors.ErrConfigValidation)
 		}
 
 		if c.GiscusCategory == "" {
-			return apperrors.NewConfigError("giscus_category", c.GiscusCategory, "Giscus category is required when using giscus provider", apperrors.ErrMissingConfig)
+			return apperrors.NewConfigError("giscus_category", c.GiscusCategory,
+				"Giscus category is required when using giscus provider", apperrors.ErrMissingConfig)
 		}
 	}
 
@@ -926,7 +983,8 @@ func (c *CORSConfig) Validate() error {
 	for _, origin := range c.AllowedOrigins {
 		if origin != "*" {
 			if _, err := url.Parse(origin); err != nil {
-				return apperrors.NewConfigError("allowed_origins", origin, "Invalid CORS allowed origin URL", apperrors.ErrConfigValidation)
+				return apperrors.NewConfigError("allowed_origins", origin,
+					"Invalid CORS allowed origin URL", apperrors.ErrConfigValidation)
 			}
 		}
 	}
@@ -935,7 +993,8 @@ func (c *CORSConfig) Validate() error {
 	validMethods := []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
 	for _, method := range c.AllowedMethods {
 		if !contains(validMethods, method) {
-			return apperrors.NewConfigError("allowed_methods", method, "Invalid HTTP method in CORS allowed methods", apperrors.ErrConfigValidation)
+			return apperrors.NewConfigError("allowed_methods", method,
+				"Invalid HTTP method in CORS allowed methods", apperrors.ErrConfigValidation)
 		}
 	}
 
@@ -960,12 +1019,14 @@ func validatePath(path, fieldName string, mustExist, mustBeWritable bool) error 
 			return apperrors.NewConfigError(fieldName, path, fieldName+" directory does not exist", apperrors.ErrMissingConfig)
 		}
 		if err != nil {
-			return apperrors.NewConfigError(fieldName, path, fmt.Sprintf("Cannot access %s: %v", fieldName, err), apperrors.ErrConfigValidation)
+			return apperrors.NewConfigError(fieldName, path,
+				fmt.Sprintf("Cannot access %s: %v", fieldName, err), apperrors.ErrConfigValidation)
 		}
 
 		// Check if it's a directory
 		if !stat.IsDir() {
-			return apperrors.NewConfigError(fieldName, path, fieldName+" must be a directory, not a file", apperrors.ErrConfigValidation)
+			return apperrors.NewConfigError(fieldName, path,
+				fieldName+" must be a directory, not a file", apperrors.ErrConfigValidation)
 		}
 	}
 
@@ -974,10 +1035,11 @@ func validatePath(path, fieldName string, mustExist, mustBeWritable bool) error 
 		testFile := filepath.Join(absPath, ".markgo-write-test")
 		file, err := os.Create(testFile)
 		if err != nil {
-			return apperrors.NewConfigError(fieldName, path, fmt.Sprintf("Directory %s is not writable", fieldName), apperrors.ErrConfigValidation)
+			return apperrors.NewConfigError(fieldName, path,
+				fmt.Sprintf("Directory %s is not writable", fieldName), apperrors.ErrConfigValidation)
 		}
-		file.Close()
-		os.Remove(testFile)
+		_ = file.Close()
+		_ = os.Remove(testFile)
 	}
 
 	return nil
@@ -992,22 +1054,26 @@ func (a *AnalyticsConfig) Validate() error {
 
 	// If enabled, provider must be specified
 	if a.Provider == "" {
-		return apperrors.NewConfigError("provider", a.Provider, "Analytics provider must be specified when analytics is enabled", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("provider", a.Provider,
+			"Analytics provider must be specified when analytics is enabled", apperrors.ErrConfigValidation)
 	}
 
 	// Validate provider and required fields
 	switch a.Provider {
 	case "google":
 		if a.TrackingID == "" {
-			return apperrors.NewConfigError("tracking_id", a.TrackingID, "Google Analytics requires a tracking ID", apperrors.ErrConfigValidation)
+			return apperrors.NewConfigError("tracking_id", a.TrackingID,
+				"Google Analytics requires a tracking ID", apperrors.ErrConfigValidation)
 		}
 	case "plausible":
 		if a.Domain == "" {
-			return apperrors.NewConfigError("domain", a.Domain, "Plausible Analytics requires a domain", apperrors.ErrConfigValidation)
+			return apperrors.NewConfigError("domain", a.Domain,
+				"Plausible Analytics requires a domain", apperrors.ErrConfigValidation)
 		}
 	case "custom":
 		if a.CustomCode == "" {
-			return apperrors.NewConfigError("custom_code", a.CustomCode, "Custom analytics requires custom code", apperrors.ErrConfigValidation)
+			return apperrors.NewConfigError("custom_code", a.CustomCode,
+				"Custom analytics requires custom code", apperrors.ErrConfigValidation)
 		}
 	default:
 		// Allow other providers without strict validation
@@ -1025,17 +1091,20 @@ func (p *PreviewConfig) Validate() error {
 
 	// Validate port range
 	if p.Port < 1 || p.Port > 65535 {
-		return apperrors.NewConfigError("port", p.Port, "Preview port must be between 1 and 65535", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("port", p.Port,
+			"Preview port must be between 1 and 65535", apperrors.ErrConfigValidation)
 	}
 
 	// Validate session timeout
 	if p.SessionTimeout < time.Minute {
-		return apperrors.NewConfigError("session_timeout", p.SessionTimeout, "Preview session timeout must be at least 1 minute", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("session_timeout", p.SessionTimeout,
+			"Preview session timeout must be at least 1 minute", apperrors.ErrConfigValidation)
 	}
 
 	// Validate max sessions
 	if p.MaxSessions < 1 || p.MaxSessions > 1000 {
-		return apperrors.NewConfigError("max_sessions", p.MaxSessions, "Preview max sessions must be between 1 and 1000", apperrors.ErrConfigValidation)
+		return apperrors.NewConfigError("max_sessions", p.MaxSessions,
+			"Preview max sessions must be between 1 and 1000", apperrors.ErrConfigValidation)
 	}
 
 	return nil

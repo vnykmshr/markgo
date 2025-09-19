@@ -14,9 +14,9 @@ func TestLoad(t *testing.T) {
 	clearEnvVars()
 
 	// Create required directories for validation
-	require.NoError(t, os.MkdirAll("./articles", 0755))
-	require.NoError(t, os.MkdirAll("./web/static", 0755))
-	require.NoError(t, os.MkdirAll("./web/templates", 0755))
+	require.NoError(t, os.MkdirAll("./articles", 0o750))
+	require.NoError(t, os.MkdirAll("./web/static", 0o750))
+	require.NoError(t, os.MkdirAll("./web/templates", 0o750))
 
 	cfg, err := Load()
 	require.NoError(t, err)
@@ -92,9 +92,9 @@ func TestLoadWithEnvironmentVariables(t *testing.T) {
 	// Create temporary directories for validation
 	tmpDir, err := os.MkdirTemp("", "markgo-test-*")
 	require.NoError(t, err)
-	require.NoError(t, os.MkdirAll(tmpDir+"/articles", 0755))
-	require.NoError(t, os.MkdirAll(tmpDir+"/static", 0755))
-	require.NoError(t, os.MkdirAll(tmpDir+"/templates", 0755))
+	require.NoError(t, os.MkdirAll(tmpDir+"/articles", 0o750))
+	require.NoError(t, os.MkdirAll(tmpDir+"/static", 0o750))
+	require.NoError(t, os.MkdirAll(tmpDir+"/templates", 0o750))
 
 	// Set environment variables
 	os.Setenv("ENVIRONMENT", "production")

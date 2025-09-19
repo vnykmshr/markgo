@@ -300,7 +300,7 @@ func (s *Service) handleFileChange(filepath string) {
 	}
 }
 
-func (s *Service) broadcastToSession(sessionID string, messageType string, data interface{}) {
+func (s *Service) broadcastToSession(sessionID, messageType string, data interface{}) {
 	conns, exists := s.clients[sessionID]
 	if !exists {
 		return
@@ -318,7 +318,9 @@ func (s *Service) broadcastToSession(sessionID string, messageType string, data 
 	for _, conn := range conns {
 		if err := conn.WriteJSON(message); err != nil {
 			s.logger.Debug("Failed to send WebSocket message", "error", err)
-			conn.Close()
+			if err := conn.Close(); err != nil {
+				s.logger.Debug("Failed to close WebSocket connection", "error", err)
+			}
 		} else {
 			activeConns = append(activeConns, conn)
 		}
@@ -355,7 +357,9 @@ func (s *Service) performCleanup() {
 		// Close connections
 		if conns, exists := s.clients[sessionID]; exists {
 			for _, conn := range conns {
-				conn.Close()
+				if err := conn.Close(); err != nil {
+					s.logger.Debug("Failed to close WebSocket connection", "error", err)
+				}
 			}
 			delete(s.clients, sessionID)
 		}
@@ -370,13 +374,19 @@ func (s *Service) performCleanup() {
 
 func generateSessionID() string {
 	bytes := make([]byte, 16)
-	rand.Read(bytes)
+	if _, err := rand.Read(bytes); err != nil {
+		// Fallback to time-based ID if crypto rand fails
+		return "session_" + hex.EncodeToString([]byte(time.Now().String()))[:16]
+	}
 	return "session_" + hex.EncodeToString(bytes)[:16]
 }
 
 func generateAuthToken() string {
 	bytes := make([]byte, 32)
-	rand.Read(bytes)
+	if _, err := rand.Read(bytes); err != nil {
+		// Fallback to time-based token if crypto rand fails
+		return hex.EncodeToString([]byte(time.Now().String()))
+	}
 	return hex.EncodeToString(bytes)
 }
 

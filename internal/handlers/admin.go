@@ -1,3 +1,5 @@
+// Package handlers provides HTTP request handlers for the MarkGo blog engine.
+// It includes handlers for admin operations, article management, API endpoints, and more.
 package handlers
 
 import (
@@ -336,7 +338,7 @@ func (h *AdminHandler) CompactMemory(c *gin.Context) {
 	})
 }
 
-// Profile handlers for pprof (development only)
+// ProfileIndex handles pprof profile index (development only)
 func (h *AdminHandler) ProfileIndex(c *gin.Context) {
 	if !h.requireDevelopmentEnv(c) {
 		return
@@ -447,7 +449,9 @@ func (h *AdminHandler) SetLogLevel(c *gin.Context) {
 
 	// Note: slog doesn't support runtime level changes natively
 	// This would require a more complex implementation with a custom handler
-	h.logger.Info("Log level change requested", "requested_level", level, "note", "Runtime log level changes require service restart")
+	h.logger.Info("Log level change requested",
+		"requested_level", level,
+		"note", "Runtime log level changes require service restart")
 
 	c.JSON(200, gin.H{
 		"message":         "Log level change requested",

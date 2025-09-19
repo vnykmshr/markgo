@@ -15,6 +15,20 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
+// Log format constants
+const (
+	LogFormatJSON = "json"
+	LogFormatText = "text"
+)
+
+// Log level constants
+const (
+	LogLevelDebug = "debug"
+	LogLevelInfo  = "info"
+	LogLevelWarn  = "warn"
+	LogLevelError = "error"
+)
+
 // LoggingService provides enhanced logging functionality with rotation and formatting
 type LoggingService struct {
 	logger     *slog.Logger
@@ -24,10 +38,10 @@ type LoggingService struct {
 }
 
 // NewLoggingService creates a new logging service with the given configuration
-func NewLoggingService(cfg config.LoggingConfig) (*LoggingService, error) {
+func NewLoggingService(cfg *config.LoggingConfig) (*LoggingService, error) {
 	logger, err := createLogger(cfg)
 	if err != nil {
-		return nil, apperrors.NewConfigError("logging", cfg, "Failed to create logger", err)
+		return nil, apperrors.NewConfigError("logging", *cfg, "Failed to create logger", err)
 	}
 
 	// Create base attributes that will be included in all log entries
@@ -51,7 +65,7 @@ func NewLoggingService(cfg config.LoggingConfig) (*LoggingService, error) {
 
 	return &LoggingService{
 		logger:     logger.With(baseArgs...),
-		config:     cfg,
+		config:     *cfg,
 		baseAttrs:  baseAttrs,
 		serviceCtx: context.Background(),
 	}, nil
@@ -63,7 +77,7 @@ func (ls *LoggingService) GetLogger() *slog.Logger {
 }
 
 // createLogger creates a configured slog.Logger based on the logging configuration
-func createLogger(cfg config.LoggingConfig) (*slog.Logger, error) {
+func createLogger(cfg *config.LoggingConfig) (*slog.Logger, error) {
 	// Parse log level
 	level, err := parseLogLevel(cfg.Level)
 	if err != nil {
@@ -85,9 +99,9 @@ func createLogger(cfg config.LoggingConfig) (*slog.Logger, error) {
 	// Create appropriate handler based on format
 	var handler slog.Handler
 	switch cfg.Format {
-	case "json":
+	case LogFormatJSON:
 		handler = slog.NewJSONHandler(writer, handlerOpts)
-	case "text":
+	case LogFormatText:
 		handler = slog.NewTextHandler(writer, handlerOpts)
 	default:
 		return nil, apperrors.NewConfigError("format", cfg.Format, "Unsupported log format", apperrors.ErrConfigValidation)
@@ -99,13 +113,13 @@ func createLogger(cfg config.LoggingConfig) (*slog.Logger, error) {
 // parseLogLevel converts string log level to slog.Level
 func parseLogLevel(levelStr string) (slog.Level, error) {
 	switch strings.ToLower(levelStr) {
-	case "debug":
+	case LogLevelDebug:
 		return slog.LevelDebug, nil
-	case "info":
+	case LogLevelInfo:
 		return slog.LevelInfo, nil
-	case "warn", "warning":
+	case LogLevelWarn, "warning":
 		return slog.LevelWarn, nil
-	case "error":
+	case LogLevelError:
 		return slog.LevelError, nil
 	default:
 		return slog.LevelInfo, apperrors.NewConfigError("level", levelStr, "Invalid log level", apperrors.ErrConfigValidation)
@@ -113,7 +127,7 @@ func parseLogLevel(levelStr string) (slog.Level, error) {
 }
 
 // getLogWriter returns the appropriate io.Writer for the log output configuration
-func getLogWriter(cfg config.LoggingConfig) (io.Writer, error) {
+func getLogWriter(cfg *config.LoggingConfig) (io.Writer, error) {
 	switch cfg.Output {
 	case "stdout":
 		return os.Stdout, nil
@@ -126,7 +140,7 @@ func getLogWriter(cfg config.LoggingConfig) (io.Writer, error) {
 
 		// Create directory if it doesn't exist
 		dir := filepath.Dir(cfg.File)
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
 			return nil, apperrors.NewConfigError("file", cfg.File, "Failed to create log directory", err)
 		}
 
@@ -149,7 +163,7 @@ func (ls *LoggingService) WithContext(keyvals ...interface{}) *slog.Logger {
 }
 
 // WithRequestContext creates a logger with request-specific context
-func (ls *LoggingService) WithRequestContext(ctx context.Context, entry LogEntry) *slog.Logger {
+func (ls *LoggingService) WithRequestContext(ctx context.Context, entry *LogEntry) *slog.Logger {
 	args := make([]interface{}, 0, 16)
 
 	if entry.RequestID != "" {
@@ -217,7 +231,7 @@ func (ls *LoggingService) LogPerformance(perfLog PerformanceLog) {
 }
 
 // LogSecurity logs security-related events with structured data
-func (ls *LoggingService) LogSecurity(secLog SecurityLog) {
+func (ls *LoggingService) LogSecurity(secLog *SecurityLog) {
 	level := slog.LevelWarn
 	switch secLog.Severity {
 	case "critical":
@@ -242,7 +256,7 @@ func (ls *LoggingService) LogSecurity(secLog SecurityLog) {
 }
 
 // LogHTTPRequest logs HTTP request details with structured data
-func (ls *LoggingService) LogHTTPRequest(ctx context.Context, entry LogEntry) {
+func (ls *LoggingService) LogHTTPRequest(ctx context.Context, entry *LogEntry) {
 	attrs := []slog.Attr{
 		slog.String("method", entry.Method),
 		slog.String("path", entry.Path),
@@ -276,7 +290,7 @@ func (ls *LoggingService) LogError(ctx context.Context, err error, msg string, k
 	}
 
 	// Add stack trace in debug mode
-	if ls.config.Level == "debug" {
+	if ls.config.Level == LogLevelDebug {
 		_, file, line, ok := runtime.Caller(1)
 		if ok {
 			attrs = append(attrs,
@@ -299,7 +313,12 @@ func (ls *LoggingService) LogError(ctx context.Context, err error, msg string, k
 }
 
 // LogSlowOperation logs operations that exceed expected duration
-func (ls *LoggingService) LogSlowOperation(ctx context.Context, operation string, duration time.Duration, threshold time.Duration, keyvals ...interface{}) {
+func (ls *LoggingService) LogSlowOperation(
+	ctx context.Context,
+	operation string,
+	duration, threshold time.Duration,
+	keyvals ...interface{},
+) {
 	if duration > threshold {
 		attrs := []slog.Attr{
 			slog.String("operation", operation),
@@ -323,7 +342,7 @@ func (ls *LoggingService) LogSlowOperation(ctx context.Context, operation string
 }
 
 // GetMemoryStats returns current memory statistics for logging
-func (ls *LoggingService) GetMemoryStats() (int64, int64, uint64) {
+func (ls *LoggingService) GetMemoryStats() (alloc, sys int64, mallocs uint64) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	return int64(m.Alloc), int64(m.Sys), m.Mallocs

@@ -19,7 +19,7 @@ type SearchService interface {
 	SearchByCategory(articles []*models.Article, category string) []*models.Article
 
 	// Advanced search
-	SearchWithFilters(articles []*models.Article, query string, filters SearchFilters) []*models.SearchResult
+	SearchWithFilters(articles []*models.Article, query string, filters *SearchFilters) []*models.SearchResult
 	GetSuggestions(articles []*models.Article, query string, limit int) []string
 
 	// Indexing and optimization
@@ -210,7 +210,7 @@ func (s *TextSearchService) SearchByCategory(articles []*models.Article, categor
 }
 
 // SearchWithFilters performs search with additional filtering
-func (s *TextSearchService) SearchWithFilters(articles []*models.Article, query string, filters SearchFilters) []*models.SearchResult {
+func (s *TextSearchService) SearchWithFilters(articles []*models.Article, query string, filters *SearchFilters) []*models.SearchResult {
 	// First, apply filters to narrow down articles
 	filtered := s.applyFilters(articles, filters)
 
@@ -491,7 +491,7 @@ func (s *TextSearchService) calculateRelevanceScore(article *models.Article, sea
 	return score, matchedFields
 }
 
-func (s *TextSearchService) applyFilters(articles []*models.Article, filters SearchFilters) []*models.Article {
+func (s *TextSearchService) applyFilters(articles []*models.Article, filters *SearchFilters) []*models.Article {
 	var filtered []*models.Article
 
 	for _, article := range articles {
@@ -522,7 +522,7 @@ func (s *TextSearchService) applyFilters(articles []*models.Article, filters Sea
 }
 
 // matchesPublishedFilter checks if article matches the published status filter
-func (s *TextSearchService) matchesPublishedFilter(article *models.Article, filters SearchFilters) bool {
+func (s *TextSearchService) matchesPublishedFilter(article *models.Article, filters *SearchFilters) bool {
 	if filters.OnlyPublished && article.Draft {
 		return false
 	}
@@ -530,7 +530,7 @@ func (s *TextSearchService) matchesPublishedFilter(article *models.Article, filt
 }
 
 // matchesFeaturedFilter checks if article matches the featured status filter
-func (s *TextSearchService) matchesFeaturedFilter(article *models.Article, filters SearchFilters) bool {
+func (s *TextSearchService) matchesFeaturedFilter(article *models.Article, filters *SearchFilters) bool {
 	if filters.OnlyFeatured && !article.Featured {
 		return false
 	}
@@ -538,7 +538,7 @@ func (s *TextSearchService) matchesFeaturedFilter(article *models.Article, filte
 }
 
 // matchesTagFilter checks if article matches any of the specified tags
-func (s *TextSearchService) matchesTagFilter(article *models.Article, filters SearchFilters) bool {
+func (s *TextSearchService) matchesTagFilter(article *models.Article, filters *SearchFilters) bool {
 	if len(filters.Tags) == 0 {
 		return true // No tag filter specified
 	}
@@ -554,7 +554,7 @@ func (s *TextSearchService) matchesTagFilter(article *models.Article, filters Se
 }
 
 // matchesCategoryFilter checks if article matches any of the specified categories
-func (s *TextSearchService) matchesCategoryFilter(article *models.Article, filters SearchFilters) bool {
+func (s *TextSearchService) matchesCategoryFilter(article *models.Article, filters *SearchFilters) bool {
 	if len(filters.Categories) == 0 {
 		return true // No category filter specified
 	}
@@ -570,7 +570,7 @@ func (s *TextSearchService) matchesCategoryFilter(article *models.Article, filte
 }
 
 // matchesDateFilter checks if article falls within the specified date range
-func (s *TextSearchService) matchesDateFilter(article *models.Article, filters SearchFilters) bool {
+func (s *TextSearchService) matchesDateFilter(article *models.Article, filters *SearchFilters) bool {
 	if filters.DateFrom == "" && filters.DateTo == "" {
 		return true // No date filter specified
 	}

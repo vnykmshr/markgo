@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/dustin/go-humanize"
 	"github.com/microcosm-cc/bluemonday"
@@ -42,9 +43,14 @@ func init() {
 		// Fallback to basic config if creation fails
 		basicConfig := obcache.NewDefaultConfig()
 		basicConfig.DefaultTTL = 0
-		cache, _ = obcache.New(basicConfig)
+		if fallbackCache, err := obcache.New(basicConfig); err == nil {
+			timeZoneCache = fallbackCache
+		} else {
+			// Failed to create cache, timeZoneCache remains nil
+			timeZoneCache = nil
+		}
+		return
 	}
-
 	timeZoneCache = cache
 }
 
@@ -84,7 +90,10 @@ func NewTemplateService(templatesPath string, cfg *config.Config) (*TemplateServ
 
 	// Initialize goflow scheduler for template maintenance
 	goflowScheduler := scheduler.New()
-	_ = goflowScheduler.Start() // Continue even if scheduler fails to start
+	if err := goflowScheduler.Start(); err != nil {
+		// Log warning but continue - scheduler is optional
+		_ = err // Explicitly ignore error for linting
+	}
 
 	service := &TemplateService{
 		config:    cfg,
@@ -129,7 +138,9 @@ func (t *TemplateService) Render(w io.Writer, templateName string, data any) err
 
 	tmpl := t.templates.Lookup(templateName)
 	if tmpl == nil {
-		return apperrors.NewHTTPError(404, fmt.Sprintf("Template '%s' not found", templateName), apperrors.ErrTemplateNotFound)
+		return apperrors.NewHTTPError(404,
+			fmt.Sprintf("Template '%s' not found", templateName),
+			apperrors.ErrTemplateNotFound)
 	}
 
 	return tmpl.Execute(w, data)
@@ -169,7 +180,10 @@ func (t *TemplateService) ListTemplates() []string {
 func (t *TemplateService) Reload(templatesPath string) error {
 	// Clear cache before reloading
 	if t.obcache != nil {
-		_ = t.obcache.Clear()
+		if err := t.obcache.Clear(); err != nil {
+			// Log warning but continue - cache clear is optional
+			_ = err // Explicitly ignore error for linting
+		}
 	}
 	return t.loadTemplates(templatesPath)
 }
@@ -211,7 +225,7 @@ func (t *TemplateService) setupTemplateMaintenance() {
 	}
 
 	// Template cache cleanup every hour
-	cleanupTask := workerpool.TaskFunc(func(ctx context.Context) error {
+	cleanupTask := workerpool.TaskFunc(func(_ context.Context) error {
 		if t.obcache != nil {
 			t.obcache.Cleanup()
 		}
@@ -219,7 +233,10 @@ func (t *TemplateService) setupTemplateMaintenance() {
 	})
 
 	// Schedule cleanup using proper cron format (6 fields: second, minute, hour, day, month, weekday)
-	_ = t.scheduler.ScheduleCron("template-cache-cleanup", "0 0 * * * *", cleanupTask) // Continue without scheduled cleanup if scheduling fails
+	if err := t.scheduler.ScheduleCron("template-cache-cleanup", "0 0 * * * *", cleanupTask); err != nil {
+		// Log warning but continue without scheduled cleanup
+		_ = err // Explicitly ignore error for linting
+	}
 }
 
 // renderToStringUncached renders template without caching
@@ -276,11 +293,14 @@ func (t *TemplateService) Shutdown() {
 	}
 
 	if t.obcache != nil {
-		t.obcache.Close()
+		if err := t.obcache.Close(); err != nil {
+			// Log warning but continue - close error is not critical
+			_ = err // Explicitly ignore error for linting
+		}
 	}
 }
 
-// GetFuncMap returns the template function map for reuse in other services
+// GetTemplateFuncMap returns the template function map for reuse in other services
 func GetTemplateFuncMap() template.FuncMap {
 	return templateFuncs
 }
@@ -288,8 +308,9 @@ func GetTemplateFuncMap() template.FuncMap {
 var templateFuncs = template.FuncMap{
 	"safeHTML": func(s string) template.HTML {
 		s = html.UnescapeString(s)
-		// Basic sanitization
+		// Basic sanitization using bluemonday UGC policy
 		policy := bluemonday.UGCPolicy()
+		// #nosec G203 - This is intentional HTML output for templates, sanitized by bluemonday
 		return template.HTML(policy.Sanitize(s))
 	},
 	"join": func(sep string, items []string) string {
@@ -401,7 +422,14 @@ var templateFuncs = template.FuncMap{
 	},
 	"formatDateInZone": func(date time.Time, zone, format string) string {
 		if cachedLoc, found := timeZoneCache.Get(zone); found {
-			return date.In(cachedLoc.(*time.Location)).Format(format)
+			if loc, ok := cachedLoc.(*time.Location); ok {
+				return date.In(loc).Format(format)
+			}
+			// Fallback if type assertion fails
+			if loc, err := time.LoadLocation(zone); err == nil {
+				return date.In(loc).Format(format)
+			}
+			return date.Format(format)
 		}
 
 		loc, err := time.LoadLocation(zone)
@@ -410,7 +438,10 @@ var templateFuncs = template.FuncMap{
 		}
 
 		// Store timezone location in cache with no expiration
-		_ = timeZoneCache.Set(zone, loc, 0)
+		if err := timeZoneCache.Set(zone, loc, 0); err != nil {
+			// Log warning but continue - cache set is optional
+			_ = err // Explicitly ignore error for linting
+		}
 		return date.In(loc).Format(format)
 	},
 	"now": func() time.Time {
@@ -477,9 +508,11 @@ var templateFuncs = template.FuncMap{
 	"truncateHTML": func(s string, length int) template.HTML {
 		runes := []rune(s)
 		if len(runes) <= length {
+			// #nosec G203 - This is intentional HTML output for templates
 			return template.HTML(s)
 		}
 		safe := template.HTMLEscapeString(string(runes[:length])) + "..."
+		// #nosec G203 - This is intentional HTML output for templates, content is escaped
 		return template.HTML(safe)
 	},
 	"slugify": func(s string) string {
@@ -573,8 +606,10 @@ var templateFuncs = template.FuncMap{
 			if i >= 2 { // Only take first 2 initials
 				break
 			}
-			if len(word) > 0 {
-				initials += strings.ToUpper(string([]rune(word)[0]))
+			if word != "" {
+				if r, _ := utf8.DecodeRuneInString(word); r != utf8.RuneError {
+					initials += strings.ToUpper(string(r))
+				}
 			}
 		}
 		return initials

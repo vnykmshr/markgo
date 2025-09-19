@@ -261,7 +261,7 @@ func ValidateOutputPath(filePath string) error {
 
 	// Check if directory is writable
 	dir := filepath.Dir(filePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return fmt.Errorf("cannot create output directory: %w", err)
 	}
 
@@ -270,8 +270,8 @@ func ValidateOutputPath(filePath string) error {
 	if file, err := os.Create(tempFile); err != nil {
 		return fmt.Errorf("cannot write to output directory: %w", err)
 	} else {
-		file.Close()
-		os.Remove(tempFile)
+		_ = file.Close()
+		_ = os.Remove(tempFile)
 	}
 
 	return nil

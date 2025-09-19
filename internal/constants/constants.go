@@ -1,3 +1,5 @@
+// Package constants provides application-wide constants for the MarkGo blog engine.
+// It includes version information, default values, and shared constants used across services.
 package constants
 
 import "time"
@@ -111,8 +113,8 @@ const (
 
 // File system constants
 const (
-	DefaultFilePermissions = 0644
-	DefaultDirPermissions  = 0755
+	DefaultFilePermissions = 0o644
+	DefaultDirPermissions  = 0o755
 	DefaultMaxFileSize     = 50 * 1024 * 1024 // 50MB
 )
 

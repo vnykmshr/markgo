@@ -368,7 +368,7 @@ func (c *CacheCoordinator) Shutdown(ctx context.Context) error {
 	c.logger.Info("Shutting down cache coordinator")
 
 	if c.obcache != nil {
-		c.obcache.Close()
+		_ = c.obcache.Close()
 	}
 
 	return nil

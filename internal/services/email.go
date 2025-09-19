@@ -35,7 +35,7 @@ type EmailService struct {
 	scheduler scheduler.Scheduler
 }
 
-func NewEmailService(cfg config.EmailConfig, logger *slog.Logger) *EmailService {
+func NewEmailService(cfg *config.EmailConfig, logger *slog.Logger) *EmailService {
 	var auth smtp.Auth
 	if cfg.Username != "" && cfg.Password != "" {
 		auth = smtp.PlainAuth("", cfg.Username, cfg.Password, cfg.Host)
@@ -48,7 +48,7 @@ func NewEmailService(cfg config.EmailConfig, logger *slog.Logger) *EmailService 
 	_ = goflowScheduler.Start() // Continue even if scheduler fails to start
 
 	es := &EmailService{
-		config:       cfg,
+		config:       *cfg,
 		logger:       logger,
 		auth:         auth,
 		recentEmails: make(map[string]time.Time),

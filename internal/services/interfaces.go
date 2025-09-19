@@ -126,7 +126,7 @@ type LoggingServiceInterface interface {
 
 	// Contextual logging
 	WithContext(keyvals ...interface{}) *slog.Logger
-	WithRequestContext(ctx context.Context, entry LogEntry) *slog.Logger
+	WithRequestContext(ctx context.Context, entry *LogEntry) *slog.Logger
 	WithComponent(component string) *slog.Logger
 
 	// Basic logging methods
@@ -137,13 +137,18 @@ type LoggingServiceInterface interface {
 
 	// Enhanced logging methods
 	LogPerformance(perfLog PerformanceLog)
-	LogSecurity(secLog SecurityLog)
-	LogHTTPRequest(ctx context.Context, entry LogEntry)
+	LogSecurity(secLog *SecurityLog)
+	LogHTTPRequest(ctx context.Context, entry *LogEntry)
 	LogError(ctx context.Context, err error, msg string, keyvals ...interface{})
-	LogSlowOperation(ctx context.Context, operation string, duration time.Duration, threshold time.Duration, keyvals ...interface{})
+	LogSlowOperation(
+		ctx context.Context,
+		operation string,
+		duration, threshold time.Duration,
+		keyvals ...interface{},
+	)
 
 	// Utility methods
-	GetMemoryStats() (int64, int64, uint64)
+	GetMemoryStats() (alloc, sys int64, mallocs uint64)
 
 	// Lifecycle management
 	Close() error

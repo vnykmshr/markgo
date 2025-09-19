@@ -1,3 +1,5 @@
+// Package export provides static site generation functionality for the MarkGo blog engine.
+// It handles exporting dynamic blog content to static HTML files for deployment.
 package export
 
 import (
@@ -93,7 +95,7 @@ func (s *StaticExportService) createOutputDir() error {
 		return fmt.Errorf("failed to remove existing output directory: %w", err)
 	}
 
-	if err := os.MkdirAll(s.outputDir, 0755); err != nil {
+	if err := os.MkdirAll(s.outputDir, 0o750); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
@@ -145,7 +147,7 @@ func (s *StaticExportService) copyFile(src, dst string) error {
 	}
 	defer srcFile.Close()
 
-	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dst), 0o750); err != nil {
 		return err
 	}
 
@@ -277,11 +279,11 @@ func (s *StaticExportService) generatePage(router *gin.Engine, page Page) error 
 
 	// Write to file
 	filePath := filepath.Join(s.outputDir, page.FilePath)
-	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filePath), 0o750); err != nil {
 		return fmt.Errorf("failed to create directory for %s: %w", filePath, err)
 	}
 
-	if err := os.WriteFile(filePath, []byte(htmlContent), 0644); err != nil {
+	if err := os.WriteFile(filePath, []byte(htmlContent), 0o600); err != nil {
 		return fmt.Errorf("failed to write file %s: %w", filePath, err)
 	}
 
@@ -383,7 +385,7 @@ func (s *StaticExportService) generateFeeds(ctx context.Context) error {
 			content = s.processXML(content)
 		}
 
-		if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(filePath, []byte(content), 0o600); err != nil {
 			return fmt.Errorf("failed to write %s: %w", feed.file, err)
 		}
 

@@ -46,7 +46,7 @@ func TestNewTemplateService(t *testing.T) {
 
 	for filename, content := range testTemplates {
 		filePath := filepath.Join(tempDir, filename)
-		err := os.WriteFile(filePath, []byte(content), 0644)
+		err := os.WriteFile(filePath, []byte(content), 0o600)
 		require.NoError(t, err)
 	}
 
@@ -184,7 +184,7 @@ func TestTemplateService_Reload(t *testing.T) {
 	// Create initial template
 	initialTemplate := `<h1>Initial Template</h1>`
 	filePath := filepath.Join(tempDir, "test.html")
-	err := os.WriteFile(filePath, []byte(initialTemplate), 0644)
+	err := os.WriteFile(filePath, []byte(initialTemplate), 0o600)
 	require.NoError(t, err)
 
 	service, err := NewTemplateService(tempDir, cfg)
@@ -197,7 +197,7 @@ func TestTemplateService_Reload(t *testing.T) {
 
 	// Update template file
 	updatedTemplate := `<h1>Updated Template</h1>`
-	err = os.WriteFile(filePath, []byte(updatedTemplate), 0644)
+	err = os.WriteFile(filePath, []byte(updatedTemplate), 0o600)
 	require.NoError(t, err)
 
 	// Reload templates
@@ -218,7 +218,7 @@ func TestTemplateFunctions_SafeHTML(t *testing.T) {
 	tempDir := t.TempDir()
 	templateContent := `{{.content | safeHTML}}`
 	filePath := filepath.Join(tempDir, "safehtml.html")
-	err := os.WriteFile(filePath, []byte(templateContent), 0644)
+	err := os.WriteFile(filePath, []byte(templateContent), 0o600)
 	require.NoError(t, err)
 
 	// Reload with new template
@@ -692,7 +692,7 @@ func createTestTemplateService(t *testing.T) *TemplateService {
 
 	for filename, content := range testTemplates {
 		filePath := filepath.Join(tempDir, filename)
-		err := os.WriteFile(filePath, []byte(content), 0644)
+		err := os.WriteFile(filePath, []byte(content), 0o600)
 		require.NoError(t, err)
 	}
 
@@ -757,7 +757,7 @@ func createBenchmarkTemplateService(b *testing.B) *TemplateService {
 </html>`
 
 	filePath := filepath.Join(tempDir, "base.html")
-	err := os.WriteFile(filePath, []byte(templateContent), 0644)
+	err := os.WriteFile(filePath, []byte(templateContent), 0o600)
 	require.NoError(b, err)
 
 	service, err := NewTemplateService(tempDir, cfg)

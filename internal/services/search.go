@@ -91,7 +91,7 @@ func (s *SearchService) SearchByTag(articles []*models.Article, tag string) []*m
 
 	for _, article := range articles {
 		for _, articleTag := range article.Tags {
-			if strings.ToLower(articleTag) == tag {
+			if strings.EqualFold(articleTag, tag) {
 				results = append(results, article)
 				break
 			}
@@ -107,7 +107,7 @@ func (s *SearchService) SearchByCategory(articles []*models.Article, category st
 
 	for _, article := range articles {
 		for _, articleCategory := range article.Categories {
-			if strings.ToLower(articleCategory) == category {
+			if strings.EqualFold(articleCategory, category) {
 				results = append(results, article)
 				break
 			}
@@ -149,7 +149,7 @@ func (s *SearchService) GetSuggestions(articles []*models.Article, query string,
 		}
 	}
 
-	var result []string
+	result := make([]string, 0, len(suggestions))
 	for suggestion := range suggestions {
 		result = append(result, suggestion)
 	}
@@ -163,9 +163,7 @@ func (s *SearchService) GetSuggestions(articles []*models.Article, query string,
 	return result
 }
 
-func (s *SearchService) calculateScore(article *models.Article, terms []string) (float64, []string) {
-	var score float64
-	var fields []string
+func (s *SearchService) calculateScore(article *models.Article, terms []string) (score float64, fields []string) {
 
 	title := strings.ToLower(article.Title)
 	content := strings.ToLower(article.Content)
@@ -189,7 +187,7 @@ func (s *SearchService) calculateScore(article *models.Article, terms []string) 
 
 		// Tag exact matches get high score
 		for _, tag := range article.Tags {
-			if strings.ToLower(tag) == term {
+			if strings.EqualFold(tag, term) {
 				score += 15.0
 				if !contains(fields, "tags") {
 					fields = append(fields, "tags")
@@ -199,7 +197,7 @@ func (s *SearchService) calculateScore(article *models.Article, terms []string) 
 
 		// Category exact matches get high score
 		for _, category := range article.Categories {
-			if strings.ToLower(category) == term {
+			if strings.EqualFold(category, term) {
 				score += 12.0
 				if !contains(fields, "categories") {
 					fields = append(fields, "categories")

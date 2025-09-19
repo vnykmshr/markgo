@@ -126,7 +126,7 @@ func main() {
 	}
 
 	// Write article content
-	if err := os.WriteFile(filepath, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(filepath, []byte(content), 0o600); err != nil {
 		apperrors.HandleCLIError(
 			apperrors.NewCLIError("file creation", fmt.Sprintf("Failed to write article file '%s'", filepath), err, 1),
 			cleanup,

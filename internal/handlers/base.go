@@ -1,3 +1,5 @@
+// Package handlers provides HTTP request handlers for the MarkGo blog engine.
+// It includes handlers for admin operations, article management, API endpoints, and more.
 package handlers
 
 import (
@@ -19,7 +21,11 @@ type BaseHandler struct {
 }
 
 // NewBaseHandler creates a new base handler
-func NewBaseHandler(config *config.Config, logger *slog.Logger, templateService services.TemplateServiceInterface) *BaseHandler {
+func NewBaseHandler(
+	config *config.Config,
+	logger *slog.Logger,
+	templateService services.TemplateServiceInterface,
+) *BaseHandler {
 	return &BaseHandler{
 		config:          config,
 		logger:          logger,

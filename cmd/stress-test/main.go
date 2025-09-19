@@ -245,7 +245,7 @@ func saveResults(filename string, results *TestResults) error {
 		return fmt.Errorf("marshaling results: %w", err)
 	}
 
-	if err := os.WriteFile(filename, data, 0644); err != nil {
+	if err := os.WriteFile(filename, data, 0o600); err != nil {
 		return fmt.Errorf("writing results file: %w", err)
 	}
 
