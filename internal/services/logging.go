@@ -10,9 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/natefinch/lumberjack.v2"
+
 	"github.com/vnykmshr/markgo/internal/config"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 // Log format constants

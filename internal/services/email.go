@@ -14,6 +14,7 @@ import (
 
 	"github.com/vnykmshr/goflow/pkg/scheduling/scheduler"
 	"github.com/vnykmshr/goflow/pkg/scheduling/workerpool"
+
 	"github.com/vnykmshr/markgo/internal/config"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/models"
@@ -45,7 +46,8 @@ func NewEmailService(cfg *config.EmailConfig, logger *slog.Logger) *EmailService
 
 	// Initialize goflow scheduler for email cleanup tasks
 	goflowScheduler := scheduler.New()
-	_ = goflowScheduler.Start() // Ignore error: email service should continue even if scheduler fails to start
+	//nolint:errcheck // Ignore error: email service should continue even if scheduler fails to start
+	_ = goflowScheduler.Start()
 
 	es := &EmailService{
 		config:       *cfg,
@@ -398,7 +400,8 @@ func (e *EmailService) setupEmailCleanupTasks() {
 	})
 
 	// Schedule cleanup every 10 minutes using cron format (6 fields: second, minute, hour, day, month, weekday)
-	_ = e.scheduler.ScheduleCron("email-cleanup", "0 */10 * * * *", cleanupTask) // Ignore error: email service should continue even if cleanup scheduling fails
+	//nolint:errcheck // Ignore error: email service should continue even if cleanup scheduling fails
+	_ = e.scheduler.ScheduleCron("email-cleanup", "0 */10 * * * *", cleanupTask)
 }
 
 // performCleanup removes old entries from the recent emails cache

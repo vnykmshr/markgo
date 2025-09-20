@@ -435,8 +435,10 @@ func (s *TextSearchService) extractWords(text string) []string {
 	return words
 }
 
-func (s *TextSearchService) calculateRelevanceScore(article *models.Article, searchTerms []string) (score float64, matchedFields []string) {
-
+func (s *TextSearchService) calculateRelevanceScore(
+	article *models.Article,
+	searchTerms []string,
+) (score float64, matchedFields []string) {
 	titleLower := strings.ToLower(article.Title)
 	contentLower := strings.ToLower(article.Content)
 	descriptionLower := strings.ToLower(article.Description)

@@ -22,6 +22,8 @@ func NewServiceFactory(logger *slog.Logger) *ServiceFactory {
 
 // ArticleServiceInterface defines the article service interface
 // Defined locally to avoid import cycles
+//
+//nolint:revive // Interface naming follows established pattern in codebase
 type ArticleServiceInterface interface {
 	// Article retrieval methods
 	GetAllArticles() []*models.Article

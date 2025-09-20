@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/vnykmshr/obcache-go/pkg/obcache"
+
 	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/services"
-	"github.com/vnykmshr/obcache-go/pkg/obcache"
 )
 
 // CacheAdapter defines the interface for cache operations
@@ -29,7 +30,7 @@ type ObcacheAdapter struct {
 
 func (a *ObcacheAdapter) Clear() {
 	if a.cache != nil {
-		_ = a.cache.Clear() // Ignore error: cache clear is non-critical
+		_ = a.cache.Clear() //nolint:errcheck // Ignore error: cache clear is non-critical
 	}
 }
 
@@ -42,13 +43,13 @@ func (a *ObcacheAdapter) Get(key string) (interface{}, bool) {
 
 func (a *ObcacheAdapter) Set(key string, value interface{}, ttl time.Duration) {
 	if a.cache != nil {
-		_ = a.cache.Set(key, value, ttl) // Ignore error: cache set is non-critical
+		_ = a.cache.Set(key, value, ttl) //nolint:errcheck // Ignore error: cache set is non-critical
 	}
 }
 
 func (a *ObcacheAdapter) Delete(key string) {
 	if a.cache != nil {
-		_ = a.cache.Delete(key) // Ignore error: cache delete is non-critical
+		_ = a.cache.Delete(key) //nolint:errcheck // Ignore error: cache delete is non-critical
 	}
 }
 

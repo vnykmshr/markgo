@@ -47,15 +47,13 @@ func NewServiceContainer(config *Config, logger *slog.Logger) (*ServiceContainer
 	}
 
 	// Initialize services in dependency order
-	if err := container.initializeServices(); err != nil {
-		return nil, fmt.Errorf("failed to initialize services: %w", err)
-	}
+	container.initializeServices()
 
 	return container, nil
 }
 
 // initializeServices initializes all services in the correct order
-func (c *ServiceContainer) initializeServices() error {
+func (c *ServiceContainer) initializeServices() {
 	// 1. Initialize cache coordinator if caching is enabled
 	if c.config.CacheEnabled {
 		cacheConfig := c.config.CacheConfig
@@ -95,8 +93,6 @@ func (c *ServiceContainer) initializeServices() error {
 		c.searchService,
 		c.logger,
 	)
-
-	return nil
 }
 
 // Start initializes and starts all services

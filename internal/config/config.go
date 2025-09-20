@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
 )
 

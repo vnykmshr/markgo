@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/constants"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 // SimpleTemplateService provides clean, maintainable template functionality

@@ -19,12 +19,13 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/vnykmshr/goflow/pkg/scheduling/scheduler"
 	"github.com/vnykmshr/goflow/pkg/scheduling/workerpool"
-	"github.com/vnykmshr/markgo/internal/config"
-	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/obcache-go/pkg/obcache"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"golang.org/x/text/unicode/norm"
+
+	"github.com/vnykmshr/markgo/internal/config"
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
 )
 
 var (
