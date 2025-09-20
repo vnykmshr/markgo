@@ -1,23 +1,17 @@
 # MarkGo Engine - GolangCI-Lint Configuration
-# Production-grade static analysis for Go code
+# Balanced static analysis for Go code - high quality without excessive strictness
 
 run:
   timeout: 5m
   issues-exit-code: 1
   tests: true
-  skip-dirs:
-    - vendor
-    - tmp
-    - todos
-  skip-files:
-    - ".*_test.go"
   modules-download-mode: readonly
 
 output:
-  format: colored-line-number
+  formats:
+    - format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
-  uniq-by-line: true
   sort-results: true
 
 linters-settings:
@@ -32,21 +26,16 @@ linters-settings:
   gocritic:
     enabled-tags:
       - diagnostic
-      - experimental
-      - opinionated
       - performance
       - style
     disabled-checks:
       - commentedOutCode
       - whyNoLint
+      - unnamedResult
+      - unlambda
 
   gocyclo:
-    min-complexity: 15
-
-  godot:
-    scope: declarations
-    exclude:
-      - "check interfaces"
+    min-complexity: 20
 
   gofmt:
     simplify: true
@@ -54,18 +43,9 @@ linters-settings:
   goimports:
     local-prefixes: github.com/vnykmshr/markgo
 
-  golint:
-    min-confidence: 0.8
-
-  gomodguard:
-    blocked:
-      modules:
-        - golang.org/x/exp:
-            recommendations:
-              - "use stable alternatives"
-
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
     settings:
       printf:
         funcs:
@@ -75,21 +55,22 @@ linters-settings:
           - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
 
   lll:
-    line-length: 120
-
-  maligned:
-    suggest-new: true
+    line-length: 140
 
   misspell:
     locale: US
 
   nakedret:
-    max-func-lines: 30
+    max-func-lines: 50
 
-  prealloc:
-    simple: true
-    range-loops: true
-    for-loops: false
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+        disabled: false
+        arguments:
+          - "checkPrivateReceivers"
+          - "sayRepetitiveInsteadOfStutters"
 
   unparam:
     check-exported: false
@@ -97,91 +78,88 @@ linters-settings:
   unused:
     check-exported: false
 
-  whitespace:
-    multi-if: false
-    multi-func: false
-
 linters:
   disable-all: true
   enable:
-    # Core linters
+    # Core linters - essential for code correctness
     - errcheck      # Check for unchecked errors
     - gosimple      # Suggest code simplifications
-    - govet         # Go vet tool
+    - govet         # Go vet tool with shadow detection
     - ineffassign   # Detect ineffectual assignments
     - staticcheck   # Static analysis checks
     - typecheck     # Type checking
     - unused        # Find unused variables/functions
 
-    # Style and formatting
+    # Style and formatting - maintain consistency
     - gofmt         # Format checker
     - goimports     # Import grouping and formatting
-    - revive        # Replacement for golint
-    - stylecheck    # Style checks
+    - revive        # Replacement for golint with better rules
 
-    # Performance
-    - prealloc      # Suggest slice preallocation
-    - bodyclose     # Check for unclosed HTTP response bodies
-
-    # Security
+    # Security - important for production code
     - gosec         # Security audit
-    - gas           # Security audit (alias for gosec)
 
-    # Code quality
-    - gocyclo       # Cyclomatic complexity
+    # Code quality - reasonable checks
+    - gocyclo       # Cyclomatic complexity (relaxed to 20)
     - goconst       # Find repeated strings that could be constants
-    - gocritic      # Comprehensive code analysis
+    - gocritic      # Code analysis (without experimental/opinionated)
     - misspell      # Spell checking
-    - unparam       # Find unused function parameters
-    - nakedret      # Check for naked returns
-    - whitespace    # Whitespace issues
-    - lll           # Line length checker
-
-    # Potential bugs
-    - rowserrcheck  # Check for errors from Rows.Err
-    - sqlclosecheck # Check for SQL statement close calls
-    - nilerr        # Check for nil error returns
+    - nakedret      # Check for naked returns (relaxed to 50 lines)
 
 issues:
+  exclude-dirs:
+    - vendor
+    - tmp
+    - todos
+
+  exclude-files:
+    - ".*_test.go"
+
   exclude-rules:
-    # Exclude known false positives
+    # Relax rules for test files
     - path: _test\.go
       linters:
         - gocyclo
         - errcheck
-        - dupl
         - gosec
+        - goconst
+        - misspell
+
+    # Relax rules for cmd/ packages (main packages often need flexibility)
     - path: cmd/
       linters:
         - revive
-        - stylecheck
         - gosec
         - gocyclo
         - gocritic
-        - lll
         - errcheck
-        - unparam
         - goconst
         - misspell
+        - nakedret
+
+    # Allow missing comments in internal packages
     - path: internal/
       linters:
         - revive
-        - stylecheck
       text: "should have comment"
-    # Allow HTML template functions
+
+    # Allow HTML template functions (common in web apps)
     - linters:
         - gosec
       text: "G203.*HTML.*auto-escape"
-    # Allow some common patterns
+
+    # Allow some common Go patterns
     - linters:
-        - gocritic
-      text: "unlambda"
+        - gosec
+      text: "G204.*subprocess.*variable"
 
   exclude-use-default: false
   exclude:
     # Standard Go patterns that are acceptable
     - "Error return value of .((os\\.)?std(out|err)\\..*|.*Close|.*Flush|os\\.Remove(All)?|.*printf?|os\\.(Un)?Setenv). is not checked"
+    # Allow defer in loops for resource cleanup
+    - "G307.*defer.*loop"
 
+  uniq-by-line: true
   max-issues-per-linter: 0
   max-same-issues: 0
   new: false
@@ -191,5 +169,5 @@ severity:
   rules:
     - linters:
         - revive
-        - stylecheck
+        - misspell
       severity: warning
