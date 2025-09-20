@@ -1009,9 +1009,21 @@ func validatePath(path, fieldName string) error {
 	}
 
 	// Convert to absolute path for validation
-	_, err := filepath.Abs(path)
+	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return apperrors.NewConfigError(fieldName, path, "Invalid path format", apperrors.ErrConfigValidation)
+	}
+
+	// Check if directory exists and is actually a directory
+	info, err := os.Stat(absPath)
+	if os.IsNotExist(err) {
+		return apperrors.NewConfigError(fieldName, path, fieldName+" directory does not exist", apperrors.ErrConfigValidation)
+	}
+	if err != nil {
+		return apperrors.NewConfigError(fieldName, path, "Cannot access "+fieldName, apperrors.ErrConfigValidation)
+	}
+	if !info.IsDir() {
+		return apperrors.NewConfigError(fieldName, path, fieldName+" must be a directory", apperrors.ErrConfigValidation)
 	}
 
 	return nil
