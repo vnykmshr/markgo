@@ -48,7 +48,7 @@ func NewLoggingService(cfg *config.LoggingConfig) (*LoggingService, error) {
 	// Create base attributes that will be included in all log entries
 	baseAttrs := []slog.Attr{
 		slog.String("service", "markgo"),
-		slog.String("version", "v1.4.0"),
+		slog.String("version", "v1.5.0"),
 		slog.String("hostname", getHostname()),
 		slog.Int("pid", os.Getpid()),
 	}
