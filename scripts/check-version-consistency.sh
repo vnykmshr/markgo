@@ -22,9 +22,9 @@ echo -e "${GREEN}📋 Canonical version: ${CANONICAL_VERSION}${NC}"
 
 # Files to check for version consistency
 declare -a VERSION_FILES=(
-    "cmd/init/main.go:version.*=.*\""
-    "internal/handlers/api.go:\"version\".*\""
-    "internal/services/logging.go:\"version\".*\""
+    "cmd/init/main.go:constants\.AppVersion"
+    "internal/handlers/api.go:constants\.AppVersion"
+    "internal/services/logging.go:constants\.AppVersion"
 )
 
 ERRORS=0
@@ -37,21 +37,12 @@ for file_pattern in "${VERSION_FILES[@]}"; do
         continue
     fi
 
-    # Extract version from file
-    VERSION_IN_FILE=$(grep -E "$pattern" "$file" | sed -E 's/.*"([^"]+)".*/\1/' | head -1)
-
-    if [[ -z "$VERSION_IN_FILE" ]]; then
-        echo -e "${YELLOW}⚠️  No version found in: $file${NC}"
-        continue
-    fi
-
-    if [[ "$VERSION_IN_FILE" != "$CANONICAL_VERSION" ]]; then
-        echo -e "${RED}❌ Version mismatch in $file:${NC}"
-        echo -e "   Expected: ${GREEN}$CANONICAL_VERSION${NC}"
-        echo -e "   Found:    ${RED}$VERSION_IN_FILE${NC}"
-        ((ERRORS++))
+    # Check if file uses constants.AppVersion
+    if grep -q "$pattern" "$file"; then
+        echo -e "${GREEN}✅ $file: uses constants.AppVersion${NC}"
     else
-        echo -e "${GREEN}✅ $file: $VERSION_IN_FILE${NC}"
+        echo -e "${RED}❌ $file: does not use constants.AppVersion${NC}"
+        ((ERRORS++))
     fi
 done
 
@@ -67,12 +58,25 @@ echo -e "\n${GREEN}🔍 Checking for hardcoded version patterns...${NC}"
 # Remove the 'v' prefix for numeric version checks
 NUMERIC_VERSION="${CANONICAL_VERSION#v}"
 
-# Look for version patterns in Go files (excluding test files and generated files)
-VERSION_PATTERNS=$(find . -name "*.go" -not -path "./vendor/*" -not -path "./.git/*" -not -name "*_test.go" -exec grep -l "\"[0-9]\+\.[0-9]\+\.[0-9]\+\"" {} \; 2>/dev/null || true)
+# Look for hardcoded version patterns in Go files (excluding test files, generated files, and expected locations)
+echo -e "${GREEN}🔍 Checking for hardcoded version strings...${NC}"
+HARDCODED_VERSIONS=$(find . -name "*.go" -not -path "./vendor/*" -not -path "./.git/*" -not -name "*_test.go" -not -path "./internal/constants/constants.go" -not -path "./cmd/server/main.go" -exec grep -l "\"v1\.[0-9]\+\.[0-9]\+\"" {} \; 2>/dev/null || true)
 
-if [[ -n "$VERSION_PATTERNS" ]]; then
-    echo -e "${YELLOW}⚠️  Found potential hardcoded versions in:${NC}"
-    echo "$VERSION_PATTERNS"
+if [[ -n "$HARDCODED_VERSIONS" ]]; then
+    echo -e "${RED}❌ Found hardcoded version strings in:${NC}"
+    echo "$HARDCODED_VERSIONS"
+    echo -e "${RED}   These should use constants.AppVersion instead${NC}"
+    ((ERRORS++))
+else
+    echo -e "${GREEN}✅ No hardcoded version strings found (excluding expected locations)${NC}"
+fi
+
+# Look for other numeric version patterns that might be unintentional
+OTHER_VERSIONS=$(find . -name "*.go" -not -path "./vendor/*" -not -path "./.git/*" -not -name "*_test.go" -exec grep -l "\"[0-9]\+\.[0-9]\+\.[0-9]\+\"" {} \; 2>/dev/null || true)
+
+if [[ -n "$OTHER_VERSIONS" ]]; then
+    echo -e "${YELLOW}⚠️  Found other numeric version patterns in:${NC}"
+    echo "$OTHER_VERSIONS"
     echo -e "${YELLOW}   Please verify these are intentional and not version references${NC}"
 fi
 

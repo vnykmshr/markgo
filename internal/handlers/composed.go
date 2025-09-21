@@ -77,6 +77,13 @@ type Handlers struct {
 	cacheService   CacheAdapter
 }
 
+// BuildInfo contains build-time information
+type BuildInfo struct {
+	Version   string
+	GitCommit string
+	BuildTime string
+}
+
 // Config for handler initialization
 type Config struct {
 	ArticleService  services.ArticleServiceInterface
@@ -87,6 +94,7 @@ type Config struct {
 	Config          *config.Config
 	Logger          *slog.Logger
 	Cache           *obcache.Cache
+	BuildInfo       *BuildInfo
 }
 
 // New creates a new composed handlers instance
@@ -104,6 +112,7 @@ func New(cfg *Config) *Handlers {
 		cfg.ArticleService,
 		cfg.SearchService,
 		cachedFunctions,
+		cfg.BuildInfo,
 	)
 
 	adminHandler := NewAdminHandler(
@@ -113,6 +122,7 @@ func New(cfg *Config) *Handlers {
 		cfg.ArticleService,
 		time.Now(),
 		CachedAdminFunctions{},
+		cfg.BuildInfo,
 	)
 
 	apiHandler := NewAPIHandler(
@@ -123,6 +133,7 @@ func New(cfg *Config) *Handlers {
 		cfg.EmailService,
 		time.Now(),
 		CachedAPIFunctions{},
+		cfg.BuildInfo,
 	)
 
 	// Create preview handler (if service is available)
@@ -132,7 +143,10 @@ func New(cfg *Config) *Handlers {
 			cfg.PreviewService,
 			cfg.ArticleService,
 			cfg.TemplateService,
-			BaseHandler{logger: cfg.Logger},
+			BaseHandler{
+				logger:    cfg.Logger,
+				buildInfo: cfg.BuildInfo,
+			},
 		)
 	}
 

@@ -19,6 +19,7 @@ type BaseHandler struct {
 	config          *config.Config
 	logger          *slog.Logger
 	templateService services.TemplateServiceInterface
+	buildInfo       *BuildInfo
 }
 
 // NewBaseHandler creates a new base handler
@@ -26,11 +27,13 @@ func NewBaseHandler(
 	config *config.Config,
 	logger *slog.Logger,
 	templateService services.TemplateServiceInterface,
+	buildInfo *BuildInfo,
 ) *BaseHandler {
 	return &BaseHandler{
 		config:          config,
 		logger:          logger,
 		templateService: templateService,
+		buildInfo:       buildInfo,
 	}
 }
 
@@ -178,12 +181,29 @@ func (h *BaseHandler) requireDevelopmentEnv(c *gin.Context) bool {
 
 // buildBaseTemplateData creates common template data that most pages need
 func (h *BaseHandler) buildBaseTemplateData(title string) map[string]any {
-	return map[string]any{"title": title, "config": h.config}
+	appVersion := "unknown"
+	if h.buildInfo != nil && h.buildInfo.Version != "" {
+		appVersion = h.buildInfo.Version
+	}
+	return map[string]any{
+		"title":       title,
+		"config":      h.config,
+		"app_version": appVersion,
+	}
 }
 
 // buildArticlePageData creates template data for article pages
 func (h *BaseHandler) buildArticlePageData(title string, recentArticles []*models.Article) map[string]any {
-	return map[string]any{"title": title, "config": h.config, "recent_articles": recentArticles}
+	appVersion := "unknown"
+	if h.buildInfo != nil && h.buildInfo.Version != "" {
+		appVersion = h.buildInfo.Version
+	}
+	return map[string]any{
+		"title":           title,
+		"config":          h.config,
+		"recent_articles": recentArticles,
+		"app_version":     appVersion,
+	}
 }
 
 // respondWithJSON provides pooled JSON response handling

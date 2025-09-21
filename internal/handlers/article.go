@@ -43,9 +43,10 @@ func NewArticleHandler(
 	articleService services.ArticleServiceInterface,
 	searchService services.SearchServiceInterface,
 	cachedFunctions CachedArticleFunctions,
+	buildInfo *BuildInfo,
 ) *ArticleHandler {
 	return &ArticleHandler{
-		BaseHandler:     NewBaseHandler(config, logger, templateService),
+		BaseHandler:     NewBaseHandler(config, logger, templateService, buildInfo),
 		articleService:  articleService,
 		searchService:   searchService,
 		cachedFunctions: cachedFunctions,

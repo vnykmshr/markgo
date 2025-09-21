@@ -13,6 +13,7 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/constants"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
 )
 
@@ -48,7 +49,7 @@ func NewLoggingService(cfg *config.LoggingConfig) (*LoggingService, error) {
 	// Create base attributes that will be included in all log entries
 	baseAttrs := []slog.Attr{
 		slog.String("service", "markgo"),
-		slog.String("version", "v1.5.0"),
+		slog.String("version", constants.AppVersion),
 		slog.String("hostname", getHostname()),
 		slog.Int("pid", os.Getpid()),
 	}

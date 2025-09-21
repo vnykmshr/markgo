@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/constants"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/models"
 	"github.com/vnykmshr/markgo/internal/services"
@@ -43,9 +44,10 @@ func NewAPIHandler(
 	emailService services.EmailServiceInterface,
 	startTime time.Time,
 	cachedFunctions CachedAPIFunctions,
+	buildInfo *BuildInfo,
 ) *APIHandler {
 	return &APIHandler{
-		BaseHandler:     NewBaseHandler(config, logger, templateService),
+		BaseHandler:     NewBaseHandler(config, logger, templateService, buildInfo),
 		articleService:  articleService,
 		emailService:    emailService,
 		startTime:       startTime,
@@ -61,7 +63,7 @@ func (h *APIHandler) Health(c *gin.Context) {
 		"status":      "healthy",
 		"timestamp":   time.Now().Unix(),
 		"uptime":      uptime.String(),
-		"version":     "v1.5.0", // This could come from build info
+		"version":     constants.AppVersion,
 		"environment": h.config.Environment,
 		"services": map[string]any{
 			"articles": "healthy", // Could check article service health

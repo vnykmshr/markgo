@@ -17,11 +17,19 @@ import (
 	"github.com/vnykmshr/obcache-go/pkg/obcache"
 
 	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/constants"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/handlers"
 	"github.com/vnykmshr/markgo/internal/middleware"
 	"github.com/vnykmshr/markgo/internal/services"
 	"github.com/vnykmshr/markgo/internal/services/preview"
+)
+
+// Build-time variables injected via ldflags
+var (
+	version   = constants.AppVersion // fallback to constant
+	gitCommit = "unknown"
+	buildTime = "unknown"
 )
 
 func main() {
@@ -199,6 +207,11 @@ func main() {
 		Config:          cfg,
 		Logger:          logger,
 		Cache:           cache,
+		BuildInfo: &handlers.BuildInfo{
+			Version:   version,
+			GitCommit: gitCommit,
+			BuildTime: buildTime,
+		},
 	})
 
 	// Setup routes

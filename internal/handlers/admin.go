@@ -53,9 +53,10 @@ func NewAdminHandler(
 	articleService services.ArticleServiceInterface,
 	startTime time.Time,
 	cachedFunctions CachedAdminFunctions,
+	buildInfo *BuildInfo,
 ) *AdminHandler {
 	return &AdminHandler{
-		BaseHandler:     NewBaseHandler(config, logger, templateService),
+		BaseHandler:     NewBaseHandler(config, logger, templateService, buildInfo),
 		articleService:  articleService,
 		startTime:       startTime,
 		cachedFunctions: cachedFunctions,
@@ -238,6 +239,24 @@ func (h *AdminHandler) Debug(c *gin.Context) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
+	buildInfo := map[string]any{
+		"version":     "unknown",
+		"git_commit":  "unknown",
+		"build_time":  "unknown",
+		"environment": h.config.Environment,
+	}
+	if h.buildInfo != nil {
+		if h.buildInfo.Version != "" {
+			buildInfo["version"] = h.buildInfo.Version
+		}
+		if h.buildInfo.GitCommit != "" {
+			buildInfo["git_commit"] = h.buildInfo.GitCommit
+		}
+		if h.buildInfo.BuildTime != "" {
+			buildInfo["build_time"] = h.buildInfo.BuildTime
+		}
+	}
+
 	debugInfo := map[string]any{
 		"runtime": map[string]any{
 			"go_version":    runtime.Version(),
@@ -269,6 +288,7 @@ func (h *AdminHandler) Debug(c *gin.Context) {
 			"cache_ttl":      h.config.Cache.TTL.String(),
 			"cache_max_size": h.config.Cache.MaxSize,
 		},
+		"build":  buildInfo,
 		"uptime": time.Since(h.startTime).String(),
 	}
 
