@@ -192,3 +192,82 @@ type PreviewStats struct {
 	FilesWatched   int           `json:"files_watched"`
 	Uptime         time.Duration `json:"uptime"`
 }
+
+// SEOServiceInterface defines the interface for SEO automation operations
+type SEOServiceInterface interface {
+	// Sitemap generation
+	GenerateSitemap() ([]byte, error)
+	GetSitemapLastModified() time.Time
+	RefreshSitemap() error
+
+	// Schema.org structured data
+	GenerateArticleSchema(article *models.Article, baseURL string) (map[string]interface{}, error)
+	GenerateWebsiteSchema(siteConfig SiteConfig) (map[string]interface{}, error)
+	GenerateBreadcrumbSchema(breadcrumbs []Breadcrumb) (map[string]interface{}, error)
+
+	// Open Graph and meta tag optimization
+	GenerateOpenGraphTags(article *models.Article, baseURL string) (map[string]string, error)
+	GenerateTwitterCardTags(article *models.Article, baseURL string) (map[string]string, error)
+	GenerateMetaTags(article *models.Article, siteConfig SiteConfig) (map[string]string, error)
+
+	// SEO analysis and monitoring
+	AnalyzeContent(content string) (*SEOAnalysis, error)
+	GetPerformanceMetrics() (*SEOMetrics, error)
+	GenerateRobotsTxt(config RobotsConfig) ([]byte, error)
+
+	// Service lifecycle
+	Start() error
+	Stop() error
+	IsEnabled() bool
+}
+
+// SiteConfig represents site-wide configuration for SEO
+type SiteConfig struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	BaseURL     string `json:"base_url"`
+	Language    string `json:"language"`
+	Author      string `json:"author"`
+	Logo        string `json:"logo,omitempty"`
+	Image       string `json:"image,omitempty"`
+}
+
+// Breadcrumb represents a breadcrumb item for structured data
+type Breadcrumb struct {
+	Name string `json:"name"`
+	URL  string `json:"url"`
+}
+
+// SEOAnalysis represents content SEO analysis results
+type SEOAnalysis struct {
+	TitleLength  int      `json:"title_length"`
+	DescLength   int      `json:"description_length"`
+	WordCount    int      `json:"word_count"`
+	ReadingTime  int      `json:"reading_time"`
+	HeadingCount int      `json:"heading_count"`
+	ImageCount   int      `json:"image_count"`
+	LinkCount    int      `json:"link_count"`
+	Keywords     []string `json:"keywords"`
+	Suggestions  []string `json:"suggestions"`
+	Score        float64  `json:"score"`
+}
+
+// SEOMetrics represents SEO performance metrics
+type SEOMetrics struct {
+	SitemapSize        int       `json:"sitemap_size"`
+	LastGenerated      time.Time `json:"last_generated"`
+	ArticlesIndexed    int       `json:"articles_indexed"`
+	AvgContentScore    float64   `json:"avg_content_score"`
+	SchemaValidation   bool      `json:"schema_validation"`
+	OpenGraphEnabled   bool      `json:"open_graph_enabled"`
+	TwitterCardEnabled bool      `json:"twitter_card_enabled"`
+}
+
+// RobotsConfig represents robots.txt configuration
+type RobotsConfig struct {
+	UserAgent  string   `json:"user_agent"`
+	Allow      []string `json:"allow"`
+	Disallow   []string `json:"disallow"`
+	CrawlDelay int      `json:"crawl_delay,omitempty"`
+	SitemapURL string   `json:"sitemap_url"`
+}
