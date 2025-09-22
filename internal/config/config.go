@@ -44,6 +44,7 @@ type Config struct {
 	Logging       LoggingConfig   `json:"logging"`
 	Analytics     AnalyticsConfig `json:"analytics"`
 	Preview       PreviewConfig   `json:"preview"`
+	SEO           SEOConfig       `json:"seo"`
 }
 
 type ServerConfig struct {
@@ -140,6 +141,23 @@ type PreviewConfig struct {
 	AuthToken      string        `json:"auth_token"`
 	SessionTimeout time.Duration `json:"session_timeout"`
 	MaxSessions    int           `json:"max_sessions"`
+}
+
+type SEOConfig struct {
+	Enabled            bool     `json:"enabled"`
+	SitemapEnabled     bool     `json:"sitemap_enabled"`
+	SchemaEnabled      bool     `json:"schema_enabled"`
+	OpenGraphEnabled   bool     `json:"open_graph_enabled"`
+	TwitterCardEnabled bool     `json:"twitter_card_enabled"`
+	RobotsAllowed      []string `json:"robots_allowed"`
+	RobotsDisallowed   []string `json:"robots_disallowed"`
+	RobotsCrawlDelay   int      `json:"robots_crawl_delay"`
+	DefaultImage       string   `json:"default_image"`
+	TwitterSite        string   `json:"twitter_site"`
+	TwitterCreator     string   `json:"twitter_creator"`
+	FacebookAppID      string   `json:"facebook_app_id"`
+	GoogleSiteVerify   string   `json:"google_site_verify"`
+	BingSiteVerify     string   `json:"bing_site_verify"`
 }
 
 // ValidationWarning represents a configuration warning that doesn't prevent startup
@@ -289,6 +307,23 @@ func Load() (*Config, error) {
 			AuthToken:      getEnv("PREVIEW_AUTH_TOKEN", ""),
 			SessionTimeout: getEnvDuration("PREVIEW_SESSION_TIMEOUT", 2*time.Hour),
 			MaxSessions:    getEnvInt("PREVIEW_MAX_SESSIONS", 50),
+		},
+
+		SEO: SEOConfig{
+			Enabled:            getEnvBool("SEO_ENABLED", true),
+			SitemapEnabled:     getEnvBool("SEO_SITEMAP_ENABLED", true),
+			SchemaEnabled:      getEnvBool("SEO_SCHEMA_ENABLED", true),
+			OpenGraphEnabled:   getEnvBool("SEO_OPEN_GRAPH_ENABLED", true),
+			TwitterCardEnabled: getEnvBool("SEO_TWITTER_CARD_ENABLED", true),
+			RobotsAllowed:      getEnvSlice("SEO_ROBOTS_ALLOWED", []string{"/"}),
+			RobotsDisallowed:   getEnvSlice("SEO_ROBOTS_DISALLOWED", []string{"/admin", "/api", "/preview"}),
+			RobotsCrawlDelay:   getEnvInt("SEO_ROBOTS_CRAWL_DELAY", 1),
+			DefaultImage:       getEnv("SEO_DEFAULT_IMAGE", ""),
+			TwitterSite:        getEnv("SEO_TWITTER_SITE", ""),
+			TwitterCreator:     getEnv("SEO_TWITTER_CREATOR", ""),
+			FacebookAppID:      getEnv("SEO_FACEBOOK_APP_ID", ""),
+			GoogleSiteVerify:   getEnv("SEO_GOOGLE_SITE_VERIFY", ""),
+			BingSiteVerify:     getEnv("SEO_BING_SITE_VERIFY", ""),
 		},
 	}
 
