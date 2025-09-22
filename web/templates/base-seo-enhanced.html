@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="{{ .config.Blog.Language | default "en" }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <!-- Enhanced SEO Meta Tags -->
+    {{ if .config.SEO.Enabled }}
+        {{/* Use dynamic SEO service when enabled */}}
+        {{ if .metaTags }}{{ renderMetaTags .metaTags }}{{ end }}
+
+        {{/* JSON-LD Structured Data */}}
+        {{ if .articleSchema }}{{ generateJsonLD .articleSchema }}{{ end }}
+        {{ if .websiteSchema }}{{ generateJsonLD .websiteSchema }}{{ end }}
+        {{ if .breadcrumbSchema }}{{ generateJsonLD .breadcrumbSchema }}{{ end }}
+
+        {{/* SEO Verification Meta Tags */}}
+        {{ if .config.SEO.GoogleSiteVerify }}
+        <meta name="google-site-verification" content="{{ .config.SEO.GoogleSiteVerify }}">
+        {{ end }}
+        {{ if .config.SEO.BingSiteVerify }}
+        <meta name="msvalidate.01" content="{{ .config.SEO.BingSiteVerify }}">
+        {{ end }}
+        {{ if .config.SEO.FacebookAppID }}
+        <meta property="fb:app_id" content="{{ .config.SEO.FacebookAppID }}">
+        {{ end }}
+    {{ else }}
+        {{/* Fallback to basic SEO when service disabled */}}
+        <title>{{ if .title }}{{ .title }} - {{ .config.Blog.Title }}{{ else }}{{ .config.Blog.Title }}{{ end }}</title>
+        <meta name="description" content="{{ if .description }}{{ .description }}{{ else }}{{ .config.Blog.Description }}{{ end }}">
+        <meta name="author" content="{{ .config.Blog.Author }}">
+        <meta name="robots" content="index, follow">
+
+        <!-- Basic Open Graph -->
+        <meta property="og:type" content="{{ if .article }}article{{ else }}website{{ end }}">
+        <meta property="og:title" content="{{ if .title }}{{ .title }}{{ else }}{{ .config.Blog.Title }}{{ end }}">
+        <meta property="og:description" content="{{ if .description }}{{ .description }}{{ else }}{{ .config.Blog.Description }}{{ end }}">
+        <meta property="og:site_name" content="{{ .config.Blog.Title }}">
+        <meta property="og:url" content="{{ if .article }}{{ buildURL .config.BaseURL (printf "/article/%s" .article.Slug) }}{{ else }}{{ .config.BaseURL }}{{ end }}">
+
+        <!-- Basic Twitter Card -->
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:title" content="{{ if .title }}{{ .title }}{{ else }}{{ .config.Blog.Title }}{{ end }}">
+        <meta name="twitter:description" content="{{ if .description }}{{ .description }}{{ else }}{{ .config.Blog.Description }}{{ end }}">
+    {{ end }}
+
+    <!-- Additional SEO meta -->
+    <meta name="theme-color" content="#1a1a1a">
+    <meta name="msapplication-navbutton-color" content="#1a1a1a">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Rest of head content stays the same... -->
+
+</head>
+<!-- Body content remains unchanged -->

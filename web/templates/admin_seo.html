@@ -1,0 +1,405 @@
+{{ define "admin_seo-content" }}
+<div class="admin-page">
+    <!-- SEO Dashboard Header -->
+    <header class="page-header admin-header">
+        <div class="container">
+            <h1 class="page-title">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M10.5 8.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
+                    <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
+                </svg>
+                SEO Dashboard
+            </h1>
+            <p class="page-description">Search Engine Optimization metrics and management</p>
+        </div>
+    </header>
+
+    <!-- SEO Content -->
+    <div class="page-content">
+        <div class="container">
+            <div class="admin-grid">
+
+                <!-- SEO Overview -->
+                <div class="admin-card full-width">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2z"/>
+                            </svg>
+                            SEO Overview
+                        </h2>
+                        <div class="card-actions">
+                            <button onclick="refreshSitemap()" class="btn btn-primary btn-sm">
+                                Refresh Sitemap
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        {{ if .seoMetrics }}
+                        <div class="stats-grid">
+                            <div class="stat-item primary">
+                                <div class="stat-icon">🗺️</div>
+                                <div class="stat-content">
+                                    <div class="stat-number">{{ .seoMetrics.ArticlesIndexed }}</div>
+                                    <div class="stat-label">Articles Indexed</div>
+                                </div>
+                            </div>
+                            <div class="stat-item success">
+                                <div class="stat-icon">📄</div>
+                                <div class="stat-content">
+                                    <div class="stat-number">{{ .seoMetrics.SitemapSize | printf "%.1fKB" | printf "%s" (div .seoMetrics.SitemapSize 1024.0) }}</div>
+                                    <div class="stat-label">Sitemap Size</div>
+                                </div>
+                            </div>
+                            <div class="stat-item info">
+                                <div class="stat-icon">⏰</div>
+                                <div class="stat-content">
+                                    <div class="stat-number">{{ .seoMetrics.LastGenerated | timeAgo }}</div>
+                                    <div class="stat-label">Last Generated</div>
+                                </div>
+                            </div>
+                            <div class="stat-item {{ if .seoMetrics.SchemaValidation }}success{{ else }}warning{{ end }}">
+                                <div class="stat-icon">{{ if .seoMetrics.SchemaValidation }}✅{{ else }}⚠️{{ end }}</div>
+                                <div class="stat-content">
+                                    <div class="stat-number">{{ if .seoMetrics.SchemaValidation }}Valid{{ else }}Issues{{ end }}</div>
+                                    <div class="stat-label">Schema Status</div>
+                                </div>
+                            </div>
+                        </div>
+                        {{ else }}
+                        <div class="alert alert-warning">
+                            <p>SEO service is not enabled or metrics are unavailable.</p>
+                            <p>Enable SEO in your configuration to see detailed metrics.</p>
+                        </div>
+                        {{ end }}
+                    </div>
+                </div>
+
+                <!-- SEO Features Status -->
+                <div class="admin-card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
+                                <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
+                            </svg>
+                            Feature Status
+                        </h2>
+                    </div>
+                    <div class="card-content">
+                        {{ if .config.SEO }}
+                        <div class="feature-list">
+                            <div class="feature-item {{ if .config.SEO.SitemapEnabled }}enabled{{ else }}disabled{{ end }}">
+                                <span class="feature-indicator">{{ if .config.SEO.SitemapEnabled }}🟢{{ else }}🔴{{ end }}</span>
+                                <span class="feature-name">XML Sitemap</span>
+                                {{ if .config.SEO.SitemapEnabled }}
+                                <a href="/sitemap.xml" target="_blank" class="feature-link">View</a>
+                                {{ end }}
+                            </div>
+                            <div class="feature-item {{ if .config.SEO.SchemaEnabled }}enabled{{ else }}disabled{{ end }}">
+                                <span class="feature-indicator">{{ if .config.SEO.SchemaEnabled }}🟢{{ else }}🔴{{ end }}</span>
+                                <span class="feature-name">Schema.org Markup</span>
+                            </div>
+                            <div class="feature-item {{ if .config.SEO.OpenGraphEnabled }}enabled{{ else }}disabled{{ end }}">
+                                <span class="feature-indicator">{{ if .config.SEO.OpenGraphEnabled }}🟢{{ else }}🔴{{ end }}</span>
+                                <span class="feature-name">Open Graph Tags</span>
+                            </div>
+                            <div class="feature-item {{ if .config.SEO.TwitterCardEnabled }}enabled{{ else }}disabled{{ end }}">
+                                <span class="feature-indicator">{{ if .config.SEO.TwitterCardEnabled }}🟢{{ else }}🔴{{ end }}</span>
+                                <span class="feature-name">Twitter Cards</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-indicator">🟢</span>
+                                <span class="feature-name">Robots.txt</span>
+                                <a href="/robots.txt" target="_blank" class="feature-link">View</a>
+                            </div>
+                        </div>
+                        {{ else }}
+                        <div class="alert alert-info">
+                            <p>SEO configuration not available. Enable SEO in your environment settings.</p>
+                        </div>
+                        {{ end }}
+                    </div>
+                </div>
+
+                <!-- SEO Tools -->
+                <div class="admin-card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
+                                <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
+                            </svg>
+                            SEO Tools
+                        </h2>
+                    </div>
+                    <div class="card-content">
+                        <div class="tools-grid">
+                            <div class="tool-item">
+                                <h4>Content Analyzer</h4>
+                                <p>Analyze article content for SEO optimization</p>
+                                <textarea id="seoContent" placeholder="Paste your article content here..." rows="4"></textarea>
+                                <button onclick="analyzeSEOContent()" class="btn btn-primary btn-sm">Analyze</button>
+                                <div id="seoAnalysisResult"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SEO Dashboard JavaScript -->
+<script>
+async function refreshSitemap() {
+    try {
+        const response = await fetch('/admin/seo/sitemap/refresh', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+        if (result.status === 'success') {
+            alert('Sitemap refreshed successfully!');
+            location.reload();
+        } else {
+            alert('Failed to refresh sitemap: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Error refreshing sitemap: ' + error.message);
+    }
+}
+
+async function analyzeSEOContent() {
+    const content = document.getElementById('seoContent').value;
+    const resultDiv = document.getElementById('seoAnalysisResult');
+
+    if (!content.trim()) {
+        resultDiv.innerHTML = '<div class="alert alert-warning">Please enter content to analyze.</div>';
+        return;
+    }
+
+    try {
+        const response = await fetch('/admin/seo/analyze', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ content: content })
+        });
+
+        const result = await response.json();
+        if (result.status === 'success') {
+            const analysis = result.analysis;
+            resultDiv.innerHTML = `
+                <div class="analysis-result">
+                    <h5>SEO Analysis Results</h5>
+                    <div class="analysis-stats">
+                        <div class="analysis-stat">
+                            <span class="stat-label">Score:</span>
+                            <span class="stat-value ${analysis.Score >= 70 ? 'good' : analysis.Score >= 40 ? 'warning' : 'poor'}">${analysis.Score.toFixed(1)}/100</span>
+                        </div>
+                        <div class="analysis-stat">
+                            <span class="stat-label">Words:</span>
+                            <span class="stat-value">${analysis.WordCount}</span>
+                        </div>
+                        <div class="analysis-stat">
+                            <span class="stat-label">Reading Time:</span>
+                            <span class="stat-value">${analysis.ReadingTime} min</span>
+                        </div>
+                        <div class="analysis-stat">
+                            <span class="stat-label">Headings:</span>
+                            <span class="stat-value">${analysis.HeadingCount}</span>
+                        </div>
+                        <div class="analysis-stat">
+                            <span class="stat-label">Images:</span>
+                            <span class="stat-value">${analysis.ImageCount}</span>
+                        </div>
+                        <div class="analysis-stat">
+                            <span class="stat-label">Links:</span>
+                            <span class="stat-value">${analysis.LinkCount}</span>
+                        </div>
+                    </div>
+                    ${analysis.Suggestions && analysis.Suggestions.length > 0 ? `
+                    <div class="analysis-suggestions">
+                        <h6>Suggestions:</h6>
+                        <ul>
+                            ${analysis.Suggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
+                        </ul>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = '<div class="alert alert-error">Failed to analyze content: ' + (result.error || 'Unknown error') + '</div>';
+        }
+    } catch (error) {
+        resultDiv.innerHTML = '<div class="alert alert-error">Error analyzing content: ' + error.message + '</div>';
+    }
+}
+</script>
+
+<!-- SEO Dashboard Styles -->
+<style>
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 8px;
+    background: var(--card-bg, #f8f9fa);
+    border: 1px solid var(--border-color, #e9ecef);
+}
+
+.stat-item.primary { border-left: 4px solid #007bff; }
+.stat-item.success { border-left: 4px solid #28a745; }
+.stat-item.info { border-left: 4px solid #17a2b8; }
+.stat-item.warning { border-left: 4px solid #ffc107; }
+
+.stat-icon {
+    font-size: 1.5rem;
+    margin-right: 1rem;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    color: var(--text-muted, #6c757d);
+    font-size: 0.875rem;
+}
+
+.feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    background: var(--bg-secondary, #f8f9fa);
+}
+
+.feature-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.feature-link {
+    color: var(--primary, #007bff);
+    text-decoration: none;
+    font-size: 0.875rem;
+}
+
+.tools-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.tool-item {
+    padding: 1rem;
+    border: 1px solid var(--border-color, #e9ecef);
+    border-radius: 8px;
+    background: var(--bg-secondary, #f8f9fa);
+}
+
+.tool-item h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary, #212529);
+}
+
+.tool-item p {
+    margin: 0 0 1rem 0;
+    color: var(--text-muted, #6c757d);
+    font-size: 0.875rem;
+}
+
+.tool-item textarea {
+    width: 100%;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color, #e9ecef);
+    border-radius: 4px;
+    font-family: inherit;
+}
+
+.analysis-result {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 4px;
+    border: 1px solid var(--border-color, #e9ecef);
+}
+
+.analysis-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.75rem;
+    margin: 1rem 0;
+}
+
+.analysis-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+    background: var(--bg-secondary, #f8f9fa);
+    border-radius: 4px;
+}
+
+.analysis-stat .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted, #6c757d);
+    margin-bottom: 0.25rem;
+}
+
+.analysis-stat .stat-value {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.analysis-stat .stat-value.good { color: #28a745; }
+.analysis-stat .stat-value.warning { color: #ffc107; }
+.analysis-stat .stat-value.poor { color: #dc3545; }
+
+.analysis-suggestions {
+    margin-top: 1rem;
+}
+
+.analysis-suggestions h6 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary, #212529);
+}
+
+.analysis-suggestions ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.analysis-suggestions li {
+    margin-bottom: 0.25rem;
+    color: var(--text-muted, #6c757d);
+    font-size: 0.875rem;
+}
+</style>
+{{ end }}
