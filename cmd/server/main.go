@@ -1,3 +1,4 @@
+// Package main provides the main HTTP server for the MarkGo blog platform.
 package main
 
 import (
@@ -24,6 +25,10 @@ import (
 	"github.com/vnykmshr/markgo/internal/services"
 	"github.com/vnykmshr/markgo/internal/services/preview"
 	"github.com/vnykmshr/markgo/internal/services/seo"
+)
+
+const (
+	envDevelopment = "development"
 )
 
 // Build-time variables injected via ldflags
@@ -122,11 +127,11 @@ func main() {
 		Author:      cfg.Blog.Author,
 	}
 	robotsConfig := services.RobotsConfig{
-		UserAgent:   "*",
-		Allow:       cfg.SEO.RobotsAllowed,
-		Disallow:    cfg.SEO.RobotsDisallowed,
-		CrawlDelay:  cfg.SEO.RobotsCrawlDelay,
-		SitemapURL:  cfg.BaseURL + "/sitemap.xml",
+		UserAgent:  "*",
+		Allow:      cfg.SEO.RobotsAllowed,
+		Disallow:   cfg.SEO.RobotsDisallowed,
+		CrawlDelay: cfg.SEO.RobotsCrawlDelay,
+		SitemapURL: cfg.BaseURL + "/sitemap.xml",
 	}
 	seoService := seo.NewService(articleService, siteConfig, robotsConfig, logger, cfg.SEO.Enabled)
 	if cfg.SEO.Enabled {
@@ -214,7 +219,7 @@ func main() {
 	)
 
 	// Development-specific enhanced logging
-	if cfg.Environment == "development" {
+	if cfg.Environment == envDevelopment {
 		router.Use(middleware.RequestTracker(logger, cfg.Environment))
 		router.Use(middleware.PerformanceLoggingMiddleware(loggingService)) // Detailed performance logging
 		logger.Info("Development logging enhancements enabled")
@@ -242,7 +247,7 @@ func main() {
 	setupRoutes(router, h, cfg, logger)
 
 	// Setup template hot-reload for development
-	if cfg.Environment == "development" {
+	if cfg.Environment == envDevelopment {
 		setupTemplateHotReload(templateService, cfg.TemplatesPath, logger)
 	}
 
@@ -387,7 +392,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 	}
 
 	// Debug endpoints (development only)
-	if cfg.Environment == "development" {
+	if cfg.Environment == envDevelopment {
 		debugGroup := router.Group("/debug")
 		{
 			// Memory and runtime debugging

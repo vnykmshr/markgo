@@ -1,3 +1,4 @@
+// Package main provides a command-line tool for initializing a new MarkGo blog.
 package main
 
 import (
@@ -12,6 +13,11 @@ import (
 
 	"github.com/vnykmshr/markgo/internal/constants"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
+)
+
+const (
+	envDevelopment = "development"
+	boolFalse      = "false"
 )
 
 var (
@@ -76,12 +82,13 @@ func main() {
 
 	var config BlogConfig
 
-	if *quick {
+	switch {
+	case *quick:
 		config = getQuickDefaults()
 		fmt.Println("⚡ Quick setup mode - using sensible defaults")
-	} else if *interactive {
+	case *interactive:
 		config = runInteractiveSetup()
-	} else {
+	default:
 		config = getQuickDefaults()
 	}
 
@@ -143,7 +150,7 @@ func getQuickDefaults() BlogConfig {
 		Email:       email,
 		Domain:      "localhost:3000",
 		Port:        "3000",
-		Environment: "development",
+		Environment: envDevelopment,
 	}
 }
 
@@ -209,14 +216,14 @@ func getEnvironmentInput(reader *bufio.Reader) string {
 
 	input, err := reader.ReadString('\n')
 	if err != nil || strings.TrimSpace(input) == "" || strings.TrimSpace(input) == "1" {
-		return "development"
+		return envDevelopment
 	}
 
 	if strings.TrimSpace(input) == "2" {
 		return "production"
 	}
 
-	return "development"
+	return envDevelopment
 }
 
 func getConfirmation(reader *bufio.Reader, prompt string) bool {
@@ -375,19 +382,13 @@ DEBUG=%s
 		config.Domain,
 		config.Email,
 		func() string {
-			if config.Environment == "development" {
+			if config.Environment == envDevelopment {
 				return "true"
 			} else {
-				return "false"
+				return boolFalse
 			}
 		}(),
-		func() string {
-			if config.Environment == "development" {
-				return "false"
-			} else {
-				return "false"
-			}
-		}(),
+		boolFalse,
 	)
 
 	return os.WriteFile(filepath.Join(dir, ".env"), []byte(content), 0o600)

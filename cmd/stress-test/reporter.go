@@ -307,7 +307,7 @@ func (rg *ReportGenerator) GenerateHTMLReport(outputPath string) error {
 		return fmt.Errorf("parsing template: %w", err)
 	}
 
-	file, err := os.Create(outputPath)
+	file, err := os.Create(outputPath) // #nosec G304 - Safe: output file path is user-specified
 	if err != nil {
 		return fmt.Errorf("creating output file: %w", err)
 	}

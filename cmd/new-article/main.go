@@ -1,3 +1,4 @@
+// Package main provides a command-line tool for creating new MarkGo articles.
 package main
 
 import (
@@ -18,6 +19,8 @@ const (
 	defaultTitle       = "Untitled Article"
 	defaultDescription = ""
 	defaultTags        = "general"
+	boolTrue           = "true"
+	boolFalse          = "false"
 	defaultCategory    = "uncategorized"
 	defaultDraft       = true
 	defaultFeatured    = false
@@ -204,9 +207,9 @@ func getInput(prompt, defaultValue string) string {
 
 func getBoolInput(prompt string, defaultValue bool) bool {
 	reader := bufio.NewReader(os.Stdin)
-	defaultStr := "false"
+	defaultStr := boolFalse
 	if defaultValue {
-		defaultStr = "true"
+		defaultStr = boolTrue
 	}
 
 	for {

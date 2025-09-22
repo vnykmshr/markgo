@@ -155,11 +155,12 @@ func (pv *PerformanceValidator) PrintValidationReport() {
 
 	fmt.Printf("Overall: %d/%d targets met (%.1f%%)\n", passed, total, float64(passed)/float64(total)*100)
 
-	if passed == total {
+	switch {
+	case passed == total:
 		fmt.Println("🎉 ALL PERFORMANCE TARGETS MET! MarkGo is ready for production.")
-	} else if passed >= total*3/4 {
+	case passed >= total*3/4:
 		fmt.Println("⚠️  Most targets met, but some optimization may be needed.")
-	} else {
+	default:
 		fmt.Println("🔧 Significant performance improvements needed before production.")
 	}
 
@@ -230,11 +231,12 @@ func (pv *PerformanceValidator) GetValidationSummary() map[string]interface{} {
 
 // getOverallStatus returns the overall validation status
 func (pv *PerformanceValidator) getOverallStatus(passed, total int) string {
-	if passed == total {
+	switch {
+	case passed == total:
 		return "PRODUCTION_READY"
-	} else if passed >= total*3/4 {
+	case passed >= total*3/4:
 		return "MOSTLY_READY"
-	} else {
+	default:
 		return "NEEDS_IMPROVEMENT"
 	}
 }

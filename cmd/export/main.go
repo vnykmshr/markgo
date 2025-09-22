@@ -1,3 +1,4 @@
+// Package main provides a command-line tool for exporting MarkGo blog content to static files.
 package main
 
 import (

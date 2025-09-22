@@ -1,3 +1,4 @@
+// Package main provides a stress testing tool for MarkGo blog applications.
 package main
 
 import (
@@ -118,6 +119,7 @@ func main() {
 
 	results, err := tester.Run(ctx)
 	if err != nil {
+		cancel()
 		log.Fatalf("Stress test failed: %v", err)
 	}
 
@@ -227,7 +229,7 @@ RATE LIMIT GUIDELINES:
 }
 
 func loadConfig(path string, config *StressTestConfig) error {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 - Safe: config file path is user-specified
 	if err != nil {
 		return fmt.Errorf("reading config file: %w", err)
 	}
