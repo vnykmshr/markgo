@@ -6,8 +6,11 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
     <!-- Primary Meta Tags -->
-    <title>{{ if .title }}{{ .title }} - {{ .config.Blog.Title }}{{ else }}{{ .config.Blog.Title }}{{ end }}</title>
-    <meta name="title" content="{{ if .title }}{{ .title }} - {{ .config.Blog.Title }}{{ else }}{{ .config.Blog.Title }}{{ end }}">
+    <title>{{ if .title }}{{ .title }}{{ else }}{{ .config.Blog.Title }}{{ end }}</title>
+
+    {{ if not .config.SEO.Enabled }}
+    {{/* Static meta tags when SEO service is disabled */}}
+    <meta name="title" content="{{ if .title }}{{ .title }}{{ else }}{{ .config.Blog.Title }}{{ end }}">
     <meta name="description" content="{{ if .description }}{{ .description }}{{ else }}{{ .config.Blog.Description }}{{ end }}">
     <meta name="author" content="{{ .config.Blog.Author }}">
     <meta name="robots" content="index, follow">
@@ -77,17 +80,40 @@
     <meta name="theme-color" content="#1a1a1a">
     <meta name="msapplication-navbutton-color" content="#1a1a1a">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <!-- Schema.org structured data -->
-    {{ if .article }}
-    <meta itemprop="name" content="{{ .article.Title }}">
-    <meta itemprop="description" content="{{ .article.Excerpt }}">
-    <meta itemprop="image" content="{{ .config.BaseURL }}/static/img/og-article-default.png">
-    <meta itemprop="author" content="{{ .config.Blog.Author }}">
-    <meta itemprop="datePublished" content="{{ .article.Date.Format "2006-01-02T15:04:05Z07:00" }}">
-    {{ if .article.LastModified }}
-    <meta itemprop="dateModified" content="{{ .article.LastModified.Format "2006-01-02T15:04:05Z07:00" }}">
     {{ end }}
+
+    <!-- Enhanced SEO Service Integration -->
+    {{ if .config.SEO.Enabled }}
+        {{/* Enhanced meta tags from SEO service */}}
+        {{ if .seoMetaTags }}{{ renderMetaTags .seoMetaTags }}{{ end }}
+
+        {{/* JSON-LD Structured Data */}}
+        {{ if .articleSchema }}{{ generateJsonLD .articleSchema }}{{ end }}
+        {{ if .websiteSchema }}{{ generateJsonLD .websiteSchema }}{{ end }}
+        {{ if .breadcrumbSchema }}{{ generateJsonLD .breadcrumbSchema }}{{ end }}
+
+        {{/* SEO Verification Tags */}}
+        {{ if .config.SEO.GoogleSiteVerify }}
+        <meta name="google-site-verification" content="{{ .config.SEO.GoogleSiteVerify }}">
+        {{ end }}
+        {{ if .config.SEO.BingSiteVerify }}
+        <meta name="msvalidate.01" content="{{ .config.SEO.BingSiteVerify }}">
+        {{ end }}
+        {{ if .config.SEO.FacebookAppID }}
+        <meta property="fb:app_id" content="{{ .config.SEO.FacebookAppID }}">
+        {{ end }}
+    {{ else }}
+        {{/* Fallback Schema.org structured data */}}
+        {{ if .article }}
+        <meta itemprop="name" content="{{ .article.Title }}">
+        <meta itemprop="description" content="{{ if .article.Description }}{{ .article.Description }}{{ else }}{{ seoExcerpt .article.Content 160 }}{{ end }}">
+        <meta itemprop="image" content="{{ .config.BaseURL }}/static/img/og-article-default.png">
+        <meta itemprop="author" content="{{ .config.Blog.Author }}">
+        <meta itemprop="datePublished" content="{{ .article.Date.Format "2006-01-02T15:04:05Z07:00" }}">
+        {{ if .article.LastModified }}
+        <meta itemprop="dateModified" content="{{ .article.LastModified.Format "2006-01-02T15:04:05Z07:00" }}">
+        {{ end }}
+        {{ end }}
     {{ end }}
 
     <!-- Favicon -->

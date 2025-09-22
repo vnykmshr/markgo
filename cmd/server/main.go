@@ -23,6 +23,7 @@ import (
 	"github.com/vnykmshr/markgo/internal/middleware"
 	"github.com/vnykmshr/markgo/internal/services"
 	"github.com/vnykmshr/markgo/internal/services/preview"
+	"github.com/vnykmshr/markgo/internal/services/seo"
 )
 
 // Build-time variables injected via ldflags
@@ -111,6 +112,28 @@ func main() {
 	}
 	emailService := services.NewEmailService(&cfg.Email, logger)
 	searchService := services.NewSearchService()
+
+	// Initialize SEO service
+	siteConfig := services.SiteConfig{
+		Name:        cfg.Blog.Title,
+		Description: cfg.Blog.Description,
+		BaseURL:     cfg.BaseURL,
+		Language:    cfg.Blog.Language,
+		Author:      cfg.Blog.Author,
+	}
+	robotsConfig := services.RobotsConfig{
+		UserAgent:   "*",
+		Allow:       cfg.SEO.RobotsAllowed,
+		Disallow:    cfg.SEO.RobotsDisallowed,
+		CrawlDelay:  cfg.SEO.RobotsCrawlDelay,
+		SitemapURL:  cfg.BaseURL + "/sitemap.xml",
+	}
+	seoService := seo.NewService(articleService, siteConfig, robotsConfig, logger, cfg.SEO.Enabled)
+	if cfg.SEO.Enabled {
+		if err := seoService.Start(); err != nil {
+			logger.Error("Failed to start SEO service", "error", err)
+		}
+	}
 
 	// Setup Gin router - ensure Gin mode matches application environment
 	switch cfg.Environment {
@@ -204,6 +227,7 @@ func main() {
 		SearchService:   searchService,
 		TemplateService: templateService,
 		PreviewService:  previewService,
+		SEOService:      seoService,
 		Config:          cfg,
 		Logger:          logger,
 		Cache:           cache,
@@ -273,7 +297,8 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 	// Static files
 	router.Static("/static", cfg.StaticPath)
 	router.StaticFile("/favicon.ico", cfg.StaticPath+"/img/favicon.ico")
-	router.StaticFile("/robots.txt", cfg.StaticPath+"/robots.txt")
+
+	router.StaticFile("/robots.txt", cfg.StaticPath+"/robots.txt") // Keep static for now, can be made dynamic later
 
 	// Health check and metrics
 	router.GET("/health", h.Health)
@@ -342,6 +367,15 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 			adminGroup.POST("/cache/clear", h.ClearCache)
 			adminGroup.GET("/stats", h.AdminStats)
 			adminGroup.POST("/articles/reload", h.ReloadArticles)
+
+			// SEO management endpoints (placeholder for now)
+			// TODO: Implement proper SEO admin interface
+			adminGroup.GET("/seo", func(c *gin.Context) {
+				c.JSON(200, gin.H{
+					"message": "SEO admin interface - under development",
+					"enabled": cfg.SEO.Enabled,
+				})
+			})
 
 			// Draft management endpoints
 			adminGroup.GET("/drafts", h.GetDrafts)
@@ -429,7 +463,11 @@ func setupTemplateHotReload(templateService *services.TemplateService, templates
 
 	// Start watching in a goroutine
 	go func() {
-		defer watcher.Close()
+		defer func() {
+			if err := watcher.Close(); err != nil {
+				logger.Error("Failed to close file watcher", "error", err)
+			}
+		}()
 
 		for {
 			select {
