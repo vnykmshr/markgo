@@ -368,6 +368,7 @@ func (h *AdminHandler) ProfileIndex(c *gin.Context) {
 	pprof.Index(c.Writer, c.Request)
 }
 
+// ProfileCmdline handles the pprof cmdline endpoint.
 func (h *AdminHandler) ProfileCmdline(c *gin.Context) {
 	if !h.requireDevelopmentEnv(c) {
 		return
@@ -375,6 +376,7 @@ func (h *AdminHandler) ProfileCmdline(c *gin.Context) {
 	pprof.Cmdline(c.Writer, c.Request)
 }
 
+// ProfileProfile handles the pprof profile endpoint.
 func (h *AdminHandler) ProfileProfile(c *gin.Context) {
 	if !h.requireDevelopmentEnv(c) {
 		return
@@ -382,6 +384,7 @@ func (h *AdminHandler) ProfileProfile(c *gin.Context) {
 	pprof.Profile(c.Writer, c.Request)
 }
 
+// ProfileSymbol handles the pprof symbol endpoint.
 func (h *AdminHandler) ProfileSymbol(c *gin.Context) {
 	if !h.requireDevelopmentEnv(c) {
 		return
@@ -389,6 +392,7 @@ func (h *AdminHandler) ProfileSymbol(c *gin.Context) {
 	pprof.Symbol(c.Writer, c.Request)
 }
 
+// ProfileTrace handles the pprof trace endpoint.
 func (h *AdminHandler) ProfileTrace(c *gin.Context) {
 	if !h.requireDevelopmentEnv(c) {
 		return
@@ -396,6 +400,7 @@ func (h *AdminHandler) ProfileTrace(c *gin.Context) {
 	pprof.Trace(c.Writer, c.Request)
 }
 
+// ProfileHeap handles the pprof heap endpoint.
 func (h *AdminHandler) ProfileHeap(c *gin.Context) {
 	if !h.requireDevelopmentEnv(c) {
 		return
@@ -403,6 +408,7 @@ func (h *AdminHandler) ProfileHeap(c *gin.Context) {
 	pprof.Handler("heap").ServeHTTP(c.Writer, c.Request)
 }
 
+// ProfileGoroutine handles the pprof goroutine endpoint.
 func (h *AdminHandler) ProfileGoroutine(c *gin.Context) {
 	if !h.requireDevelopmentEnv(c) {
 		return
@@ -410,6 +416,7 @@ func (h *AdminHandler) ProfileGoroutine(c *gin.Context) {
 	pprof.Handler("goroutine").ServeHTTP(c.Writer, c.Request)
 }
 
+// ProfileBlock handles the pprof block endpoint.
 func (h *AdminHandler) ProfileBlock(c *gin.Context) {
 	if !h.requireDevelopmentEnv(c) {
 		return
@@ -417,6 +424,7 @@ func (h *AdminHandler) ProfileBlock(c *gin.Context) {
 	pprof.Handler("block").ServeHTTP(c.Writer, c.Request)
 }
 
+// ProfileMutex handles the pprof mutex endpoint.
 func (h *AdminHandler) ProfileMutex(c *gin.Context) {
 	if !h.requireDevelopmentEnv(c) {
 		return
@@ -424,6 +432,7 @@ func (h *AdminHandler) ProfileMutex(c *gin.Context) {
 	pprof.Handler("mutex").ServeHTTP(c.Writer, c.Request)
 }
 
+// ProfileAllocs handles the pprof allocs endpoint.
 func (h *AdminHandler) ProfileAllocs(c *gin.Context) {
 	if !h.requireDevelopmentEnv(c) {
 		return

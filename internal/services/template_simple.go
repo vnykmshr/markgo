@@ -50,6 +50,7 @@ func (s *SimpleTemplateService) loadTemplates(templatesPath string) error {
 	return nil
 }
 
+// Render renders a template to the provided writer.
 func (s *SimpleTemplateService) Render(w io.Writer, templateName string, data any) error {
 	if s.templates == nil {
 		return apperrors.ErrTemplateNotFound
@@ -65,6 +66,7 @@ func (s *SimpleTemplateService) Render(w io.Writer, templateName string, data an
 	return tmpl.Execute(w, data)
 }
 
+// RenderToString renders a template and returns the result as a string.
 func (s *SimpleTemplateService) RenderToString(templateName string, data any) (string, error) {
 	var buf bytes.Buffer
 	if err := s.Render(&buf, templateName, data); err != nil {
@@ -73,6 +75,7 @@ func (s *SimpleTemplateService) RenderToString(templateName string, data any) (s
 	return buf.String(), nil
 }
 
+// HasTemplate checks if a template with the given name exists.
 func (s *SimpleTemplateService) HasTemplate(templateName string) bool {
 	if s.templates == nil {
 		return false
@@ -80,10 +83,12 @@ func (s *SimpleTemplateService) HasTemplate(templateName string) bool {
 	return s.templates.Lookup(templateName) != nil
 }
 
+// GetTemplate returns the underlying template instance.
 func (s *SimpleTemplateService) GetTemplate() *template.Template {
 	return s.templates
 }
 
+// Reload reloads all templates from the specified path.
 func (s *SimpleTemplateService) Reload(templatesPath string) error {
 	return s.loadTemplates(templatesPath)
 }

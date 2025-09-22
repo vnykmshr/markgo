@@ -392,6 +392,7 @@ func NewCachedRepository(repository Repository, cache *CacheCoordinator, logger 
 
 // Implement Repository interface with caching
 
+// LoadAll loads all articles from the repository with caching.
 func (cr *CachedRepository) LoadAll(ctx context.Context) ([]*models.Article, error) {
 	// Don't cache LoadAll as it's typically called once at startup
 	articles, err := cr.repository.LoadAll(ctx)
@@ -404,6 +405,7 @@ func (cr *CachedRepository) LoadAll(ctx context.Context) ([]*models.Article, err
 	return articles, err
 }
 
+// GetBySlug retrieves an article by slug with caching.
 func (cr *CachedRepository) GetBySlug(slug string) (*models.Article, error) {
 	// Check cache first
 	if article, found := cr.cache.GetArticle(slug); found {
@@ -419,30 +421,37 @@ func (cr *CachedRepository) GetBySlug(slug string) (*models.Article, error) {
 	return article, err
 }
 
+// GetByTag retrieves articles by tag.
 func (cr *CachedRepository) GetByTag(tag string) []*models.Article {
 	return cr.repository.GetByTag(tag)
 }
 
+// GetByCategory retrieves articles by category.
 func (cr *CachedRepository) GetByCategory(category string) []*models.Article {
 	return cr.repository.GetByCategory(category)
 }
 
+// GetPublished retrieves all published articles.
 func (cr *CachedRepository) GetPublished() []*models.Article {
 	return cr.repository.GetPublished()
 }
 
+// GetDrafts retrieves all draft articles.
 func (cr *CachedRepository) GetDrafts() []*models.Article {
 	return cr.repository.GetDrafts()
 }
 
+// GetFeatured retrieves featured articles.
 func (cr *CachedRepository) GetFeatured(limit int) []*models.Article {
 	return cr.repository.GetFeatured(limit)
 }
 
+// GetRecent retrieves recent articles.
 func (cr *CachedRepository) GetRecent(limit int) []*models.Article {
 	return cr.repository.GetRecent(limit)
 }
 
+// Reload reloads articles and invalidates cache.
 func (cr *CachedRepository) Reload(ctx context.Context) error {
 	err := cr.repository.Reload(ctx)
 	if err == nil {
@@ -452,10 +461,12 @@ func (cr *CachedRepository) Reload(ctx context.Context) error {
 	return err
 }
 
+// GetLastModified returns the last modification time.
 func (cr *CachedRepository) GetLastModified() time.Time {
 	return cr.repository.GetLastModified()
 }
 
+// GetStats retrieves statistics with caching.
 func (cr *CachedRepository) GetStats() *models.Stats {
 	// Check cache first
 	if stats, found := cr.cache.GetStats(); found {
@@ -471,6 +482,7 @@ func (cr *CachedRepository) GetStats() *models.Stats {
 	return stats
 }
 
+// UpdateDraftStatus updates the draft status of an article and invalidates cache.
 func (cr *CachedRepository) UpdateDraftStatus(slug string, isDraft bool) error {
 	err := cr.repository.UpdateDraftStatus(slug, isDraft)
 	if err == nil {

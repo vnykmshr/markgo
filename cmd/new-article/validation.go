@@ -267,12 +267,12 @@ func ValidateOutputPath(filePath string) error {
 
 	// Try to create a temporary file to test write permissions
 	tempFile := filePath + ".tmp"
-	if file, err := os.Create(tempFile); err != nil { // #nosec G304 - Safe: controlled file creation for validation
+	file, err := os.Create(tempFile) // #nosec G304
+	if err != nil {
 		return fmt.Errorf("cannot write to output directory: %w", err)
-	} else {
-		_ = file.Close()
-		_ = os.Remove(tempFile)
 	}
+	_ = file.Close()
+	_ = os.Remove(tempFile)
 
 	return nil
 }

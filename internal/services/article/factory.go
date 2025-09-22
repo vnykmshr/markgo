@@ -101,70 +101,87 @@ func (a *ServiceAdapter) GetAllArticles() []*models.Article {
 	return a.service.GetAllArticles()
 }
 
+// GetArticleBySlug retrieves an article by slug.
 func (a *ServiceAdapter) GetArticleBySlug(slug string) (*models.Article, error) {
 	return a.service.GetArticleBySlug(slug)
 }
 
+// GetArticlesByTag retrieves articles by tag.
 func (a *ServiceAdapter) GetArticlesByTag(tag string) []*models.Article {
 	return a.service.GetArticlesByTag(tag)
 }
 
+// GetArticlesByCategory retrieves articles by category.
 func (a *ServiceAdapter) GetArticlesByCategory(category string) []*models.Article {
 	return a.service.GetArticlesByCategory(category)
 }
 
+// GetArticlesForFeed retrieves articles for feed generation.
 func (a *ServiceAdapter) GetArticlesForFeed(limit int) []*models.Article {
 	return a.service.GetArticlesForFeed(limit)
 }
 
+// GetFeaturedArticles retrieves featured articles.
 func (a *ServiceAdapter) GetFeaturedArticles(limit int) []*models.Article {
 	return a.service.GetFeaturedArticles(limit)
 }
 
+// GetRecentArticles retrieves recent articles.
 func (a *ServiceAdapter) GetRecentArticles(limit int) []*models.Article {
 	return a.service.GetRecentArticles(limit)
 }
 
+// GetAllTags retrieves all available tags.
 func (a *ServiceAdapter) GetAllTags() []string {
 	return a.service.GetAllTags()
 }
 
+// GetAllCategories retrieves all available categories.
 func (a *ServiceAdapter) GetAllCategories() []string {
 	return a.service.GetAllCategories()
 }
 
+// GetTagCounts retrieves tag usage counts.
 func (a *ServiceAdapter) GetTagCounts() []models.TagCount {
 	return a.service.GetTagCounts()
 }
 
+// GetCategoryCounts retrieves category usage counts.
 func (a *ServiceAdapter) GetCategoryCounts() []models.CategoryCount {
 	return a.service.GetCategoryCounts()
 }
 
+// GetStats retrieves article statistics.
 func (a *ServiceAdapter) GetStats() *models.Stats {
 	return a.service.GetStats()
 }
 
+// ReloadArticles reloads all articles.
 func (a *ServiceAdapter) ReloadArticles() error {
 	return a.service.ReloadArticles()
 }
 
+// GetDraftArticles retrieves all draft articles.
 func (a *ServiceAdapter) GetDraftArticles() []*models.Article {
 	return a.service.GetDraftArticles()
 }
 
+// GetDraftBySlug retrieves a draft article by slug.
 func (a *ServiceAdapter) GetDraftBySlug(slug string) (*models.Article, error) {
 	return a.service.GetDraftBySlug(slug)
 }
 
+// PreviewDraft previews a draft article.
 func (a *ServiceAdapter) PreviewDraft(slug string) (*models.Article, error) {
 	return a.service.PreviewDraft(slug)
 }
 
+// PublishDraft publishes a draft article.
 func (a *ServiceAdapter) PublishDraft(slug string) error {
 	return a.service.PublishDraft(slug)
 }
 
+// UnpublishArticle unpublishes an article.
 func (a *ServiceAdapter) UnpublishArticle(slug string) error {
 	return a.service.UnpublishArticle(slug)
 }
@@ -187,6 +204,7 @@ func (a *ServiceAdapter) IsHealthy() bool {
 	return a.container.IsHealthy()
 }
 
+// GetHealthStatus returns the health status.
 func (a *ServiceAdapter) GetHealthStatus() map[string]interface{} {
 	return a.container.GetHealthStatus()
 }
@@ -196,10 +214,12 @@ func (a *ServiceAdapter) SearchArticles(query string, limit int) []*models.Searc
 	return a.service.SearchArticles(query, limit)
 }
 
+// SearchInTitle searches articles by title.
 func (a *ServiceAdapter) SearchInTitle(query string, limit int) []*models.SearchResult {
 	return a.service.SearchInTitle(query, limit)
 }
 
+// GetSearchSuggestions returns search suggestions.
 func (a *ServiceAdapter) GetSearchSuggestions(query string, limit int) []string {
 	return a.service.GetSearchSuggestions(query, limit)
 }

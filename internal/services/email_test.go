@@ -612,7 +612,7 @@ func TestEmailService_SendEmail_InvalidSMTPConfig(t *testing.T) {
 	assert.Contains(t, strings.ToLower(err.Error()), "dial")
 }
 
-func TestEmailService_InterfaceCompliance(t *testing.T) {
+func TestEmailService_InterfaceCompliance(_ *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	config := config.EmailConfig{}
 

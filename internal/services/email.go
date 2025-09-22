@@ -23,6 +23,7 @@ import (
 // Ensure EmailService implements EmailServiceInterface
 var _ EmailServiceInterface = (*EmailService)(nil)
 
+// EmailService provides email functionality.
 type EmailService struct {
 	config       config.EmailConfig
 	logger       *slog.Logger
@@ -36,6 +37,7 @@ type EmailService struct {
 	scheduler scheduler.Scheduler
 }
 
+// NewEmailService creates a new EmailService instance.
 func NewEmailService(cfg *config.EmailConfig, logger *slog.Logger) *EmailService {
 	var auth smtp.Auth
 	if cfg.Username != "" && cfg.Password != "" {

@@ -144,7 +144,7 @@ func main() {
 func shouldRunInteractive() bool {
 	// Run interactive if no flags were provided
 	flagsProvided := false
-	flag.Visit(func(f *flag.Flag) {
+	flag.Visit(func(_ *flag.Flag) {
 		flagsProvided = true
 	})
 	return !flagsProvided

@@ -62,6 +62,7 @@ type CachedTemplateFunctions struct {
 	ParseTemplate  func(string, string) (*template.Template, error)
 }
 
+// TemplateService provides template rendering functionality.
 type TemplateService struct {
 	templates *template.Template
 	config    *config.Config
@@ -76,6 +77,7 @@ type TemplateService struct {
 	cancel    context.CancelFunc
 }
 
+// NewTemplateService creates a new TemplateService instance.
 func NewTemplateService(templatesPath string, cfg *config.Config) (*TemplateService, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -133,6 +135,7 @@ func (t *TemplateService) loadTemplates(templatesPath string) error {
 	return nil
 }
 
+// Render renders a template to the provided writer.
 func (t *TemplateService) Render(w io.Writer, templateName string, data any) error {
 	if t.templates == nil {
 		return apperrors.ErrTemplateNotFound
@@ -148,6 +151,7 @@ func (t *TemplateService) Render(w io.Writer, templateName string, data any) err
 	return tmpl.Execute(w, data)
 }
 
+// RenderToString renders a template and returns the result as a string.
 func (t *TemplateService) RenderToString(templateName string, data any) (string, error) {
 	// Use cached function if available
 	if t.cachedFunctions.RenderToString != nil {
@@ -158,6 +162,7 @@ func (t *TemplateService) RenderToString(templateName string, data any) (string,
 	return t.renderToStringUncached(templateName, data)
 }
 
+// HasTemplate checks if a template with the given name exists.
 func (t *TemplateService) HasTemplate(templateName string) bool {
 	if t.templates == nil {
 		return false
@@ -165,6 +170,7 @@ func (t *TemplateService) HasTemplate(templateName string) bool {
 	return t.templates.Lookup(templateName) != nil
 }
 
+// ListTemplates returns a list of all available template names.
 func (t *TemplateService) ListTemplates() []string {
 	if t.templates == nil {
 		return []string{}
@@ -179,6 +185,7 @@ func (t *TemplateService) ListTemplates() []string {
 	return names
 }
 
+// Reload reloads all templates from the specified path.
 func (t *TemplateService) Reload(templatesPath string) error {
 	// Clear cache before reloading
 	if t.obcache != nil {

@@ -48,18 +48,21 @@ type Config struct {
 	SEO           SEOConfig       `json:"seo"`
 }
 
+// ServerConfig holds server-related configuration options.
 type ServerConfig struct {
 	ReadTimeout  time.Duration `json:"read_timeout"`
 	WriteTimeout time.Duration `json:"write_timeout"`
 	IdleTimeout  time.Duration `json:"idle_timeout"`
 }
 
+// CacheConfig holds cache-related configuration options.
 type CacheConfig struct {
 	TTL             time.Duration `json:"ttl"`
 	MaxSize         int           `json:"max_size"`
 	CleanupInterval time.Duration `json:"cleanup_interval"`
 }
 
+// EmailConfig holds email-related configuration options.
 type EmailConfig struct {
 	Host     string `json:"host"`
 	Port     int    `json:"port"`
@@ -70,27 +73,32 @@ type EmailConfig struct {
 	UseSSL   bool   `json:"use_ssl"`
 }
 
+// RateLimitConfig holds rate limiting configuration options.
 type RateLimitConfig struct {
 	General RateLimit `json:"general"`
 	Contact RateLimit `json:"contact"`
 }
 
+// RateLimit defines rate limiting parameters.
 type RateLimit struct {
 	Requests int           `json:"requests"`
 	Window   time.Duration `json:"window"`
 }
 
+// CORSConfig holds CORS-related configuration options.
 type CORSConfig struct {
 	AllowedOrigins []string `json:"allowed_origins"`
 	AllowedMethods []string `json:"allowed_methods"`
 	AllowedHeaders []string `json:"allowed_headers"`
 }
 
+// AdminConfig holds admin authentication configuration.
 type AdminConfig struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
+// BlogConfig holds blog-specific configuration options.
 type BlogConfig struct {
 	Title        string `json:"title"`
 	Description  string `json:"description"`
@@ -101,6 +109,7 @@ type BlogConfig struct {
 	PostsPerPage int    `json:"posts_per_page"`
 }
 
+// CommentsConfig holds comment system configuration options.
 type CommentsConfig struct {
 	Enabled          bool   `json:"enabled"`
 	Provider         string `json:"provider"`
@@ -113,6 +122,7 @@ type CommentsConfig struct {
 	ReactionsEnabled bool   `json:"reactions_enabled"`
 }
 
+// LoggingConfig holds logging-related configuration options.
 type LoggingConfig struct {
 	Level      string `json:"level"`          // debug, info, warn, error
 	Format     string `json:"format"`         // json, text
@@ -126,6 +136,7 @@ type LoggingConfig struct {
 	TimeFormat string `json:"time_format"`    // custom time format for text logs
 }
 
+// AnalyticsConfig holds analytics-related configuration options.
 type AnalyticsConfig struct {
 	Enabled    bool   `json:"enabled"`               // enable/disable analytics
 	Provider   string `json:"provider,omitempty"`    // google, plausible, etc.
@@ -135,6 +146,7 @@ type AnalyticsConfig struct {
 	CustomCode string `json:"custom_code,omitempty"` // custom analytics code
 }
 
+// PreviewConfig holds preview server configuration options.
 type PreviewConfig struct {
 	Enabled        bool          `json:"enabled"`
 	Port           int           `json:"port"`
@@ -144,6 +156,7 @@ type PreviewConfig struct {
 	MaxSessions    int           `json:"max_sessions"`
 }
 
+// SEOConfig holds SEO-related configuration options.
 type SEOConfig struct {
 	Enabled            bool     `json:"enabled"`
 	SitemapEnabled     bool     `json:"sitemap_enabled"`
@@ -1104,6 +1117,7 @@ func (a *AnalyticsConfig) Validate() error {
 	return nil
 }
 
+// Validate validates the preview configuration and returns an error if invalid.
 func (p *PreviewConfig) Validate() error {
 	// If preview is disabled, no validation needed
 	if !p.Enabled {

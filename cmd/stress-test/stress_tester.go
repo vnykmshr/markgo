@@ -215,9 +215,7 @@ func (st *StressTester) processURL(ctx context.Context, task URLTask) {
 		return
 	}
 	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			// Error closing response body - non-critical for stress testing
-		}
+		_ = resp.Body.Close() // Best effort cleanup
 	}()
 
 	responseTime := time.Since(startTime)
@@ -319,7 +317,7 @@ func (st *StressTester) addURL(rawURL string, depth int) {
 	}
 }
 
-func (st *StressTester) extractLinks(body, baseURL string) []string {
+func (st *StressTester) extractLinks(body, _ string) []string {
 	matches := st.urlPattern.FindAllStringSubmatch(body, -1)
 	links := make([]string, 0, len(matches))
 
@@ -338,10 +336,10 @@ func (st *StressTester) extractLinks(body, baseURL string) []string {
 	return links
 }
 
-func (st *StressTester) recordError(url, error string, depth int) {
+func (st *StressTester) recordError(url, errMsg string, depth int) {
 	errorInfo := ErrorInfo{
 		URL:       url,
-		Error:     error,
+		Error:     errMsg,
 		Timestamp: time.Now(),
 		Depth:     depth,
 	}
@@ -386,10 +384,10 @@ func (st *StressTester) addValidation(validation URLValidation) {
 	st.results.URLValidations = append(st.results.URLValidations, validation)
 }
 
-func (st *StressTester) addError(error ErrorInfo) {
+func (st *StressTester) addError(errInfo ErrorInfo) {
 	errorsMutex.Lock()
 	defer errorsMutex.Unlock()
-	st.results.Errors = append(st.results.Errors, error)
+	st.results.Errors = append(st.results.Errors, errInfo)
 }
 
 func (st *StressTester) addResponseTime(entry ResponseTimeEntry) {

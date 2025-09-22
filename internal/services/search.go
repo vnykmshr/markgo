@@ -7,12 +7,15 @@ import (
 	"github.com/vnykmshr/markgo/internal/models"
 )
 
+// SearchService provides search functionality for articles.
 type SearchService struct{}
 
+// NewSearchService creates a new SearchService instance.
 func NewSearchService() *SearchService {
 	return &SearchService{}
 }
 
+// Search performs a full-text search across articles.
 func (s *SearchService) Search(articles []*models.Article, query string, limit int) []*models.SearchResult {
 	if query == "" || len(articles) == 0 {
 		return []*models.SearchResult{}
@@ -47,6 +50,7 @@ func (s *SearchService) Search(articles []*models.Article, query string, limit i
 	return results
 }
 
+// SearchInTitle searches for articles with matching titles.
 func (s *SearchService) SearchInTitle(articles []*models.Article, query string, limit int) []*models.SearchResult {
 	if query == "" || len(articles) == 0 {
 		return []*models.SearchResult{}
@@ -85,6 +89,7 @@ func (s *SearchService) SearchInTitle(articles []*models.Article, query string, 
 	return results
 }
 
+// SearchByTag returns articles that have the specified tag.
 func (s *SearchService) SearchByTag(articles []*models.Article, tag string) []*models.Article {
 	tag = strings.ToLower(strings.TrimSpace(tag))
 	var results []*models.Article
@@ -101,6 +106,7 @@ func (s *SearchService) SearchByTag(articles []*models.Article, tag string) []*m
 	return results
 }
 
+// SearchByCategory returns articles in the specified category.
 func (s *SearchService) SearchByCategory(articles []*models.Article, category string) []*models.Article {
 	category = strings.ToLower(strings.TrimSpace(category))
 	var results []*models.Article
@@ -117,6 +123,7 @@ func (s *SearchService) SearchByCategory(articles []*models.Article, category st
 	return results
 }
 
+// GetSuggestions returns search suggestions based on the query.
 func (s *SearchService) GetSuggestions(articles []*models.Article, query string, limit int) []string {
 	if query == "" {
 		return []string{}

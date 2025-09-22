@@ -312,9 +312,7 @@ func (rg *ReportGenerator) GenerateHTMLReport(outputPath string) error {
 		return fmt.Errorf("creating output file: %w", err)
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			// Note: error logging not available in this context, this is a cleanup operation
-		}
+		_ = file.Close() // Best effort cleanup
 	}()
 
 	if err := t.Execute(file, data); err != nil {

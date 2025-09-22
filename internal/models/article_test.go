@@ -23,7 +23,7 @@ func (m *mockProcessor) GenerateExcerpt(content string, maxLength int) string {
 	return content[:maxLength] + "..."
 }
 
-func (m *mockProcessor) ProcessDuplicateTitles(title, htmlContent string) string {
+func (m *mockProcessor) ProcessDuplicateTitles(_, htmlContent string) string {
 	return htmlContent
 }
 
@@ -228,7 +228,7 @@ func (m *errorMockProcessor) GenerateExcerpt(content string, maxLength int) stri
 	return content[:maxLength] + "..."
 }
 
-func (m *errorMockProcessor) ProcessDuplicateTitles(title, htmlContent string) string {
+func (m *errorMockProcessor) ProcessDuplicateTitles(_, htmlContent string) string {
 	return htmlContent + " (processed)"
 }
 

@@ -24,7 +24,7 @@ func TestInterfaceCompliance(t *testing.T) {
 	})
 
 	// EmailService interface compliance
-	t.Run("EmailService implements EmailServiceInterface", func(t *testing.T) {
+	t.Run("EmailService implements EmailServiceInterface", func(_ *testing.T) {
 		cfg := config.EmailConfig{
 			Host: "test.example.com",
 			Port: 587,
@@ -37,7 +37,7 @@ func TestInterfaceCompliance(t *testing.T) {
 	})
 
 	// SearchService interface compliance
-	t.Run("SearchService implements SearchServiceInterface", func(t *testing.T) {
+	t.Run("SearchService implements SearchServiceInterface", func(_ *testing.T) {
 		service := NewSearchService()
 
 		// This will fail to compile if SearchService doesn't implement the interface

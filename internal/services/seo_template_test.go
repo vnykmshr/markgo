@@ -13,12 +13,12 @@ const (
 
 func TestGenerateJsonLD(t *testing.T) {
 	funcMap := GetTemplateFuncMap()
-	generateJsonLD, exists := funcMap["generateJsonLD"]
+	generateJSONLD, exists := funcMap["generateJsonLD"]
 	if !exists {
-		t.Fatal("generateJsonLD function not found in template function map")
+		t.Fatal("generateJSONLD function not found in template function map")
 	}
 
-	fn := generateJsonLD.(func(map[string]interface{}) template.HTML)
+	fn := generateJSONLD.(func(map[string]interface{}) template.HTML)
 
 	testData := map[string]interface{}{
 		"@context": "https://schema.org",
@@ -209,7 +209,7 @@ func TestBuildURL(t *testing.T) {
 
 func TestJSONLDValidation(t *testing.T) {
 	funcMap := GetTemplateFuncMap()
-	generateJsonLD := funcMap["generateJsonLD"].(func(map[string]interface{}) template.HTML)
+	generateJSONLD := funcMap["generateJsonLD"].(func(map[string]interface{}) template.HTML)
 
 	// Test complex nested structure
 	complexData := map[string]interface{}{
@@ -240,7 +240,7 @@ func TestJSONLDValidation(t *testing.T) {
 		"dateModified":  "2023-01-02T12:00:00Z",
 	}
 
-	result := generateJsonLD(complexData)
+	result := generateJSONLD(complexData)
 	htmlResult := string(result)
 
 	// Extract JSON from script tag

@@ -10,6 +10,7 @@ import (
 	"github.com/vnykmshr/markgo/internal/services"
 )
 
+// PreviewHandler handles preview-related requests.
 type PreviewHandler struct {
 	previewService  services.PreviewServiceInterface
 	articleService  services.ArticleServiceInterface
@@ -17,6 +18,7 @@ type PreviewHandler struct {
 	BaseHandler
 }
 
+// NewPreviewHandler creates a new PreviewHandler.
 func NewPreviewHandler(
 	previewService services.PreviewServiceInterface,
 	articleService services.ArticleServiceInterface,

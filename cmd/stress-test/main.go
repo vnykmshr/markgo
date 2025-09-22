@@ -119,8 +119,8 @@ func main() {
 
 	results, err := tester.Run(ctx)
 	if err != nil {
-		cancel()
-		log.Fatalf("Stress test failed: %v", err)
+		log.Printf("Stress test failed: %v", err)
+		os.Exit(1) //nolint:gocritic // defer cancel() not needed on early exit
 	}
 
 	// Validate performance targets

@@ -384,9 +384,8 @@ DEBUG=%s
 		func() string {
 			if config.Environment == envDevelopment {
 				return "true"
-			} else {
-				return boolFalse
 			}
+			return boolFalse
 		}(),
 		boolFalse,
 	)

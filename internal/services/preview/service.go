@@ -17,6 +17,7 @@ import (
 	"github.com/vnykmshr/markgo/internal/services"
 )
 
+// Service provides preview functionality.
 type Service struct {
 	articleService  services.ArticleServiceInterface
 	templateService services.TemplateServiceInterface
@@ -31,9 +32,12 @@ type Service struct {
 	running         bool
 }
 
+// Session represents a preview session.
 type Session = services.PreviewSession
+// Stats represents preview statistics.
 type Stats = services.PreviewStats
 
+// NewService creates a new preview service instance.
 func NewService(
 	articleService services.ArticleServiceInterface,
 	templateService services.TemplateServiceInterface,
@@ -76,6 +80,7 @@ func NewService(
 	return service, nil
 }
 
+// Start starts the preview service.
 func (s *Service) Start() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -99,6 +104,7 @@ func (s *Service) Start() error {
 	return nil
 }
 
+// Stop stops the preview service.
 func (s *Service) Stop() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -126,6 +132,7 @@ func (s *Service) Stop() error {
 	return nil
 }
 
+// CreateSession creates a new preview session for the given article slug.
 func (s *Service) CreateSession(articleSlug string) (*Session, error) {
 	if articleSlug == "" {
 		return nil, fmt.Errorf("article slug is required")
@@ -168,6 +175,7 @@ func (s *Service) CreateSession(articleSlug string) (*Session, error) {
 	return session, nil
 }
 
+// GetSession retrieves a preview session by ID.
 func (s *Service) GetSession(sessionID string) (*Session, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -182,6 +190,7 @@ func (s *Service) GetSession(sessionID string) (*Session, error) {
 	return session, nil
 }
 
+// DeleteSession removes a preview session.
 func (s *Service) DeleteSession(sessionID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -210,16 +219,19 @@ func (s *Service) DeleteSession(sessionID string) error {
 	return nil
 }
 
+// RegisterWebSocketClient registers a new WebSocket client for the given session.
 func (s *Service) RegisterWebSocketClient(sessionID string, w http.ResponseWriter, r *http.Request) error {
 	return s.registerWebSocketClientImpl(sessionID, w, r)
 }
 
+// IsRunning returns whether the preview service is currently running.
 func (s *Service) IsRunning() bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.running
 }
 
+// GetStats returns statistics about the preview service.
 func (s *Service) GetStats() *Stats {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

@@ -28,12 +28,14 @@ type ObcacheAdapter struct {
 	cache *obcache.Cache
 }
 
+// Clear clears all entries from the cache.
 func (a *ObcacheAdapter) Clear() {
 	if a.cache != nil {
 		_ = a.cache.Clear() //nolint:errcheck // Ignore error: cache clear is non-critical
 	}
 }
 
+// Get retrieves a value from the cache by key.
 func (a *ObcacheAdapter) Get(key string) (interface{}, bool) {
 	if a.cache == nil {
 		return nil, false
@@ -41,18 +43,21 @@ func (a *ObcacheAdapter) Get(key string) (interface{}, bool) {
 	return a.cache.Get(key)
 }
 
+// Set stores a value in the cache with the specified TTL.
 func (a *ObcacheAdapter) Set(key string, value interface{}, ttl time.Duration) {
 	if a.cache != nil {
 		_ = a.cache.Set(key, value, ttl) //nolint:errcheck // Ignore error: cache set is non-critical
 	}
 }
 
+// Delete removes a value from the cache by key.
 func (a *ObcacheAdapter) Delete(key string) {
 	if a.cache != nil {
 		_ = a.cache.Delete(key) //nolint:errcheck // Ignore error: cache delete is non-critical
 	}
 }
 
+// Stats returns cache statistics.
 func (a *ObcacheAdapter) Stats() map[string]interface{} {
 	if a.cache == nil {
 		return map[string]interface{}{}
@@ -168,40 +173,49 @@ func (h *Handlers) Home(c *gin.Context) {
 	h.ArticleHandler.Home(c)
 }
 
+// Articles handles the articles listing route.
 func (h *Handlers) Articles(c *gin.Context) {
 	h.ArticleHandler.Articles(c)
 }
 
+// Article handles individual article route.
 func (h *Handlers) Article(c *gin.Context) {
 	h.ArticleHandler.Article(c)
 }
 
+// ArticlesByTag handles articles filtered by tag route.
 func (h *Handlers) ArticlesByTag(c *gin.Context) {
 	h.ArticleHandler.ArticlesByTag(c)
 }
 
+// ArticlesByCategory handles articles filtered by category route.
 func (h *Handlers) ArticlesByCategory(c *gin.Context) {
 	h.ArticleHandler.ArticlesByCategory(c)
 }
 
+// Tags handles the tags listing route.
 func (h *Handlers) Tags(c *gin.Context) {
 	h.ArticleHandler.Tags(c)
 }
 
+// Categories handles the categories listing route.
 func (h *Handlers) Categories(c *gin.Context) {
 	h.ArticleHandler.Categories(c)
 }
 
+// Search handles the search route.
 func (h *Handlers) Search(c *gin.Context) {
 	h.ArticleHandler.Search(c)
 }
 
+// AboutArticle handles the about page route.
 func (h *Handlers) AboutArticle(c *gin.Context) {
 	// Set the slug parameter to "about" for the Article handler
 	c.Params = append(c.Params, gin.Param{Key: "slug", Value: "about"})
 	h.ArticleHandler.Article(c)
 }
 
+// ContactForm handles the contact form route.
 func (h *Handlers) ContactForm(c *gin.Context) {
 	// Render contact form template
 	data := h.ArticleHandler.buildBaseTemplateData("Contact")
@@ -210,6 +224,7 @@ func (h *Handlers) ContactForm(c *gin.Context) {
 	h.ArticleHandler.renderHTML(c, 200, "base.html", data)
 }
 
+// ContactSubmit handles contact form submission.
 func (h *Handlers) ContactSubmit(c *gin.Context) {
 	h.APIHandler.Contact(c)
 }
@@ -219,18 +234,22 @@ func (h *Handlers) RSSFeed(c *gin.Context) {
 	h.APIHandler.RSS(c)
 }
 
+// JSONFeed handles JSON feed generation.
 func (h *Handlers) JSONFeed(c *gin.Context) {
 	h.APIHandler.JSONFeed(c)
 }
 
+// Sitemap handles sitemap generation.
 func (h *Handlers) Sitemap(c *gin.Context) {
 	h.APIHandler.Sitemap(c)
 }
 
+// Health handles health check requests.
 func (h *Handlers) Health(c *gin.Context) {
 	h.APIHandler.Health(c)
 }
 
+// Metrics handles metrics requests.
 func (h *Handlers) Metrics(c *gin.Context) {
 	h.AdminHandler.Metrics(c)
 }
@@ -240,10 +259,12 @@ func (h *Handlers) AdminHome(c *gin.Context) {
 	h.AdminHandler.AdminHome(c)
 }
 
+// AdminStats handles admin statistics requests.
 func (h *Handlers) AdminStats(c *gin.Context) {
 	h.AdminHandler.Stats(c)
 }
 
+// ReloadArticles handles article reload requests.
 func (h *Handlers) ReloadArticles(c *gin.Context) {
 	h.AdminHandler.ReloadArticles(c)
 }
@@ -257,6 +278,7 @@ func (h *Handlers) GetDrafts(c *gin.Context) {
 	})
 }
 
+// GetDraftBySlug handles retrieving a specific draft article by slug.
 func (h *Handlers) GetDraftBySlug(c *gin.Context) {
 	slug := c.Param("slug")
 	if slug == "" {
@@ -273,6 +295,7 @@ func (h *Handlers) GetDraftBySlug(c *gin.Context) {
 	c.JSON(200, gin.H{"draft": draft})
 }
 
+// PreviewDraft handles previewing a draft article.
 func (h *Handlers) PreviewDraft(c *gin.Context) {
 	slug := c.Param("slug")
 	if slug == "" {
@@ -289,6 +312,7 @@ func (h *Handlers) PreviewDraft(c *gin.Context) {
 	c.JSON(200, gin.H{"preview": draft})
 }
 
+// PublishDraft handles publishing a draft article.
 func (h *Handlers) PublishDraft(c *gin.Context) {
 	slug := c.Param("slug")
 	if slug == "" {
@@ -338,6 +362,7 @@ func (h *Handlers) PublishDraft(c *gin.Context) {
 		"status":  "published"})
 }
 
+// UnpublishArticle handles unpublishing an article.
 func (h *Handlers) UnpublishArticle(c *gin.Context) {
 	slug := c.Param("slug")
 	if slug == "" {
@@ -387,6 +412,7 @@ func (h *Handlers) UnpublishArticle(c *gin.Context) {
 		"status":  "draft"})
 }
 
+// ClearCache handles cache clearing requests.
 func (h *Handlers) ClearCache(c *gin.Context) {
 	if h.cacheService != nil {
 		h.cacheService.Clear()
@@ -399,50 +425,62 @@ func (h *Handlers) DebugMemory(c *gin.Context) {
 	h.AdminHandler.Debug(c)
 }
 
+// DebugRuntime handles runtime debug requests.
 func (h *Handlers) DebugRuntime(c *gin.Context) {
 	h.AdminHandler.Debug(c)
 }
 
+// DebugConfig handles config debug requests.
 func (h *Handlers) DebugConfig(c *gin.Context) {
 	h.AdminHandler.Debug(c)
 }
 
+// DebugRequests handles request debug information.
 func (h *Handlers) DebugRequests(c *gin.Context) {
 	h.AdminHandler.Debug(c)
 }
 
+// SetLogLevel handles log level changes.
 func (h *Handlers) SetLogLevel(c *gin.Context) {
 	h.AdminHandler.SetLogLevel(c)
 }
 
+// PprofIndex handles pprof index requests.
 func (h *Handlers) PprofIndex(c *gin.Context) {
 	h.AdminHandler.ProfileIndex(c)
 }
 
+// PprofProfile handles pprof profile requests.
 func (h *Handlers) PprofProfile(c *gin.Context) {
 	h.AdminHandler.ProfileProfile(c)
 }
 
+// PprofTrace handles pprof trace requests.
 func (h *Handlers) PprofTrace(c *gin.Context) {
 	h.AdminHandler.ProfileTrace(c)
 }
 
+// PprofHeap handles pprof heap requests.
 func (h *Handlers) PprofHeap(c *gin.Context) {
 	h.AdminHandler.ProfileHeap(c)
 }
 
+// PprofGoroutine handles pprof goroutine requests.
 func (h *Handlers) PprofGoroutine(c *gin.Context) {
 	h.AdminHandler.ProfileGoroutine(c)
 }
 
+// PprofAllocs handles pprof allocs requests.
 func (h *Handlers) PprofAllocs(c *gin.Context) {
 	h.AdminHandler.ProfileAllocs(c)
 }
 
+// PprofBlock handles pprof block requests.
 func (h *Handlers) PprofBlock(c *gin.Context) {
 	h.AdminHandler.ProfileBlock(c)
 }
 
+// PprofMutex handles pprof mutex requests.
 func (h *Handlers) PprofMutex(c *gin.Context) {
 	h.AdminHandler.ProfileMutex(c)
 }

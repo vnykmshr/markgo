@@ -173,6 +173,7 @@ func (s *Service) removeWebSocketClient(sessionID string, targetConn *websocket.
 		"remaining_clients", len(filtered))
 }
 
+// BroadcastReload broadcasts a reload message to all clients in the given session.
 func (s *Service) BroadcastReload(sessionID string) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

@@ -22,6 +22,7 @@ import (
 	"github.com/vnykmshr/markgo/internal/services"
 )
 
+// StaticExportService provides static site export functionality.
 type StaticExportService struct {
 	config          *Config
 	logger          *slog.Logger
@@ -34,6 +35,7 @@ type StaticExportService struct {
 	includeDrafts   bool
 }
 
+// Config holds export configuration options.
 type Config struct {
 	OutputDir       string
 	StaticPath      string
@@ -46,6 +48,7 @@ type Config struct {
 	IncludeDrafts   bool
 }
 
+// NewStaticExportService creates a new StaticExportService instance.
 func NewStaticExportService(cfg *Config) (*StaticExportService, error) {
 	if cfg.OutputDir == "" {
 		return nil, fmt.Errorf("output directory is required")
@@ -64,6 +67,7 @@ func NewStaticExportService(cfg *Config) (*StaticExportService, error) {
 	}, nil
 }
 
+// Export performs static site export.
 func (s *StaticExportService) Export(ctx context.Context) error {
 	s.logger.Info("Starting static site export")
 
@@ -198,6 +202,7 @@ func (s *StaticExportService) generatePages(_ context.Context) error {
 	return nil
 }
 
+// Page represents a page to be exported.
 type Page struct {
 	Path     string
 	FilePath string
