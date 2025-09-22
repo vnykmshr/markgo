@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"html"
 	"html/template"
@@ -614,6 +615,95 @@ var templateFuncs = template.FuncMap{
 			}
 		}
 		return initials
+	},
+
+	// SEO Template Functions
+	"generateJsonLD": func(data map[string]interface{}) template.HTML {
+		// Convert map to JSON for structured data
+		jsonBytes, err := json.Marshal(data)
+		if err != nil {
+			return template.HTML("")
+		}
+		// #nosec G203 - This is intentional JSON-LD structured data for SEO
+		return template.HTML(fmt.Sprintf(`<script type="application/ld+json">%s</script>`, string(jsonBytes)))
+	},
+	"renderMetaTags": func(tags map[string]string) template.HTML {
+		var buf strings.Builder
+		for name, content := range tags {
+			if content == "" {
+				continue
+			}
+			// Escape HTML entities in meta content
+			escapedContent := html.EscapeString(content)
+
+			// Determine meta tag type
+			if strings.HasPrefix(name, "og:") || strings.HasPrefix(name, "twitter:") || strings.HasPrefix(name, "article:") {
+				buf.WriteString(fmt.Sprintf(`<meta property="%s" content="%s">`, html.EscapeString(name), escapedContent))
+			} else if name == "canonical" {
+				buf.WriteString(fmt.Sprintf(`<link rel="canonical" href="%s">`, escapedContent))
+			} else {
+				buf.WriteString(fmt.Sprintf(`<meta name="%s" content="%s">`, html.EscapeString(name), escapedContent))
+			}
+			buf.WriteString("\n")
+		}
+		// #nosec G203 - This is intentional HTML output for meta tags, content is escaped
+		return template.HTML(buf.String())
+	},
+	"seoExcerpt": func(content string, maxLength int) string {
+		// Remove markdown formatting for SEO description
+		text := content
+		text = strings.ReplaceAll(text, "#", "")
+		text = strings.ReplaceAll(text, "*", "")
+		text = strings.ReplaceAll(text, "_", "")
+		text = strings.ReplaceAll(text, "`", "")
+		text = strings.ReplaceAll(text, "[", "")
+		text = strings.ReplaceAll(text, "]", "")
+		text = strings.ReplaceAll(text, "(", "")
+		text = strings.ReplaceAll(text, ")", "")
+
+		// Clean up whitespace
+		words := strings.Fields(text)
+		if len(words) == 0 {
+			return ""
+		}
+
+		// Build excerpt
+		var excerpt strings.Builder
+		for _, word := range words {
+			if excerpt.Len()+len(word)+1 > maxLength {
+				break
+			}
+			if excerpt.Len() > 0 {
+				excerpt.WriteString(" ")
+			}
+			excerpt.WriteString(word)
+		}
+
+		result := excerpt.String()
+		if len(result) < len(strings.Join(words, " ")) {
+			result += "..."
+		}
+
+		return result
+	},
+	"readingTime": func(content string, wordsPerMinute int) int {
+		if wordsPerMinute <= 0 {
+			wordsPerMinute = 200 // Default reading speed
+		}
+		words := strings.Fields(content)
+		minutes := len(words) / wordsPerMinute
+		if minutes == 0 && len(words) > 0 {
+			return 1 // Minimum 1 minute
+		}
+		return minutes
+	},
+	"buildURL": func(baseURL, path string) string {
+		if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
+			return path // Already absolute URL
+		}
+		baseURL = strings.TrimRight(baseURL, "/")
+		path = strings.TrimLeft(path, "/")
+		return fmt.Sprintf("%s/%s", baseURL, path)
 	},
 }
 
