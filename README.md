@@ -30,7 +30,7 @@ A modern, high-performance file-based blog engine built with Go. MarkGo combines
 - **Docker deployment** with comprehensive configuration
 - **Static site export** for GitHub Pages, Netlify, Vercel deployment
 - **Built-in security** with rate limiting, CORS, and input validation
-- **SEO optimized** with sitemaps, structured data, and meta tags
+- **Advanced SEO automation** with dynamic sitemaps, Schema.org markup, Open Graph tags, and Twitter Cards
 - **Full-text search** across all content
 - **RSS/JSON feeds** for content syndication
 
@@ -132,8 +132,9 @@ Write your article content here using Markdown...
 - **Automatic excerpts** with configurable length
 - **Reading time estimation**
 - **Tag and category organization**
-- **SEO metadata** generation
-- **Social media optimization**
+- **Advanced SEO automation** with Schema.org JSON-LD structured data
+- **Dynamic sitemap generation** with automatic updates
+- **Social media optimization** with Open Graph and Twitter Card tags
 - **Multiple Markdown extensions** supported (`.md`, `.markdown`, `.mdown`, `.mkd`)
 
 > 📖 **Learn More**: See the [Complete Project Guide](docs/project-guide.md) for detailed information about content creation, customization, and advanced features.
