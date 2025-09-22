@@ -99,7 +99,7 @@ func TestLoggingServiceFileOutput(t *testing.T) {
 	// Create temporary directory for test logs
 	tmpDir, err := os.MkdirTemp("", "logging-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	logFile := filepath.Join(tmpDir, "test.log")
 
@@ -127,7 +127,7 @@ func TestLoggingServiceFileOutput(t *testing.T) {
 	assert.FileExists(t, logFile)
 
 	// Read and verify log content
-	content, err := os.ReadFile(logFile)
+	content, err := os.ReadFile(logFile) // #nosec G304 - Safe: test file reading in temp directory
 	require.NoError(t, err)
 	assert.Contains(t, string(content), "Test message")
 	assert.Contains(t, string(content), "key")

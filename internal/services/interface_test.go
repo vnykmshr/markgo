@@ -20,7 +20,7 @@ func TestInterfaceCompliance(t *testing.T) {
 		}
 
 		// This will fail to compile if ArticleService doesn't implement the interface
-		var _ ArticleServiceInterface = service
+		var _ = ArticleServiceInterface(service)
 	})
 
 	// EmailService interface compliance

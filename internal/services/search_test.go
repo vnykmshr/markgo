@@ -27,7 +27,7 @@ func TestSearchService_Search(t *testing.T) {
 	if len(results) != 1 {
 		t.Errorf("Expected 1 result, got %d", len(results))
 	}
-	if results[0].Article.Title != "Go Programming Tutorial" {
+	if results[0].Title != "Go Programming Tutorial" {
 		t.Errorf("Wrong article returned")
 	}
 

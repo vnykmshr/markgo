@@ -97,52 +97,52 @@ func TestLoadWithEnvironmentVariables(t *testing.T) {
 	require.NoError(t, os.MkdirAll(tmpDir+"/templates", 0o750))
 
 	// Set environment variables
-	os.Setenv("ENVIRONMENT", "production")
-	os.Setenv("PORT", "8080")
-	os.Setenv("ARTICLES_PATH", tmpDir+"/articles")
-	os.Setenv("STATIC_PATH", tmpDir+"/static")
-	os.Setenv("TEMPLATES_PATH", tmpDir+"/templates")
-	os.Setenv("BASE_URL", "https://example.com")
+	_ = os.Setenv("ENVIRONMENT", "production")
+	_ = os.Setenv("PORT", "8080")
+	_ = os.Setenv("ARTICLES_PATH", tmpDir+"/articles")
+	_ = os.Setenv("STATIC_PATH", tmpDir+"/static")
+	_ = os.Setenv("TEMPLATES_PATH", tmpDir+"/templates")
+	_ = os.Setenv("BASE_URL", "https://example.com")
 
-	os.Setenv("SERVER_READ_TIMEOUT", "30s")
-	os.Setenv("SERVER_WRITE_TIMEOUT", "30s")
-	os.Setenv("SERVER_IDLE_TIMEOUT", "120s")
+	_ = os.Setenv("SERVER_READ_TIMEOUT", "30s")
+	_ = os.Setenv("SERVER_WRITE_TIMEOUT", "30s")
+	_ = os.Setenv("SERVER_IDLE_TIMEOUT", "120s")
 
-	os.Setenv("CACHE_TTL", "2h")
-	os.Setenv("CACHE_MAX_SIZE", "2000")
-	os.Setenv("CACHE_CLEANUP_INTERVAL", "20m")
+	_ = os.Setenv("CACHE_TTL", "2h")
+	_ = os.Setenv("CACHE_MAX_SIZE", "2000")
+	_ = os.Setenv("CACHE_CLEANUP_INTERVAL", "20m")
 
-	os.Setenv("EMAIL_HOST", "smtp.example.com")
-	os.Setenv("EMAIL_PORT", "465")
-	os.Setenv("EMAIL_USERNAME", "user@example.com")
-	os.Setenv("EMAIL_PASSWORD", "password")
-	os.Setenv("EMAIL_FROM", "noreply@example.com")
-	os.Setenv("EMAIL_TO", "admin@example.com")
-	os.Setenv("EMAIL_USE_SSL", "false")
+	_ = os.Setenv("EMAIL_HOST", "smtp.example.com")
+	_ = os.Setenv("EMAIL_PORT", "465")
+	_ = os.Setenv("EMAIL_USERNAME", "user@example.com")
+	_ = os.Setenv("EMAIL_PASSWORD", "password")
+	_ = os.Setenv("EMAIL_FROM", "noreply@example.com")
+	_ = os.Setenv("EMAIL_TO", "admin@example.com")
+	_ = os.Setenv("EMAIL_USE_SSL", "false")
 
-	os.Setenv("RATE_LIMIT_GENERAL_REQUESTS", "200")
-	os.Setenv("RATE_LIMIT_GENERAL_WINDOW", "30m")
-	os.Setenv("RATE_LIMIT_CONTACT_REQUESTS", "10")
-	os.Setenv("RATE_LIMIT_CONTACT_WINDOW", "2h")
+	_ = os.Setenv("RATE_LIMIT_GENERAL_REQUESTS", "200")
+	_ = os.Setenv("RATE_LIMIT_GENERAL_WINDOW", "30m")
+	_ = os.Setenv("RATE_LIMIT_CONTACT_REQUESTS", "10")
+	_ = os.Setenv("RATE_LIMIT_CONTACT_WINDOW", "2h")
 
-	os.Setenv("CORS_ALLOWED_ORIGINS", "https://example.com,https://api.example.com")
-	os.Setenv("CORS_ALLOWED_METHODS", "GET,POST,PUT,DELETE")
-	os.Setenv("CORS_ALLOWED_HEADERS", "Content-Type,Authorization")
+	_ = os.Setenv("CORS_ALLOWED_ORIGINS", "https://example.com,https://api.example.com")
+	_ = os.Setenv("CORS_ALLOWED_METHODS", "GET,POST,PUT,DELETE")
+	_ = os.Setenv("CORS_ALLOWED_HEADERS", "Content-Type,Authorization")
 
-	os.Setenv("ADMIN_USERNAME", "superuser")
-	os.Setenv("ADMIN_PASSWORD", "secretpassword")
+	_ = os.Setenv("ADMIN_USERNAME", "superuser")
+	_ = os.Setenv("ADMIN_PASSWORD", "secretpassword")
 
-	os.Setenv("BLOG_TITLE", "My Custom Blog")
-	os.Setenv("BLOG_DESCRIPTION", "A custom blog description")
-	os.Setenv("BLOG_AUTHOR", "John Doe")
-	os.Setenv("BLOG_AUTHOR_EMAIL", "john@example.com")
-	os.Setenv("BLOG_LANGUAGE", "es")
-	os.Setenv("BLOG_THEME", "dark")
-	os.Setenv("BLOG_POSTS_PER_PAGE", "20")
+	_ = os.Setenv("BLOG_TITLE", "My Custom Blog")
+	_ = os.Setenv("BLOG_DESCRIPTION", "A custom blog description")
+	_ = os.Setenv("BLOG_AUTHOR", "John Doe")
+	_ = os.Setenv("BLOG_AUTHOR_EMAIL", "john@example.com")
+	_ = os.Setenv("BLOG_LANGUAGE", "es")
+	_ = os.Setenv("BLOG_THEME", "dark")
+	_ = os.Setenv("BLOG_POSTS_PER_PAGE", "20")
 
 	defer clearEnvVars()
 	defer func() {
-		os.RemoveAll(tmpDir)
+		_ = os.RemoveAll(tmpDir)
 	}()
 
 	cfg, err := Load()
@@ -225,8 +225,8 @@ func TestEnvironmentVariableParsing(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setValue != "" {
-				os.Setenv(tt.envVar, tt.setValue)
-				defer os.Unsetenv(tt.envVar)
+				_ = os.Setenv(tt.envVar, tt.setValue)
+				defer func() { _ = os.Unsetenv(tt.envVar) }()
 			}
 
 			result := tt.testFunc(tt.envVar, tt.expected)
@@ -254,8 +254,8 @@ func TestGetEnvBool(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.value, func(t *testing.T) {
-			os.Setenv("TEST_BOOL", tc.value)
-			defer os.Unsetenv("TEST_BOOL")
+			_ = os.Setenv("TEST_BOOL", tc.value)
+			defer func() { _ = os.Unsetenv("TEST_BOOL") }()
 
 			result := getEnvBool("TEST_BOOL", false)
 			assert.Equal(t, tc.expected, result)
@@ -263,8 +263,8 @@ func TestGetEnvBool(t *testing.T) {
 	}
 
 	// Test with invalid boolean
-	os.Setenv("TEST_INVALID_BOOL", "not_a_bool")
-	defer os.Unsetenv("TEST_INVALID_BOOL")
+	_ = os.Setenv("TEST_INVALID_BOOL", "not_a_bool")
+	defer func() { _ = os.Unsetenv("TEST_INVALID_BOOL") }()
 
 	result := getEnvBool("TEST_INVALID_BOOL", true)
 	assert.Equal(t, true, result)
@@ -295,8 +295,8 @@ func TestStringSliceParsing(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setValue != "" {
-				os.Setenv(tt.envVar, tt.setValue)
-				defer os.Unsetenv(tt.envVar)
+				_ = os.Setenv(tt.envVar, tt.setValue)
+				defer func() { _ = os.Unsetenv(tt.envVar) }()
 			}
 
 			if tt.name == "non-existing returns default" || tt.name == "empty string returns default" {
@@ -325,7 +325,7 @@ func clearEnvVars() {
 	}
 
 	for _, env := range vars {
-		os.Unsetenv(env)
+		_ = os.Unsetenv(env)
 	}
 }
 
@@ -342,8 +342,8 @@ func BenchmarkLoad(b *testing.B) {
 }
 
 func BenchmarkGetEnv(b *testing.B) {
-	os.Setenv("BENCH_VAR", "benchmark_value")
-	defer os.Unsetenv("BENCH_VAR")
+	_ = os.Setenv("BENCH_VAR", "benchmark_value")
+	defer func() { _ = os.Unsetenv("BENCH_VAR") }()
 
 	for b.Loop() {
 		getEnv("BENCH_VAR", "default")
@@ -351,8 +351,8 @@ func BenchmarkGetEnv(b *testing.B) {
 }
 
 func BenchmarkGetEnvInt(b *testing.B) {
-	os.Setenv("BENCH_INT", "12345")
-	defer os.Unsetenv("BENCH_INT")
+	_ = os.Setenv("BENCH_INT", "12345")
+	defer func() { _ = os.Unsetenv("BENCH_INT") }()
 
 	for b.Loop() {
 		getEnvInt("BENCH_INT", 0)
@@ -360,8 +360,8 @@ func BenchmarkGetEnvInt(b *testing.B) {
 }
 
 func BenchmarkGetEnvSlice(b *testing.B) {
-	os.Setenv("BENCH_SLICE", "value1,value2,value3,value4,value5")
-	defer os.Unsetenv("BENCH_SLICE")
+	_ = os.Setenv("BENCH_SLICE", "value1,value2,value3,value4,value5")
+	defer func() { _ = os.Unsetenv("BENCH_SLICE") }()
 
 	for b.Loop() {
 		getEnvSlice("BENCH_SLICE", []string{"default"})
@@ -413,8 +413,8 @@ func TestEnvironmentAwareRateLimiting(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set environment
-			os.Setenv("ENVIRONMENT", tt.environment)
-			defer os.Unsetenv("ENVIRONMENT")
+			_ = os.Setenv("ENVIRONMENT", tt.environment)
+			defer func() { _ = os.Unsetenv("ENVIRONMENT") }()
 
 			// Load config
 			cfg, err := Load()

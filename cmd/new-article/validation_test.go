@@ -445,7 +445,7 @@ func TestValidateOutputPath(t *testing.T) {
 	// Create a temporary directory for testing
 	tempDir, err := os.MkdirTemp("", "test_articles")
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	testCases := []struct {
 		name        string
@@ -464,8 +464,8 @@ func TestValidateOutputPath(t *testing.T) {
 			name: "existing file",
 			setup: func() string {
 				path := filepath.Join(tempDir, "existing.md")
-				file, _ := os.Create(path)
-				file.Close()
+				file, _ := os.Create(path) // #nosec G304 - Safe: test file creation in temp directory
+				_ = file.Close()
 				return path
 			},
 			expectError: true,

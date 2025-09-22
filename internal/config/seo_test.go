@@ -23,16 +23,16 @@ func TestSEOConfigLoading(t *testing.T) {
 	// Save original env values and set test values
 	for key, value := range testEnvs {
 		originalEnvs[key] = os.Getenv(key)
-		os.Setenv(key, value)
+		_ = os.Setenv(key, value)
 	}
 
 	// Restore original environment after test
 	defer func() {
 		for key, originalValue := range originalEnvs {
 			if originalValue == "" {
-				os.Unsetenv(key)
+				_ = os.Unsetenv(key)
 			} else {
-				os.Setenv(key, originalValue)
+				_ = os.Setenv(key, originalValue)
 			}
 		}
 	}()
@@ -92,14 +92,14 @@ func TestSEOConfigDefaults(t *testing.T) {
 	originalEnvs := make(map[string]string)
 	for _, envVar := range seoEnvVars {
 		originalEnvs[envVar] = os.Getenv(envVar)
-		os.Unsetenv(envVar)
+		_ = os.Unsetenv(envVar)
 	}
 
 	// Restore environment after test
 	defer func() {
 		for key, originalValue := range originalEnvs {
 			if originalValue != "" {
-				os.Setenv(key, originalValue)
+				_ = os.Setenv(key, originalValue)
 			}
 		}
 	}()
@@ -147,13 +147,13 @@ func TestSEOConfigDefaults(t *testing.T) {
 func TestSEOConfigDisabled(t *testing.T) {
 	// Set SEO to disabled
 	originalEnabled := os.Getenv("SEO_ENABLED")
-	os.Setenv("SEO_ENABLED", "false")
+	_ = os.Setenv("SEO_ENABLED", "false")
 
 	defer func() {
 		if originalEnabled == "" {
-			os.Unsetenv("SEO_ENABLED")
+			_ = os.Unsetenv("SEO_ENABLED")
 		} else {
-			os.Setenv("SEO_ENABLED", originalEnabled)
+			_ = os.Setenv("SEO_ENABLED", originalEnabled)
 		}
 	}()
 

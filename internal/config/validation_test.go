@@ -665,8 +665,8 @@ func TestLoadWithValidationFailures(t *testing.T) {
 
 	// Test with missing directories
 	t.Run("load with missing directories", func(t *testing.T) {
-		os.Setenv("ARTICLES_PATH", "/nonexistent/articles")
-		defer os.Unsetenv("ARTICLES_PATH")
+		_ = os.Setenv("ARTICLES_PATH", "/nonexistent/articles")
+		defer func() { _ = os.Unsetenv("ARTICLES_PATH") }()
 
 		_, err := Load()
 		assert.Error(t, err)
@@ -682,15 +682,15 @@ func TestLoadWithValidationFailures(t *testing.T) {
 		require.NoError(t, os.MkdirAll(tmpDir+"/static", 0o750))
 		require.NoError(t, os.MkdirAll(tmpDir+"/templates", 0o750))
 
-		os.Setenv("ARTICLES_PATH", tmpDir+"/articles")
-		os.Setenv("STATIC_PATH", tmpDir+"/static")
-		os.Setenv("TEMPLATES_PATH", tmpDir+"/templates")
-		os.Setenv("PORT", "70000")
+		_ = os.Setenv("ARTICLES_PATH", tmpDir+"/articles")
+		_ = os.Setenv("STATIC_PATH", tmpDir+"/static")
+		_ = os.Setenv("TEMPLATES_PATH", tmpDir+"/templates")
+		_ = os.Setenv("PORT", "70000")
 		defer func() {
-			os.Unsetenv("ARTICLES_PATH")
-			os.Unsetenv("STATIC_PATH")
-			os.Unsetenv("TEMPLATES_PATH")
-			os.Unsetenv("PORT")
+			_ = os.Unsetenv("ARTICLES_PATH")
+			_ = os.Unsetenv("STATIC_PATH")
+			_ = os.Unsetenv("TEMPLATES_PATH")
+			_ = os.Unsetenv("PORT")
 		}()
 
 		_, err := Load()
@@ -707,15 +707,15 @@ func TestLoadWithValidationFailures(t *testing.T) {
 		require.NoError(t, os.MkdirAll(tmpDir+"/static", 0o750))
 		require.NoError(t, os.MkdirAll(tmpDir+"/templates", 0o750))
 
-		os.Setenv("ARTICLES_PATH", tmpDir+"/articles")
-		os.Setenv("STATIC_PATH", tmpDir+"/static")
-		os.Setenv("TEMPLATES_PATH", tmpDir+"/templates")
-		os.Setenv("ENVIRONMENT", "invalid")
+		_ = os.Setenv("ARTICLES_PATH", tmpDir+"/articles")
+		_ = os.Setenv("STATIC_PATH", tmpDir+"/static")
+		_ = os.Setenv("TEMPLATES_PATH", tmpDir+"/templates")
+		_ = os.Setenv("ENVIRONMENT", "invalid")
 		defer func() {
-			os.Unsetenv("ARTICLES_PATH")
-			os.Unsetenv("STATIC_PATH")
-			os.Unsetenv("TEMPLATES_PATH")
-			os.Unsetenv("ENVIRONMENT")
+			_ = os.Unsetenv("ARTICLES_PATH")
+			_ = os.Unsetenv("STATIC_PATH")
+			_ = os.Unsetenv("TEMPLATES_PATH")
+			_ = os.Unsetenv("ENVIRONMENT")
 		}()
 
 		_, err := Load()
