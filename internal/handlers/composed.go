@@ -91,6 +91,7 @@ type Config struct {
 	SearchService   services.SearchServiceInterface
 	TemplateService services.TemplateServiceInterface
 	PreviewService  services.PreviewServiceInterface
+	SEOService      services.SEOServiceInterface
 	Config          *config.Config
 	Logger          *slog.Logger
 	Cache           *obcache.Cache
@@ -113,6 +114,7 @@ func New(cfg *Config) *Handlers {
 		cfg.SearchService,
 		cachedFunctions,
 		cfg.BuildInfo,
+		cfg.SEOService,
 	)
 
 	adminHandler := NewAdminHandler(
@@ -123,6 +125,7 @@ func New(cfg *Config) *Handlers {
 		time.Now(),
 		CachedAdminFunctions{},
 		cfg.BuildInfo,
+		cfg.SEOService,
 	)
 
 	apiHandler := NewAPIHandler(
@@ -134,6 +137,7 @@ func New(cfg *Config) *Handlers {
 		time.Now(),
 		CachedAPIFunctions{},
 		cfg.BuildInfo,
+		cfg.SEOService,
 	)
 
 	// Create preview handler (if service is available)
