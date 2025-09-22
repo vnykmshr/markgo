@@ -480,13 +480,13 @@ var templateFuncs = template.FuncMap{
 	"not": func(a bool) bool {
 		return !a
 	},
-	"contains": strings.Contains,
+	"contains":  strings.Contains,
 	"hasPrefix": strings.HasPrefix,
 	"hasSuffix": strings.HasSuffix,
-	"lower": strings.ToLower,
-	"upper": strings.ToUpper,
-	"title": titleCaser.String,
-	"trim": strings.TrimSpace,
+	"lower":     strings.ToLower,
+	"upper":     strings.ToUpper,
+	"title":     titleCaser.String,
+	"trim":      strings.TrimSpace,
 	"truncate": func(s string, length int) string {
 		runes := []rune(s)
 		if len(runes) <= length {

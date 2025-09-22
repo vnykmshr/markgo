@@ -34,6 +34,7 @@ type Service struct {
 
 // Session represents a preview session.
 type Session = services.PreviewSession
+
 // Stats represents preview statistics.
 type Stats = services.PreviewStats
 
