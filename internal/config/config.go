@@ -26,6 +26,7 @@ const (
 	TestEnvironment        = "test"
 )
 
+// Config represents the main application configuration.
 type Config struct {
 	Environment   string          `json:"environment"`
 	Port          int             `json:"port"`
@@ -174,6 +175,7 @@ type ValidationResult struct {
 	Warnings []ValidationWarning `json:"warnings"`
 }
 
+// Load reads and validates the application configuration from environment variables.
 func Load() (*Config, error) {
 	// Load .env file if it exists (ignore errors as it's optional)
 	if err := godotenv.Load(); err != nil {

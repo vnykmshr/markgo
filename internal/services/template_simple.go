@@ -113,9 +113,7 @@ func addDateTimeFunctions(funcMap template.FuncMap) {
 	funcMap["formatDateTime"] = func(t time.Time) string {
 		return t.Format(constants.DefaultDateTimeFormat)
 	}
-	funcMap["humanizeTime"] = func(t time.Time) string {
-		return humanize.Time(t)
-	}
+	funcMap["humanizeTime"] = humanize.Time
 }
 
 // addStringFunctions adds string manipulation template functions

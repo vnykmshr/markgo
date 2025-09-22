@@ -146,7 +146,7 @@ func (s *StaticExportService) copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer srcFile.Close()
+	defer func() { _ = srcFile.Close() }()
 
 	if mkdirErr := os.MkdirAll(filepath.Dir(dst), 0o750); mkdirErr != nil {
 		return mkdirErr
@@ -156,7 +156,7 @@ func (s *StaticExportService) copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer dstFile.Close()
+	defer func() { _ = dstFile.Close() }()
 
 	_, err = io.Copy(dstFile, srcFile)
 	return err

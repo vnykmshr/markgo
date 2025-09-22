@@ -344,9 +344,7 @@ var templateFuncs = template.FuncMap{
 	"mul": func(a, b int) int {
 		return a * b
 	},
-	"printf": func(format string, args ...any) string {
-		return fmt.Sprintf(format, args...)
-	},
+	"printf": fmt.Sprintf,
 	"le": func(a, b any) bool {
 		switch va := a.(type) {
 		case int:
@@ -382,9 +380,7 @@ var templateFuncs = template.FuncMap{
 	"lt": func(a, b int) bool {
 		return a < b
 	},
-	"eq": func(a, b any) bool {
-		return reflect.DeepEqual(a, b)
-	},
+	"eq": reflect.DeepEqual,
 	"len": func(items any) int {
 		v := reflect.ValueOf(items)
 		switch v.Kind() {
@@ -446,9 +442,7 @@ var templateFuncs = template.FuncMap{
 		}
 		return date.In(loc).Format(format)
 	},
-	"now": func() time.Time {
-		return time.Now()
-	},
+	"now": time.Now,
 	"max": func(a, b int) int {
 		if a > b {
 			return a
@@ -479,27 +473,13 @@ var templateFuncs = template.FuncMap{
 	"not": func(a bool) bool {
 		return !a
 	},
-	"contains": func(s, substr string) bool {
-		return strings.Contains(s, substr)
-	},
-	"hasPrefix": func(s, prefix string) bool {
-		return strings.HasPrefix(s, prefix)
-	},
-	"hasSuffix": func(s, suffix string) bool {
-		return strings.HasSuffix(s, suffix)
-	},
-	"lower": func(s string) string {
-		return strings.ToLower(s)
-	},
-	"upper": func(s string) string {
-		return strings.ToUpper(s)
-	},
-	"title": func(s string) string {
-		return titleCaser.String(s)
-	},
-	"trim": func(s string) string {
-		return strings.TrimSpace(s)
-	},
+	"contains": strings.Contains,
+	"hasPrefix": strings.HasPrefix,
+	"hasSuffix": strings.HasSuffix,
+	"lower": strings.ToLower,
+	"upper": strings.ToUpper,
+	"title": titleCaser.String,
+	"trim": strings.TrimSpace,
 	"truncate": func(s string, length int) string {
 		runes := []rune(s)
 		if len(runes) <= length {

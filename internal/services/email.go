@@ -258,7 +258,7 @@ func (e *EmailService) TestConnection() error {
 	if err != nil {
 		return apperrors.NewHTTPError(503, "Email service temporarily unavailable", err)
 	}
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	// Test authentication
 	if e.auth != nil {
