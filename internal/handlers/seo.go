@@ -65,7 +65,7 @@ func (h *SEOHandler) ServeRobotsTxt(c *gin.Context) {
 	robotsConfig := services.RobotsConfig{
 		UserAgent:  "*",
 		Allow:      []string{"/"},
-		Disallow:   []string{"/admin", "/api", "/preview"},
+		Disallow:   []string{"/admin", "/preview"},
 		CrawlDelay: 1,
 		SitemapURL: c.Request.URL.Scheme + "://" + c.Request.Host + "/sitemap.xml",
 	}
