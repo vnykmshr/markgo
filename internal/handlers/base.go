@@ -20,6 +20,8 @@ type BaseHandler struct {
 	logger          *slog.Logger
 	templateService services.TemplateServiceInterface
 	buildInfo       *BuildInfo
+	seoService      services.SEOServiceInterface
+	seoHelper       *SEODataHelper
 }
 
 // NewBaseHandler creates a new base handler
@@ -28,12 +30,20 @@ func NewBaseHandler(
 	logger *slog.Logger,
 	templateService services.TemplateServiceInterface,
 	buildInfo *BuildInfo,
+	seoService services.SEOServiceInterface,
 ) *BaseHandler {
+	var seoHelper *SEODataHelper
+	if seoService != nil {
+		seoHelper = NewSEODataHelper(seoService, config)
+	}
+
 	return &BaseHandler{
 		config:          config,
 		logger:          logger,
 		templateService: templateService,
 		buildInfo:       buildInfo,
+		seoService:      seoService,
+		seoHelper:       seoHelper,
 	}
 }
 
@@ -48,6 +58,8 @@ func (h *BaseHandler) withCachedFallback(
 	// Try cached function first
 	if cachedFunc != nil {
 		if data, err := cachedFunc(); err == nil {
+			// Enhance with SEO data before rendering
+			h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
 			h.renderHTML(c, http.StatusOK, template, data)
 			return
 		}
@@ -62,6 +74,8 @@ func (h *BaseHandler) withCachedFallback(
 		return
 	}
 
+	// Enhance with SEO data before rendering
+	h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
 	h.renderHTML(c, http.StatusOK, template, data)
 }
 
@@ -93,6 +107,56 @@ func (h *BaseHandler) withCachedStringFallback(
 
 	c.Header("Content-Type", contentType)
 	c.String(http.StatusOK, data)
+}
+
+// enhanceWithSEO adds SEO data to template data
+func (h *BaseHandler) enhanceWithSEO(data map[string]any, seoType string) {
+	if h.seoHelper == nil || h.seoService == nil || !h.seoService.IsEnabled() {
+		return
+	}
+
+	var seoData map[string]interface{}
+
+	switch seoType {
+	case "article":
+		if article, ok := data["article"].(*models.Article); ok && article != nil {
+			seoData = h.seoHelper.GenerateArticleSEOData(article)
+		}
+	case "home":
+		seoData = h.seoHelper.GenerateHomeSEOData()
+	case "page":
+		title, _ := data["title"].(string)
+		description, _ := data["description"].(string)
+		path := ""
+		if pageData, ok := data["path"].(string); ok {
+			path = pageData
+		}
+		seoData = h.seoHelper.GeneratePageSEOData(title, description, path)
+	}
+
+	// Merge SEO data into template data
+	if seoData != nil {
+		h.seoHelper.AddSEODataToTemplateData(data, seoData)
+	}
+}
+
+// enhanceTemplateDataWithSEO intelligently adds SEO data based on page context
+func (h *BaseHandler) enhanceTemplateDataWithSEO(data map[string]any, path string) {
+	if h.seoHelper == nil || h.seoService == nil || !h.seoService.IsEnabled() {
+		return
+	}
+
+	// Determine SEO type based on data content and path
+	seoType := "page" // default
+
+	// Check if this is an article page
+	if article, ok := data["article"].(*models.Article); ok && article != nil {
+		seoType = "article"
+	} else if path == "/" || path == "" {
+		seoType = "home"
+	}
+
+	h.enhanceWithSEO(data, seoType)
 }
 
 // renderHTML renders HTML template with common error handling

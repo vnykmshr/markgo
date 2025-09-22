@@ -44,9 +44,10 @@ func NewArticleHandler(
 	searchService services.SearchServiceInterface,
 	cachedFunctions CachedArticleFunctions,
 	buildInfo *BuildInfo,
+	seoService services.SEOServiceInterface,
 ) *ArticleHandler {
 	return &ArticleHandler{
-		BaseHandler:     NewBaseHandler(config, logger, templateService, buildInfo),
+		BaseHandler:     NewBaseHandler(config, logger, templateService, buildInfo, seoService),
 		articleService:  articleService,
 		searchService:   searchService,
 		cachedFunctions: cachedFunctions,
@@ -205,7 +206,12 @@ func (h *ArticleHandler) Search(c *gin.Context) {
 
 // Helper methods
 
-const recentArticlesLimit = 5
+const (
+	recentArticlesLimit = 5
+
+	// Template names
+	templateArticle = "article"
+)
 
 // getRecentArticles returns the most recent published articles for footer display
 func (h *ArticleHandler) getRecentArticles() []*models.Article {
@@ -285,7 +291,7 @@ func (h *ArticleHandler) getArticleDataUncached(slug string) (map[string]any, er
 	}
 
 	// Use special template for about page
-	templateName := "article"
+	templateName := templateArticle
 	if slug == "about" {
 		templateName = "about-article"
 	}

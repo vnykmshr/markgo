@@ -45,9 +45,10 @@ func NewAPIHandler(
 	startTime time.Time,
 	cachedFunctions CachedAPIFunctions,
 	buildInfo *BuildInfo,
+	seoService services.SEOServiceInterface,
 ) *APIHandler {
 	return &APIHandler{
-		BaseHandler:     NewBaseHandler(config, logger, templateService, buildInfo),
+		BaseHandler:     NewBaseHandler(config, logger, templateService, buildInfo, seoService),
 		articleService:  articleService,
 		emailService:    emailService,
 		startTime:       startTime,

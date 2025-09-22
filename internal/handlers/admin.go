@@ -54,9 +54,10 @@ func NewAdminHandler(
 	startTime time.Time,
 	cachedFunctions CachedAdminFunctions,
 	buildInfo *BuildInfo,
+	seoService services.SEOServiceInterface,
 ) *AdminHandler {
 	return &AdminHandler{
-		BaseHandler:     NewBaseHandler(config, logger, templateService, buildInfo),
+		BaseHandler:     NewBaseHandler(config, logger, templateService, buildInfo, seoService),
 		articleService:  articleService,
 		startTime:       startTime,
 		cachedFunctions: cachedFunctions,
