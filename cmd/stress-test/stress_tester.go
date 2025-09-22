@@ -214,7 +214,11 @@ func (st *StressTester) processURL(ctx context.Context, task URLTask) {
 		atomic.AddInt64(&st.results.FailedRequests, 1)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			// Error closing response body - non-critical for stress testing
+		}
+	}()
 
 	responseTime := time.Since(startTime)
 	atomic.AddInt64(&st.results.SuccessfulRequests, 1)

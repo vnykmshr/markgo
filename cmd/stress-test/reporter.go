@@ -311,7 +311,11 @@ func (rg *ReportGenerator) GenerateHTMLReport(outputPath string) error {
 	if err != nil {
 		return fmt.Errorf("creating output file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			// Note: error logging not available in this context, this is a cleanup operation
+		}
+	}()
 
 	if err := t.Execute(file, data); err != nil {
 		return fmt.Errorf("executing template: %w", err)
