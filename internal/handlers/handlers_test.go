@@ -17,9 +17,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/vnykmshr/markgo/internal/config"
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/models"
 	"github.com/vnykmshr/markgo/internal/services"
-	apperrors "github.com/vnykmshr/markgo/internal/errors"
 )
 
 func init() {
@@ -40,24 +40,26 @@ func (m *MockArticleService) GetArticleBySlug(slug string) (*models.Article, err
 	}
 	return nil, errors.New("article not found")
 }
-func (m *MockArticleService) GetArticlesByTag(tag string) []*models.Article              { return nil }
-func (m *MockArticleService) GetArticlesByCategory(category string) []*models.Article    { return nil }
-func (m *MockArticleService) GetArticlesForFeed(limit int) []*models.Article             { return nil }
-func (m *MockArticleService) GetFeaturedArticles(limit int) []*models.Article            { return nil }
-func (m *MockArticleService) GetRecentArticles(limit int) []*models.Article              { return nil }
-func (m *MockArticleService) GetAllTags() []string                                       { return []string{} }
-func (m *MockArticleService) GetAllCategories() []string                                 { return []string{} }
-func (m *MockArticleService) GetTagCounts() []models.TagCount                            { return []models.TagCount{} }
-func (m *MockArticleService) GetCategoryCounts() []models.CategoryCount                  { return []models.CategoryCount{} }
-func (m *MockArticleService) GetStats() *models.Stats                                    { return &models.Stats{} }
-func (m *MockArticleService) ReloadArticles() error                                      { return nil }
-func (m *MockArticleService) GetDraftArticles() []*models.Article                        { return nil }
-func (m *MockArticleService) GetDraftBySlug(slug string) (*models.Article, error)        { return nil, nil }
+func (m *MockArticleService) GetArticlesByTag(tag string) []*models.Article           { return nil }
+func (m *MockArticleService) GetArticlesByCategory(category string) []*models.Article { return nil }
+func (m *MockArticleService) GetArticlesForFeed(limit int) []*models.Article          { return nil }
+func (m *MockArticleService) GetFeaturedArticles(limit int) []*models.Article         { return nil }
+func (m *MockArticleService) GetRecentArticles(limit int) []*models.Article           { return nil }
+func (m *MockArticleService) GetAllTags() []string                                    { return []string{} }
+func (m *MockArticleService) GetAllCategories() []string                              { return []string{} }
+func (m *MockArticleService) GetTagCounts() []models.TagCount                         { return []models.TagCount{} }
+func (m *MockArticleService) GetCategoryCounts() []models.CategoryCount {
+	return []models.CategoryCount{}
+}
+func (m *MockArticleService) GetStats() *models.Stats                             { return &models.Stats{} }
+func (m *MockArticleService) ReloadArticles() error                               { return nil }
+func (m *MockArticleService) GetDraftArticles() []*models.Article                 { return nil }
+func (m *MockArticleService) GetDraftBySlug(slug string) (*models.Article, error) { return nil, nil }
 
 type MockEmailService struct {
-	ShouldFail       bool
-	NotConfigured    bool
-	LastMessageSent  *models.ContactMessage
+	ShouldFail      bool
+	NotConfigured   bool
+	LastMessageSent *models.ContactMessage
 }
 
 func (m *MockEmailService) SendContactMessage(msg *models.ContactMessage) error {
@@ -108,9 +110,9 @@ func (m *MockTemplateService) GetTemplate() *template.Template      { return nil
 
 type MockSEOService struct{}
 
-func (m *MockSEOService) GenerateSitemap() ([]byte, error)                                { return nil, nil }
-func (m *MockSEOService) GetSitemapLastModified() time.Time                               { return time.Now() }
-func (m *MockSEOService) RefreshSitemap() error                                           { return nil }
+func (m *MockSEOService) GenerateSitemap() ([]byte, error)  { return nil, nil }
+func (m *MockSEOService) GetSitemapLastModified() time.Time { return time.Now() }
+func (m *MockSEOService) RefreshSitemap() error             { return nil }
 func (m *MockSEOService) GenerateArticleSchema(article *models.Article, baseURL string) (map[string]interface{}, error) {
 	return nil, nil
 }
@@ -129,14 +131,16 @@ func (m *MockSEOService) GenerateTwitterCardTags(article *models.Article, baseUR
 func (m *MockSEOService) GenerateMetaTags(article *models.Article, siteConfig services.SiteConfig) (map[string]string, error) {
 	return nil, nil
 }
-func (m *MockSEOService) AnalyzeContent(content string) (*services.SEOAnalysis, error) { return nil, nil }
-func (m *MockSEOService) GetPerformanceMetrics() (*services.SEOMetrics, error)         { return nil, nil }
+func (m *MockSEOService) AnalyzeContent(content string) (*services.SEOAnalysis, error) {
+	return nil, nil
+}
+func (m *MockSEOService) GetPerformanceMetrics() (*services.SEOMetrics, error) { return nil, nil }
 func (m *MockSEOService) GenerateRobotsTxt(config services.RobotsConfig) ([]byte, error) {
 	return nil, nil
 }
-func (m *MockSEOService) Start() error      { return nil }
-func (m *MockSEOService) Stop() error       { return nil }
-func (m *MockSEOService) IsEnabled() bool   { return true }
+func (m *MockSEOService) Start() error    { return nil }
+func (m *MockSEOService) Stop() error     { return nil }
+func (m *MockSEOService) IsEnabled() bool { return true }
 
 func createTestConfig() *config.Config {
 	return &config.Config{

@@ -175,10 +175,10 @@ func main() {
 
 	// Global middleware
 	router.Use(
-		middleware.RecoveryWithErrorHandler(logger), // Custom recovery with error handling
-		middleware.Logger(logger),                   // Basic request logging
-		middleware.Performance(logger),              // Performance monitoring
-		middleware.SmartCacheHeaders(),              // Intelligent HTTP cache headers
+		middleware.RecoveryWithErrorHandler(logger),                                 // Custom recovery with error handling
+		middleware.Logger(logger),                                                   // Basic request logging
+		middleware.Performance(logger),                                              // Performance monitoring
+		middleware.SmartCacheHeaders(),                                              // Intelligent HTTP cache headers
 		middleware.CORS(cfg.CORS.AllowedOrigins, cfg.Environment == envDevelopment), // Secure CORS with exact origin matching
 		middleware.Security(),
 		middleware.RateLimit(cfg.RateLimit.General.Requests, cfg.RateLimit.General.Window),
