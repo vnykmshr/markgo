@@ -4,19 +4,19 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25.0+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Security](https://img.shields.io/badge/Security-Audited-green.svg)](#security)
-[![Performance](https://img.shields.io/badge/Cold%20Start-17ms-brightgreen.svg)](#performance)
+[![Performance](https://img.shields.io/badge/Cold%20Start-Fast-brightgreen.svg)](#performance)
 [![Demo](https://img.shields.io/badge/Demo-Live%20Site-blue.svg)](https://vnykmshr.github.io/markgo/)
 
-A modern, high-performance file-based blog engine built with Go. MarkGo combines the simplicity of file-based content management with the power of a dynamic web server, delivering **blazing-fast 17ms cold start** and enterprise-grade performance.
+A modern, high-performance file-based blog engine built with Go. MarkGo combines the simplicity of file-based content management with the power of a dynamic web server, delivering sub-second cold start and enterprise-grade performance.
 
 🌐 **[Live Demo](https://vnykmshr.github.io/markgo/)** - See MarkGo in action with automatic GitHub Pages deployment
 
 ## ✨ Features
 
 ### 🚀 Exceptional Performance
-- **17ms cold start time** - fastest in class
-- **Sub-microsecond response times** for core operations
-- **Zero-allocation caching** with enterprise obcache-go integration  
+- **Sub-second cold start** - significantly faster than traditional platforms
+- **Optimized response times** for core operations
+- **Zero-allocation caching** with enterprise obcache-go integration
 - **38MB single binary** deployment with no dependencies
 - **Concurrent request handling** with optimized goroutines
 
@@ -294,7 +294,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 | Platform | Cold Start Time | Memory Usage | Binary Size |
 |----------|----------------|--------------|-------------|
-| MarkGo   | **17ms**       | ~30MB        | ~38MB       |
+| MarkGo   | **<1s**        | ~30MB        | ~38MB       |
 | Ghost    | 150-300ms      | ~200MB       | Node.js + deps |
 | WordPress| 500-1000ms     | ~100MB       | PHP + MySQL |
 | Hugo     | Static only    | Build time   | Go binary   |
