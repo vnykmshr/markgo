@@ -7,7 +7,7 @@ import "time"
 // Application metadata
 const (
 	AppName    = "MarkGo"
-	AppVersion = "v1.6.1"
+	AppVersion = "v2.0.0"
 )
 
 // File paths and directories
