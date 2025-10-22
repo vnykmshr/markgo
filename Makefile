@@ -2,7 +2,7 @@
 
 # Variables
 BINARY_NAME=markgo
-MAIN_PATH=./cmd/server
+MAIN_PATH=./cmd/markgo
 BUILD_DIR=./build
 DOCKER_IMAGE=markgo
 DOCKER_TAG=latest
@@ -16,7 +16,13 @@ GOFMT=gofmt
 GOLINT=golangci-lint
 
 # Build flags
-LDFLAGS=-ldflags "-s -w -X main.version=$(shell git describe --tags --always --dirty)"
+VERSION=$(shell git describe --tags --always --dirty 2>/dev/null || echo "v2.0.0")
+GIT_COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_TIME=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
+LDFLAGS=-ldflags "-s -w \
+	-X 'github.com/vnykmshr/markgo/internal/commands/serve.Version=$(VERSION)' \
+	-X 'github.com/vnykmshr/markgo/internal/commands/serve.GitCommit=$(GIT_COMMIT)' \
+	-X 'github.com/vnykmshr/markgo/internal/commands/serve.BuildTime=$(BUILD_TIME)'"
 BUILD_FLAGS=-trimpath
 
 .PHONY: help build build-all build-release clean test test-race coverage lint fmt run dev docker install tidy
@@ -27,24 +33,13 @@ help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # Build targets
-build: ## Build main server binary
+build: ## Build unified CLI binary (includes all commands)
 	@echo "Building $(BINARY_NAME)..."
 	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=0 $(GOBUILD) $(BUILD_FLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PATH)
 	@echo "✓ Build complete: $(BUILD_DIR)/$(BINARY_NAME)"
 
-build-all: ## Build all CLI tools (server, init, new, export)
-	@echo "Building all tools..."
-	@mkdir -p $(BUILD_DIR)
-	@echo "  Building server..."
-	@CGO_ENABLED=0 $(GOBUILD) $(BUILD_FLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PATH)
-	@echo "  Building init..."
-	@CGO_ENABLED=0 $(GOBUILD) $(BUILD_FLAGS) -o $(BUILD_DIR)/init ./cmd/init
-	@echo "  Building new-article..."
-	@CGO_ENABLED=0 $(GOBUILD) $(BUILD_FLAGS) -o $(BUILD_DIR)/new-article ./cmd/new-article
-	@echo "  Building export..."
-	@CGO_ENABLED=0 $(GOBUILD) $(BUILD_FLAGS) -o $(BUILD_DIR)/export ./cmd/export
-	@echo "✓ All builds complete"
+build-all: build ## Alias for build (single unified binary)
 
 build-release: ## Build for all platforms (Linux, macOS, Windows)
 	@echo "Building release binaries..."
