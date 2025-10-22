@@ -112,20 +112,67 @@ func Compress() gin.HandlerFunc {
 	}
 }
 
-// RateLimit provides basic rate limiting
+// RateLimit provides sliding window rate limiting with bounded memory
 func RateLimit(requests int, window time.Duration) gin.HandlerFunc {
-	// Simple in-memory rate limiter with mutex for thread safety
+	const maxClients = 10000 // Prevent memory exhaustion attacks
+
 	clients := make(map[string][]time.Time)
 	var mu sync.RWMutex
 
+	// Background cleanup goroutine to prevent unbounded growth
+	go func() {
+		ticker := time.NewTicker(1 * time.Minute)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			mu.Lock()
+			now := time.Now()
+
+			// Clean up old entries and empty slices
+			for ip, times := range clients {
+				var validTimes []time.Time
+				for _, t := range times {
+					if now.Sub(t) <= window {
+						validTimes = append(validTimes, t)
+					}
+				}
+
+				if len(validTimes) == 0 {
+					delete(clients, ip)
+				} else {
+					clients[ip] = validTimes
+				}
+			}
+			mu.Unlock()
+		}
+	}()
+
 	return func(c *gin.Context) {
-		ip := c.ClientIP()
+		// Use RemoteAddr for security (ClientIP can be spoofed via X-Forwarded-For)
+		ip := c.Request.RemoteAddr
+		// Strip port from RemoteAddr (format is "IP:port")
+		if idx := len(ip) - 1; idx >= 0 {
+			for i := idx; i >= 0; i-- {
+				if ip[i] == ':' {
+					ip = ip[:i]
+					break
+				}
+			}
+		}
+
 		now := time.Now()
 
 		mu.Lock()
 		defer mu.Unlock()
 
-		// Clean old entries
+		// Prevent memory exhaustion: reject if too many unique IPs
+		if len(clients) >= maxClients && clients[ip] == nil {
+			c.Header("Retry-After", "3600")
+			c.AbortWithStatus(http.StatusTooManyRequests)
+			return
+		}
+
+		// Clean old entries for this IP
 		if times, exists := clients[ip]; exists {
 			var validTimes []time.Time
 			for _, t := range times {
@@ -138,12 +185,16 @@ func RateLimit(requests int, window time.Duration) gin.HandlerFunc {
 
 		// Check rate limit
 		if len(clients[ip]) >= requests {
-			c.Header("Retry-After", "60")
+			retryAfter := int(window.Seconds())
+			c.Header("Retry-After", fmt.Sprintf("%d", retryAfter))
 			c.AbortWithStatus(http.StatusTooManyRequests)
 			return
 		}
 
 		// Add current request
+		if clients[ip] == nil {
+			clients[ip] = make([]time.Time, 0, requests)
+		}
 		clients[ip] = append(clients[ip], now)
 		c.Next()
 	}
