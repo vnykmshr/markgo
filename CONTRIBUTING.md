@@ -4,12 +4,13 @@ Thank you for your interest in contributing to MarkGo! This document provides gu
 
 ## Code of Conduct
 
-By participating in this project, you agree to abide by our Code of Conduct:
+Read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
-- **Be respectful** and inclusive in all interactions
-- **Be constructive** when giving feedback
-- **Focus on the issue**, not the person
-- **Help create** a welcoming environment for all contributors
+## First Time Contributing?
+
+Look for issues labeled [`good first issue`](https://github.com/vnykmshr/markgo/labels/good%20first%20issue).
+
+**Response Times**: Expect PR feedback within 3-5 days. Ping the maintainer if no response after 1 week.
 
 ## How to Contribute
 
@@ -175,40 +176,15 @@ markgo/
 └── deployments/       # Deployment configs
 ```
 
-### Running Tests
-
-```bash
-# Run all tests
-make test
-
-# Run with race detection
-make test-race
-
-# Generate coverage report
-make coverage
-
-# Run benchmarks
-make benchmark
-```
-
 ### Local Development
 
 ```bash
-# Start development server with hot reload
-make dev
-
-# Build for current platform
-make build
-
-# Build for all platforms
-make build-all
-
-# Run linting
-make lint
-
-# Format code
-make fmt
+make dev      # Start development server with hot reload
+make test     # Run all tests
+make check    # Run all quality checks (fmt, vet, lint, tests)
 ```
+
+See [README.md](README.md#development) for complete build and test commands.
 
 ### Adding New Features
 

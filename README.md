@@ -13,12 +13,12 @@ A modern, high-performance file-based blog engine built with Go. MarkGo combines
 
 ## ✨ Features
 
-### 🚀 Exceptional Performance
-- **Sub-second cold start** - significantly faster than traditional platforms
-- **Optimized response times** for core operations
-- **Zero-allocation caching** with enterprise obcache-go integration
-- **38MB single binary** deployment with no dependencies
-- **Concurrent request handling** with optimized goroutines
+### 🚀 Performance
+- **Fast startup**: Server ready in <1 second
+- **Low memory**: ~30MB resident, 38MB single binary
+- **In-memory caching**: obcache-go, no external dependencies
+- **No runtime required**: No Node.js, PHP, or database needed
+- **Concurrent**: Handles multiple requests efficiently
 
 ### 📝 File-Based Content Management
 - **Markdown articles** with YAML frontmatter
@@ -44,10 +44,11 @@ A modern, high-performance file-based blog engine built with Go. MarkGo combines
 
 ### Option 1: Download Release (Recommended)
 
-1. **Download**: Visit [Releases](https://github.com/vnykmshr/markgo/releases) and download for your platform
-2. **Initialize**: `markgo init --quick`
-3. **Start**: `markgo`
-4. **Visit**: http://localhost:3000
+1. **Download**: [Latest release](https://github.com/vnykmshr/markgo/releases/latest) for your platform
+2. **Extract**: `tar -xzf markgo-*.tar.gz && cd markgo`
+3. **Initialize**: `./markgo init --quick`
+4. **Start**: `./markgo`
+5. **Visit**: http://localhost:3000
 
 ### Option 2: Build from Source
 
@@ -290,14 +291,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🌟 Why MarkGo?
 
-### Performance Comparison
+### Performance Characteristics
 
-| Platform | Cold Start Time | Memory Usage | Binary Size |
-|----------|----------------|--------------|-------------|
-| MarkGo   | **<1s**        | ~30MB        | ~38MB       |
-| Ghost    | 150-300ms      | ~200MB       | Node.js + deps |
-| WordPress| 500-1000ms     | ~100MB       | PHP + MySQL |
-| Hugo     | Static only    | Build time   | Go binary   |
+| Platform | Type | Memory Usage | Dependencies |
+|----------|------|--------------|--------------|
+| MarkGo   | Dynamic server | ~30MB | Single binary (38MB) |
+| Ghost    | Dynamic server | ~200MB | Node.js + SQLite |
+| WordPress| Dynamic server | ~100MB | PHP + MySQL |
+| Hugo     | Static generator | Build-time only | Go binary |
+
+See [BENCHMARKS.md](BENCHMARKS.md) for detailed performance metrics.
 
 ### Key Advantages
 
@@ -318,25 +321,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [🐛 Issue Tracker](https://github.com/vnykmshr/markgo/issues) - Bug reports and feature requests
 - [💬 Discussions](https://github.com/vnykmshr/markgo/discussions) - Community discussions
 - [🚀 Quick Deploy](docs/deployment.md) - Production deployment guide
-
-## 💡 Inspiration
-
-MarkGo was inspired by the need for a high-performance blog engine that combines:
-- The simplicity of static site generators
-- The flexibility of dynamic web applications  
-- The developer experience of modern tools
-- The reliability of Go's ecosystem
-
-Perfect for developers, technical writers, and anyone who values performance and simplicity.
-
-## 📚 Comprehensive Documentation
-
-This README provides a quick overview. For detailed information, explore our comprehensive documentation:
-
-- **[📘 Complete Project Guide](docs/project-guide.md)** - Everything you need to know about MarkGo Engine
-- **[🏛️ System Overview](docs/system-overview.md)** - Technical architecture and performance characteristics
-- **[📐 Architecture Guide](docs/architecture.md)** - In-depth technical design and patterns
-- **[🚀 Deployment Guide](docs/deployment.md)** - Production deployment strategies
 
 ---
 
