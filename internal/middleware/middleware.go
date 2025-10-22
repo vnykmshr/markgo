@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 
@@ -66,14 +65,29 @@ func Security() gin.HandlerFunc {
 	}
 }
 
-// CORS handles cross-origin requests
-func CORS() gin.HandlerFunc {
+// CORS handles cross-origin requests with secure origin validation
+func CORS(allowedOrigins []string, isDevelopment bool) gin.HandlerFunc {
+	// Build a map of allowed origins for O(1) lookup
+	allowedMap := make(map[string]bool)
+	for _, origin := range allowedOrigins {
+		allowedMap[origin] = true
+	}
+
+	// In development, add localhost variants explicitly
+	if isDevelopment {
+		allowedMap["http://localhost:3000"] = true
+		allowedMap["http://127.0.0.1:3000"] = true
+		allowedMap["http://localhost:3001"] = true
+		allowedMap["http://127.0.0.1:3001"] = true
+	}
+
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
 
-		// Allow specific origins or all for development
-		if origin != "" && (strings.Contains(origin, "localhost") || strings.Contains(origin, "127.0.0.1")) {
+		// Only allow explicitly configured origins (exact match - no substring)
+		if origin != "" && allowedMap[origin] {
 			c.Header("Access-Control-Allow-Origin", origin)
+			c.Header("Vary", "Origin") // Important for caching
 		}
 
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")

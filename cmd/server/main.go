@@ -179,7 +179,7 @@ func main() {
 		middleware.Logger(logger),                   // Basic request logging
 		middleware.Performance(logger),              // Performance monitoring
 		middleware.SmartCacheHeaders(),              // Intelligent HTTP cache headers
-		middleware.CORS(),
+		middleware.CORS(cfg.CORS.AllowedOrigins, cfg.Environment == envDevelopment), // Secure CORS with exact origin matching
 		middleware.Security(),
 		middleware.RateLimit(cfg.RateLimit.General.Requests, cfg.RateLimit.General.Window),
 		middleware.ErrorHandler(logger), // Centralized error handling (must be last)
