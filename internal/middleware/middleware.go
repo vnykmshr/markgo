@@ -158,18 +158,6 @@ func Logger(logger *slog.Logger) gin.HandlerFunc {
 	})
 }
 
-// PerformanceMiddleware is an alias for Performance
-func PerformanceMiddleware(logger *slog.Logger) gin.HandlerFunc {
-	return Performance(logger)
-}
-
-// CompetitorBenchmarkMiddleware is a no-op placeholder
-func CompetitorBenchmarkMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Next()
-	}
-}
-
 // SmartCacheHeaders adds basic cache headers
 func SmartCacheHeaders() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -223,26 +211,5 @@ func ErrorHandler(logger *slog.Logger) gin.HandlerFunc {
 		if len(c.Errors) > 0 {
 			logger.Error("Request error", "errors", c.Errors.String())
 		}
-	}
-}
-
-// RequestLoggingMiddleware provides enhanced request logging
-func RequestLoggingMiddleware(_ interface{}) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Next()
-	}
-}
-
-// SecurityLoggingMiddleware provides security event logging
-func SecurityLoggingMiddleware(_ interface{}) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Next()
-	}
-}
-
-// PerformanceLoggingMiddleware provides detailed performance logging
-func PerformanceLoggingMiddleware(_ interface{}) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Next()
 	}
 }

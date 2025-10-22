@@ -175,15 +175,12 @@ func main() {
 
 	// Global middleware
 	router.Use(
-		middleware.RequestLoggingMiddleware(loggingService), // Enhanced request logging with structured data
-		middleware.RecoveryWithErrorHandler(logger),         // Custom recovery with error handling
-		middleware.Logger(logger),                           // Basic request logging (may be redundant now)
-		middleware.PerformanceMiddleware(logger),
-		middleware.CompetitorBenchmarkMiddleware(),
-		middleware.SmartCacheHeaders(), // Intelligent HTTP cache headers
+		middleware.RecoveryWithErrorHandler(logger), // Custom recovery with error handling
+		middleware.Logger(logger),                   // Basic request logging
+		middleware.Performance(logger),              // Performance monitoring
+		middleware.SmartCacheHeaders(),              // Intelligent HTTP cache headers
 		middleware.CORS(),
 		middleware.Security(),
-		middleware.SecurityLoggingMiddleware(loggingService), // Security event logging
 		middleware.RateLimit(cfg.RateLimit.General.Requests, cfg.RateLimit.General.Window),
 		middleware.ErrorHandler(logger), // Centralized error handling (must be last)
 	)
@@ -191,7 +188,6 @@ func main() {
 	// Development-specific enhanced logging
 	if cfg.Environment == envDevelopment {
 		router.Use(middleware.RequestTracker(logger, cfg.Environment))
-		router.Use(middleware.PerformanceLoggingMiddleware(loggingService)) // Detailed performance logging
 		logger.Info("Development logging enhancements enabled")
 	}
 
