@@ -3,12 +3,10 @@
 package models
 
 import (
-	"crypto/md5" // #nosec G501 - Safe: MD5 used for non-cryptographic cache invalidation
-	"sync"
 	"time"
 )
 
-// Article represents a blog article with memory optimization
+// Article represents a blog article
 type Article struct {
 	Slug         string    `yaml:"slug" json:"slug"`
 	Title        string    `yaml:"title" json:"title"`
@@ -24,121 +22,9 @@ type Article struct {
 	WordCount    int       `yaml:"-" json:"word_count"`
 	LastModified time.Time `yaml:"-" json:"last_modified"`
 
-	// Memory optimized fields - lazy loaded
-	processedContent *string          `yaml:"-" json:"-"`
-	excerpt          *string          `yaml:"-" json:"-"`
-	contentHash      [16]byte         `yaml:"-" json:"-"`
-	mu               sync.RWMutex     `yaml:"-" json:"-"`
-	processor        ArticleProcessor `yaml:"-" json:"-"`
-}
-
-// ArticleProcessor interface for lazy content processing
-type ArticleProcessor interface {
-	ProcessMarkdown(content string) (string, error)
-	GenerateExcerpt(content string, maxLength int) string
-	ProcessDuplicateTitles(title, htmlContent string) string
-}
-
-// GetProcessedContent returns the processed HTML content, generating it if needed
-func (a *Article) GetProcessedContent() string {
-	a.mu.RLock()
-	if a.processedContent != nil {
-		content := *a.processedContent
-		a.mu.RUnlock()
-		return content
-	}
-	a.mu.RUnlock()
-
-	// Generate processed content
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
-	// Double-check pattern - another goroutine might have processed it
-	if a.processedContent != nil {
-		return *a.processedContent
-	}
-
-	// Generate content hash for cache invalidation
-	hash := md5.Sum([]byte(a.Content)) // #nosec G401 - Safe: MD5 used for non-cryptographic cache invalidation
-	if a.contentHash != hash && a.processor != nil {
-		processed, err := a.processor.ProcessMarkdown(a.Content)
-		if err == nil {
-			// Process duplicate titles after markdown conversion
-			processed = a.processor.ProcessDuplicateTitles(a.Title, processed)
-			a.processedContent = &processed
-			a.contentHash = hash
-			return processed
-		}
-	}
-
-	// Fallback to raw content if processing fails
-	a.processedContent = &a.Content
-	return a.Content
-}
-
-// GetExcerpt returns the article excerpt, generating it if needed
-func (a *Article) GetExcerpt() string {
-	a.mu.RLock()
-	if a.excerpt != nil {
-		excerpt := *a.excerpt
-		a.mu.RUnlock()
-		return excerpt
-	}
-	a.mu.RUnlock()
-
-	// Generate excerpt
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
-	// Double-check pattern
-	if a.excerpt != nil {
-		return *a.excerpt
-	}
-
-	if a.processor != nil {
-		excerpt := a.processor.GenerateExcerpt(a.Content, 200)
-		a.excerpt = &excerpt
-		return excerpt
-	}
-
-	// Fallback to description or truncated content
-	if a.Description != "" {
-		a.excerpt = &a.Description
-		return a.Description
-	}
-
-	const maxLength = 200
-	content := a.Content
-	if len(content) > maxLength {
-		content = content[:maxLength] + "..."
-	}
-	a.excerpt = &content
-	return content
-}
-
-// SetProcessor sets the processor for lazy content processing
-func (a *Article) SetProcessor(processor ArticleProcessor) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.processor = processor
-}
-
-// ProcessedContent returns the processed content
-func (a *Article) ProcessedContent() string {
-	return a.GetProcessedContent()
-}
-
-// Excerpt returns the excerpt
-func (a *Article) Excerpt() string {
-	return a.GetExcerpt()
-}
-
-// ClearProcessedContent clears cached processed content (for memory optimization)
-func (a *Article) ClearProcessedContent() {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.processedContent = nil
-	a.excerpt = nil
+	// Processed fields - populated when article is loaded
+	ProcessedContent string `yaml:"-" json:"-"`
+	Excerpt          string `yaml:"-" json:"-"`
 }
 
 // ContactMessage represents a contact form submission
@@ -188,7 +74,7 @@ func (a *Article) ToListView() *ArticleList {
 		Date:        a.Date,
 		Tags:        a.Tags,
 		Categories:  a.Categories,
-		Excerpt:     a.GetExcerpt(),
+		Excerpt:     a.Excerpt,
 		ReadingTime: a.ReadingTime,
 		Featured:    a.Featured,
 	}

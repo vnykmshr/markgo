@@ -233,10 +233,19 @@ func (s *CompositeService) GetSearchSuggestions(query string, limit int) []strin
 
 // ProcessArticleContent processes article content through the content processor
 func (s *CompositeService) ProcessArticleContent(article *models.Article) error {
-	// Set the article processor for lazy loading
-	article.SetProcessor(s.contentProcessor)
+	// Process markdown content to HTML
+	processedHTML, err := s.contentProcessor.ProcessMarkdown(article.Content)
+	if err != nil {
+		return err
+	}
 
-	// Pre-calculate reading time and word count
+	// Process duplicate titles
+	article.ProcessedContent = s.contentProcessor.ProcessDuplicateTitles(article.Title, processedHTML)
+
+	// Generate excerpt
+	article.Excerpt = s.contentProcessor.GenerateExcerpt(article.Content, 200)
+
+	// Calculate reading time and word count
 	article.ReadingTime = s.contentProcessor.CalculateReadingTime(article.Content)
 	article.WordCount = len(strings.Fields(article.Content))
 

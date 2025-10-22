@@ -11,8 +11,6 @@ import (
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
-
-	"github.com/vnykmshr/markgo/internal/models"
 )
 
 // ContentProcessor handles all content-related processing operations
@@ -263,6 +261,5 @@ func (p *MarkdownContentProcessor) ValidateContent(content string) []string {
 	return issues
 }
 
-// Ensure MarkdownContentProcessor implements the interfaces
+// Ensure MarkdownContentProcessor implements the ContentProcessor interface
 var _ ContentProcessor = (*MarkdownContentProcessor)(nil)
-var _ models.ArticleProcessor = (*MarkdownContentProcessor)(nil)
