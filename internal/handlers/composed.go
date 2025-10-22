@@ -78,7 +78,6 @@ type Handlers struct {
 	ArticleHandler *ArticleHandler
 	AdminHandler   *AdminHandler
 	APIHandler     *APIHandler
-	PreviewHandler *PreviewHandler
 	cacheService   CacheAdapter
 }
 
@@ -95,7 +94,6 @@ type Config struct {
 	EmailService    services.EmailServiceInterface
 	SearchService   services.SearchServiceInterface
 	TemplateService services.TemplateServiceInterface
-	PreviewService  services.PreviewServiceInterface
 	SEOService      services.SEOServiceInterface
 	Config          *config.Config
 	Logger          *slog.Logger
@@ -145,25 +143,10 @@ func New(cfg *Config) *Handlers {
 		cfg.SEOService,
 	)
 
-	// Create preview handler (if service is available)
-	var previewHandler *PreviewHandler
-	if cfg.PreviewService != nil {
-		previewHandler = NewPreviewHandler(
-			cfg.PreviewService,
-			cfg.ArticleService,
-			cfg.TemplateService,
-			BaseHandler{
-				logger:    cfg.Logger,
-				buildInfo: cfg.BuildInfo,
-			},
-		)
-	}
-
 	return &Handlers{
 		ArticleHandler: articleHandler,
 		AdminHandler:   adminHandler,
 		APIHandler:     apiHandler,
-		PreviewHandler: previewHandler,
 		cacheService:   cacheService,
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"io"
 	"log/slog"
-	"net/http"
 	"time"
 
 	"github.com/vnykmshr/markgo/internal/models"
@@ -152,45 +151,6 @@ type LoggingServiceInterface interface {
 
 	// Lifecycle management
 	Close() error
-}
-
-// PreviewServiceInterface defines the interface for live preview operations
-type PreviewServiceInterface interface {
-	// Session management
-	CreateSession(articleSlug string) (*PreviewSession, error)
-	GetSession(sessionID string) (*PreviewSession, error)
-	DeleteSession(sessionID string) error
-
-	// WebSocket management
-	RegisterWebSocketClient(sessionID string, w http.ResponseWriter, r *http.Request) error
-	BroadcastReload(sessionID string) error
-
-	// Service lifecycle
-	Start() error
-	Stop() error
-	GetStats() *PreviewStats
-
-	// Service health
-	IsRunning() bool
-}
-
-// PreviewSession represents an active preview session
-type PreviewSession struct {
-	ID           string    `json:"id"`
-	ArticleSlug  string    `json:"article_slug"`
-	URL          string    `json:"url"`
-	AuthToken    string    `json:"auth_token"`
-	CreatedAt    time.Time `json:"created_at"`
-	LastAccessed time.Time `json:"last_accessed"`
-	ClientCount  int       `json:"client_count"`
-}
-
-// PreviewStats represents preview service statistics
-type PreviewStats struct {
-	ActiveSessions int           `json:"active_sessions"`
-	TotalClients   int           `json:"total_clients"`
-	FilesWatched   int           `json:"files_watched"`
-	Uptime         time.Duration `json:"uptime"`
 }
 
 // SEOServiceInterface defines the interface for SEO automation operations

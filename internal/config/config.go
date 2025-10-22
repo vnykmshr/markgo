@@ -44,7 +44,6 @@ type Config struct {
 	Comments      CommentsConfig  `json:"comments"`
 	Logging       LoggingConfig   `json:"logging"`
 	Analytics     AnalyticsConfig `json:"analytics"`
-	Preview       PreviewConfig   `json:"preview"`
 	SEO           SEOConfig       `json:"seo"`
 }
 
@@ -144,16 +143,6 @@ type AnalyticsConfig struct {
 	Domain     string `json:"domain,omitempty"`      // domain for analytics (plausible)
 	DataAPI    string `json:"data_api,omitempty"`    // custom API endpoint
 	CustomCode string `json:"custom_code,omitempty"` // custom analytics code
-}
-
-// PreviewConfig holds preview server configuration options.
-type PreviewConfig struct {
-	Enabled        bool          `json:"enabled"`
-	Port           int           `json:"port"`
-	BaseURL        string        `json:"base_url"`
-	AuthToken      string        `json:"auth_token"`
-	SessionTimeout time.Duration `json:"session_timeout"`
-	MaxSessions    int           `json:"max_sessions"`
 }
 
 // SEOConfig holds SEO-related configuration options.
@@ -315,15 +304,6 @@ func Load() (*Config, error) {
 			CustomCode: getEnv("ANALYTICS_CUSTOM_CODE", ""),
 		},
 
-		Preview: PreviewConfig{
-			Enabled:        getEnvBool("PREVIEW_ENABLED", false),
-			Port:           getEnvInt("PREVIEW_PORT", 3001),
-			BaseURL:        getEnv("PREVIEW_BASE_URL", ""),
-			AuthToken:      getEnv("PREVIEW_AUTH_TOKEN", ""),
-			SessionTimeout: getEnvDuration("PREVIEW_SESSION_TIMEOUT", 2*time.Hour),
-			MaxSessions:    getEnvInt("PREVIEW_MAX_SESSIONS", 50),
-		},
-
 		SEO: SEOConfig{
 			Enabled:            getEnvBool("SEO_ENABLED", true),
 			SitemapEnabled:     getEnvBool("SEO_SITEMAP_ENABLED", true),
@@ -331,7 +311,7 @@ func Load() (*Config, error) {
 			OpenGraphEnabled:   getEnvBool("SEO_OPEN_GRAPH_ENABLED", true),
 			TwitterCardEnabled: getEnvBool("SEO_TWITTER_CARD_ENABLED", true),
 			RobotsAllowed:      getEnvSlice("SEO_ROBOTS_ALLOWED", []string{"/"}),
-			RobotsDisallowed:   getEnvSlice("SEO_ROBOTS_DISALLOWED", []string{"/admin", "/api", "/preview"}),
+			RobotsDisallowed:   getEnvSlice("SEO_ROBOTS_DISALLOWED", []string{"/admin", "/api"}),
 			RobotsCrawlDelay:   getEnvInt("SEO_ROBOTS_CRAWL_DELAY", 1),
 			DefaultImage:       getEnv("SEO_DEFAULT_IMAGE", ""),
 			TwitterSite:        getEnv("SEO_TWITTER_SITE", ""),
@@ -753,11 +733,6 @@ func (c *Config) Validate() error {
 		return apperrors.NewConfigError("analytics", c.Analytics, "Invalid analytics configuration", err)
 	}
 
-	// Validate preview configuration
-	if err := c.Preview.Validate(); err != nil {
-		return apperrors.NewConfigError("preview", c.Preview, "Invalid preview configuration", err)
-	}
-
 	return nil
 }
 
@@ -1112,34 +1087,6 @@ func (a *AnalyticsConfig) Validate() error {
 	default:
 		// Allow other providers without strict validation
 		// This allows for future extensibility
-	}
-
-	return nil
-}
-
-// Validate validates the preview configuration and returns an error if invalid.
-func (p *PreviewConfig) Validate() error {
-	// If preview is disabled, no validation needed
-	if !p.Enabled {
-		return nil
-	}
-
-	// Validate port range
-	if p.Port < 1 || p.Port > 65535 {
-		return apperrors.NewConfigError("port", p.Port,
-			"Preview port must be between 1 and 65535", apperrors.ErrConfigValidation)
-	}
-
-	// Validate session timeout
-	if p.SessionTimeout < time.Minute {
-		return apperrors.NewConfigError("session_timeout", p.SessionTimeout,
-			"Preview session timeout must be at least 1 minute", apperrors.ErrConfigValidation)
-	}
-
-	// Validate max sessions
-	if p.MaxSessions < 1 || p.MaxSessions > 1000 {
-		return apperrors.NewConfigError("max_sessions", p.MaxSessions,
-			"Preview max sessions must be between 1 and 1000", apperrors.ErrConfigValidation)
 	}
 
 	return nil

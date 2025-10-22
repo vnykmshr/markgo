@@ -23,7 +23,6 @@ import (
 	"github.com/vnykmshr/markgo/internal/handlers"
 	"github.com/vnykmshr/markgo/internal/middleware"
 	"github.com/vnykmshr/markgo/internal/services"
-	"github.com/vnykmshr/markgo/internal/services/preview"
 	"github.com/vnykmshr/markgo/internal/services/seo"
 )
 
@@ -41,7 +40,6 @@ var (
 func main() {
 	var logger *slog.Logger
 	var server *http.Server
-	var previewService services.PreviewServiceInterface
 
 	// Cleanup function for graceful shutdown
 	cleanup := func() {
@@ -50,15 +48,6 @@ func main() {
 			defer cancel()
 
 			logger.Info("Performing graceful shutdown...")
-
-			// Stop preview service first
-			if previewService != nil {
-				if err := previewService.Stop(); err != nil {
-					logger.Warn("Error stopping preview service", "error", err)
-				} else {
-					logger.Info("Preview service stopped")
-				}
-			}
 
 			if err := server.Shutdown(ctx); err != nil {
 				logger.Error("Error during shutdown", "error", err)
@@ -167,25 +156,6 @@ func main() {
 		)
 	}
 
-	// Initialize preview service (if enabled)
-	if cfg.Preview.Enabled {
-		ps, err := preview.NewService(articleService, templateService, &cfg.Preview, logger, cfg.ArticlesPath)
-		if err != nil {
-			apperrors.HandleCLIError(
-				apperrors.NewCLIError("preview service initialization", "Failed to initialize preview service", err, 1),
-				cleanup,
-			)
-		}
-		previewService = ps
-
-		// Start preview service
-		if err := previewService.Start(); err != nil {
-			logger.Error("Failed to start preview service", "error", err)
-		} else {
-			logger.Info("Preview service started", "enabled", cfg.Preview.Enabled)
-		}
-	}
-
 	// Setup HTML templates
 	if err := setupTemplates(router, templateService); err != nil {
 		apperrors.HandleCLIError(
@@ -231,7 +201,6 @@ func main() {
 		EmailService:    emailService,
 		SearchService:   searchService,
 		TemplateService: templateService,
-		PreviewService:  previewService,
 		SEOService:      seoService,
 		Config:          cfg,
 		Logger:          logger,
@@ -344,19 +313,6 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 	router.GET("/feed.xml", h.RSSFeed)
 	router.GET("/feed.json", h.JSONFeed)
 	router.GET("/sitemap.xml", h.Sitemap)
-
-	// Preview routes (if enabled)
-	if cfg.Preview.Enabled && h.PreviewHandler != nil {
-		previewGroup := router.Group("/api/preview")
-		{
-			previewGroup.POST("/sessions", h.PreviewHandler.CreatePreviewSession)
-			previewGroup.GET("/sessions", h.PreviewHandler.ListSessions)
-			previewGroup.DELETE("/sessions/:sessionId", h.PreviewHandler.DeleteSession)
-			previewGroup.GET("/ws/:sessionId", h.PreviewHandler.WebSocketEndpoint)
-		}
-		router.GET("/preview/:sessionId", h.PreviewHandler.ServePreview)
-		logger.Info("Preview routes enabled", "base_url", cfg.Preview.BaseURL)
-	}
 
 	// Admin routes (optional) - with minimal middleware chain to avoid header conflicts
 	if cfg.Admin.Username != "" && cfg.Admin.Password != "" {

@@ -132,7 +132,7 @@ func TestSEOConfigDefaults(t *testing.T) {
 	}
 
 	// Check default robots configuration
-	expectedDisallowed := []string{"/admin", "/api", "/preview"}
+	expectedDisallowed := []string{"/admin", "/api"}
 	if len(cfg.SEO.RobotsDisallowed) != len(expectedDisallowed) {
 		t.Errorf("Expected %d disallowed paths, got %d", len(expectedDisallowed), len(cfg.SEO.RobotsDisallowed))
 	}
