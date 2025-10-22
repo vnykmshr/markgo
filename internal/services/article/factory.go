@@ -20,42 +20,10 @@ func NewServiceFactory(logger *slog.Logger) *ServiceFactory {
 	}
 }
 
-// ArticleServiceInterface defines the article service interface
-// Defined locally to avoid import cycles
-//
-//nolint:revive // Interface naming follows established pattern in codebase
-type ArticleServiceInterface interface {
-	// Article retrieval methods
-	GetAllArticles() []*models.Article
-	GetArticleBySlug(slug string) (*models.Article, error)
-	GetArticlesByTag(tag string) []*models.Article
-	GetArticlesByCategory(category string) []*models.Article
-	GetArticlesForFeed(limit int) []*models.Article
-
-	// Featured and recent articles
-	GetFeaturedArticles(limit int) []*models.Article
-	GetRecentArticles(limit int) []*models.Article
-
-	// Metadata methods
-	GetAllTags() []string
-	GetAllCategories() []string
-	GetTagCounts() []models.TagCount
-	GetCategoryCounts() []models.CategoryCount
-
-	// Statistics and management
-	GetStats() *models.Stats
-	ReloadArticles() error
-
-	// Draft operations
-	GetDraftArticles() []*models.Article
-	GetDraftBySlug(slug string) (*models.Article, error)
-	PreviewDraft(slug string) (*models.Article, error)
-	PublishDraft(slug string) error
-	UnpublishArticle(slug string) error
-}
-
-// CreateService creates a new article service using the modular architecture
-func (f *ServiceFactory) CreateService(articlesPath string) (ArticleServiceInterface, error) {
+// CreateService creates a new article service using the modular architecture.
+// Returns a ServiceAdapter that implements services.ArticleServiceInterface (defined in parent package).
+// Note: We avoid importing parent package to prevent import cycles; structural typing handles interface compatibility.
+func (f *ServiceFactory) CreateService(articlesPath string) (*ServiceAdapter, error) {
 	// Create configuration
 	config := &Config{
 		ArticlesPath: articlesPath,
@@ -86,15 +54,14 @@ func (f *ServiceFactory) CreateService(articlesPath string) (ArticleServiceInter
 	return adapter, nil
 }
 
-// ServiceAdapter adapts the service container to implement the ArticleServiceInterface
+// ServiceAdapter adapts the service container to implement services.ArticleServiceInterface.
+// This adapter provides the bridge between the internal modular architecture
+// and the public interface defined in the parent services package.
 type ServiceAdapter struct {
 	service   Service
 	container *ServiceContainer
 	logger    *slog.Logger
 }
-
-// Ensure ServiceAdapter implements ArticleServiceInterface
-var _ ArticleServiceInterface = (*ServiceAdapter)(nil)
 
 // GetAllArticles returns all articles from the underlying service
 func (a *ServiceAdapter) GetAllArticles() []*models.Article {
@@ -169,21 +136,6 @@ func (a *ServiceAdapter) GetDraftArticles() []*models.Article {
 // GetDraftBySlug retrieves a draft article by slug.
 func (a *ServiceAdapter) GetDraftBySlug(slug string) (*models.Article, error) {
 	return a.service.GetDraftBySlug(slug)
-}
-
-// PreviewDraft previews a draft article.
-func (a *ServiceAdapter) PreviewDraft(slug string) (*models.Article, error) {
-	return a.service.PreviewDraft(slug)
-}
-
-// PublishDraft publishes a draft article.
-func (a *ServiceAdapter) PublishDraft(slug string) error {
-	return a.service.PublishDraft(slug)
-}
-
-// UnpublishArticle unpublishes an article.
-func (a *ServiceAdapter) UnpublishArticle(slug string) error {
-	return a.service.UnpublishArticle(slug)
 }
 
 // Shutdown gracefully shuts down the service

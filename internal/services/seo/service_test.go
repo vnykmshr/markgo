@@ -43,9 +43,6 @@ func (m *MockArticleService) GetStats() *models.Stats                          {
 func (m *MockArticleService) ReloadArticles() error                            { return nil }
 func (m *MockArticleService) GetDraftArticles() []*models.Article              { return nil }
 func (m *MockArticleService) GetDraftBySlug(_ string) (*models.Article, error) { return nil, nil }
-func (m *MockArticleService) PreviewDraft(_ string) (*models.Article, error)   { return nil, nil }
-func (m *MockArticleService) PublishDraft(_ string) error                      { return nil }
-func (m *MockArticleService) UnpublishArticle(_ string) error                  { return nil }
 
 func createTestService() (*Service, *MockArticleService) {
 	mockArticles := &MockArticleService{

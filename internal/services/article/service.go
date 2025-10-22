@@ -45,11 +45,6 @@ type Service interface {
 	ReloadArticles() error
 	GetLastReloadTime() time.Time
 
-	// Draft operations
-	PreviewDraft(slug string) (*models.Article, error)
-	PublishDraft(slug string) error
-	UnpublishArticle(slug string) error
-
 	// Lifecycle
 	Start(ctx context.Context) error
 	Stop() error
@@ -370,46 +365,12 @@ func (s *CompositeService) GetLastReloadTime() time.Time {
 	return s.repository.GetLastModified()
 }
 
-// PreviewDraft allows previewing a draft article
-func (s *CompositeService) PreviewDraft(slug string) (*models.Article, error) {
-	return s.GetDraftBySlug(slug)
-}
-
-// PublishDraft publishes a draft article
-func (s *CompositeService) PublishDraft(slug string) error {
-	s.logger.Info("Publishing draft article", "slug", slug)
-
-	err := s.repository.UpdateDraftStatus(slug, false)
-	if err != nil {
-		s.logger.Error("Failed to publish draft", "slug", slug, "error", err)
-		return fmt.Errorf("failed to publish draft: %w", err)
-	}
-
-	// Rebuild search index after publishing
-	articles := s.repository.GetPublished()
-	s.buildSearchIndex(articles)
-
-	s.logger.Info("Draft published successfully", "slug", slug)
-	return nil
-}
-
-// UnpublishArticle unpublishes an article (converts to draft)
-func (s *CompositeService) UnpublishArticle(slug string) error {
-	s.logger.Info("Unpublishing article", "slug", slug)
-
-	err := s.repository.UpdateDraftStatus(slug, true)
-	if err != nil {
-		s.logger.Error("Failed to unpublish article", "slug", slug, "error", err)
-		return fmt.Errorf("failed to unpublish article: %w", err)
-	}
-
-	// Rebuild search index after unpublishing
-	articles := s.repository.GetPublished()
-	s.buildSearchIndex(articles)
-
-	s.logger.Info("Article unpublished successfully", "slug", slug)
-	return nil
-}
+// NOTE: Draft publishing/unpublishing methods removed per product simplification.
+// Users manage draft status via Git workflow:
+// 1. Edit article markdown file
+// 2. Change `draft: true/false` in YAML frontmatter
+// 3. Commit and push changes
+// This aligns with the Git-centric workflow for tech-savvy developers.
 
 // Private methods
 

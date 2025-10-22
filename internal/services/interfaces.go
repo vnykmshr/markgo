@@ -67,12 +67,12 @@ type ArticleServiceInterface interface {
 	GetStats() *models.Stats
 	ReloadArticles() error
 
-	// Draft operations
+	// Draft read-only operations
+	// Note: Drafts are articles with `draft: true` in YAML frontmatter.
+	// Users manage draft status via Git (edit file, commit, push).
+	// No publish/unpublish API needed - use your editor and Git workflow.
 	GetDraftArticles() []*models.Article
 	GetDraftBySlug(slug string) (*models.Article, error)
-	PreviewDraft(slug string) (*models.Article, error)
-	PublishDraft(slug string) error
-	UnpublishArticle(slug string) error
 }
 
 // EmailServiceInterface defines the interface for email operations
