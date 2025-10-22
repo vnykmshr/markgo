@@ -336,9 +336,18 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 		}
 	}
 
-	// Debug endpoints (development only)
+	// Debug endpoints (development only, with auth if admin configured)
 	if cfg.Environment == envDevelopment {
 		debugGroup := router.Group("/debug")
+
+		// Add Basic Auth if admin credentials are configured
+		if cfg.Admin.Username != "" && cfg.Admin.Password != "" {
+			debugGroup.Use(middleware.BasicAuth(cfg.Admin.Username, cfg.Admin.Password))
+			logger.Info("Debug endpoints enabled with authentication", "environment", cfg.Environment)
+		} else {
+			logger.Warn("Debug endpoints enabled WITHOUT authentication - configure ADMIN_USERNAME/PASSWORD for security")
+		}
+
 		{
 			// Memory and runtime debugging
 			debugGroup.GET("/memory", h.DebugMemory)
@@ -347,7 +356,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 			debugGroup.GET("/requests", h.DebugRequests)
 			debugGroup.POST("/log-level", h.SetLogLevel)
 
-			// Go pprof profiling endpoints
+			// Go pprof profiling endpoints at /debug/pprof
 			pprofGroup := debugGroup.Group("/pprof")
 			{
 				pprofGroup.GET("/", h.PprofIndex)
@@ -362,8 +371,6 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 				pprofGroup.GET("/mutex", h.PprofMutex)
 			}
 		}
-
-		logger.Info("Debug endpoints enabled", "environment", cfg.Environment)
 	}
 
 	// 404 handler
