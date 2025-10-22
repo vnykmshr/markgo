@@ -1071,7 +1071,7 @@ func TestCommentsConfig_Validate(t *testing.T) {
 		}
 		err := cfg.Validate()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "Comments provider must be one of: giscus, disqus")
+		assert.Contains(t, err.Error(), "Comments provider must be 'giscus'")
 	})
 
 	t.Run("invalid provider", func(t *testing.T) {
@@ -1081,7 +1081,7 @@ func TestCommentsConfig_Validate(t *testing.T) {
 		}
 		err := cfg.Validate()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "Comments provider must be one of: giscus, disqus")
+		assert.Contains(t, err.Error(), "Comments provider must be 'giscus'")
 	})
 
 	t.Run("giscus without repo", func(t *testing.T) {

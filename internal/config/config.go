@@ -970,16 +970,15 @@ func (c *CommentsConfig) Validate() error {
 		return nil // Comments are disabled, skip validation
 	}
 
-	// Validate provider
-	validProviders := []string{"giscus", "disqus", "utterances"}
-	if !contains(validProviders, c.Provider) {
+	// Validate provider (only Giscus supported)
+	if c.Provider != "giscus" {
 		return apperrors.NewConfigError("provider", c.Provider,
-			"Comments provider must be one of: giscus, disqus, utterances",
+			"Comments provider must be 'giscus' (Disqus and Utterances removed for simplification)",
 			apperrors.ErrConfigValidation)
 	}
 
-	// Validate giscus configuration if using giscus
-	if c.Provider == "giscus" {
+	// Validate giscus configuration
+	{
 		if c.GiscusRepo == "" {
 			return apperrors.NewConfigError("giscus_repo", c.GiscusRepo,
 				"Giscus repository is required when using giscus provider",
