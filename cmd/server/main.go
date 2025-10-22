@@ -230,7 +230,7 @@ func main() {
 		logger.Info("Starting MarkGo server",
 			"port", cfg.Port,
 			"environment", cfg.Environment,
-			"version", "v1.5.0")
+			"version", version)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error("Server failed to start", "error", err)
 			apperrors.HandleCLIError(
