@@ -333,13 +333,6 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 					"enabled": cfg.SEO.Enabled,
 				})
 			})
-
-			// Draft management endpoints
-			adminGroup.GET("/drafts", h.GetDrafts)
-			adminGroup.GET("/drafts/:slug", h.GetDraftBySlug)
-			adminGroup.GET("/drafts/:slug/preview", h.PreviewDraft)
-			adminGroup.POST("/drafts/:slug/publish", h.PublishDraft)
-			adminGroup.POST("/articles/:slug/unpublish", h.UnpublishArticle)
 		}
 	}
 
