@@ -9,11 +9,9 @@ import (
 	"net/http/pprof"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/gin-gonic/gin"
 	"github.com/vnykmshr/obcache-go/pkg/obcache"
 
@@ -211,11 +209,6 @@ func main() {
 	// Setup routes
 	setupRoutes(router, h, cfg, logger)
 
-	// Setup template hot-reload for development
-	if cfg.Environment == envDevelopment {
-		setupTemplateHotReload(templateService, cfg.TemplatesPath, logger)
-	}
-
 	// Create HTTP server
 	server = &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),
@@ -401,58 +394,4 @@ func setupTemplates(router *gin.Engine, templateService *services.TemplateServic
 	router.SetHTMLTemplate(tmpl)
 
 	return nil
-}
-
-// setupTemplateHotReload sets up file watching for template hot-reload in development
-func setupTemplateHotReload(templateService *services.TemplateService, templatesPath string, logger *slog.Logger) {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		logger.Error("Failed to create template watcher", "error", err)
-		return
-	}
-
-	// Add templates directory to watcher
-	err = watcher.Add(templatesPath)
-	if err != nil {
-		logger.Error("Failed to watch templates directory", "error", err)
-		return
-	}
-
-	// Start watching in a goroutine
-	go func() {
-		defer func() {
-			if err := watcher.Close(); err != nil {
-				logger.Error("Failed to close file watcher", "error", err)
-			}
-		}()
-
-		for {
-			select {
-			case event, ok := <-watcher.Events:
-				if !ok {
-					return
-				}
-
-				// Only reload on write/create events for HTML files
-				if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) {
-					if filepath.Ext(event.Name) == ".html" {
-						logger.Debug("Template file changed, reloading", "file", event.Name)
-						if err := templateService.Reload(templatesPath); err != nil {
-							logger.Error("Failed to reload templates", "error", err)
-						} else {
-							logger.Info("Templates reloaded successfully")
-						}
-					}
-				}
-
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-				logger.Error("Template watcher error", "error", err)
-			}
-		}
-	}()
-
-	logger.Info("Template hot-reload enabled", "path", templatesPath)
 }
