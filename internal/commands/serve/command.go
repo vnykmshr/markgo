@@ -312,19 +312,10 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 			middleware.NoCache(), // No caching for admin
 		)
 		{
-			adminGroup.GET("", h.AdminHome) // Admin dashboard/home page
+			adminGroup.GET("", h.AdminHome)
 			adminGroup.POST("/cache/clear", h.ClearCache)
 			adminGroup.GET("/stats", h.AdminStats)
 			adminGroup.POST("/articles/reload", h.ReloadArticles)
-
-			// SEO management endpoints (placeholder for now)
-			// TODO: Implement proper SEO admin interface
-			adminGroup.GET("/seo", func(c *gin.Context) {
-				c.JSON(200, gin.H{
-					"message": "SEO admin interface - under development",
-					"enabled": cfg.SEO.Enabled,
-				})
-			})
 		}
 	}
 
@@ -346,7 +337,6 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 			debugGroup.GET("/runtime", h.DebugRuntime)
 			debugGroup.GET("/config", h.DebugConfig)
 			debugGroup.GET("/requests", h.DebugRequests)
-			debugGroup.POST("/log-level", h.SetLogLevel)
 
 			// Go pprof profiling endpoints at /debug/pprof
 			pprofGroup := debugGroup.Group("/pprof")

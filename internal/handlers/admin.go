@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"runtime"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -104,55 +103,13 @@ func (h *AdminHandler) AdminHome(c *gin.Context) {
 		"total", totalArticles)
 
 	adminRoutes := []map[string]any{
-		{
-			"name":        "Statistics",
-			"url":         "/admin/stats",
-			"method":      "GET",
-			"description": "View detailed blog statistics and analytics",
-			"icon":        "📊",
-		},
-		{
-			"name":        "Clear Cache",
-			"url":         "/admin/cache/clear",
-			"method":      "POST",
-			"description": "Clear all cached data to force refresh",
-			"icon":        "🗑️",
-		},
-		{
-			"name":        "Reload Articles",
-			"url":         "/admin/articles/reload",
-			"method":      "POST",
-			"description": "Reload all articles from disk",
-			"icon":        "🔄",
-		},
-		{
-			"name":        "Draft Articles",
-			"url":         "/admin/drafts",
-			"method":      "GET",
-			"description": "View and manage draft articles",
-			"icon":        "📝",
-		},
-		{
-			"name":        "Preview Sessions",
-			"url":         "/api/preview/sessions",
-			"method":      "GET",
-			"description": "View active preview sessions and statistics",
-			"icon":        "👁️",
-		},
-		{
-			"name":        "System Metrics",
-			"url":         "/metrics",
-			"method":      "GET",
-			"description": "View system performance metrics",
-			"icon":        "⚡",
-		},
-		{
-			"name":        "Health Check",
-			"url":         "/health",
-			"method":      "GET",
-			"description": "Check application health status",
-			"icon":        "❤️",
-		},
+		{"name": "Statistics", "url": "/admin/stats", "method": "GET"},
+		{"name": "Clear Cache", "url": "/admin/cache/clear", "method": "POST"},
+		{"name": "Reload Articles", "url": "/admin/articles/reload", "method": "POST"},
+		{"name": "Draft Articles", "url": "/admin/drafts", "method": "GET"},
+		{"name": "Preview Sessions", "url": "/api/preview/sessions", "method": "GET"},
+		{"name": "System Metrics", "url": "/metrics", "method": "GET"},
+		{"name": "Health Check", "url": "/health", "method": "GET"},
 	}
 
 	// Get tag and category counts for additional metrics
@@ -326,40 +283,6 @@ func (h *AdminHandler) ReloadArticles(c *gin.Context) {
 	})
 }
 
-// CompactMemory handles manual memory compaction (development only)
-func (h *AdminHandler) CompactMemory(c *gin.Context) {
-	if !h.requireDevelopmentEnv(c) {
-		return
-	}
-
-	var before, after runtime.MemStats
-	runtime.ReadMemStats(&before)
-
-	// Force garbage collection
-	runtime.GC()
-	runtime.GC() // Call twice to ensure cleanup
-
-	// Force garbage collection (article service may not have CompactMemory method)
-	runtime.GC()
-
-	runtime.ReadMemStats(&after)
-
-	h.logger.Info("Memory compaction completed",
-		"before_alloc", before.Alloc,
-		"after_alloc", after.Alloc,
-		"freed", before.Alloc-after.Alloc)
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Memory compaction completed",
-		"memory": map[string]any{
-			"before_alloc": formatBytes(before.Alloc),
-			"after_alloc":  formatBytes(after.Alloc),
-			"freed":        formatBytes(before.Alloc - after.Alloc),
-		},
-		"timestamp": time.Now().Unix(),
-	})
-}
-
 // ProfileIndex handles pprof profile index (development only)
 func (h *AdminHandler) ProfileIndex(c *gin.Context) {
 	if !h.requireDevelopmentEnv(c) {
@@ -438,58 +361,6 @@ func (h *AdminHandler) ProfileAllocs(c *gin.Context) {
 		return
 	}
 	pprof.Handler("allocs").ServeHTTP(c.Writer, c.Request)
-}
-
-// SetLogLevel handles dynamic log level changes
-func (h *AdminHandler) SetLogLevel(c *gin.Context) {
-	if !h.requireDevelopmentEnv(c) {
-		return
-	}
-
-	level := c.PostForm("level")
-	if level == "" {
-		level = c.Query("level")
-	}
-
-	if level == "" {
-		c.JSON(400, gin.H{
-			"error":   "Missing log level parameter",
-			"message": "Please provide 'level' parameter with value: debug, info, warn, error",
-			"example": "POST /admin/log-level with level=debug or GET /admin/log-level?level=info",
-		})
-		return
-	}
-
-	// Validate log level
-	validLevels := map[string]bool{
-		"debug": true,
-		"info":  true,
-		"warn":  true,
-		"error": true,
-	}
-
-	level = strings.ToLower(strings.TrimSpace(level))
-	if !validLevels[level] {
-		c.JSON(400, gin.H{
-			"error":    "Invalid log level",
-			"message":  "Log level must be one of: debug, info, warn, error",
-			"provided": level,
-		})
-		return
-	}
-
-	// Note: slog doesn't support runtime level changes natively
-	// This would require a more complex implementation with a custom handler
-	h.logger.Info("Log level change requested",
-		"requested_level", level,
-		"note", "Runtime log level changes require service restart")
-
-	c.JSON(200, gin.H{
-		"message":         "Log level change requested",
-		"requested_level": level,
-		"note":            "Runtime log level changes are not currently supported. Please update config and restart service.",
-		"current_status":  "Request logged for future implementation",
-	})
 }
 
 // Uncached data generation methods

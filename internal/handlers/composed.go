@@ -279,11 +279,6 @@ func (h *Handlers) DebugRequests(c *gin.Context) {
 	h.AdminHandler.Debug(c)
 }
 
-// SetLogLevel handles log level changes.
-func (h *Handlers) SetLogLevel(c *gin.Context) {
-	h.AdminHandler.SetLogLevel(c)
-}
-
 // PprofIndex handles pprof index requests.
 func (h *Handlers) PprofIndex(c *gin.Context) {
 	h.AdminHandler.ProfileIndex(c)
