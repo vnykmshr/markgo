@@ -1,10 +1,10 @@
 # Building MarkGo: A Developer's Journey
 
-*October 2024*
+*August - October 2024*
 
 After spending way too much time fighting with WordPress plugins and waiting for Ghost to cold start, I decided to build something different. Not because the world needed another blog engine, but because I wanted one that worked the way I think about content: files in a folder, version controlled, no database complexity.
 
-This is the story of building MarkGo - the decisions made, the mistakes fixed, and the lessons learned.
+This is the story of building MarkGo - the decisions made, the mistakes fixed, and the lessons learned. Particularly the journey from "let's add all the features" to "let's remove everything we don't need."
 
 ## The Problem I Actually Had
 
@@ -93,7 +93,7 @@ Early on, I made a classic mistake: over-engineering. I built elaborate object p
 
 Then I deleted 6,000 of them.
 
-### What I Removed
+### First Simplification Wave (v1.x → v2.0.0)
 
 **Complex Object Pools**: Turned out Go's garbage collector is pretty good. The pools added complexity with zero measurable benefit.
 
@@ -101,28 +101,50 @@ Then I deleted 6,000 of them.
 
 **Elaborate Handler Chains**: Originally had 7 layers of abstraction. Now? 2. The code is easier to debug and actually faster.
 
+**Table-Driven Tests**: Converted 1,193 lines of repetitive test code into 300 lines of table-driven tests. Same coverage, way more maintainable.
+
+### Second Simplification Wave (v2.0.0 → v2.1.0)
+
+After v2.0.0 launched, I realized I was still carrying unnecessary complexity. The question became: "Can I remove more code while keeping the same functionality?"
+
+Turns out, yes. Removed another ~1,800 lines.
+
+**Unified CLI**: Had 5 separate binaries (`server`, `init`, `new-article`, `export`, plus utilities). Each had its own `main.go`, build target, and documentation. Consolidated everything into one `markgo` binary with subcommands. Distribution got way simpler.
+
+**SEO Service Simplification**: Built a stateful service with lifecycle management (Start/Stop), sitemap caching, mutexes, and performance metrics. For what? Generating a sitemap for 100 articles takes 10ms. Ripped out all the state management, made it a simple utility. Went from 3 files (982 lines) to 1 file (795 lines). Still does the same thing.
+
+**Admin Interface Cleanup**: Removed emoji icons from JSON responses (why?), deleted non-functional endpoints (SetLogLevel doesn't work with slog anyway), removed questionable memory management endpoints. 152 lines gone, cleaner API.
+
+**Middleware Consolidation**: Found 3 middleware functions that were defined but never used (RequestID, Timeout, Compress). Deleted them. Merged performance.go into middleware.go. 56 lines removed.
+
+**Article Service**: Removed lazy loading infrastructure that added complexity for no measurable benefit at this scale. 115 lines gone, code is clearer.
+
+**Build System**: The Makefile was 660 lines with elaborate targets for multiple binaries. After CLI consolidation, it's 136 lines. That's a 79% reduction.
+
 ### What I Kept
 
 **Middleware Pattern**: Clean separation of concerns. Security, logging, rate limiting - each middleware does one thing.
 
 **Service Layer**: Separates business logic from HTTP handling. Makes testing way easier.
 
-**Table-Driven Tests**: This was a recent win. Converted 1,193 lines of repetitive test code into 300 lines of table-driven tests. Same coverage, way more maintainable.
+**In-Memory Caching**: Still the right choice for this scale. Fast, simple, works.
 
 ## Performance: The Numbers
 
 I won't claim MarkGo is the "fastest" anything. But here's what I measured on my M1 MacBook:
 
-- **Cold start**: 800ms to first request
+- **Cold start**: <1 second to first request
 - **Memory**: 30MB resident (including caching 100+ articles)
 - **Response time**: 2-5ms for cached articles
-- **Binary size**: 38MB (includes everything)
+- **Binary size**: ~27MB after optimizations (includes everything)
 
 Compare that to:
 - **Ghost**: 150-300ms response time, but needs Node.js + SQLite (~200MB)
 - **WordPress**: 500-1000ms response time, PHP + MySQL stack
 
 The real win isn't raw speed - it's deployment simplicity. One binary. No database. No runtime dependencies.
+
+Interestingly, removing ~1,800 lines of code in v2.1.0 didn't slow anything down. Turns out simpler code can be just as fast.
 
 ## Development Timeline
 
@@ -146,6 +168,13 @@ gantt
     Major refactoring (-6K loc) :done, 2024-09-16, 2024-09-20
     SEO automation              :done, 2024-09-20, 2024-09-23
     Test improvements           :done, 2024-10-20, 2024-10-22
+
+    section Release Milestones
+    v2.0.0 Release              :done, 2024-10-22, 2024-10-22
+    CLI consolidation (5→1)     :done, 2024-10-23, 2024-10-23
+    SEO simplification          :done, 2024-10-23, 2024-10-23
+    Admin & middleware cleanup  :done, 2024-10-23, 2024-10-23
+    v2.1.0 Release (-1.8K loc)  :done, 2024-10-23, 2024-10-23
 ```
 
 ## Security: Learning the Hard Way
@@ -272,18 +301,24 @@ The folder structure is pretty standard Go:
 
 ```
 markgo/
-├── cmd/                    # Binaries (server, CLI tools)
+├── cmd/
+│   └── markgo/            # Unified CLI binary (was 5 separate binaries)
 ├── internal/              # Private packages
-│   ├── config/           # Environment & validation
-│   ├── handlers/         # HTTP handlers
-│   ├── middleware/       # Request pipeline
-│   ├── models/           # Data structures
-│   └── services/         # Business logic
+│   ├── commands/          # CLI subcommands (serve, init, new, export)
+│   ├── config/            # Environment & validation
+│   ├── handlers/          # HTTP handlers
+│   ├── middleware/        # Request pipeline
+│   ├── models/            # Data structures
+│   └── services/          # Business logic
+│       ├── seo/           # SEO utilities (was 3 files, now 1)
+│       └── ...
 ├── web/                   # Templates & static files
 └── articles/              # User content (markdown)
 ```
 
 Why `internal/`? It's a Go convention that prevents other projects from importing these packages. Good for marking "this is implementation detail, not API."
+
+The unified CLI structure (`cmd/markgo/`) came in v2.1.0. Before that, we had separate directories for each binary, which was overkill. Now one `main.go` routes to subcommands. Much simpler to build and distribute.
 
 ## What I'd Do Differently
 
@@ -295,16 +330,57 @@ Why `internal/`? It's a Go convention that prevents other projects from importin
 
 **Use More Mermaid Diagrams**: Turns out people actually read documentation when it has pictures. Who knew?
 
-## Current State
+**Question Every Abstraction**: In v2.1.0, I found 5 separate binaries, 3 unused middleware functions, and a stateful SEO service with lifecycle management. All unnecessary. If I'd asked "does this really need to exist?" earlier, could've saved the refactoring.
 
-After several months and lots of refactoring:
+## Lessons from v2.1.0 Simplification
 
-- **8,205 lines** of documentation
-- **~15,000 lines** of Go code (after removing 6,000 lines of cruft)
-- **65.8% test coverage** on core packages
+The second simplification wave taught me some things:
+
+**Code That Doesn't Exist Can't Break**
+
+When I removed the SEO service's sitemap caching layer (mutexes, timestamps, refresh logic), nothing broke. Why? Because the "optimized" path and the simple path did the same thing. The complexity existed to solve a problem I didn't have.
+
+**Distribution Complexity is Real Complexity**
+
+Five separate binaries meant:
+- Five build targets in CI
+- Five release artifacts to manage
+- Five different "getting started" guides
+- Users confused about which binary to run
+
+One unified CLI simplified all of that. The code change wasn't huge, but the UX improvement was massive.
+
+**Test Coverage Isn't a Goal**
+
+v2.0.0 had 65.8% coverage. v2.1.0 has 17.9%. Did I remove tests? Yes - interface compliance tests that provided zero value. What remained tests actual behavior, not Go's type system.
+
+Chasing coverage percentages leads to bad tests. Test what matters.
+
+**Dead Code Accumulates Fast**
+
+Three middleware functions (RequestID, Timeout, Compress) were defined but never wired up. How long were they there? Months. Nobody noticed because they did nothing.
+
+Regular code audits help. Ask: "Is this being used? No? Delete it."
+
+**Premature Statefulness**
+
+The SEO service tracked running state, last modified times, and performance metrics. Why? Nobody was using them. The metrics weren't exposed anywhere. The state transitions were never checked.
+
+Start stateless. Add state only when you have a specific need.
+
+## Current State (v2.1.0)
+
+After several months and two major simplification waves:
+
+- **~13,000 lines** of Go code (removed 6,000 in v2.0.0, then 1,800 more in v2.1.0)
+- **17.9% test coverage** - intentionally focused on what matters, not chasing arbitrary percentages
+- **1 unified binary** instead of 5 separate ones
 - **Zero lint reports** (down from 273)
+- **Binary size: ~27MB** optimized
 
 The codebase is maintainable, documented, and actually pleasant to work on.
+
+Key philosophy: "Less code, same functionality." Every line that doesn't need to exist is a line that can't have bugs.
 
 ## Data Flow: How Everything Connects
 
@@ -385,16 +461,34 @@ If you're building something similar:
 
 6. **One binary deployment is underrated**. Not having to manage dependencies in production is amazing.
 
+7. **Delete code regularly**. Every few months, audit for dead code, unused features, and premature abstractions. You'll find some.
+
+8. **Stateless beats stateful**. If you can avoid tracking state, do it. State machines are where bugs hide.
+
+9. **Distribution matters**. Five binaries with confusing names create real friction for users. UX includes the download experience.
+
+10. **Test coverage is a terrible metric**. Test important behavior, not arbitrary line percentages.
+
 ## What's Next
 
-Current version is v1.6.0. It's feature-complete for my needs. Future plans:
+Current version is v2.1.0. After two major simplification waves, the codebase is in a good place. Future direction:
 
-- **Better caching strategies**: Maybe LRU eviction instead of TTL
-- **Plugin system**: For people who want to extend functionality
-- **Admin UI**: Right now it's CLI only
-- **Performance benchmarks**: Proper comparison with other platforms
+**No New Features (Probably)**
 
-But honestly? I might just use it for a while before adding more features. Sometimes done is better than perfect.
+I'm resisting the urge to add more. Every feature request now gets the question: "Does this need to exist?"
+
+The project serves its purpose: fast, simple blogging with markdown files. Adding complexity for edge cases defeats that purpose.
+
+**Maybe:**
+- **Performance benchmarks**: Proper comparison with Ghost, WordPress, Hugo
+- **Better examples**: More sample blogs and use cases
+- **Edge case fixes**: But only if they affect real users
+
+**Philosophy Going Forward**
+
+The goal is maintenance, not expansion. Keep dependencies updated, fix bugs, improve documentation. But resist feature creep.
+
+Sometimes the best thing you can add to a project is nothing.
 
 ## Try It Yourself
 
