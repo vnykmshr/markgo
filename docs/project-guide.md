@@ -342,7 +342,7 @@ Use the built-in article generator:
 
 ```bash
 # Generate new article
-./markgo new-article "My New Post"
+./markgo new "My New Post"
 
 # Or manually create in articles/published/ 
 # (supports .md, .markdown, .mdown, .mkd extensions)
@@ -586,7 +586,7 @@ time ./build/markgo &
 go mod tidy
 
 # Build all platforms
-make build-all
+make build
 
 # Build for specific platform
 make build-linux    # Linux

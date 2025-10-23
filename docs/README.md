@@ -44,14 +44,17 @@ Code-level documentation:
 | **Models** | Core data structures | [models-package.md](./models-package.md) |
 | **Errors** | Domain-specific error handling | [errors-package.md](./errors-package.md) |
 
-## 🚀 CLI Tools
+## 🚀 CLI Commands
 
-| Tool | Purpose | Documentation |
-|------|---------|---------------|
-| **Server** | Main MarkGo web server | [cmd-server-package.md](./cmd-server-package.md) |
-| **Init** | Quick blog initialization wizard | [cmd-init-package.md](./cmd-init-package.md) |
-| **New Article** | Interactive article creation tool | [cmd-new-article-package.md](./cmd-new-article-package.md) |
-| **Stress Test** | Performance testing and validation | [stress-test-package.md](./stress-test-package.md) |
+MarkGo uses a unified CLI with subcommands:
+
+| Command | Purpose | Documentation |
+|---------|---------|---------------|
+| **markgo serve** | Start the web server | Main server command |
+| **markgo init** | Initialize a new blog | Quick setup wizard |
+| **markgo new** | Create a new article | Interactive article creation |
+| **markgo export** | Export to static site | GitHub Pages, Netlify, Vercel |
+| **Stress Test** | Performance testing tool | [stress-test-package.md](./stress-test-package.md) |
 
 ## 📝 Release Information
 

@@ -19,8 +19,7 @@ A high-performance blog engine built with Go. MarkGo combines file-based content
 **Content Management**
 - Markdown files with YAML frontmatter
 - Git-based workflow for version control
-- CLI tools for article creation
-- Hot-reload in development
+- CLI tools for article creation and export
 
 **Production Ready**
 - Docker deployment support
@@ -31,7 +30,7 @@ A high-performance blog engine built with Go. MarkGo combines file-based content
 
 **Developer Experience**
 - Clean architecture with separated concerns
-- Comprehensive test coverage
+- Unified CLI with subcommands
 - Environment variable configuration
 - Extensive documentation
 
@@ -46,7 +45,7 @@ tar -xzf markgo-*.tar.gz && cd markgo
 
 # Initialize and start
 ./markgo init --quick
-./markgo
+./markgo serve
 
 # Visit http://localhost:3000
 ```
@@ -56,20 +55,20 @@ tar -xzf markgo-*.tar.gz && cd markgo
 ```bash
 git clone https://github.com/vnykmshr/markgo
 cd markgo
-make build-all
+make build
 
-./build/init --quick
-./build/markgo
+./build/markgo init --quick
+./build/markgo serve
 ```
 
 ### Create Articles
 
 ```bash
 # Interactive creation
-markgo new-article
+markgo new
 
 # Quick creation
-markgo new-article --title "Hello World" --tags "introduction,getting-started"
+markgo new --title "Hello World" --tags "introduction,getting-started"
 ```
 
 ### Deploy to GitHub Pages
@@ -84,8 +83,9 @@ See [Getting Started Guide](docs/GETTING-STARTED.md) for detailed setup instruct
 
 ```
 markgo/
-├── cmd/              # Binaries (server, CLI tools)
+├── cmd/markgo/       # Unified CLI binary
 ├── internal/         # Private packages
+│   ├── commands/     # CLI commands (serve, init, new, export)
 │   ├── config/       # Configuration management
 │   ├── handlers/     # HTTP handlers
 │   ├── middleware/   # HTTP middleware
@@ -166,7 +166,7 @@ make export-github-pages
 make export-static
 
 # Custom configuration
-./build/export --output ./public --base-url https://yourdomain.com
+./build/markgo export --output ./public --base-url https://yourdomain.com
 ```
 
 Example: [vnykmshr.github.io/markgo](https://vnykmshr.github.io/markgo/)

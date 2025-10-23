@@ -15,7 +15,7 @@ Welcome to MarkGo! This guide will get you from zero to a running blog in under 
 ```bash
 git clone https://github.com/vnykmshr/markgo.git
 cd markgo
-make build-all
+make build
 ```
 
 ### Step 2: Initialize Your Blog
@@ -40,7 +40,7 @@ This creates:
 ### Step 3: Start Your Blog
 
 ```bash
-markgo
+markgo serve
 ```
 
 Visit http://localhost:3000 - Your blog is live! 🎉
@@ -48,7 +48,7 @@ Visit http://localhost:3000 - Your blog is live! 🎉
 ### Step 4: Create Your First Article
 
 ```bash
-markgo new-article
+markgo new
 ```
 
 Follow the interactive prompts to create your first blog post.
@@ -79,13 +79,13 @@ my-blog/
 
 ```bash
 # Interactive mode - guided setup
-markgo new-article
+markgo new
 
 # Quick creation
-markgo new-article --title "My First Post" --tags "tutorial,markgo"
+markgo new --title "My First Post" --tags "tutorial,markgo"
 
 # With date prefix
-markgo new-article --title "News Update" --date-prefix
+markgo new --title "News Update" --date-prefix
 ```
 
 ### Manual Creation
@@ -216,7 +216,7 @@ Modify `web/templates/base.html` for layout changes:
 markgo
 
 # In another terminal, create content
-markgo new-article
+markgo new
 
 # Edit files - changes appear instantly!
 ```

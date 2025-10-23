@@ -11,7 +11,7 @@ markgo
 
 # 3. Visit http://localhost:3000
 # 4. Create first article
-markgo new-article
+markgo new
 ```
 
 ## 📋 Commands
@@ -20,7 +20,7 @@ markgo new-article
 |---------|-------------|
 | `markgo` | Start blog server |
 | `markgo init` | Initialize new blog |
-| `markgo new-article` | Create new article |
+| `markgo new` | Create new article |
 | `markgo stress-test` | Performance testing |
 
 ## 📁 File Structure
@@ -105,7 +105,7 @@ ANALYTICS_TRACKING_ID=GA_ID
 
 ```bash
 # Build all tools
-make build-all
+make build
 
 # Run tests
 make test
