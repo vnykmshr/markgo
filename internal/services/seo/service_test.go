@@ -44,7 +44,7 @@ func (m *MockArticleService) ReloadArticles() error                            {
 func (m *MockArticleService) GetDraftArticles() []*models.Article              { return nil }
 func (m *MockArticleService) GetDraftBySlug(_ string) (*models.Article, error) { return nil, nil }
 
-func createTestService() (*Service, *MockArticleService) {
+func createTestHelper() (*Helper, *MockArticleService) {
 	mockArticles := &MockArticleService{
 		articles: []*models.Article{
 			{
@@ -87,14 +87,14 @@ func createTestService() (*Service, *MockArticleService) {
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
-	service := NewService(mockArticles, siteConfig, robotsConfig, logger, true)
-	return service, mockArticles
+	helper := NewHelper(mockArticles, siteConfig, robotsConfig, logger, true)
+	return helper, mockArticles
 }
 
 func TestSitemapGeneration(t *testing.T) {
-	service, _ := createTestService()
+	helper, _ := createTestHelper()
 
-	sitemap, err := service.GenerateSitemap()
+	sitemap, err := helper.GenerateSitemap()
 	if err != nil {
 		t.Fatalf("Failed to generate sitemap: %v", err)
 	}
@@ -127,17 +127,9 @@ func TestSitemapGeneration(t *testing.T) {
 }
 
 func TestRobotsGeneration(t *testing.T) {
-	service, _ := createTestService()
+	helper, _ := createTestHelper()
 
-	robotsConfig := services.RobotsConfig{
-		UserAgent:  "*",
-		Allow:      []string{"/"},
-		Disallow:   []string{"/admin", "/api"},
-		CrawlDelay: 1,
-		SitemapURL: "https://example.com/sitemap.xml",
-	}
-
-	robots, err := service.GenerateRobotsTxt(robotsConfig)
+	robots, err := helper.GenerateRobotsTxt()
 	if err != nil {
 		t.Fatalf("Failed to generate robots.txt: %v", err)
 	}
@@ -163,11 +155,11 @@ func TestRobotsGeneration(t *testing.T) {
 }
 
 func TestContentAnalysis(t *testing.T) {
-	service, _ := createTestService()
+	helper, _ := createTestHelper()
 
 	content := "# Test Article\n\nThis is a test article with multiple paragraphs and some **bold** text.\n\n![Image](image.jpg)\n\n[Link](https://example.com)"
 
-	analysis, err := service.AnalyzeContent(content)
+	analysis, err := helper.AnalyzeContent(content)
 	if err != nil {
 		t.Fatalf("Failed to analyze content: %v", err)
 	}
@@ -193,47 +185,21 @@ func TestContentAnalysis(t *testing.T) {
 	}
 }
 
-func TestServiceLifecycle(t *testing.T) {
-	service, _ := createTestService()
-
-	// Test start
-	err := service.Start()
-	if err != nil {
-		t.Fatalf("Failed to start service: %v", err)
-	}
-
-	if !service.IsEnabled() {
-		t.Error("Service should be enabled after start")
-	}
-
-	// Test sitemap is cached
-	lastMod := service.GetSitemapLastModified()
-	if lastMod.IsZero() {
-		t.Error("Sitemap should have last modified time after start")
-	}
-
-	// Test stop
-	err = service.Stop()
-	if err != nil {
-		t.Fatalf("Failed to stop service: %v", err)
-	}
-}
-
-func TestDisabledService(t *testing.T) {
+func TestDisabledHelper(t *testing.T) {
 	mockArticles := &MockArticleService{}
 	siteConfig := services.SiteConfig{BaseURL: "https://example.com"}
 	robotsConfig := services.RobotsConfig{}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
-	// Create disabled service
-	service := NewService(mockArticles, siteConfig, robotsConfig, logger, false)
+	// Create disabled helper
+	helper := NewHelper(mockArticles, siteConfig, robotsConfig, logger, false)
 
-	if service.IsEnabled() {
-		t.Error("Service should be disabled")
+	if helper.IsEnabled() {
+		t.Error("Helper should be disabled")
 	}
 
-	_, err := service.GenerateSitemap()
+	_, err := helper.GenerateSitemap()
 	if err == nil {
-		t.Error("Disabled service should return error for sitemap generation")
+		t.Error("Disabled helper should return error for sitemap generation")
 	}
 }

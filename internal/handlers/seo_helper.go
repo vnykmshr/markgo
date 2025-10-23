@@ -29,19 +29,8 @@ func (h *SEODataHelper) GenerateArticleSEOData(article *models.Article) map[stri
 	seoData := make(map[string]interface{})
 	baseURL := h.config.BaseURL
 
-	// Generate site config for SEO service
-	siteConfig := services.SiteConfig{
-		Name:        h.config.Blog.Title,
-		Description: h.config.Blog.Description,
-		BaseURL:     baseURL,
-		Language:    h.config.Blog.Language,
-		Author:      h.config.Blog.Author,
-		Logo:        h.config.SEO.DefaultImage,
-		Image:       h.config.SEO.DefaultImage,
-	}
-
 	// Generate meta tags
-	if metaTags, err := h.seoService.GenerateMetaTags(article, siteConfig); err == nil {
+	if metaTags, err := h.seoService.GenerateMetaTags(article); err == nil {
 		seoData["seoMetaTags"] = metaTags
 	}
 
@@ -73,7 +62,7 @@ func (h *SEODataHelper) GenerateArticleSEOData(article *models.Article) map[stri
 	}
 
 	// Generate Website Schema
-	if websiteSchema, err := h.seoService.GenerateWebsiteSchema(siteConfig); err == nil {
+	if websiteSchema, err := h.seoService.GenerateWebsiteSchema(); err == nil {
 		seoData["websiteSchema"] = websiteSchema
 	}
 
@@ -98,35 +87,13 @@ func (h *SEODataHelper) GeneratePageSEOData(title, description, path string) map
 
 	seoData := make(map[string]interface{})
 
-	// Generate site config
-	siteConfig := services.SiteConfig{
-		Name:        h.config.Blog.Title,
-		Description: h.config.Blog.Description,
-		BaseURL:     h.config.BaseURL,
-		Language:    h.config.Blog.Language,
-		Author:      h.config.Blog.Author,
-		Logo:        h.config.SEO.DefaultImage,
-		Image:       h.config.SEO.DefaultImage,
+	// Generate page meta tags
+	if metaTags, err := h.seoService.GeneratePageMetaTags(title, description, path); err == nil {
+		seoData["seoMetaTags"] = metaTags
 	}
-
-	// Generate page meta tags (using regular meta tags for pages)
-	// Create a temporary article-like structure for page meta generation
-	tempPageData := map[string]string{
-		"title":               title,
-		"description":         description,
-		"canonical":           h.config.BaseURL + path,
-		"og:type":             "website",
-		"og:title":            title,
-		"og:description":      description,
-		"og:site_name":        siteConfig.Name,
-		"twitter:card":        "summary",
-		"twitter:title":       title,
-		"twitter:description": description,
-	}
-	seoData["seoMetaTags"] = tempPageData
 
 	// Generate Website Schema
-	if websiteSchema, err := h.seoService.GenerateWebsiteSchema(siteConfig); err == nil {
+	if websiteSchema, err := h.seoService.GenerateWebsiteSchema(); err == nil {
 		seoData["websiteSchema"] = websiteSchema
 	}
 

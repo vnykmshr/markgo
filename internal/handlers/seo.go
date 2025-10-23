@@ -24,7 +24,7 @@ func NewSEOHandler(seoService services.SEOServiceInterface, logger *slog.Logger)
 	}
 }
 
-// ServeSitemap serves the XML sitemap
+// ServeSitemap serves the XML sitemap (generated on-demand)
 func (h *SEOHandler) ServeSitemap(c *gin.Context) {
 	if !h.seoService.IsEnabled() {
 		c.Header("Content-Type", "text/plain")
@@ -43,12 +43,7 @@ func (h *SEOHandler) ServeSitemap(c *gin.Context) {
 	// Set appropriate headers for XML sitemap
 	c.Header("Content-Type", "application/xml; charset=utf-8")
 	c.Header("Cache-Control", "public, max-age=3600") // Cache for 1 hour
-
-	// Add Last-Modified header
-	lastMod := h.seoService.GetSitemapLastModified()
-	if !lastMod.IsZero() {
-		c.Header("Last-Modified", lastMod.Format(http.TimeFormat))
-	}
+	c.Header("Last-Modified", time.Now().Format(http.TimeFormat))
 
 	c.Data(http.StatusOK, "application/xml; charset=utf-8", sitemap)
 }
@@ -61,16 +56,7 @@ func (h *SEOHandler) ServeRobotsTxt(c *gin.Context) {
 		return
 	}
 
-	// Build robots config from request context
-	robotsConfig := services.RobotsConfig{
-		UserAgent:  "*",
-		Allow:      []string{"/"},
-		Disallow:   []string{"/admin", "/preview"},
-		CrawlDelay: 1,
-		SitemapURL: c.Request.URL.Scheme + "://" + c.Request.Host + "/sitemap.xml",
-	}
-
-	robotsTxt, err := h.seoService.GenerateRobotsTxt(robotsConfig)
+	robotsTxt, err := h.seoService.GenerateRobotsTxt()
 	if err != nil {
 		h.logger.Error("Failed to generate robots.txt", "error", err)
 		c.Header("Content-Type", "text/plain")
@@ -85,57 +71,6 @@ func (h *SEOHandler) ServeRobotsTxt(c *gin.Context) {
 	c.Data(http.StatusOK, "text/plain; charset=utf-8", robotsTxt)
 }
 
-// GetSEOMetrics returns SEO performance metrics (admin endpoint)
-func (h *SEOHandler) GetSEOMetrics(c *gin.Context) {
-	if !h.seoService.IsEnabled() {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "SEO service not enabled",
-		})
-		return
-	}
-
-	metrics, err := h.seoService.GetPerformanceMetrics()
-	if err != nil {
-		h.logger.Error("Failed to get SEO metrics", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to retrieve SEO metrics",
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"metrics": metrics,
-	})
-}
-
-// RefreshSitemap forces a sitemap regeneration (admin endpoint)
-func (h *SEOHandler) RefreshSitemap(c *gin.Context) {
-	if !h.seoService.IsEnabled() {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "SEO service not enabled",
-		})
-		return
-	}
-
-	start := time.Now()
-	if err := h.seoService.RefreshSitemap(); err != nil {
-		h.logger.Error("Failed to refresh sitemap", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to refresh sitemap",
-		})
-		return
-	}
-
-	duration := time.Since(start)
-	h.logger.Info("Sitemap refreshed successfully", "duration", duration)
-
-	c.JSON(http.StatusOK, gin.H{
-		"status":   "success",
-		"message":  "Sitemap refreshed successfully",
-		"duration": duration.String(),
-	})
-}
 
 // AnalyzeContent performs SEO analysis on provided content (admin endpoint)
 func (h *SEOHandler) AnalyzeContent(c *gin.Context) {
@@ -181,8 +116,6 @@ func RegisterSEORoutes(router *gin.Engine, handler *SEOHandler) {
 	// Admin SEO endpoints (should be protected by auth middleware)
 	admin := router.Group("/admin/seo")
 	{
-		admin.GET("/metrics", handler.GetSEOMetrics)
-		admin.POST("/sitemap/refresh", handler.RefreshSitemap)
 		admin.POST("/analyze", handler.AnalyzeContent)
 	}
 }

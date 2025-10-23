@@ -110,13 +110,12 @@ func (m *MockTemplateService) GetTemplate() *template.Template      { return nil
 
 type MockSEOService struct{}
 
-func (m *MockSEOService) GenerateSitemap() ([]byte, error)  { return nil, nil }
-func (m *MockSEOService) GetSitemapLastModified() time.Time { return time.Now() }
-func (m *MockSEOService) RefreshSitemap() error             { return nil }
+func (m *MockSEOService) GenerateSitemap() ([]byte, error)    { return nil, nil }
+func (m *MockSEOService) GenerateRobotsTxt() ([]byte, error) { return nil, nil }
 func (m *MockSEOService) GenerateArticleSchema(article *models.Article, baseURL string) (map[string]interface{}, error) {
 	return nil, nil
 }
-func (m *MockSEOService) GenerateWebsiteSchema(siteConfig services.SiteConfig) (map[string]interface{}, error) {
+func (m *MockSEOService) GenerateWebsiteSchema() (map[string]interface{}, error) {
 	return nil, nil
 }
 func (m *MockSEOService) GenerateBreadcrumbSchema(breadcrumbs []services.Breadcrumb) (map[string]interface{}, error) {
@@ -128,18 +127,15 @@ func (m *MockSEOService) GenerateOpenGraphTags(article *models.Article, baseURL 
 func (m *MockSEOService) GenerateTwitterCardTags(article *models.Article, baseURL string) (map[string]string, error) {
 	return nil, nil
 }
-func (m *MockSEOService) GenerateMetaTags(article *models.Article, siteConfig services.SiteConfig) (map[string]string, error) {
+func (m *MockSEOService) GenerateMetaTags(article *models.Article) (map[string]string, error) {
+	return nil, nil
+}
+func (m *MockSEOService) GeneratePageMetaTags(title, description, path string) (map[string]string, error) {
 	return nil, nil
 }
 func (m *MockSEOService) AnalyzeContent(content string) (*services.SEOAnalysis, error) {
 	return nil, nil
 }
-func (m *MockSEOService) GetPerformanceMetrics() (*services.SEOMetrics, error) { return nil, nil }
-func (m *MockSEOService) GenerateRobotsTxt(config services.RobotsConfig) ([]byte, error) {
-	return nil, nil
-}
-func (m *MockSEOService) Start() error    { return nil }
-func (m *MockSEOService) Stop() error     { return nil }
 func (m *MockSEOService) IsEnabled() bool { return true }
 
 func createTestConfig() *config.Config {

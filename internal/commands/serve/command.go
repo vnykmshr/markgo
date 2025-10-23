@@ -106,7 +106,7 @@ func Run(args []string) {
 	emailService := services.NewEmailService(&cfg.Email, logger)
 	searchService := services.NewSearchService()
 
-	// Initialize SEO service
+	// Initialize SEO helper (stateless utility)
 	siteConfig := services.SiteConfig{
 		Name:        cfg.Blog.Title,
 		Description: cfg.Blog.Description,
@@ -121,11 +121,9 @@ func Run(args []string) {
 		CrawlDelay: cfg.SEO.RobotsCrawlDelay,
 		SitemapURL: cfg.BaseURL + "/sitemap.xml",
 	}
-	seoService := seo.NewService(articleService, siteConfig, robotsConfig, logger, cfg.SEO.Enabled)
+	seoService := seo.NewHelper(articleService, siteConfig, robotsConfig, logger, cfg.SEO.Enabled)
 	if cfg.SEO.Enabled {
-		if err := seoService.Start(); err != nil {
-			logger.Error("Failed to start SEO service", "error", err)
-		}
+		logger.Info("SEO features enabled")
 	}
 
 	// Setup Gin router - ensure Gin mode matches application environment

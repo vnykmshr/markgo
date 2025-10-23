@@ -153,31 +153,27 @@ type LoggingServiceInterface interface {
 	Close() error
 }
 
-// SEOServiceInterface defines the interface for SEO automation operations
+// SEOServiceInterface defines the interface for SEO utilities (stateless)
 type SEOServiceInterface interface {
-	// Sitemap generation
+	// Sitemap generation (on-demand, no caching)
 	GenerateSitemap() ([]byte, error)
-	GetSitemapLastModified() time.Time
-	RefreshSitemap() error
+	GenerateRobotsTxt() ([]byte, error)
 
 	// Schema.org structured data
 	GenerateArticleSchema(article *models.Article, baseURL string) (map[string]interface{}, error)
-	GenerateWebsiteSchema(siteConfig SiteConfig) (map[string]interface{}, error)
+	GenerateWebsiteSchema() (map[string]interface{}, error)
 	GenerateBreadcrumbSchema(breadcrumbs []Breadcrumb) (map[string]interface{}, error)
 
 	// Open Graph and meta tag optimization
 	GenerateOpenGraphTags(article *models.Article, baseURL string) (map[string]string, error)
 	GenerateTwitterCardTags(article *models.Article, baseURL string) (map[string]string, error)
-	GenerateMetaTags(article *models.Article, siteConfig SiteConfig) (map[string]string, error)
+	GenerateMetaTags(article *models.Article) (map[string]string, error)
+	GeneratePageMetaTags(title, description, path string) (map[string]string, error)
 
-	// SEO analysis and monitoring
+	// SEO analysis
 	AnalyzeContent(content string) (*SEOAnalysis, error)
-	GetPerformanceMetrics() (*SEOMetrics, error)
-	GenerateRobotsTxt(config RobotsConfig) ([]byte, error)
 
-	// Service lifecycle
-	Start() error
-	Stop() error
+	// Status check
 	IsEnabled() bool
 }
 
