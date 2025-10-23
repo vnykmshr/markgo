@@ -184,7 +184,7 @@ func Run(args []string) {
 
 	// Development-specific enhanced logging
 	if cfg.Environment == envDevelopment {
-		router.Use(middleware.RequestTracker(logger, cfg.Environment))
+		router.Use(middleware.RequestTracker())
 		logger.Info("Development logging enhancements enabled")
 	}
 

@@ -3,7 +3,6 @@
 package middleware
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
@@ -15,45 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RequestID adds a unique request ID to each request
-func RequestID() gin.HandlerFunc {
-	return gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
-		if err, ok := recovered.(string); ok {
-			c.String(http.StatusInternalServerError, fmt.Sprintf("error: %s", err))
-		}
-		c.AbortWithStatus(http.StatusInternalServerError)
-	})
-}
-
-// Timeout middleware with configurable duration
-func Timeout(timeout time.Duration) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
-		defer cancel()
-
-		c.Request = c.Request.WithContext(ctx)
-
-		done := make(chan struct{})
-		go func() {
-			defer func() {
-				if err := recover(); err != nil {
-					c.AbortWithStatus(http.StatusInternalServerError)
-				}
-				close(done)
-			}()
-			c.Next()
-		}()
-
-		select {
-		case <-done:
-			return
-		case <-ctx.Done():
-			c.AbortWithStatus(http.StatusRequestTimeout)
-			return
-		}
-	}
-}
-
 // Security adds basic security headers
 func Security() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -62,6 +22,30 @@ func Security() gin.HandlerFunc {
 		c.Header("X-XSS-Protection", "1; mode=block")
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
 		c.Next()
+	}
+}
+
+// Performance logs request timing and basic metrics
+func Performance(logger *slog.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+
+		c.Next()
+
+		duration := time.Since(start)
+
+		// Log slow requests (over 1 second)
+		if duration > time.Second {
+			logger.Warn("Slow request",
+				"method", c.Request.Method,
+				"path", c.Request.URL.Path,
+				"duration", duration,
+				"status", c.Writer.Status(),
+			)
+		}
+
+		// Add timing header
+		c.Header("X-Response-Time", duration.String())
 	}
 }
 
@@ -100,14 +84,6 @@ func CORS(allowedOrigins []string, isDevelopment bool) gin.HandlerFunc {
 			return
 		}
 
-		c.Next()
-	}
-}
-
-// Compress enables gzip compression
-func Compress() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Header("Content-Encoding", "gzip")
 		c.Next()
 	}
 }
@@ -232,7 +208,7 @@ func SmartCacheHeaders() gin.HandlerFunc {
 }
 
 // RequestTracker adds request tracking
-func RequestTracker(_ *slog.Logger, _ string) gin.HandlerFunc {
+func RequestTracker() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		requestID := generateRequestID()
 		c.Header("X-Request-ID", requestID)
