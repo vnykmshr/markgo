@@ -4,14 +4,14 @@ go 1.25.0
 
 require (
 	github.com/dustin/go-humanize v1.0.1
-	github.com/gin-gonic/gin v1.10.1
+	github.com/gin-gonic/gin v1.11.0
 	github.com/joho/godotenv v1.5.1
 	github.com/microcosm-cc/bluemonday v1.0.27
-	github.com/stretchr/testify v1.10.0
-	github.com/vnykmshr/goflow v1.0.0
-	github.com/vnykmshr/obcache-go v1.0.2
-	github.com/yuin/goldmark v1.7.12
-	golang.org/x/text v0.26.0
+	github.com/stretchr/testify v1.11.1
+	github.com/vnykmshr/goflow v1.0.3
+	github.com/vnykmshr/obcache-go v1.0.3
+	github.com/yuin/goldmark v1.7.13
+	golang.org/x/text v0.28.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -30,8 +30,9 @@ require (
 	github.com/gin-contrib/sse v1.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.26.0 // indirect
+	github.com/go-playground/validator/v10 v10.27.0 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
+	github.com/goccy/go-yaml v1.18.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -45,17 +46,24 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.23.0 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.65.0 // indirect
+	github.com/prometheus/common v0.66.1 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
+	github.com/quic-go/qpack v0.5.1 // indirect
+	github.com/quic-go/quic-go v0.54.0 // indirect
 	github.com/redis/go-redis/v9 v9.12.1 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.0 // indirect
-	go.opentelemetry.io/otel v1.37.0 // indirect
-	go.opentelemetry.io/otel/metric v1.37.0 // indirect
+	go.opentelemetry.io/otel v1.38.0 // indirect
+	go.opentelemetry.io/otel/metric v1.38.0 // indirect
+	go.uber.org/mock v0.5.0 // indirect
+	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/arch v0.21.0 // indirect
-	golang.org/x/crypto v0.39.0 // indirect
-	golang.org/x/net v0.41.0 // indirect
+	golang.org/x/crypto v0.41.0 // indirect
+	golang.org/x/mod v0.26.0 // indirect
+	golang.org/x/net v0.43.0 // indirect
+	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
+	golang.org/x/tools v0.35.0 // indirect
+	google.golang.org/protobuf v1.36.9 // indirect
 )
