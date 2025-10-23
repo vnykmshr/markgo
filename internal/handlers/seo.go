@@ -71,7 +71,6 @@ func (h *SEOHandler) ServeRobotsTxt(c *gin.Context) {
 	c.Data(http.StatusOK, "text/plain; charset=utf-8", robotsTxt)
 }
 
-
 // AnalyzeContent performs SEO analysis on provided content (admin endpoint)
 func (h *SEOHandler) AnalyzeContent(c *gin.Context) {
 	if !h.seoService.IsEnabled() {

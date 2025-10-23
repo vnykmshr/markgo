@@ -110,7 +110,7 @@ func (m *MockTemplateService) GetTemplate() *template.Template      { return nil
 
 type MockSEOService struct{}
 
-func (m *MockSEOService) GenerateSitemap() ([]byte, error)    { return nil, nil }
+func (m *MockSEOService) GenerateSitemap() ([]byte, error)   { return nil, nil }
 func (m *MockSEOService) GenerateRobotsTxt() ([]byte, error) { return nil, nil }
 func (m *MockSEOService) GenerateArticleSchema(article *models.Article, baseURL string) (map[string]interface{}, error) {
 	return nil, nil

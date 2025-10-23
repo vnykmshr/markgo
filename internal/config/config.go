@@ -162,7 +162,6 @@ type SEOConfig struct {
 	BingSiteVerify     string   `json:"bing_site_verify"`
 }
 
-
 // Load reads and validates the application configuration from environment variables.
 func Load() (*Config, error) {
 	// Load .env file if it exists (ignore errors as it's optional)
@@ -315,7 +314,6 @@ func Load() (*Config, error) {
 
 	return cfg, nil
 }
-
 
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
