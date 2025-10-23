@@ -38,8 +38,8 @@ jobs:
     - name: Install dependencies
       run: go mod download
 
-    - name: Build export tool
-      run: go build -o markgo-export ./cmd/export
+    - name: Build unified CLI
+      run: go build -o markgo ./cmd/markgo
 
     - name: Setup demo blog content
       run: |
@@ -149,9 +149,9 @@ jobs:
         /
         ├── articles/           # Your blog posts
         ├── web/
-        │   ├── static/        # CSS, JS, images  
+        │   ├── static/        # CSS, JS, images
         │   └── templates/     # HTML templates
-        ├── cmd/export/        # Static export tool
+        ├── cmd/markgo/        # Unified CLI (includes export)
         └── .github/workflows/ # GitHub Actions
         ```
 
@@ -258,7 +258,7 @@ jobs:
 
     - name: Export static site
       run: |
-        ./markgo-export \
+        ./markgo export \
           --output ./dist \
           --base-url "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}" \
           --verbose
