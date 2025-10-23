@@ -12,7 +12,7 @@ A high-performance blog engine built with Go. MarkGo combines file-based content
 
 **Performance**
 - Server ready in under 1 second
-- 30MB memory footprint, 38MB binary
+- 30MB memory footprint, ~27MB binary
 - In-memory caching with no external dependencies
 - No runtime requirements (Node.js, PHP, databases)
 
@@ -265,7 +265,7 @@ Contributions welcome. See [Contributing Guide](CONTRIBUTING.md) for details.
 
 | Platform | Type | Memory | Dependencies |
 |----------|------|--------|--------------|
-| MarkGo   | Dynamic server | ~30MB | Single binary (38MB) |
+| MarkGo   | Dynamic server | ~30MB | Single binary (~27MB) |
 | Ghost    | Dynamic server | ~200MB | Node.js + SQLite |
 | WordPress| Dynamic server | ~100MB | PHP + MySQL |
 | Hugo     | Static generator | Build-time | Go binary |
