@@ -44,7 +44,7 @@ jobs:
         govulncheck ./...
 
     - name: Build
-      run: go build -ldflags="-w -s" ./cmd/server
+      run: go build -ldflags="-w -s" ./cmd/markgo
 
     - name: Upload coverage
       uses: codecov/codecov-action@v4
@@ -83,9 +83,12 @@ jobs:
       run: |
         EXT=""
         if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
-        go build -ldflags="-w -s -X main.version=${{ github.ref_name || 'dev' }}" \
+        VERSION="${{ github.ref_name || 'dev' }}"
+        GIT_COMMIT="${{ github.sha }}"
+        BUILD_TIME="$(date -u '+%Y-%m-%d_%H:%M:%S')"
+        go build -ldflags="-w -s -X 'github.com/vnykmshr/markgo/internal/commands/serve.Version=${VERSION}' -X 'github.com/vnykmshr/markgo/internal/commands/serve.GitCommit=${GIT_COMMIT}' -X 'github.com/vnykmshr/markgo/internal/commands/serve.BuildTime=${BUILD_TIME}'" \
           -o markgo-${{ matrix.target.goos }}-${{ matrix.target.goarch }}${EXT} \
-          ./cmd/server
+          ./cmd/markgo
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
