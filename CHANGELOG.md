@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [2.2.0] - 2025-10-24
+
+### Major Changes
+
+**Stress Testing Tool Graduation:**
+- **WebStress** - Independent stress testing tool (graduated from examples/stress-test/)
+  - Migrated to standalone repository: https://github.com/vnykmshr/webstress
+  - Enhanced with clean architecture and comprehensive documentation
+  - Generalized to work with any web application (not just MarkGo)
+  - Added migration guide: examples/STRESS_TESTING.md
+
 ### Added
 
 **Operational Excellence:**
@@ -53,7 +66,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - golang.org/x/crypto: v0.39.0 → v0.43.0 (security)
   - golang.org/x/net: v0.41.0 → v0.46.0 (security)
 
-- **Documentation**: Updated README.md binary size (38MB → ~27MB)
+- **Documentation**: Comprehensive cleanup and simplification
+  - Updated README.md binary size (38MB → ~27MB)
+  - Moved status reports to historical documentation
+  - Pruned outdated documentation
+  - Simplified structure for better maintainability
+
+### Removed
+
+- **examples/stress-test/**: Graduated to independent WebStress project
+  - 6 files removed (~50KB of code)
+  - Replaced with migration guide (examples/STRESS_TESTING.md)
+  - Full functionality preserved in https://github.com/vnykmshr/webstress
 
 ### Fixed
 
@@ -65,14 +89,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cleaned 7.5MB of local artifacts (temp_articles/, dist/)
 - All tests passing with updated dependencies
 - CI/CD pipelines verified and passing
+- Documentation hygiene improvements
 
 **Hygiene Score Improvement: 78/100 → 91/100** (+13 points)
 
-**Commits in this maintenance cycle:** 4
-- Week 1 critical fixes
-- 33 dependency updates with testing
-- Operational documentation
+**Commits in this release:** 8
+- Week 1 critical hygiene fixes
+- 33 dependency updates with comprehensive testing
+- Operational documentation (runbook, checklist)
 - Handler test coverage improvements
+- Documentation cleanup and simplification
+- WebStress graduation
 
 ---
 
