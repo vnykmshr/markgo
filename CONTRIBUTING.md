@@ -75,7 +75,15 @@ We welcome feature suggestions! Please:
    make install-dev-tools
    ```
 
-3. **Create a feature branch**:
+3. **Set up pre-commit hooks** (optional but recommended):
+   ```bash
+   pip install pre-commit
+   pre-commit install
+   ```
+
+   This runs code quality checks before each commit.
+
+4. **Create a feature branch**:
    ```bash
    git checkout -b feature/your-feature-name
    ```

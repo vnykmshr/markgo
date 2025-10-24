@@ -1,207 +1,357 @@
-# MarkGo API Documentation
-Generated on: Thu Sep 11 07:35:12 +0545 2025
+# MarkGo HTTP API Reference
+
+**Version:** 2.1.0
 
 ## Overview
 
-MarkGo is a high-performance, file-based blog engine built with Go. This documentation provides a comprehensive overview of the internal APIs, data structures, and interfaces.
+MarkGo provides HTTP endpoints for browsing articles, search, RSS feeds, and administration. All endpoints return HTML unless otherwise specified.
 
-## Architecture
+## Base Configuration
 
-MarkGo follows a clean architecture pattern with the following layers:
+- **Default Port:** 3000 (configurable via `PORT` env variable)
+- **Base URL:** Set via `BASE_URL` env variable
 
-- **Models**: Core data structures and domain objects
-- **Services**: Business logic and data processing
-- **Handlers**: HTTP request handling and routing
-- **Middleware**: Request processing pipeline
-- **Config**: Configuration management
+## Public Endpoints
 
-## Package Documentation
+### Home & Articles
 
-### Core Packages
+#### `GET /`
+Homepage displaying recent articles.
 
-#### [Models Package](./models-package.md)
-Core data structures including Article, ContactMessage, SearchResult, Feed, and Pagination.
+**Response:** HTML page
 
-#### [Config Package](./config-package.md)
-Configuration management including environment-specific settings and validation.
+---
 
-#### [Services Package](./services-package.md)
-Business logic services including article management, search, email, and templates.
+#### `GET /articles`
+List all published articles with pagination.
 
-#### [Handlers Package](./handlers-package.md)
-HTTP request handlers for web interface, admin functionality, and API endpoints.
+**Query Parameters:**
+- `page` (optional): Page number (default: 1)
 
-#### [Middleware Package](./middleware-package.md)
-HTTP middleware components including security, rate limiting, and performance monitoring.
+**Response:** HTML page with article list
 
-#### [Errors Package](./errors-package.md)
-Domain-specific error handling including structured error types and utilities.
+---
 
-### Command Line Tools
+#### `GET /articles/:slug`
+View individual article by slug.
 
-#### [MarkGo Server](./cmd-server-package.md)
-Main web server application with HTTP configuration and graceful shutdown.
+**Parameters:**
+- `slug`: Article slug (from filename or frontmatter)
 
-#### [New Article Tool](./cmd-new-article-package.md)
-Interactive article creation CLI tool with templates and validation.
+**Response:**
+- `200 OK`: HTML article page
+- `200 OK`: Error page (if article not found)
 
-#### [Init Tool](./cmd-init-package.md)
-Quick blog initialization tool with interactive setup wizard.
+---
 
-#### [Stress Test Tool](./stress-test-package.md)
-Performance testing tool with automatic URL discovery and validation.
+### Filtering
 
-## Preview API Endpoints
+#### `GET /tags`
+List all tags with article counts.
 
-### Overview
+**Response:** HTML page with tag cloud
 
-The Preview API provides real-time preview capabilities for draft articles with WebSocket-based live reload functionality.
+---
 
-### Authentication
+#### `GET /tags/:tag`
+List articles with specific tag.
 
-Preview endpoints use session-based authentication with auto-generated tokens.
+**Parameters:**
+- `tag`: Tag name
 
-### Base URL
+**Response:** HTML page with filtered articles
 
-All preview endpoints are prefixed with `/api/preview`
+---
 
-### Endpoints
+#### `GET /categories`
+List all categories with article counts.
 
-#### Create Preview Session
-`POST /api/preview/sessions`
+**Response:** HTML page with categories
 
-Creates a new preview session for a draft article.
+---
 
-**Request Body:**
+#### `GET /categories/:category`
+List articles in specific category.
+
+**Parameters:**
+- `category`: Category name (URL-encoded for spaces)
+
+**Response:** HTML page with filtered articles
+
+---
+
+### Search
+
+#### `GET /search`
+Full-text search articles.
+
+**Query Parameters:**
+- `q`: Search query string
+
+**Response:** HTML page with search results
+
+---
+
+### Special Pages
+
+#### `GET /about`
+About page (if `about.md` exists in articles directory).
+
+**Response:** HTML page
+
+---
+
+#### `POST /contact`
+Contact form submission.
+
+**Content-Type:** `application/x-www-form-urlencoded`
+
+**Form Fields:**
+- `name`: Sender name (required)
+- `email`: Sender email (required)
+- `message`: Message content (required)
+
+**Response:**
+- `200 OK`: Success message
+- `400 Bad Request`: Validation errors
+- `429 Too Many Requests`: Rate limit exceeded
+
+**Rate Limit:** Configurable, default 1 request per minute per IP
+
+---
+
+## Feeds
+
+#### `GET /feed.xml`
+RSS 2.0 feed of recent articles.
+
+**Response:** XML (application/rss+xml)
+
+---
+
+#### `GET /feed.json`
+JSON feed of recent articles.
+
+**Response:** JSON (application/json)
+
+**Example Response:**
 ```json
 {
-  "article_slug": "example-article-slug"
+  "version": "https://jsonfeed.org/version/1",
+  "title": "Blog Title",
+  "home_page_url": "https://example.com",
+  "feed_url": "https://example.com/feed.json",
+  "items": [
+    {
+      "id": "article-slug",
+      "url": "https://example.com/articles/article-slug",
+      "title": "Article Title",
+      "content_html": "<p>Content...</p>",
+      "date_published": "2025-10-23T00:00:00Z",
+      "tags": ["tag1", "tag2"]
+    }
+  ]
 }
 ```
 
-**Response:**
+---
+
+## SEO & Crawlers
+
+#### `GET /sitemap.xml`
+XML sitemap for search engines.
+
+**Response:** XML (application/xml)
+
+---
+
+#### `GET /robots.txt`
+Robots.txt for web crawlers.
+
+**Response:** Plain text
+
+---
+
+## Health & Monitoring
+
+#### `GET /health`
+Health check endpoint.
+
+**Response:** JSON
+
+**Example Response:**
 ```json
 {
-  "session_id": "session_abc123",
-  "url": "http://localhost:3000/preview/session_abc123",
-  "auth_token": "auth_token_here",
-  "created_at": "2025-09-19T10:30:00Z"
+  "status": "healthy",
+  "timestamp": "2025-10-23T10:00:00Z",
+  "uptime": 3600,
+  "version": "v2.1.0"
 }
 ```
 
 **Status Codes:**
-- `200` - Session created successfully
-- `400` - Invalid request body or article slug
-- `404` - Draft article not found
-- `429` - Maximum sessions exceeded
+- `200 OK`: Service healthy
+- `503 Service Unavailable`: Service degraded
 
-#### List Active Sessions
-`GET /api/preview/sessions`
+---
 
-Returns list of active preview sessions.
+#### `GET /metrics`
+Prometheus metrics endpoint.
 
-**Response:**
+**Response:** Plain text (Prometheus format)
+
+**Metrics Include:**
+- HTTP request counters
+- Request duration histograms
+- Go runtime metrics
+
+---
+
+## Admin Endpoints
+
+Admin endpoints require Basic Authentication (configured via `ADMIN_USERNAME` and `ADMIN_PASSWORD`).
+
+#### `GET /admin`
+Admin dashboard.
+
+**Authentication:** Basic Auth required
+
+**Response:** HTML admin page with statistics
+
+---
+
+#### `GET /admin/stats`
+Retrieve site statistics.
+
+**Authentication:** Basic Auth required
+
+**Response:** JSON
+
+**Example Response:**
 ```json
 {
-  "sessions": [
-    {
-      "session_id": "session_abc123",
-      "article_slug": "example-article",
-      "url": "http://localhost:3000/preview/session_abc123",
-      "created_at": "2025-09-19T10:30:00Z",
-      "last_accessed": "2025-09-19T10:35:00Z",
-      "client_count": 2
-    }
-  ],
-  "stats": {
-    "active_sessions": 1,
-    "total_clients": 2,
-    "files_watched": 1
+  "articles": {
+    "total": 42,
+    "published": 40,
+    "drafts": 2
+  },
+  "tags": 15,
+  "categories": 8,
+  "cache": {
+    "enabled": true,
+    "hits": 1000,
+    "misses": 50
   }
 }
 ```
 
-#### Delete Preview Session
-`DELETE /api/preview/sessions/{sessionId}`
+---
 
-Terminates a preview session and closes all WebSocket connections.
+#### `POST /admin/cache/clear`
+Clear application cache.
 
-**Response:**
+**Authentication:** Basic Auth required
+
+**Response:** JSON
+
+**Example Response:**
 ```json
 {
-  "message": "Preview session deleted successfully"
+  "message": "Cache cleared successfully"
 }
 ```
 
-**Status Codes:**
-- `200` - Session deleted successfully
-- `404` - Session not found
+---
 
-#### WebSocket Connection
-`GET /api/preview/ws/{sessionId}`
+#### `POST /admin/articles/reload`
+Reload articles from disk without restarting.
 
-Establishes WebSocket connection for real-time updates.
+**Authentication:** Basic Auth required
 
-**WebSocket Messages:**
+**Response:** JSON
 
-**Connection Confirmation:**
+**Example Response:**
 ```json
 {
-  "type": "connected",
-  "session_id": "session_abc123",
-  "timestamp": 1695117000
+  "message": "Articles reloaded successfully",
+  "count": 42
 }
 ```
 
-**File Change Reload:**
-```json
-{
-  "type": "reload",
-  "data": {
-    "article_slug": "example-article",
-    "file_path": "/path/to/article.md",
-    "reason": "file_changed"
-  },
-  "timestamp": 1695117000
-}
-```
+---
 
-#### Serve Preview Page
-`GET /preview/{sessionId}`
+## Debug Endpoints (Development Only)
 
-Serves the preview page for the article associated with the session.
+Debug endpoints are only available when `ENVIRONMENT=development`. They require Basic Auth if admin credentials are configured.
 
-**Response:** HTML page with embedded WebSocket client for live reload.
+**Available Endpoints:**
+- `GET /debug/pprof/*`: Go pprof profiling endpoints
+- See Go pprof documentation for details
 
-### Error Responses
+---
 
-All API endpoints return errors in a consistent format:
+## Static Assets
 
-```json
-{
-  "error": "error_code",
-  "message": "Human readable error message",
-  "details": "Additional error context (optional)"
-}
-```
+#### `GET /static/*`
+Serve static files (CSS, JavaScript, images).
 
-### Configuration
+**Response:** File content with appropriate Content-Type
 
-Preview service configuration options:
+**Caching:** Long-term cache headers in production
 
-- `PREVIEW_ENABLED` - Enable/disable preview service
-- `PREVIEW_PORT` - WebSocket port (default: 8081)
-- `PREVIEW_MAX_SESSIONS` - Maximum concurrent sessions (default: 10)
-- `PREVIEW_SESSION_TIMEOUT` - Session timeout (default: 30m)
+---
 
-## Performance Targets
+## Error Responses
 
-| Metric | Target | Purpose |
-|--------|--------|---------|
-| Throughput | ≥1000 req/s | Competitive advantage vs Ghost |
-| 95th Percentile | <50ms | 4x faster than Ghost ~200ms |
-| Average Response | <30ms | Excellent user experience |
-| Error Rate | <1% | Production reliability |
-| Success Rate | >99% | Production readiness |
+MarkGo typically returns HTML error pages for user-facing endpoints. Status codes:
 
-*This documentation is automatically generated from Go source code comments.*
+- `200 OK`: Success (even for "article not found" - returns error page)
+- `400 Bad Request`: Invalid request parameters
+- `404 Not Found`: Route not found
+- `429 Too Many Requests`: Rate limit exceeded
+- `500 Internal Server Error`: Server error
+- `503 Service Unavailable`: Service unavailable
+
+---
+
+## Rate Limiting
+
+Rate limiting is applied per IP address:
+
+- **General requests:** Configurable (default: 10 req/s)
+- **Contact form:** Configurable (default: 1 req/min)
+
+Rate limit headers:
+- `X-RateLimit-Limit`: Request limit
+- `X-RateLimit-Remaining`: Remaining requests
+- `X-RateLimit-Reset`: Reset timestamp
+
+---
+
+## Security Headers
+
+All responses include security headers:
+
+- `Strict-Transport-Security`: HSTS for HTTPS
+- `X-Frame-Options`: SAMEORIGIN
+- `X-Content-Type-Options`: nosniff
+- `X-XSS-Protection`: 1; mode=block
+- `Content-Security-Policy`: Configured CSP
+
+---
+
+## CORS
+
+CORS is enabled with configurable allowed origins (via `CORS_ALLOWED_ORIGINS`).
+
+---
+
+## Further Reading
+
+- [Configuration Guide](configuration.md) - All configuration options
+- [Getting Started](GETTING-STARTED.md) - Setup and usage
+- [Architecture](architecture.md) - Technical architecture
+
+---
+
+**Last Updated:** October 2025 (v2.1.0)

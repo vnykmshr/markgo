@@ -20,7 +20,6 @@ Complete documentation for MarkGo - a high-performance file-based blog engine bu
 
 - [Architecture Guide](architecture.md) - Technical architecture and design
 - [Contributing Guide](../CONTRIBUTING.md) - How to contribute
-- [Pre-Commit Setup](PRE_COMMIT_SETUP.md) - Pre-commit hooks configuration
 
 ## 📚 Reference Documentation
 
@@ -31,7 +30,6 @@ Complete documentation for MarkGo - a high-performance file-based blog engine bu
 
 - [Security Guide](../SECURITY.md) - Security best practices and reporting
 - [Code of Conduct](../CODE_OF_CONDUCT.md) - Community guidelines
-- [Hygiene Review](HYGIENE-REVIEW-2025-10-23.md) - Latest project health review
 
 ## 📝 Release Information
 

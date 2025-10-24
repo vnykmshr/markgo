@@ -1,6 +1,8 @@
-# MarkGo Engine v1.0.0 - Deployment Guide
+# MarkGo Deployment Guide
 
-This guide covers production deployment of MarkGo Engine using various methods.
+**Version:** 2.1.0
+
+This guide covers production deployment of MarkGo using various methods.
 
 ## 🚀 Quick Deploy Options
 
