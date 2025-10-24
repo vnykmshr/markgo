@@ -137,8 +137,8 @@ func (m *EnhancedMockArticleService) GetCategoryCounts() []models.CategoryCount 
 
 func (m *EnhancedMockArticleService) GetStats() *models.Stats {
 	return &models.Stats{
-		TotalArticles: len(m.articles),
-		TotalTags:     len(m.GetAllTags()),
+		TotalArticles:   len(m.articles),
+		TotalTags:       len(m.GetAllTags()),
 		TotalCategories: len(m.GetAllCategories()),
 	}
 }
