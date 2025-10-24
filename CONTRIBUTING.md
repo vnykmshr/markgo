@@ -75,13 +75,18 @@ We welcome feature suggestions! Please:
    make install-dev-tools
    ```
 
-3. **Set up pre-commit hooks** (optional but recommended):
+3. **Set up pre-commit hooks** (recommended):
    ```bash
-   pip install pre-commit
-   pre-commit install
+   ./.githooks/setup.sh
    ```
 
-   This runs code quality checks before each commit.
+   This installs hooks that run before each commit:
+   - Secret detection (prevents credential leaks)
+   - Code formatting check (gofmt)
+   - Go vet analysis
+   - Tests execution
+
+   **Prevents CI failures** by catching issues locally first.
 
 4. **Create a feature branch**:
    ```bash
