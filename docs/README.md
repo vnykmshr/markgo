@@ -1,6 +1,6 @@
 # MarkGo Documentation
 
-Complete documentation for MarkGo Engine - a modern, high-performance file-based blog platform built with Go.
+Complete documentation for MarkGo - a high-performance file-based blog engine built with Go.
 
 ## 📖 Getting Started
 
@@ -8,57 +8,35 @@ Complete documentation for MarkGo Engine - a modern, high-performance file-based
 
 - [Quick Start](../README.md#quick-start) - Get running in 5 minutes
 - [Getting Started Guide](GETTING-STARTED.md) - Detailed setup walkthrough
-- [Project Guide](project-guide.md) - Complete feature overview
 
 ## ⚙️ Configuration & Deployment
 
 - [Configuration Guide](configuration.md) - All environment variables and options
 - [Deployment Guide](deployment.md) - Production deployment strategies
-- [Static Export](static-export.md) - GitHub Pages, Netlify, Vercel deployment
+- [Static Export Guide](static-export.md) - GitHub Pages, Netlify, Vercel deployment
+- [Operational Runbook](RUNBOOK.md) - Production operations, troubleshooting, incident response
 
 ## 🏗️ Architecture & Development
 
-- [System Overview](system-overview.md) - Performance characteristics and design
-- [Architecture Guide](architecture.md) - Technical architecture details
+- [Architecture Guide](architecture.md) - Technical architecture and design
 - [Contributing Guide](../CONTRIBUTING.md) - How to contribute
+- [Pre-Commit Setup](PRE_COMMIT_SETUP.md) - Pre-commit hooks configuration
 
 ## 📚 Reference Documentation
 
 - [API Documentation](API.md) - HTTP endpoints and responses
-- [Quick Reference](QUICK-REFERENCE.md) - Commands and common tasks
+- [Benchmarks](../BENCHMARKS.md) - Performance metrics
 
-## 🔐 Security
+## 🔐 Security & Quality
 
-- [Security Guide](../SECURITY.md) - Security best practices and configuration
-
-## 📦 Package Documentation
-
-Code-level documentation:
-
-| Package | Description | Documentation |
-|---------|-------------|---------------|
-| **Config** | Configuration management and validation | [config-package.md](./config-package.md) |
-| **Handlers** | HTTP request handlers and routing | [handlers-package.md](./handlers-package.md) |
-| **Middleware** | HTTP middleware pipeline components | [middleware-package.md](./middleware-package.md) |
-| **Services** | Business logic and service layer | [services-package.md](./services-package.md) |
-| **Models** | Core data structures | [models-package.md](./models-package.md) |
-| **Errors** | Domain-specific error handling | [errors-package.md](./errors-package.md) |
-
-## 🚀 CLI Commands
-
-MarkGo uses a unified CLI with subcommands:
-
-| Command | Purpose | Documentation |
-|---------|---------|---------------|
-| **markgo serve** | Start the web server | Main server command |
-| **markgo init** | Initialize a new blog | Quick setup wizard |
-| **markgo new** | Create a new article | Interactive article creation |
-| **markgo export** | Export to static site | GitHub Pages, Netlify, Vercel |
-| **Stress Test** | Performance testing tool | [stress-test-package.md](./stress-test-package.md) |
+- [Security Guide](../SECURITY.md) - Security best practices and reporting
+- [Code of Conduct](../CODE_OF_CONDUCT.md) - Community guidelines
+- [Hygiene Review](HYGIENE-REVIEW-2025-10-23.md) - Latest project health review
 
 ## 📝 Release Information
 
 - [Changelog](../CHANGELOG.md) - Version history and changes
+- [Release Checklist](../.github/RELEASE_CHECKLIST.md) - Pre-release validation procedures
 
 ---
 

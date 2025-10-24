@@ -129,8 +129,6 @@ Write your article using Markdown...
 - Social media optimization (Open Graph, Twitter Cards)
 - Multiple Markdown file extensions: `.md`, `.markdown`, `.mdown`, `.mkd`
 
-See [Complete Project Guide](docs/project-guide.md) for advanced features.
-
 ## Configuration
 
 MarkGo is configured via environment variables. Copy `.env.example` to `.env`:
@@ -217,18 +215,16 @@ make check          # Run all quality checks
 
 ## Documentation
 
-### Guides
-- [Complete Project Guide](docs/project-guide.md) - Everything about MarkGo
-- [System Overview](docs/system-overview.md) - Architecture and performance
-- [Architecture Guide](docs/architecture.md) - Technical design details
-- [Deployment Guide](docs/deployment.md) - Production deployment
-
-### Reference
-- [Configuration Guide](docs/configuration.md) - Configuration options
-- [Theme Customization](docs/themes.md) - Customizing appearance
-- [API Documentation](docs/api.md) - HTTP endpoints
+- [Getting Started Guide](docs/GETTING-STARTED.md) - Detailed setup walkthrough
+- [Configuration Guide](docs/configuration.md) - All configuration options
+- [Deployment Guide](docs/deployment.md) - Production deployment strategies
+- [Static Export Guide](docs/static-export.md) - GitHub Pages, Netlify, Vercel
+- [Architecture Guide](docs/architecture.md) - Technical architecture and design
+- [API Documentation](docs/API.md) - HTTP endpoints and responses
+- [Operational Runbook](docs/RUNBOOK.md) - Operations and troubleshooting
 - [Contributing Guide](CONTRIBUTING.md) - How to contribute
-- [Troubleshooting](docs/troubleshooting.md) - Common issues
+
+See [docs/](docs/) for complete documentation.
 
 ## Development
 
@@ -281,7 +277,7 @@ See [BENCHMARKS.md](BENCHMARKS.md) for detailed metrics.
 - **Security**: Rate limiting and input validation built-in
 - **Portability**: File-based content, easy migration
 
-Read the [System Overview](docs/system-overview.md) and [Architecture Guide](docs/architecture.md) for technical details.
+Read the [Architecture Guide](docs/architecture.md) for technical details.
 
 ## Links
 
