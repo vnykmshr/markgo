@@ -8,8 +8,8 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/stretchr/testify v1.11.1
-	github.com/vnykmshr/goflow v1.0.3
-	github.com/vnykmshr/obcache-go v1.0.3
+	github.com/vnykmshr/goflow v1.2.0
+	github.com/vnykmshr/obcache-go v1.1.0
 	github.com/yuin/goldmark v1.7.13
 	golang.org/x/text v0.30.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -50,7 +50,7 @@ require (
 	github.com/prometheus/procfs v0.18.0 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/quic-go/quic-go v0.55.0 // indirect
-	github.com/redis/go-redis/v9 v9.14.1 // indirect
+	github.com/redis/go-redis/v9 v9.16.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.0 // indirect
