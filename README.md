@@ -266,7 +266,7 @@ Contributions welcome. See [Contributing Guide](CONTRIBUTING.md) for details.
 | WordPress| Dynamic server | ~100MB | PHP + MySQL |
 | Hugo     | Static generator | Build-time | Go binary |
 
-See [BENCHMARKS.md](BENCHMARKS.md) for detailed metrics.
+See [BENCHMARKS.md](docs/BENCHMARKS.md) for detailed metrics.
 
 ## Key Advantages
 
