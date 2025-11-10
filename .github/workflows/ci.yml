@@ -91,7 +91,7 @@ jobs:
           ./cmd/markgo
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: markgo-${{ matrix.target.goos }}-${{ matrix.target.goarch }}
         path: markgo-*
