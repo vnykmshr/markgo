@@ -238,6 +238,7 @@ jobs:
         cat > .env << 'EOF'
         # Blog Configuration
         BLOG_TITLE=Code & Coffee
+        BLOG_TAGLINE=Brewing ideas, one commit at a time
         BLOG_DESCRIPTION=A developer's journey through modern programming languages, tools, and best practices
         BLOG_AUTHOR=Gopher Mark
         BASE_URL=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
