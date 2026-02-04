@@ -3,6 +3,7 @@ package serve
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -28,15 +29,23 @@ const (
 	envDevelopment = "development"
 )
 
-// Build-time variables injected via ldflags
-var (
-	Version   = constants.AppVersion // exported for main to inject
-	GitCommit = "unknown"
-	BuildTime = "unknown"
-)
+// Version is injected via ldflags at build time
+var Version = constants.AppVersion
 
 // Run starts the MarkGo HTTP server.
 func Run(args []string) {
+	// Parse command-line flags
+	fs := flag.NewFlagSet("serve", flag.ContinueOnError)
+	port := fs.Int("port", 0, "Override server port (default: from .env or 3000)")
+	fs.Usage = printUsage
+
+	if err := fs.Parse(args[1:]); err != nil {
+		if err == flag.ErrHelp {
+			os.Exit(0)
+		}
+		os.Exit(1)
+	}
+
 	var logger *slog.Logger
 	var server *http.Server
 
@@ -61,6 +70,11 @@ func Run(args []string) {
 			apperrors.NewCLIError("configuration loading", "Failed to load configuration", err, 1),
 			cleanup,
 		)
+	}
+
+	// Apply CLI overrides
+	if *port != 0 {
+		cfg.Port = *port
 	}
 
 	// Setup enhanced logging with configuration
@@ -200,8 +214,8 @@ func Run(args []string) {
 		Cache:           cache,
 		BuildInfo: &handlers.BuildInfo{
 			Version:   Version,
-			GitCommit: GitCommit,
-			BuildTime: BuildTime,
+			GitCommit: constants.GitCommit,
+			BuildTime: constants.BuildTime,
 		},
 	})
 
@@ -357,6 +371,28 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 
 	// 404 handler
 	router.NoRoute(h.NotFound)
+}
+
+func printUsage() {
+	fmt.Printf(`markgo serve - Start the blog server
+
+USAGE:
+    markgo serve [options]
+
+OPTIONS:
+    --port PORT    Override server port (default: from .env or 3000)
+    --help         Show this help message
+
+CONFIGURATION:
+    Most server settings are configured via .env file.
+    Run 'markgo init' to generate a default configuration.
+    See docs/configuration.md for all options.
+
+EXAMPLES:
+    markgo serve              # Start with .env configuration
+    markgo serve --port 8080  # Start on port 8080
+
+`)
 }
 
 // setupTemplates configures Gin's HTML template renderer using TemplateService

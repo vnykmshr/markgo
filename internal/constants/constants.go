@@ -10,6 +10,12 @@ const (
 	AppVersion = "v2.2.0"
 )
 
+// Build-time variables injected via ldflags
+var (
+	GitCommit = "unknown"
+	BuildTime = "unknown"
+)
+
 // File paths and directories
 const (
 	DefaultArticlesPath  = "articles"

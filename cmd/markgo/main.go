@@ -29,6 +29,9 @@ func main() {
 
 	if command == "-v" || command == "--version" || command == "version" {
 		fmt.Printf("MarkGo %s\n", constants.AppVersion)
+		if constants.GitCommit != "unknown" {
+			fmt.Printf("  commit: %s\n  built:  %s\n", constants.GitCommit, constants.BuildTime)
+		}
 		return
 	}
 

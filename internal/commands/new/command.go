@@ -9,6 +9,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -369,8 +370,13 @@ func showHelp() {
 	fmt.Println("AVAILABLE TEMPLATES:")
 
 	templates := GetAvailableTemplates()
-	for name, template := range templates {
-		fmt.Printf("  %-12s %s\n", name, template.Description)
+	names := make([]string, 0, len(templates))
+	for name := range templates {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		fmt.Printf("  %-12s %s\n", name, templates[name].Description)
 	}
 }
 
@@ -424,9 +430,15 @@ func listTemplates() {
 	fmt.Println()
 
 	templates := GetAvailableTemplates()
-	for name, template := range templates {
+	names := make([]string, 0, len(templates))
+	for name := range templates {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		tmpl := templates[name]
 		fmt.Printf("  %s\n", name)
-		fmt.Printf("    %s: %s\n", template.Name, template.Description)
+		fmt.Printf("    %s: %s\n", tmpl.Name, tmpl.Description)
 		fmt.Println()
 	}
 

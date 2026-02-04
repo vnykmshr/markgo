@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/vnykmshr/markgo/internal/config"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
@@ -29,15 +30,19 @@ func Run(args []string) {
 	// Load application configuration
 	cfg, err := config.Load()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading configuration: %v\n", err)
-		os.Exit(1)
+		apperrors.HandleCLIError(
+			apperrors.NewCLIError("configuration loading", "Failed to load configuration", err, 1),
+			nil,
+		)
 	}
 
 	// Setup logging
 	loggingService, err := services.NewLoggingService(&cfg.Logging)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error initializing logging: %v\n", err)
-		os.Exit(1)
+		apperrors.HandleCLIError(
+			apperrors.NewCLIError("logging initialization", "Failed to initialize logging", err, 1),
+			nil,
+		)
 	}
 
 	logger := loggingService.GetLogger()
@@ -125,15 +130,21 @@ func parseFlags(args []string) *ExportConfig {
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--output", "-o":
-			if i+1 < len(args) {
-				config.OutputDir = args[i+1]
-				i++
+			if i+1 >= len(args) {
+				fmt.Fprintf(os.Stderr, "Error: %s requires a value\n\n", args[i])
+				printUsage()
+				os.Exit(1)
 			}
+			config.OutputDir = args[i+1]
+			i++
 		case "--base-url", "-u":
-			if i+1 < len(args) {
-				config.BaseURL = args[i+1]
-				i++
+			if i+1 >= len(args) {
+				fmt.Fprintf(os.Stderr, "Error: %s requires a value\n\n", args[i])
+				printUsage()
+				os.Exit(1)
 			}
+			config.BaseURL = args[i+1]
+			i++
 		case "--include-drafts", "-d":
 			config.IncludeDrafts = true
 		case "--verbose", "-v":
@@ -141,6 +152,12 @@ func parseFlags(args []string) *ExportConfig {
 		case "--help", "-h":
 			printUsage()
 			os.Exit(0)
+		default:
+			if strings.HasPrefix(args[i], "-") {
+				fmt.Fprintf(os.Stderr, "Error: unknown flag %s\n\n", args[i])
+				printUsage()
+				os.Exit(1)
+			}
 		}
 	}
 
