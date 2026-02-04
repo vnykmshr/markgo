@@ -625,11 +625,11 @@ var templateFuncs = template.FuncMap{
 
 			// Determine meta tag type
 			if strings.HasPrefix(name, "og:") || strings.HasPrefix(name, "twitter:") || strings.HasPrefix(name, "article:") {
-				buf.WriteString(fmt.Sprintf(`<meta property="%s" content="%s">`, html.EscapeString(name), escapedContent))
+				buf.WriteString(fmt.Sprintf(`<meta property="%s" content="%s">`, html.EscapeString(name), escapedContent)) //nolint:gocritic // HTML attribute quoting, not Go string quoting
 			} else if name == "canonical" {
-				buf.WriteString(fmt.Sprintf(`<link rel="canonical" href="%s">`, escapedContent))
+				buf.WriteString(fmt.Sprintf(`<link rel="canonical" href="%s">`, escapedContent)) //nolint:gocritic // HTML attribute quoting, not Go string quoting
 			} else {
-				buf.WriteString(fmt.Sprintf(`<meta name="%s" content="%s">`, html.EscapeString(name), escapedContent))
+				buf.WriteString(fmt.Sprintf(`<meta name="%s" content="%s">`, html.EscapeString(name), escapedContent)) //nolint:gocritic // HTML attribute quoting, not Go string quoting
 			}
 			buf.WriteString("\n")
 		}
