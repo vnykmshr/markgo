@@ -625,7 +625,7 @@ html {
         var(--color-bg-secondary) 0%,
         var(--color-bg-primary) 100%
     );
-    padding: var(--spacing-12) 0 var(--spacing-8) 0;
+    padding: var(--spacing-8) 0 var(--spacing-6) 0;
     text-align: center;
     border-bottom: 1px solid var(--color-border);
 }
@@ -648,7 +648,7 @@ html {
 
 /* Content sections after header */
 .page-content {
-    padding: var(--spacing-16) 0;
+    padding: var(--spacing-12) 0;
 }
 
 /* ==========================================================================
@@ -661,7 +661,7 @@ html {
         var(--color-bg-secondary) 0%,
         var(--color-bg-primary) 100%
     );
-    padding: var(--spacing-16) 0 var(--spacing-12) 0;
+    padding: var(--spacing-8) 0 var(--spacing-6) 0;
     text-align: center;
 }
 
@@ -723,7 +723,7 @@ html {
 }
 
 .featured-section {
-    padding: var(--spacing-12) 0 var(--spacing-16) 0;
+    padding: var(--spacing-12) 0;
     background-color: var(--color-bg-secondary);
 }
 
@@ -734,7 +734,7 @@ html {
 }
 
 .recent-section {
-    padding: var(--spacing-16) 0;
+    padding: var(--spacing-12) 0;
 }
 
 .articles-grid {
@@ -852,7 +852,7 @@ html {
 }
 
 .tags-section {
-    padding: var(--spacing-16) 0;
+    padding: var(--spacing-12) 0;
     background-color: var(--color-bg-secondary);
 }
 
@@ -896,7 +896,7 @@ html {
    ========================================================================== */
 
 .cta-section {
-    padding: var(--spacing-16) 0;
+    padding: var(--spacing-12) 0;
     background: linear-gradient(
         135deg,
         var(--color-primary) 0%,
@@ -1104,6 +1104,31 @@ html {
 /* ==========================================================================
    Responsive Design (Mobile-first)
    ========================================================================== */
+
+/* Large phones and up */
+@media (min-width: 481px) {
+    .hero-section {
+        padding: var(--spacing-16) 0 var(--spacing-12) 0;
+    }
+
+    .page-header {
+        padding: var(--spacing-12) 0 var(--spacing-8) 0;
+    }
+
+    .page-content {
+        padding: var(--spacing-16) 0;
+    }
+
+    .recent-section,
+    .tags-section,
+    .cta-section {
+        padding: var(--spacing-16) 0;
+    }
+
+    .featured-section {
+        padding: var(--spacing-12) 0 var(--spacing-16) 0;
+    }
+}
 
 /* Tablet and up */
 @media (min-width: 769px) {

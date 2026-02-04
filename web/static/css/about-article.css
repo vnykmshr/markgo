@@ -25,7 +25,7 @@
 
 .sidebar-card {
     background-color: var(--color-bg-secondary);
-    padding: var(--spacing-6);
+    padding: var(--spacing-4);
     border-radius: var(--radius-lg);
     border: 1px solid var(--color-border);
 }
@@ -358,7 +358,7 @@
         var(--color-primary-dark)
     );
     color: var(--color-text-inverse);
-    padding: var(--spacing-8);
+    padding: var(--spacing-6);
     border-radius: var(--radius-xl);
     text-align: center;
     margin-top: var(--spacing-12);
@@ -464,6 +464,34 @@
 .connect-actions {
     flex-direction: column;
     justify-content: center;
+}
+
+/* Large phones and up */
+@media (min-width: 481px) {
+    .sidebar-card {
+        padding: var(--spacing-6);
+    }
+
+    .contact-cta {
+        padding: var(--spacing-8);
+    }
+
+    .article-content h1 {
+        font-size: var(--font-size-3xl);
+    }
+
+    .article-content h2 {
+        font-size: var(--font-size-2xl);
+    }
+
+    .article-content h3 {
+        font-size: var(--font-size-xl);
+    }
+
+    .article-footer {
+        margin-top: var(--spacing-12);
+        padding-top: var(--spacing-8);
+    }
 }
 
 /* Tablet+ */
@@ -597,17 +625,17 @@
 }
 
 .article-content h1 {
-    font-size: var(--font-size-3xl);
+    font-size: var(--font-size-2xl);
     font-weight: 800;
 }
 
 .article-content h2 {
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-xl);
     font-weight: 700;
 }
 
 .article-content h3 {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     font-weight: 600;
 }
 
@@ -661,8 +689,8 @@
 }
 
 .article-footer {
-    margin-top: var(--spacing-12);
-    padding-top: var(--spacing-8);
+    margin-top: var(--spacing-8);
+    padding-top: var(--spacing-6);
     border-top: 1px solid var(--color-border);
 }
 

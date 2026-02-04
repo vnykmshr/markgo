@@ -36,7 +36,7 @@
 
 .tag-link {
     display: block;
-    padding: var(--spacing-6);
+    padding: var(--spacing-4);
     text-decoration: none;
     color: inherit;
 }
@@ -179,6 +179,14 @@
 }
 
 /* Responsive Design (Mobile-first) */
+/* Large phones and up */
+@media (min-width: 481px) {
+    .tag-link {
+        padding: var(--spacing-6);
+    }
+}
+
+/* Tablet and up */
 @media (min-width: 769px) {
     .tags-grid {
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

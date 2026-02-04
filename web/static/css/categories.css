@@ -24,7 +24,7 @@
     background-color: var(--color-bg-primary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-xl);
-    padding: var(--spacing-6);
+    padding: var(--spacing-4);
     transition: all var(--transition-fast);
     position: relative;
     overflow: hidden;
@@ -66,8 +66,9 @@
         var(--color-primary-dark)
     );
     color: var(--color-text-inverse);
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
+    font-size: var(--font-size-base);
     border-radius: var(--radius-lg);
     display: flex;
     align-items: center;
@@ -179,7 +180,7 @@
     );
     color: var(--color-text-inverse);
     border-radius: var(--radius-xl);
-    padding: var(--spacing-6);
+    padding: var(--spacing-4);
     text-align: center;
     position: relative;
     overflow: hidden;
@@ -293,6 +294,24 @@
 }
 
 /* Responsive Design (Mobile-first) */
+/* Large phones and up */
+@media (min-width: 481px) {
+    .category-card {
+        padding: var(--spacing-6);
+    }
+
+    .category-icon {
+        width: 48px;
+        height: 48px;
+        font-size: var(--font-size-lg);
+    }
+
+    .featured-category {
+        padding: var(--spacing-6);
+    }
+}
+
+/* Tablet and up */
 @media (min-width: 769px) {
     .categories-grid {
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
