@@ -1,15 +1,17 @@
 {{ define "categories-content" }}
 <div class="categories-page">
-    <div class="container">
-        <!-- Page Header -->
-        <header class="page-header">
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="container">
             <h1 class="page-title">All Categories</h1>
             <p class="page-description">
                 Browse articles by category. {{ .count }} categories covering
                 different areas of interest.
             </p>
-        </header>
+        </div>
+    </header>
 
+    <div class="container">
         <!-- Categories Grid -->
         <div class="categories-content">
             {{ if .categories }}

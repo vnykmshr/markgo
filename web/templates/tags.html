@@ -1,15 +1,17 @@
 {{ define "tags-content" }}
 <div class="tags-page">
-    <div class="container">
-        <!-- Page Header -->
-        <header class="page-header">
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="container">
             <h1 class="page-title">All Tags</h1>
             <p class="page-description">
                 Explore articles by topic. {{ .count }} tags covering various
                 aspects of technology, programming, and life.
             </p>
-        </header>
+        </div>
+    </header>
 
+    <div class="container">
         <!-- Tags Cloud -->
         <div class="tags-content">
             {{ if .tags }}

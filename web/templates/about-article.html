@@ -1,8 +1,8 @@
 {{ define "about-article-content" }}
 <div class="about-page">
-    <div class="container">
-        <!-- Page Header -->
-        <header class="page-header">
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="container">
             <h1 class="page-title">{{ .article.Title }}</h1>
             {{ if .article.Description }}
             <p class="page-description">{{ .article.Description }}</p>
@@ -23,8 +23,10 @@
                 </div>
                 {{ end }}
             </div>
-        </header>
+        </div>
+    </header>
 
+    <div class="container">
         <!-- About Content -->
         <div class="about-content">
             <div class="about-main">
