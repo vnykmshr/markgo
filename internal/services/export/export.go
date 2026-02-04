@@ -96,13 +96,36 @@ func (s *StaticExportService) Export(ctx context.Context) error {
 }
 
 func (s *StaticExportService) createOutputDir() error {
-	if err := os.RemoveAll(s.outputDir); err != nil {
-		return fmt.Errorf("failed to remove existing output directory: %w", err)
+	tmpDir := s.outputDir + ".tmp"
+	oldDir := s.outputDir + ".old"
+
+	// Clean up any leftover temp/old dirs from a previous failed run
+	_ = os.RemoveAll(tmpDir)
+	_ = os.RemoveAll(oldDir)
+
+	// Create the temp directory for the new export
+	if err := os.MkdirAll(tmpDir, 0o750); err != nil {
+		return fmt.Errorf("failed to create temp output directory: %w", err)
 	}
 
-	if err := os.MkdirAll(s.outputDir, 0o750); err != nil {
-		return fmt.Errorf("failed to create output directory: %w", err)
+	// Swap: existing → .old, .tmp → final
+	if _, err := os.Stat(s.outputDir); err == nil {
+		if err := os.Rename(s.outputDir, oldDir); err != nil {
+			_ = os.RemoveAll(tmpDir)
+			return fmt.Errorf("failed to move existing output directory: %w", err)
+		}
 	}
+
+	if err := os.Rename(tmpDir, s.outputDir); err != nil {
+		// Attempt to restore the old directory
+		if _, statErr := os.Stat(oldDir); statErr == nil {
+			_ = os.Rename(oldDir, s.outputDir)
+		}
+		return fmt.Errorf("failed to rename temp directory to output: %w", err)
+	}
+
+	// Remove the old directory now that the new one is in place
+	_ = os.RemoveAll(oldDir)
 
 	s.logger.Info("Created output directory", "path", s.outputDir)
 	return nil
