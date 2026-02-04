@@ -15,7 +15,7 @@
 
 .tags-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: 1fr;
     gap: var(--spacing-6);
     margin-bottom: var(--spacing-12);
 }
@@ -149,8 +149,9 @@
 /* Tag Statistics */
 .tags-stats {
     display: flex;
+    flex-direction: column;
     justify-content: center;
-    gap: var(--spacing-8);
+    gap: var(--spacing-4);
     margin-bottom: var(--spacing-8);
     padding: var(--spacing-6);
     background-color: var(--color-bg-secondary);
@@ -177,40 +178,14 @@
     letter-spacing: 0.5px;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
+/* Responsive Design (Mobile-first) */
+@media (min-width: 769px) {
     .tags-grid {
-        grid-template-columns: 1fr;
-    }
-
-    /* Page title responsive removed - handled by main.css */
-
-    .tags-cloud {
-        gap: var(--spacing-2);
-    }
-
-    .tag-cloud-item {
-        font-size: var(--font-size-sm) !important;
-        padding: var(--spacing-1) var(--spacing-3);
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     }
 
     .tags-stats {
-        flex-direction: column;
-        gap: var(--spacing-4);
-    }
-}
-
-@media (max-width: 480px) {
-    .tag-card {
-        margin: 0 var(--spacing-2);
-    }
-
-    .popular-tags-section {
-        margin: var(--spacing-6) -var(--spacing-2) 0;
-        border-radius: var(--radius-lg);
-    }
-
-    .tag-link {
-        padding: var(--spacing-4);
+        flex-direction: row;
+        gap: var(--spacing-8);
     }
 }

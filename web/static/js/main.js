@@ -299,68 +299,130 @@
 
   /**
    * Theme toggle functionality with error boundary
+   *
+   * Two-axis theme system:
+   * 1. Color theme (from BLOG_THEME config via data-blog-theme): "default", "ocean", "forest", etc.
+   * 2. Light/dark mode (user preference or system): "light" or "dark"
+   *
+   * data-theme attribute values:
+   * - (none) — system preference controls light/dark, default color theme
+   * - "dark" — forced dark, default color theme
+   * - "light" — forced light, default color theme
+   * - "ocean" — ocean color theme, light mode
+   * - "ocean-dark" — ocean color theme, dark mode
    */
   function initThemeToggle() {
-    const themeToggle = document.querySelector(".theme-toggle");
+    var themeToggle = document.querySelector(".theme-toggle");
     if (!themeToggle) return;
 
     try {
-      // Get saved theme or default to 'light' with error boundary
-      let savedTheme = "light";
+      var savedMode = null;
       try {
-        savedTheme = localStorage.getItem("theme") || "light";
+        savedMode = localStorage.getItem("theme");
       } catch (localStorageError) {
-        console.warn("localStorage access failed, using default theme:", localStorageError);
-        // Fallback to system preference if localStorage fails
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          savedTheme = "dark";
-        }
+        console.warn("localStorage access failed:", localStorageError);
       }
 
-      document.documentElement.setAttribute("data-theme", savedTheme);
-      updateThemeToggle(savedTheme);
+      // Apply saved light/dark preference combined with blog theme
+      applyTheme(savedMode);
+      updateThemeToggle(getEffectiveMode(savedMode));
 
       themeToggle.addEventListener("click", function () {
         try {
-          const currentTheme = document.documentElement.getAttribute("data-theme");
-          const newTheme = currentTheme === "dark" ? "light" : "dark";
+          var currentMode = getEffectiveMode(null);
+          var newMode = currentMode === "dark" ? "light" : "dark";
 
-          document.documentElement.setAttribute("data-theme", newTheme);
-          
-          // Safe localStorage access
           try {
-            localStorage.setItem("theme", newTheme);
+            localStorage.setItem("theme", newMode);
           } catch (storageError) {
             console.warn("Failed to save theme preference:", storageError);
-            // Theme still works, just won't persist
           }
-          
-          updateThemeToggle(newTheme);
+
+          applyTheme(newMode);
+          updateThemeToggle(newMode);
         } catch (toggleError) {
           console.error("Theme toggle failed:", toggleError);
-          // Prevent theme toggle from crashing the app
         }
       });
     } catch (error) {
       console.error("Theme toggle initialization failed:", error);
-      // App continues to work without theme toggle
     }
   }
 
   /**
-   * Update theme toggle button
+   * Get the blog color theme from server-rendered attribute
+   */
+  function getBlogTheme() {
+    var blogTheme = document.documentElement.getAttribute("data-blog-theme");
+    if (!blogTheme || blogTheme === "default") return null;
+    return blogTheme;
+  }
+
+  /**
+   * Apply theme by combining blog color theme with light/dark mode
+   */
+  function applyTheme(mode) {
+    var blogTheme = getBlogTheme();
+    var effectiveMode = getEffectiveMode(mode);
+
+    if (!blogTheme) {
+      // Default color theme — just set light/dark
+      if (mode === "dark" || mode === "light") {
+        document.documentElement.setAttribute("data-theme", mode);
+      } else {
+        document.documentElement.removeAttribute("data-theme");
+      }
+    } else {
+      // Named color theme — combine with dark mode
+      if (effectiveMode === "dark") {
+        document.documentElement.setAttribute("data-theme", blogTheme + "-dark");
+      } else {
+        document.documentElement.setAttribute("data-theme", blogTheme);
+      }
+    }
+  }
+
+  /**
+   * Get effective light/dark mode considering saved preference and system
+   */
+  function getEffectiveMode(savedMode) {
+    if (savedMode === "dark" || savedMode === "light") return savedMode;
+    // Check localStorage if not passed
+    if (!savedMode) {
+      try {
+        savedMode = localStorage.getItem("theme");
+        if (savedMode === "dark" || savedMode === "light") return savedMode;
+      } catch (e) {
+        // ignore
+      }
+    }
+    // Fall back to system preference
+    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      return "dark";
+    }
+    return "light";
+  }
+
+  /**
+   * Update theme toggle button icon
    */
   function updateThemeToggle(theme) {
-    const themeToggle = document.querySelector(".theme-toggle");
+    var themeToggle = document.querySelector(".theme-toggle");
     if (!themeToggle) return;
 
-    const icon = themeToggle.querySelector("svg");
+    var icon = themeToggle.querySelector("svg");
+    if (!icon) return;
+
+    // SVG path constants — hardcoded, safe for innerHTML
+    var sunPath = '<path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>';
+    var moonPath = '<path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>';
+
     if (theme === "dark") {
-      icon.innerHTML =
-        '<path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>';
+      icon.innerHTML = sunPath;
+      themeToggle.setAttribute("aria-label", "Switch to light mode");
     } else {
-      icon.innerHTML =
-        '<path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>';
+      icon.innerHTML = moonPath;
+      themeToggle.setAttribute("aria-label", "Switch to dark mode");
     }
   }
 

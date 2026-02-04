@@ -9,7 +9,7 @@
 }
 
 .search-title {
-    font-size: var(--font-size-4xl);
+    font-size: var(--font-size-2xl);
     font-weight: 800;
     margin-bottom: var(--spacing-2);
     color: var(--color-text-primary);
@@ -29,21 +29,21 @@
 
 .search-input-group {
     display: flex;
+    flex-direction: column;
     position: relative;
     box-shadow: var(--shadow-lg);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     overflow: hidden;
 }
 
 .search-input {
     flex: 1;
-    padding: var(--spacing-4) var(--spacing-6);
+    padding: var(--spacing-3) var(--spacing-4);
     border: 2px solid var(--color-border);
-    border-right: none;
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-base);
     background-color: var(--color-bg-primary);
     color: var(--color-text-primary);
-    border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .search-input:focus {
@@ -53,11 +53,12 @@
 }
 
 .search-button {
-    padding: var(--spacing-4) var(--spacing-6);
+    padding: var(--spacing-3) var(--spacing-4);
     background-color: var(--color-primary);
     color: var(--color-text-inverse);
     border: 2px solid var(--color-primary);
-    border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    border-top: none;
     cursor: pointer;
     transition: all var(--transition-fast);
 }
@@ -145,12 +146,12 @@
 
 .result-meta {
     display: flex;
-    align-items: center;
-    gap: var(--spacing-4);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-2);
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);
     margin-bottom: var(--spacing-4);
-    flex-wrap: wrap;
 }
 
 .result-score {
@@ -239,9 +240,9 @@
 
 .alternative-actions {
     display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: var(--spacing-4);
-    justify-content: center;
-    flex-wrap: wrap;
 }
 
 .search-landing {
@@ -307,7 +308,7 @@
 
 .tips-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: 1fr;
     gap: var(--spacing-6);
     margin-bottom: var(--spacing-12);
 }
@@ -385,54 +386,55 @@
     text-decoration: none;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
+/* Responsive Design (Mobile-first) */
+@media (min-width: 769px) {
     .search-title {
-        font-size: var(--font-size-2xl);
+        font-size: var(--font-size-4xl);
     }
 
     .search-input-group {
-        flex-direction: column;
-        border-radius: var(--radius-lg);
+        flex-direction: row;
+        border-radius: var(--radius-xl);
     }
 
     .search-input {
-        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-        border-right: 2px solid var(--color-border);
+        border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+        border-right: none;
+        font-size: var(--font-size-lg);
+        padding: var(--spacing-4) var(--spacing-6);
     }
 
     .search-button {
-        border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-        border-top: none;
-    }
-
-    .search-stats {
-        gap: var(--spacing-4);
+        border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
+        border-top: 2px solid var(--color-primary);
+        padding: var(--spacing-4) var(--spacing-6);
     }
 
     .tips-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     }
 
     .alternative-actions {
-        flex-direction: column;
-        align-items: center;
+        flex-direction: row;
+        justify-content: center;
     }
 
     .result-meta {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--spacing-2);
+        flex-direction: row;
+        align-items: center;
+        gap: var(--spacing-4);
+        flex-wrap: wrap;
     }
 }
 
-@media (max-width: 480px) {
-    .search-input {
-        font-size: var(--font-size-base);
-        padding: var(--spacing-3) var(--spacing-4);
+/* Dark mode — system preference */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .search-input:focus {
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
     }
+}
 
-    .search-button {
-        padding: var(--spacing-3) var(--spacing-4);
-    }
+/* Dark mode — manual toggle */
+[data-theme="dark"] .search-input:focus {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }

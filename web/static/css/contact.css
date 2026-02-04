@@ -15,8 +15,8 @@
 
 .contact-content {
     display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: var(--spacing-12);
+    grid-template-columns: 1fr;
+    gap: var(--spacing-8);
     align-items: start;
 }
 
@@ -84,7 +84,8 @@
 
 .captcha-container {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     gap: var(--spacing-3);
 }
 
@@ -115,6 +116,7 @@
 
 .form-actions {
     display: flex;
+    flex-direction: column;
     gap: var(--spacing-4);
     margin-top: var(--spacing-8);
 }
@@ -183,8 +185,7 @@
 }
 
 .contact-info {
-    position: sticky;
-    top: var(--spacing-8);
+    position: static;
 }
 
 .contact-card {
@@ -396,45 +397,66 @@
     }
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
+/* Responsive Design (Mobile-first) */
+@media (min-width: 769px) {
     .contact-content {
-        grid-template-columns: 1fr;
-        gap: var(--spacing-8);
+        grid-template-columns: 2fr 1fr;
+        gap: var(--spacing-12);
     }
 
     .contact-info {
-        position: static;
+        position: sticky;
+        top: var(--spacing-8);
     }
 
     .form-actions {
-        flex-direction: column;
-    }
-
-    .btn {
-        justify-content: center;
+        flex-direction: row;
     }
 
     .captcha-container {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        align-items: center;
     }
 
     .captcha-question {
-        min-width: auto;
-    }
-
-    .message-container {
-        left: 20px;
-        right: 20px;
-        max-width: none;
+        min-width: 120px;
     }
 }
 
-@media (max-width: 480px) {
-    /* Page title responsive removed - handled by main.css */
-
-    .contact-form {
-        padding: var(--spacing-6);
+/* Dark mode — system preference */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .message-success {
+        background: #1a3a2a;
+        color: #86efac;
+        border-color: #2d5a3e;
     }
+
+    :root:not([data-theme="light"]) .message-error {
+        background: #3b1c22;
+        color: #fca5a5;
+        border-color: #5a2d35;
+    }
+
+    :root:not([data-theme="light"]) .form-input:focus,
+    :root:not([data-theme="light"]) .form-textarea:focus {
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+    }
+}
+
+/* Dark mode — manual toggle */
+[data-theme="dark"] .message-success {
+    background: #1a3a2a;
+    color: #86efac;
+    border-color: #2d5a3e;
+}
+
+[data-theme="dark"] .message-error {
+    background: #3b1c22;
+    color: #fca5a5;
+    border-color: #5a2d35;
+}
+
+[data-theme="dark"] .form-input:focus,
+[data-theme="dark"] .form-textarea:focus {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }
