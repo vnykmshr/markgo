@@ -19,7 +19,7 @@ Complete documentation for MarkGo - a high-performance file-based blog engine bu
 ## 🏗️ Architecture & Development
 
 - [Architecture Guide](architecture.md) - Technical architecture and design
-- [Contributing Guide](../CONTRIBUTING.md) - How to contribute
+- [Contributing Guide](../.github/CONTRIBUTING.md) - How to contribute
 
 ## 📚 Reference Documentation
 
@@ -28,8 +28,8 @@ Complete documentation for MarkGo - a high-performance file-based blog engine bu
 
 ## 🔐 Security & Quality
 
-- [Security Guide](../SECURITY.md) - Security best practices and reporting
-- [Code of Conduct](CODE_OF_CONDUCT.md) - Community guidelines
+- [Security Guide](../.github/SECURITY.md) - Security best practices and reporting
+- [Code of Conduct](../.github/CODE_OF_CONDUCT.md) - Community guidelines
 
 ## 📝 Release Information
 

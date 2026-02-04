@@ -8,6 +8,21 @@ A high-performance blog engine built with Go. MarkGo combines file-based content
 
 **[Live Demo](https://vnykmshr.github.io/markgo/)**
 
+## Quick Start
+
+**Download a release** from [GitHub Releases](https://github.com/vnykmshr/markgo/releases), or **build from source**:
+
+```bash
+git clone https://github.com/vnykmshr/markgo && cd markgo
+make build
+
+./build/markgo init --quick
+./build/markgo serve
+# Visit http://localhost:3000
+```
+
+See [Getting Started Guide](docs/GETTING-STARTED.md) for detailed setup instructions.
+
 ## Features
 
 **Performance**
@@ -34,248 +49,78 @@ A high-performance blog engine built with Go. MarkGo combines file-based content
 - Environment variable configuration
 - Extensive documentation
 
-## Quick Start
-
-### Option 1: Download Release
-
-Download the latest binary for your platform from [GitHub Releases](https://github.com/vnykmshr/markgo/releases):
+## Usage
 
 ```bash
-# Linux (amd64)
-curl -L -o markgo https://github.com/vnykmshr/markgo/releases/latest/download/markgo-linux-amd64
-chmod +x markgo
-
-# Initialize and start
-./markgo init --quick
-./markgo serve
-
-# Visit http://localhost:3000
+markgo init [--quick]                    # Initialize a new blog
+markgo serve                             # Start the web server
+markgo new [--title "..." --tags "..."]  # Create an article
+markgo export --output ./public          # Export to static site
 ```
-
-### Option 2: Build from Source
-
-```bash
-git clone https://github.com/vnykmshr/markgo
-cd markgo
-make build
-
-./build/markgo init --quick
-./build/markgo serve
-```
-
-### Create Articles
-
-```bash
-# Interactive creation
-markgo new
-
-# Quick creation
-markgo new --title "Hello World" --tags "introduction,getting-started"
-```
-
-### Deploy to GitHub Pages
-
-1. Fork this repository
-2. Enable GitHub Pages: Settings > Pages > Source: GitHub Actions
-3. Push changes - site auto-deploys to `https://yourusername.github.io/markgo`
-
-See [Getting Started Guide](docs/GETTING-STARTED.md) for detailed setup instructions.
-
-## Project Structure
-
-```
-markgo/
-├── cmd/markgo/       # Unified CLI binary
-├── internal/         # Private packages
-│   ├── commands/     # CLI commands (serve, init, new, export)
-│   ├── config/       # Configuration management
-│   ├── handlers/     # HTTP handlers
-│   ├── middleware/   # HTTP middleware
-│   ├── models/       # Data structures
-│   └── services/     # Business logic
-├── web/              # Templates and static files
-│   ├── static/       # CSS, JS, images
-│   └── templates/    # HTML templates
-├── articles/         # Blog content (Markdown)
-├── deployments/      # Docker and deployment configs
-└── docs/             # Documentation
-```
-
-## Writing Articles
-
-Articles are Markdown files with YAML frontmatter:
-
-```markdown
----
-title: "Your Article Title"
-description: "Article description for SEO"
-date: 2024-01-15T10:00:00Z
-published: true
-tags: ["golang", "blogging", "tutorial"]
-categories: ["Technical"]
-author: "Your Name"
----
-
-# Your Article Content
-
-Write your article using Markdown...
-```
-
-### Article Features
-
-- Automatic excerpt generation
-- Reading time estimation
-- Tag and category organization
-- SEO automation with Schema.org structured data
-- Dynamic sitemap generation
-- Social media optimization (Open Graph, Twitter Cards)
-- Multiple Markdown file extensions: `.md`, `.markdown`, `.mdown`, `.mkd`
 
 ## Configuration
 
-MarkGo is configured via environment variables. Copy `.env.example` to `.env`:
+Configure via environment variables. Copy `.env.example` to `.env`:
 
 ```bash
-# Basic configuration
 BLOG_TITLE="Your Blog Title"
-BLOG_DESCRIPTION="Your blog description"
 BLOG_AUTHOR="Your Name"
 BASE_URL="https://yourdomain.com"
-
-# Performance
 CACHE_ENABLED=true
-CACHE_TTL=3600
-
-# Features
 SEARCH_ENABLED=true
-RSS_ENABLED=true
-CONTACT_ENABLED=true
 ```
 
 See [Configuration Guide](docs/configuration.md) for complete options.
 
 ## Deployment
 
-### Static Sites
-
+**Static export** (GitHub Pages, Netlify, Vercel):
 ```bash
-# Export to static site
-./build/markgo export --output ./public --base-url https://yourdomain.com
+markgo export --output ./public --base-url https://yourdomain.com
 ```
 
-Example: [vnykmshr.github.io/markgo](https://vnykmshr.github.io/markgo/)
-
-See [Static Export Guide](docs/static-export.md) for hosting options.
-
-### Docker
-
+**Docker**:
 ```bash
 docker compose up -d
 ```
 
-### Manual Deployment
-
+**Manual** (systemd):
 ```bash
-# Build for production
 make build
-
-# Deploy to server
 scp build/markgo server:/usr/local/bin/
-
-# Install systemd service (Linux)
 sudo cp deployments/markgo.service /etc/systemd/system/
-sudo systemctl enable markgo
-sudo systemctl start markgo
+sudo systemctl enable --now markgo
 ```
 
-### Build Commands
+See [Deployment Guide](docs/deployment.md) and [Static Export Guide](docs/static-export.md) for details.
+
+## Development
 
 ```bash
-make build          # Build for current platform
-make build-release  # Build for all platforms (Linux, macOS, Windows)
-make docker         # Build and run Docker container
-```
-
-## Testing
-
-```bash
-make test           # Run tests
-make test-race      # Run tests with race detection
-make coverage       # Generate coverage report
-make lint           # Run linter (golangci-lint v2)
+make dev             # Start dev server with hot reload
+make build           # Build for current platform
+make build-release   # Build for all platforms
+make fmt             # Format code
+make lint            # Run linter (golangci-lint v2)
+make test            # Run tests
+make test-race       # Run tests with race detection
+make coverage        # Generate coverage report
 ```
 
 ## Documentation
 
-- [Getting Started Guide](docs/GETTING-STARTED.md) - Detailed setup walkthrough
-- [Configuration Guide](docs/configuration.md) - All configuration options
-- [Deployment Guide](docs/deployment.md) - Production deployment strategies
-- [Static Export Guide](docs/static-export.md) - GitHub Pages, Netlify, Vercel
-- [Architecture Guide](docs/architecture.md) - Technical architecture and design
-- [API Documentation](docs/API.md) - HTTP endpoints and responses
-- [Operational Runbook](docs/RUNBOOK.md) - Operations and troubleshooting
-- [Contributing Guide](CONTRIBUTING.md) - How to contribute
-
-See [docs/](docs/) for complete documentation.
-
-## Development
-
-### Prerequisites
-
-```bash
-make lint                 # Run linting (requires golangci-lint)
-make fmt                  # Format code
-make test                 # Run all tests
-```
-
-### Hot Reload
-
-```bash
-make dev    # Start development server with hot reload
-```
-
-Changes to templates and configuration are automatically reloaded.
+- [Getting Started](docs/GETTING-STARTED.md) - Setup walkthrough
+- [Configuration](docs/configuration.md) - All configuration options
+- [Deployment](docs/deployment.md) - Production deployment strategies
+- [Static Export](docs/static-export.md) - GitHub Pages, Netlify, Vercel
+- [Architecture](docs/architecture.md) - Technical architecture and design
+- [API](docs/API.md) - HTTP endpoints and responses
+- [Runbook](docs/RUNBOOK.md) - Operations and troubleshooting
+- [Benchmarks](docs/BENCHMARKS.md) - Performance metrics
 
 ## Contributing
 
-Contributions welcome. See [Contributing Guide](CONTRIBUTING.md) for details.
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/name`
-3. Make changes and add tests
-4. Run `make fmt && make lint && make test`
-5. Commit: `git commit -m 'Add feature'`
-6. Push: `git push origin feature/name`
-7. Open a Pull Request
-
-## Performance Comparison
-
-| Platform | Type | Memory | Dependencies |
-|----------|------|--------|--------------|
-| MarkGo   | Dynamic server | ~30MB | Single binary (~27MB) |
-| Ghost    | Dynamic server | ~200MB | Node.js + SQLite |
-| WordPress| Dynamic server | ~100MB | PHP + MySQL |
-| Hugo     | Static generator | Build-time | Go binary |
-
-See [BENCHMARKS.md](docs/BENCHMARKS.md) for detailed metrics.
-
-## Key Advantages
-
-- **Git-based content**: Version control and easy backups
-- **Performance**: Native Go speed and efficiency
-- **Deployment flexibility**: Dynamic server or static export
-- **Simplicity**: Single binary, no external dependencies
-- **Security**: Rate limiting and input validation built-in
-- **Portability**: File-based content, easy migration
-
-Read the [Architecture Guide](docs/architecture.md) for technical details.
-
-## Links
-
-- [Live Demo](https://vnykmshr.github.io/markgo/)
-- [Documentation](docs/)
-- [Issue Tracker](https://github.com/vnykmshr/markgo/issues)
-- [Discussions](https://github.com/vnykmshr/markgo/discussions)
+Contributions welcome. See [Contributing Guide](.github/CONTRIBUTING.md) for details.
 
 ## License
 

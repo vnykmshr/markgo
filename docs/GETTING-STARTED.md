@@ -366,7 +366,7 @@ Now that you're up and running:
 - [Architecture Guide](./architecture.md)
 - [Deployment Guide](./deployment.md)
 - [API Documentation](./API.md)
-- [Contributing](../CONTRIBUTING.md)
+- [Contributing](../.github/CONTRIBUTING.md)
 
 ---
 

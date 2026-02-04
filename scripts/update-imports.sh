@@ -111,7 +111,7 @@ update_go_mod() {
 update_documentation() {
     echo -e "${BLUE}📚 Updating documentation...${NC}"
     
-    local doc_files=("README.md" "CONTRIBUTING.md" "docs/"*.md)
+    local doc_files=("README.md" ".github/CONTRIBUTING.md" "docs/"*.md)
     local count=0
     
     for pattern in "${doc_files[@]}"; do
