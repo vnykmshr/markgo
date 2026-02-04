@@ -72,3 +72,6 @@ todos/
 # Temporary generated articles (for testing)
 temp_articles/
 .env
+
+# Playwright MCP browser data
+.playwright-mcp/
