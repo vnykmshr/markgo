@@ -175,6 +175,7 @@ html {
     line-height: 1.6;
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
+    overflow-x: hidden;
 }
 
 body {
@@ -501,7 +502,8 @@ html {
 }
 
 .navbar-brand {
-    flex-shrink: 0;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .brand-link {
@@ -514,14 +516,14 @@ html {
 }
 
 .brand-title {
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-lg);
     font-weight: 700;
     margin: 0;
     color: var(--color-text-primary);
 }
 
 .brand-subtitle {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     color: var(--color-text-muted);
     margin: 0;
     margin-top: var(--spacing-1);
@@ -1166,6 +1168,18 @@ html {
 
     .navbar-toggle {
         display: none;
+    }
+
+    .navbar-brand {
+        overflow: visible;
+    }
+
+    .brand-title {
+        font-size: var(--font-size-2xl);
+    }
+
+    .brand-subtitle {
+        font-size: var(--font-size-sm);
     }
 
     .hero-title {
