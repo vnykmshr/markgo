@@ -639,9 +639,10 @@ html {
         var(--color-bg-secondary) 0%,
         var(--color-bg-primary) 100%
     );
-    padding: var(--spacing-8) 0 var(--spacing-6) 0;
+    padding: var(--spacing-8) 0 var(--spacing-8) 0;
     text-align: center;
     border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--spacing-4);
 }
 
 .page-title {
@@ -1126,7 +1127,8 @@ html {
     }
 
     .page-header {
-        padding: var(--spacing-12) 0 var(--spacing-8) 0;
+        padding: var(--spacing-12) 0 var(--spacing-10) 0;
+        margin-bottom: var(--spacing-6);
     }
 
     .page-content {
@@ -1192,6 +1194,7 @@ html {
 
     .page-header {
         padding: var(--spacing-16) 0 var(--spacing-12) 0;
+        margin-bottom: var(--spacing-8);
     }
 
     .section-header {
