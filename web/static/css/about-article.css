@@ -748,21 +748,6 @@
     text-decoration: none;
 }
 
-.share-button.twitter:hover {
-    background-color: #1da1f2;
-    border-color: #1da1f2;
-}
-
-.share-button.linkedin:hover {
-    background-color: #0077b5;
-    border-color: #0077b5;
-}
-
-.share-button.facebook:hover {
-    background-color: #1877f2;
-    border-color: #1877f2;
-}
-
 .share-button svg {
     width: 16px;
     height: 16px;
@@ -884,7 +869,7 @@
     right: 2px;
     width: 14px;
     height: 14px;
-    background: #10b981;
+    background: var(--color-success);
     border-radius: 50%;
     border: 2px solid white;
     animation: pulse 2s infinite;
@@ -933,9 +918,9 @@
 
 /* Tech Stack Card */
 .tech-stack-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
 }
 
 .tech-grid {
@@ -949,21 +934,19 @@
     align-items: center;
     gap: var(--spacing-3);
     padding: var(--spacing-2);
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-bg-primary);
     border-radius: var(--radius-lg);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--color-border);
     transition: all var(--transition-fast);
 }
 
 .tech-item:hover {
     transform: translateX(4px);
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--color-bg-tertiary);
 }
 
 .tech-item.primary {
-    background: rgba(255, 215, 0, 0.2);
-    border-color: rgba(255, 215, 0, 0.4);
+    border-color: var(--color-primary);
 }
 
 .tech-icon {
@@ -975,25 +958,18 @@
     justify-content: center;
     font-size: var(--font-size-xs);
     font-weight: 800;
-    color: white;
+    color: var(--color-text-inverse);
     flex-shrink: 0;
 }
 
-.tech-icon.go {
-    background: #00add8;
-}
-
-.tech-icon.js {
-    background: #f7df1e;
-    color: #000;
-}
-
-.tech-icon.py {
-    background: #3776ab;
+.tech-icon.go,
+.tech-icon.js,
+.tech-icon.py,
+.tech-icon.docker {
+    background: var(--color-primary-dark);
 }
 
 .tech-icon.docker {
-    background: #2496ed;
     font-size: var(--font-size-lg);
 }
 
@@ -1017,14 +993,14 @@
 .level-bar {
     flex: 1;
     height: 4px;
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--color-border);
     border-radius: var(--radius-full);
     overflow: hidden;
 }
 
 .level-fill {
     height: 100%;
-    background: linear-gradient(90deg, #10b981, #34d399);
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
     border-radius: var(--radius-full);
     transition: width 1s ease-out;
 }
@@ -1032,14 +1008,14 @@
 .level-text {
     font-size: var(--font-size-xs);
     font-weight: 500;
-    opacity: 0.9;
+    color: var(--color-text-muted);
 }
 
 /* Stats Card */
 .stats-card {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    color: white;
-    border: none;
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
 }
 
 .stats-grid {
@@ -1051,31 +1027,30 @@
 .stat-item {
     text-align: center;
     padding: var(--spacing-3);
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-bg-primary);
     border-radius: var(--radius-lg);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--color-border);
 }
 
 .stat-number {
     display: block;
     font-size: var(--font-size-xl);
     font-weight: 800;
-    color: white;
+    color: var(--color-primary);
     margin-bottom: var(--spacing-1);
 }
 
 .stat-label {
     font-size: var(--font-size-xs);
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--color-text-muted);
     font-weight: 500;
 }
 
 /* Interests Card */
 .interests-card {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    color: white;
-    border: none;
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
 }
 
 .interests-grid {
@@ -1089,16 +1064,15 @@
     align-items: center;
     gap: var(--spacing-2);
     padding: var(--spacing-2);
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-bg-primary);
     border-radius: var(--radius-md);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--color-border);
     transition: all var(--transition-fast);
 }
 
 .interest-item:hover {
     transform: scale(1.02);
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--color-bg-tertiary);
 }
 
 .interest-emoji {
@@ -1109,14 +1083,14 @@
 .interest-text {
     font-size: var(--font-size-xs);
     font-weight: 500;
-    color: white;
+    color: var(--color-text-primary);
 }
 
 /* Focus Card */
 .focus-card {
-    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    background: var(--color-bg-secondary);
     color: var(--color-text-primary);
-    border: none;
+    border: 1px solid var(--color-border);
 }
 
 .focus-items {
@@ -1129,9 +1103,9 @@
     display: flex;
     gap: var(--spacing-3);
     padding: var(--spacing-3);
-    background: rgba(255, 255, 255, 0.6);
+    background: var(--color-bg-primary);
     border-radius: var(--radius-lg);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+    border: 1px solid var(--color-border);
     transition: all var(--transition-fast);
 }
 
@@ -1141,8 +1115,8 @@
 }
 
 .focus-item.featured {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.9));
-    border: 2px solid rgba(168, 237, 234, 0.5);
+    background: var(--color-bg-primary);
+    border: 2px solid var(--color-primary);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
@@ -1181,7 +1155,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #10b981;
+    background: var(--color-success);
 }
 
 .status-indicator.active {
@@ -1196,12 +1170,8 @@
 
 /* Categories Card Enhancement */
 .categories-card {
-    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-    border: none;
-}
-
-.categories-card .card-title {
-    color: var(--color-text-primary);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
 }
 
 /* Infographic cards — mobile defaults */

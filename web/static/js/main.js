@@ -638,20 +638,15 @@
       transition: "all 0.3s ease",
     });
 
-    // Set background color based on type
-    switch (type) {
-      case "success":
-        message.style.backgroundColor = "#10b981";
-        break;
-      case "error":
-        message.style.backgroundColor = "#ef4444";
-        break;
-      case "warning":
-        message.style.backgroundColor = "#f59e0b";
-        break;
-      default:
-        message.style.backgroundColor = "#3b82f6";
-    }
+    // Set background color from design tokens with hardcoded fallbacks
+    const style = getComputedStyle(document.documentElement);
+    const colors = {
+      success: ['--color-success', '#10b981'],
+      error:   ['--color-error',   '#ef4444'],
+      warning: ['--color-warning', '#f59e0b'],
+    };
+    const [cssVar, fallback] = colors[type] || ['--color-primary', '#2563eb'];
+    message.style.backgroundColor = style.getPropertyValue(cssVar).trim() || fallback;
 
     document.body.appendChild(message);
 

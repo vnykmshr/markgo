@@ -198,20 +198,12 @@
     text-decoration: none;
 }
 
-.share-button.twitter:hover {
-    background-color: #1da1f2;
-    color: white;
-    border-color: #1da1f2;
-}
-.share-button.linkedin:hover {
-    background-color: #0077b5;
-    color: white;
-    border-color: #0077b5;
-}
+.share-button.twitter:hover,
+.share-button.linkedin:hover,
 .share-button.facebook:hover {
-    background-color: #1877f2;
+    background-color: var(--color-primary);
     color: white;
-    border-color: #1877f2;
+    border-color: var(--color-primary);
 }
 .share-button.copy-link:hover {
     background-color: var(--color-success);
