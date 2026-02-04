@@ -46,7 +46,7 @@ type AdminHandler struct {
 
 // NewAdminHandler creates a new admin handler
 func NewAdminHandler(
-	config *config.Config,
+	cfg *config.Config,
 	logger *slog.Logger,
 	templateService services.TemplateServiceInterface,
 	articleService services.ArticleServiceInterface,
@@ -56,7 +56,7 @@ func NewAdminHandler(
 	seoService services.SEOServiceInterface,
 ) *AdminHandler {
 	return &AdminHandler{
-		BaseHandler:     NewBaseHandler(config, logger, templateService, buildInfo, seoService),
+		BaseHandler:     NewBaseHandler(cfg, logger, templateService, buildInfo, seoService),
 		articleService:  articleService,
 		startTime:       startTime,
 		cachedFunctions: cachedFunctions,

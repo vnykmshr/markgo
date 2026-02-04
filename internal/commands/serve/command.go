@@ -140,7 +140,7 @@ func Run(args []string) {
 		CrawlDelay: cfg.SEO.RobotsCrawlDelay,
 		SitemapURL: cfg.BaseURL + "/sitemap.xml",
 	}
-	seoService := seo.NewHelper(articleService, siteConfig, robotsConfig, logger, cfg.SEO.Enabled)
+	seoService := seo.NewHelper(articleService, &siteConfig, &robotsConfig, logger, cfg.SEO.Enabled)
 	if cfg.SEO.Enabled {
 		logger.Info("SEO features enabled")
 	}

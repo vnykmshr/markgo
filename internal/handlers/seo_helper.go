@@ -13,10 +13,10 @@ type SEODataHelper struct {
 }
 
 // NewSEODataHelper creates a new SEO data helper
-func NewSEODataHelper(seoService services.SEOServiceInterface, config *config.Config) *SEODataHelper {
+func NewSEODataHelper(seoService services.SEOServiceInterface, cfg *config.Config) *SEODataHelper {
 	return &SEODataHelper{
 		seoService: seoService,
-		config:     config,
+		config:     cfg,
 	}
 }
 
@@ -115,7 +115,7 @@ func (h *SEODataHelper) GeneratePageSEOData(title, description, path string) map
 }
 
 // AddSEODataToTemplateData adds SEO data to existing template data
-func (h *SEODataHelper) AddSEODataToTemplateData(templateData map[string]interface{}, seoData map[string]interface{}) {
+func (h *SEODataHelper) AddSEODataToTemplateData(templateData, seoData map[string]interface{}) {
 	for key, value := range seoData {
 		templateData[key] = value
 	}

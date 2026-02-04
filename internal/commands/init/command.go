@@ -95,7 +95,7 @@ func Run(args []string) {
 	}
 
 	// Create blog structure
-	if err := createBlogStructure(targetDir, config); err != nil {
+	if err := createBlogStructure(targetDir, &config); err != nil {
 		apperrors.HandleCLIError(
 			apperrors.NewCLIError("blog creation", "Failed to create blog structure", err, 1),
 			cleanup,
@@ -104,7 +104,7 @@ func Run(args []string) {
 	}
 
 	// Show success message with next steps
-	showSuccessMessage(targetDir, config)
+	showSuccessMessage(targetDir, &config)
 }
 
 func validateDirectory(dir string) error {
@@ -183,7 +183,7 @@ func runInteractiveSetup() BlogConfig {
 	fmt.Println()
 
 	if !getConfirmation(reader, "Proceed with this configuration?") {
-		fmt.Println("Setup cancelled.")
+		fmt.Println("Setup canceled.")
 		os.Exit(0)
 	}
 
@@ -240,7 +240,7 @@ func getConfirmation(reader *bufio.Reader, prompt string) bool {
 	return input == "y" || input == "yes"
 }
 
-func createBlogStructure(dir string, config BlogConfig) error {
+func createBlogStructure(dir string, config *BlogConfig) error {
 	// Create directories
 	dirs := []string{
 		"articles",
@@ -290,7 +290,7 @@ func createBlogStructure(dir string, config BlogConfig) error {
 	return nil
 }
 
-func createEnvFile(dir string, config BlogConfig) error {
+func createEnvFile(dir string, config *BlogConfig) error {
 	baseURL := "http://localhost:" + config.Port
 	if config.Environment == "production" {
 		baseURL = "https://" + config.Domain
@@ -396,7 +396,7 @@ DEBUG=%s
 	return os.WriteFile(filepath.Join(dir, ".env"), []byte(content), 0o600)
 }
 
-func createSampleArticles(dir string, config BlogConfig) error {
+func createSampleArticles(dir string, config *BlogConfig) error {
 	articlesDir := filepath.Join(dir, "articles")
 
 	// Welcome article - use simpler template
@@ -511,7 +511,7 @@ func createSampleArticles(dir string, config BlogConfig) error {
 	return os.WriteFile(filepath.Join(articlesDir, "getting-started.md"), []byte(gettingStartedContent), 0o600)
 }
 
-func createBasicTemplates(dir string, config BlogConfig) error {
+func createBasicTemplates(dir string, config *BlogConfig) error {
 	// This is a basic implementation - in a real scenario, you'd copy from a templates directory
 	// For now, create a simple base template
 	templatesDir := filepath.Join(dir, "web", "templates")
@@ -665,7 +665,7 @@ article pre code {
 	return os.WriteFile(filepath.Join(cssDir, "style.css"), []byte(css), 0o600)
 }
 
-func createReadme(dir string, config BlogConfig) error {
+func createReadme(dir string, config *BlogConfig) error {
 	readme := "# " + config.Title + "\n\n" +
 		config.Description + "\n\n" +
 		"A fast, developer-friendly blog powered by [MarkGo](https://github.com/vnykmshr/markgo).\n\n" +
@@ -773,7 +773,7 @@ config.local.yaml
 	return os.WriteFile(filepath.Join(dir, ".gitignore"), []byte(gitignore), 0o600)
 }
 
-func showSuccessMessage(dir string, config BlogConfig) {
+func showSuccessMessage(dir string, config *BlogConfig) {
 	fmt.Println("🎉 MarkGo blog created successfully!")
 	fmt.Println()
 	fmt.Printf("📁 Location: %s\n", dir)

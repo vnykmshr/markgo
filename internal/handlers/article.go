@@ -37,7 +37,7 @@ type ArticleHandler struct {
 
 // NewArticleHandler creates a new article handler
 func NewArticleHandler(
-	config *config.Config,
+	cfg *config.Config,
 	logger *slog.Logger,
 	templateService services.TemplateServiceInterface,
 	articleService services.ArticleServiceInterface,
@@ -47,7 +47,7 @@ func NewArticleHandler(
 	seoService services.SEOServiceInterface,
 ) *ArticleHandler {
 	return &ArticleHandler{
-		BaseHandler:     NewBaseHandler(config, logger, templateService, buildInfo, seoService),
+		BaseHandler:     NewBaseHandler(cfg, logger, templateService, buildInfo, seoService),
 		articleService:  articleService,
 		searchService:   searchService,
 		cachedFunctions: cachedFunctions,

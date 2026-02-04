@@ -298,7 +298,7 @@ func TestArticleBySlug(t *testing.T) {
 			router := gin.New()
 			router.GET("/articles/:slug", handler.Article)
 
-			req := httptest.NewRequest("GET", "/articles/"+tt.slug, nil)
+			req := httptest.NewRequest("GET", "/articles/"+tt.slug, http.NoBody)
 			w := httptest.NewRecorder()
 
 			router.ServeHTTP(w, req)
@@ -348,7 +348,7 @@ func TestArticlesListing(t *testing.T) {
 			router := gin.New()
 			router.GET("/articles", handler.Articles)
 
-			req := httptest.NewRequest("GET", "/articles"+tt.query, nil)
+			req := httptest.NewRequest("GET", "/articles"+tt.query, http.NoBody)
 			w := httptest.NewRecorder()
 
 			router.ServeHTTP(w, req)
@@ -406,7 +406,7 @@ func TestArticlesByTag(t *testing.T) {
 			router := gin.New()
 			router.GET("/tags/:tag", handler.ArticlesByTag)
 
-			req := httptest.NewRequest("GET", "/tags/"+tt.tag, nil)
+			req := httptest.NewRequest("GET", "/tags/"+tt.tag, http.NoBody)
 			w := httptest.NewRecorder()
 
 			router.ServeHTTP(w, req)
@@ -464,7 +464,7 @@ func TestArticlesByCategory(t *testing.T) {
 			router := gin.New()
 			router.GET("/categories/:category", handler.ArticlesByCategory)
 
-			req := httptest.NewRequest("GET", "/categories/"+tt.category, nil)
+			req := httptest.NewRequest("GET", "/categories/"+tt.category, http.NoBody)
 			w := httptest.NewRecorder()
 
 			router.ServeHTTP(w, req)
@@ -522,7 +522,7 @@ func TestSearch(t *testing.T) {
 			router := gin.New()
 			router.GET("/search", handler.Search)
 
-			req := httptest.NewRequest("GET", "/search"+tt.query, nil)
+			req := httptest.NewRequest("GET", "/search"+tt.query, http.NoBody)
 			w := httptest.NewRecorder()
 
 			router.ServeHTTP(w, req)
@@ -538,7 +538,7 @@ func TestHomePage(t *testing.T) {
 	router := gin.New()
 	router.GET("/", handler.Home)
 
-	req := httptest.NewRequest("GET", "/", nil)
+	req := httptest.NewRequest("GET", "/", http.NoBody)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -552,7 +552,7 @@ func TestTagsPage(t *testing.T) {
 	router := gin.New()
 	router.GET("/tags", handler.Tags)
 
-	req := httptest.NewRequest("GET", "/tags", nil)
+	req := httptest.NewRequest("GET", "/tags", http.NoBody)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -566,7 +566,7 @@ func TestCategoriesPage(t *testing.T) {
 	router := gin.New()
 	router.GET("/categories", handler.Categories)
 
-	req := httptest.NewRequest("GET", "/categories", nil)
+	req := httptest.NewRequest("GET", "/categories", http.NoBody)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)

@@ -115,7 +115,7 @@ func Run(args []string) {
 }
 
 func parseFlags(args []string) *ExportConfig {
-	config := &ExportConfig{
+	exportCfg := &ExportConfig{
 		OutputDir:     "./dist",
 		BaseURL:       "",
 		IncludeDrafts: false,
@@ -135,7 +135,7 @@ func parseFlags(args []string) *ExportConfig {
 				printUsage()
 				os.Exit(1)
 			}
-			config.OutputDir = args[i+1]
+			exportCfg.OutputDir = args[i+1]
 			i++
 		case "--base-url", "-u":
 			if i+1 >= len(args) {
@@ -143,12 +143,12 @@ func parseFlags(args []string) *ExportConfig {
 				printUsage()
 				os.Exit(1)
 			}
-			config.BaseURL = args[i+1]
+			exportCfg.BaseURL = args[i+1]
 			i++
 		case "--include-drafts", "-d":
-			config.IncludeDrafts = true
+			exportCfg.IncludeDrafts = true
 		case "--verbose", "-v":
-			config.Verbose = true
+			exportCfg.Verbose = true
 		case "--help", "-h":
 			printUsage()
 			os.Exit(0)
@@ -162,16 +162,16 @@ func parseFlags(args []string) *ExportConfig {
 	}
 
 	// Ensure output directory is absolute
-	if !filepath.IsAbs(config.OutputDir) {
+	if !filepath.IsAbs(exportCfg.OutputDir) {
 		wd, err := os.Getwd()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error getting working directory: %v\n", err)
 			os.Exit(1)
 		}
-		config.OutputDir = filepath.Join(wd, config.OutputDir)
+		exportCfg.OutputDir = filepath.Join(wd, exportCfg.OutputDir)
 	}
 
-	return config
+	return exportCfg
 }
 
 func printUsage() {

@@ -109,12 +109,12 @@ func Run(args []string) {
 		filename = dateStr + "-" + filename
 	}
 
-	filepath := filepath.Join(articlesDir, filename)
+	filePath := filepath.Join(articlesDir, filename)
 
 	// Validate output path
-	if err := ValidateOutputPath(filepath); err != nil {
+	if err := ValidateOutputPath(filePath); err != nil {
 		apperrors.HandleCLIError(
-			apperrors.NewCLIError("file path validation", fmt.Sprintf("Cannot create article file at '%s'", filepath), err, 1),
+			apperrors.NewCLIError("file path validation", fmt.Sprintf("Cannot create article file at '%s'", filePath), err, 1),
 			cleanup,
 		)
 		return
@@ -127,21 +127,21 @@ func Run(args []string) {
 
 	// Preview mode - show content without writing file
 	if *preview {
-		showPreview(content, filepath)
+		showPreview(content, filePath)
 		return
 	}
 
 	// Write article content
-	if err := os.WriteFile(filepath, []byte(content), 0o600); err != nil {
+	if err := os.WriteFile(filePath, []byte(content), 0o600); err != nil {
 		apperrors.HandleCLIError(
-			apperrors.NewCLIError("file creation", fmt.Sprintf("Failed to write article file '%s'", filepath), err, 1),
+			apperrors.NewCLIError("file creation", fmt.Sprintf("Failed to write article file '%s'", filePath), err, 1),
 			cleanup,
 		)
 		return
 	}
 
 	// Show success message
-	showSuccessMessage(filepath, selectedTemplate.Name, *title, *author, *tags, *category, *draft, *featured, *datePrefix)
+	showSuccessMessage(filePath, selectedTemplate.Name, *title, *author, *tags, *category, *draft, *featured, *datePrefix)
 }
 
 func shouldRunInteractive(fs *flag.FlagSet) bool {
@@ -447,10 +447,10 @@ func listTemplates() {
 }
 
 // showPreview displays the generated article content without creating a file
-func showPreview(content, filepath string) {
+func showPreview(content, filePath string) {
 	fmt.Println("📄 Article Preview")
 	fmt.Println("==================")
-	fmt.Printf("Would be saved to: %s\n", filepath)
+	fmt.Printf("Would be saved to: %s\n", filePath)
 	fmt.Println()
 	fmt.Println("Content:")
 	fmt.Println("--------")
@@ -461,10 +461,10 @@ func showPreview(content, filepath string) {
 }
 
 // showSuccessMessage displays a comprehensive success message
-func showSuccessMessage(filepath, templateName, title, author, tags, category string, draft, featured, datePrefix bool) {
+func showSuccessMessage(filePath, templateName, title, author, tags, category string, draft, featured, datePrefix bool) {
 	fmt.Println("✅ Article Created Successfully!")
 	fmt.Println()
-	fmt.Printf("📁 File: %s\n", filepath)
+	fmt.Printf("📁 File: %s\n", filePath)
 	fmt.Printf("📝 Template: %s\n", templateName)
 	fmt.Printf("📄 Title: %s\n", title)
 	fmt.Printf("👤 Author: %s\n", author)

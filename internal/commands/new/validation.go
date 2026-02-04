@@ -28,42 +28,42 @@ type ValidationResult struct {
 }
 
 // ValidateArticleInput validates all article input parameters
-func ValidateArticleInput(title, description, tags, category, author string, template string) ValidationResult {
-	var errors []ValidationError
+func ValidateArticleInput(title, description, tags, category, author, template string) ValidationResult {
+	var errs []ValidationError
 
 	// Validate title
 	if titleErr := validateTitle(title); titleErr != nil {
-		errors = append(errors, *titleErr)
+		errs = append(errs, *titleErr)
 	}
 
 	// Validate description
 	if descErr := validateDescription(description); descErr != nil {
-		errors = append(errors, *descErr)
+		errs = append(errs, *descErr)
 	}
 
 	// Validate tags
 	if tagsErr := validateTags(tags); tagsErr != nil {
-		errors = append(errors, *tagsErr)
+		errs = append(errs, *tagsErr)
 	}
 
 	// Validate category
 	if catErr := validateCategory(category); catErr != nil {
-		errors = append(errors, *catErr)
+		errs = append(errs, *catErr)
 	}
 
 	// Validate author
 	if authorErr := validateAuthor(author); authorErr != nil {
-		errors = append(errors, *authorErr)
+		errs = append(errs, *authorErr)
 	}
 
 	// Validate template
 	if templateErr := validateTemplate(template); templateErr != nil {
-		errors = append(errors, *templateErr)
+		errs = append(errs, *templateErr)
 	}
 
 	return ValidationResult{
-		Valid:  len(errors) == 0,
-		Errors: errors,
+		Valid:  len(errs) == 0,
+		Errors: errs,
 	}
 }
 
@@ -326,10 +326,10 @@ func ValidateSlug(slug string) error {
 }
 
 // ShowValidationErrors displays validation errors in a user-friendly format
-func ShowValidationErrors(errors []ValidationError) {
+func ShowValidationErrors(errs []ValidationError) {
 	fmt.Println("❌ Validation failed:")
 	fmt.Println()
-	for i, err := range errors {
+	for i, err := range errs {
 		fmt.Printf("  %d. %s: %s\n", i+1, strings.ToUpper(err.Field[:1])+err.Field[1:], err.Message)
 		if err.Value != "" && len(err.Value) < 50 {
 			fmt.Printf("     Value: '%s'\n", err.Value)

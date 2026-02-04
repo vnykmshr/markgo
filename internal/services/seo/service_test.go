@@ -87,7 +87,7 @@ func createTestHelper() (*Helper, *MockArticleService) {
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
-	helper := NewHelper(mockArticles, siteConfig, robotsConfig, logger, true)
+	helper := NewHelper(mockArticles, &siteConfig, &robotsConfig, logger, true)
 	return helper, mockArticles
 }
 
@@ -192,7 +192,7 @@ func TestDisabledHelper(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 	// Create disabled helper
-	helper := NewHelper(mockArticles, siteConfig, robotsConfig, logger, false)
+	helper := NewHelper(mockArticles, &siteConfig, &robotsConfig, logger, false)
 
 	if helper.IsEnabled() {
 		t.Error("Helper should be disabled")

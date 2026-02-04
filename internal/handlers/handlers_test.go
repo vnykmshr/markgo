@@ -326,7 +326,7 @@ func TestAdminEndpoints(t *testing.T) {
 		router := gin.New()
 		router.GET("/admin/stats", adminHandler.Stats)
 
-		req := httptest.NewRequest("GET", "/admin/stats", nil)
+		req := httptest.NewRequest("GET", "/admin/stats", http.NoBody)
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
@@ -349,7 +349,7 @@ func TestHealthEndpoint(t *testing.T) {
 	router := gin.New()
 	router.GET("/health", handler.Health)
 
-	req := httptest.NewRequest("GET", "/health", nil)
+	req := httptest.NewRequest("GET", "/health", http.NoBody)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)

@@ -31,7 +31,7 @@ func TestCORS(t *testing.T) {
 			c.String(200, "ok")
 		})
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest("GET", "/test", http.NoBody)
 		req.Header.Set("Origin", "https://example.com")
 		w := httptest.NewRecorder()
 
@@ -50,7 +50,7 @@ func TestCORS(t *testing.T) {
 			c.String(200, "ok")
 		})
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest("GET", "/test", http.NoBody)
 		req.Header.Set("Origin", "https://evil.com")
 		w := httptest.NewRecorder()
 
@@ -70,7 +70,7 @@ func TestCORS(t *testing.T) {
 		})
 
 		// Try to bypass with localhost.evil.com (should be rejected)
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest("GET", "/test", http.NoBody)
 		req.Header.Set("Origin", "http://localhost.evil.com")
 		w := httptest.NewRecorder()
 
@@ -89,7 +89,7 @@ func TestCORS(t *testing.T) {
 			c.String(200, "ok")
 		})
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest("GET", "/test", http.NoBody)
 		req.Header.Set("Origin", "http://localhost:3000")
 		w := httptest.NewRecorder()
 
@@ -107,7 +107,7 @@ func TestCORS(t *testing.T) {
 			c.String(200, "ok")
 		})
 
-		req := httptest.NewRequest("OPTIONS", "/test", nil)
+		req := httptest.NewRequest("OPTIONS", "/test", http.NoBody)
 		req.Header.Set("Origin", "https://example.com")
 		w := httptest.NewRecorder()
 
@@ -125,7 +125,7 @@ func TestCORS(t *testing.T) {
 			c.String(200, "ok")
 		})
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest("GET", "/test", http.NoBody)
 		// No Origin header
 		w := httptest.NewRecorder()
 
@@ -148,7 +148,7 @@ func TestRateLimit(t *testing.T) {
 
 		// Make 5 requests (within limit)
 		for i := 0; i < 5; i++ {
-			req := httptest.NewRequest("GET", "/test", nil)
+			req := httptest.NewRequest("GET", "/test", http.NoBody)
 			req.RemoteAddr = "192.168.1.1:12345"
 			w := httptest.NewRecorder()
 
@@ -167,7 +167,7 @@ func TestRateLimit(t *testing.T) {
 
 		// Make 3 requests (at limit)
 		for i := 0; i < 3; i++ {
-			req := httptest.NewRequest("GET", "/test", nil)
+			req := httptest.NewRequest("GET", "/test", http.NoBody)
 			req.RemoteAddr = "192.168.1.2:12345"
 			w := httptest.NewRecorder()
 
@@ -177,7 +177,7 @@ func TestRateLimit(t *testing.T) {
 		}
 
 		// 4th request should be blocked
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest("GET", "/test", http.NoBody)
 		req.RemoteAddr = "192.168.1.2:12345"
 		w := httptest.NewRecorder()
 
@@ -196,7 +196,7 @@ func TestRateLimit(t *testing.T) {
 
 		// IP1: 2 requests (at limit)
 		for i := 0; i < 2; i++ {
-			req := httptest.NewRequest("GET", "/test", nil)
+			req := httptest.NewRequest("GET", "/test", http.NoBody)
 			req.RemoteAddr = "192.168.1.3:12345"
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
@@ -205,7 +205,7 @@ func TestRateLimit(t *testing.T) {
 
 		// IP2: 2 requests (should also succeed - different IP)
 		for i := 0; i < 2; i++ {
-			req := httptest.NewRequest("GET", "/test", nil)
+			req := httptest.NewRequest("GET", "/test", http.NoBody)
 			req.RemoteAddr = "192.168.1.4:12345"
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
@@ -221,20 +221,20 @@ func TestRateLimit(t *testing.T) {
 		})
 
 		// Same IP with different ports should be treated as same client
-		req1 := httptest.NewRequest("GET", "/test", nil)
+		req1 := httptest.NewRequest("GET", "/test", http.NoBody)
 		req1.RemoteAddr = "192.168.1.5:11111"
 		w1 := httptest.NewRecorder()
 		router.ServeHTTP(w1, req1)
 		assert.Equal(t, 200, w1.Code)
 
-		req2 := httptest.NewRequest("GET", "/test", nil)
+		req2 := httptest.NewRequest("GET", "/test", http.NoBody)
 		req2.RemoteAddr = "192.168.1.5:22222" // Different port, same IP
 		w2 := httptest.NewRecorder()
 		router.ServeHTTP(w2, req2)
 		assert.Equal(t, 200, w2.Code)
 
 		// 3rd request should be blocked (same IP, at limit)
-		req3 := httptest.NewRequest("GET", "/test", nil)
+		req3 := httptest.NewRequest("GET", "/test", http.NoBody)
 		req3.RemoteAddr = "192.168.1.5:33333"
 		w3 := httptest.NewRecorder()
 		router.ServeHTTP(w3, req3)
@@ -250,7 +250,7 @@ func TestSecurity(t *testing.T) {
 		c.String(200, "ok")
 	})
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -271,7 +271,7 @@ func TestLogger(t *testing.T) {
 		c.String(200, "ok")
 	})
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -288,7 +288,7 @@ func TestNoCache(t *testing.T) {
 		c.String(200, "ok")
 	})
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -307,7 +307,7 @@ func TestSmartCacheHeaders(t *testing.T) {
 		c.String(200, "ok")
 	})
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)

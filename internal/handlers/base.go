@@ -26,7 +26,7 @@ type BaseHandler struct {
 
 // NewBaseHandler creates a new base handler
 func NewBaseHandler(
-	config *config.Config,
+	cfg *config.Config,
 	logger *slog.Logger,
 	templateService services.TemplateServiceInterface,
 	buildInfo *BuildInfo,
@@ -34,11 +34,11 @@ func NewBaseHandler(
 ) *BaseHandler {
 	var seoHelper *SEODataHelper
 	if seoService != nil {
-		seoHelper = NewSEODataHelper(seoService, config)
+		seoHelper = NewSEODataHelper(seoService, cfg)
 	}
 
 	return &BaseHandler{
-		config:          config,
+		config:          cfg,
 		logger:          logger,
 		templateService: templateService,
 		buildInfo:       buildInfo,

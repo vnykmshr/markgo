@@ -44,15 +44,15 @@ type URL struct {
 // NewHelper creates a new SEO helper instance
 func NewHelper(
 	articleService services.ArticleServiceInterface,
-	siteConfig services.SiteConfig,
-	robotsConfig services.RobotsConfig,
+	siteConfig *services.SiteConfig,
+	robotsConfig *services.RobotsConfig,
 	logger *slog.Logger,
 	enabled bool,
 ) *Helper {
 	return &Helper{
 		articleService: articleService,
-		siteConfig:     siteConfig,
-		robotsConfig:   robotsConfig,
+		siteConfig:     *siteConfig,
+		robotsConfig:   *robotsConfig,
 		logger:         logger,
 		enabled:        enabled,
 	}
@@ -219,7 +219,7 @@ func (h *Helper) GenerateOpenGraphTags(article *models.Article, baseURL string) 
 	}
 
 	// Image
-	imageURL := extractFirstImage(article.Content, baseURL, h.siteConfig)
+	imageURL := extractFirstImage(article.Content, baseURL, &h.siteConfig)
 	if imageURL != "" {
 		tags["og:image"] = imageURL
 		tags["og:image:alt"] = fmt.Sprintf("Featured image for %s", article.Title)
@@ -273,7 +273,7 @@ func (h *Helper) GenerateTwitterCardTags(article *models.Article, baseURL string
 	tags := make(map[string]string)
 
 	// Determine card type based on content
-	imageURL := extractFirstImage(article.Content, baseURL, h.siteConfig)
+	imageURL := extractFirstImage(article.Content, baseURL, &h.siteConfig)
 	if imageURL != "" {
 		tags["twitter:card"] = "summary_large_image"
 		tags["twitter:image"] = imageURL
@@ -458,7 +458,7 @@ func (h *Helper) GenerateArticleSchema(article *models.Article, baseURL string) 
 	}
 
 	// Extract first image from content if available
-	imageURL := extractFirstImage(article.Content, baseURL, h.siteConfig)
+	imageURL := extractFirstImage(article.Content, baseURL, &h.siteConfig)
 
 	schema := map[string]interface{}{
 		"@context": "https://schema.org",
@@ -705,7 +705,7 @@ func (h *Helper) buildArticleURL(slug string) (string, error) {
 
 // Standalone utility functions (stateless)
 
-func extractFirstImage(content, baseURL string, siteConfig services.SiteConfig) string {
+func extractFirstImage(content, baseURL string, siteConfig *services.SiteConfig) string {
 	lines := strings.Split(content, "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -785,7 +785,7 @@ func extractTwitterHandle(author string) string {
 		for _, part := range parts {
 			if strings.HasPrefix(part, "@") {
 				handle := strings.TrimPrefix(part, "@")
-				if len(handle) > 0 && len(handle) <= 15 {
+				if handle != "" && len(handle) <= 15 {
 					return "@" + handle
 				}
 			}

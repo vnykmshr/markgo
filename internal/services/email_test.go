@@ -209,13 +209,13 @@ func TestEmailService_SendNotification(t *testing.T) {
 
 func TestEmailService_BuildEmailMessage(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	config := config.EmailConfig{
+	cfg := config.EmailConfig{
 		Host: "smtp.example.com",
 		Port: 587,
 		From: "test@example.com",
 		To:   "recipient@example.com",
 	}
-	service := NewEmailService(&config, logger)
+	service := NewEmailService(&cfg, logger)
 
 	from := "sender@example.com"
 	to := "recipient@example.com"
@@ -239,8 +239,8 @@ func TestEmailService_BuildEmailMessage(t *testing.T) {
 
 func TestEmailService_GenerateContactEmailBody(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	config := config.EmailConfig{}
-	service := NewEmailService(&config, logger)
+	cfg := config.EmailConfig{}
+	service := NewEmailService(&cfg, logger)
 
 	message := &models.ContactMessage{
 		Name:    "John Doe",
@@ -390,7 +390,7 @@ func TestEmailService_SendTestEmail(t *testing.T) {
 
 func TestEmailService_GenerateTestEmailBody(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	config := config.EmailConfig{
+	cfg := config.EmailConfig{
 		Host:     "smtp.example.com",
 		Port:     587,
 		Username: "test@example.com",
@@ -398,7 +398,7 @@ func TestEmailService_GenerateTestEmailBody(t *testing.T) {
 		From:     "test@example.com",
 		To:       "recipient@example.com",
 	}
-	service := NewEmailService(&config, logger)
+	service := NewEmailService(&cfg, logger)
 
 	body := service.generateTestEmailBody()
 	assert.NotEmpty(t, body)
@@ -411,8 +411,8 @@ func TestEmailService_GenerateTestEmailBody(t *testing.T) {
 	// Check content
 	assert.Contains(t, body, "Email Service Test")
 	assert.Contains(t, body, "This is a test email")
-	assert.Contains(t, body, config.From)
-	assert.Contains(t, body, config.Host)
+	assert.Contains(t, body, cfg.From)
+	assert.Contains(t, body, cfg.Host)
 	assert.Contains(t, body, "587") // Port as string
 
 	// Check timestamp is included
@@ -513,8 +513,8 @@ func TestEmailService_ValidateConfig(t *testing.T) {
 
 func TestEmailService_IsValidEmail(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	config := config.EmailConfig{}
-	service := NewEmailService(&config, logger)
+	cfg := config.EmailConfig{}
+	service := NewEmailService(&cfg, logger)
 
 	tests := []struct {
 		email    string
@@ -597,7 +597,7 @@ func TestEmailService_GetConfig(t *testing.T) {
 
 func TestEmailService_SendEmail_InvalidSMTPConfig(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	config := config.EmailConfig{
+	cfg := config.EmailConfig{
 		Host:     "invalid.smtp.server.that.does.not.exist",
 		Port:     587,
 		Username: "test@example.com",
@@ -605,7 +605,7 @@ func TestEmailService_SendEmail_InvalidSMTPConfig(t *testing.T) {
 		From:     "test@example.com",
 		To:       "recipient@example.com",
 	}
-	service := NewEmailService(&config, logger)
+	service := NewEmailService(&cfg, logger)
 
 	err := service.sendEmail("recipient@example.com", "Test Subject", "Test Body")
 	assert.Error(t, err)
@@ -614,16 +614,16 @@ func TestEmailService_SendEmail_InvalidSMTPConfig(t *testing.T) {
 
 func TestEmailService_InterfaceCompliance(_ *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	config := config.EmailConfig{}
+	cfg := config.EmailConfig{}
 
 	// This test ensures EmailService implements EmailServiceInterface
-	var _ EmailServiceInterface = NewEmailService(&config, logger)
+	var _ EmailServiceInterface = NewEmailService(&cfg, logger)
 }
 
 func BenchmarkEmailService_BuildEmailMessage(b *testing.B) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	config := config.EmailConfig{}
-	service := NewEmailService(&config, logger)
+	cfg := config.EmailConfig{}
+	service := NewEmailService(&cfg, logger)
 
 	from := "sender@example.com"
 	to := "recipient@example.com"
@@ -638,8 +638,8 @@ func BenchmarkEmailService_BuildEmailMessage(b *testing.B) {
 
 func BenchmarkEmailService_GenerateContactEmailBody(b *testing.B) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	config := config.EmailConfig{}
-	service := NewEmailService(&config, logger)
+	cfg := config.EmailConfig{}
+	service := NewEmailService(&cfg, logger)
 
 	message := &models.ContactMessage{
 		Name:    "Benchmark User",
@@ -659,7 +659,7 @@ func BenchmarkEmailService_GenerateContactEmailBody(b *testing.B) {
 
 func BenchmarkEmailService_ValidateConfig(b *testing.B) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	config := config.EmailConfig{
+	cfg := config.EmailConfig{
 		Host:     "smtp.gmail.com",
 		Port:     587,
 		Username: "test@gmail.com",
@@ -667,7 +667,7 @@ func BenchmarkEmailService_ValidateConfig(b *testing.B) {
 		From:     "test@gmail.com",
 		To:       "recipient@gmail.com",
 	}
-	service := NewEmailService(&config, logger)
+	service := NewEmailService(&cfg, logger)
 
 	for b.Loop() {
 		errors := service.ValidateConfig()

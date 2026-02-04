@@ -37,7 +37,7 @@ type APIHandler struct {
 
 // NewAPIHandler creates a new API handler
 func NewAPIHandler(
-	config *config.Config,
+	cfg *config.Config,
 	logger *slog.Logger,
 	templateService services.TemplateServiceInterface,
 	articleService services.ArticleServiceInterface,
@@ -48,7 +48,7 @@ func NewAPIHandler(
 	seoService services.SEOServiceInterface,
 ) *APIHandler {
 	return &APIHandler{
-		BaseHandler:     NewBaseHandler(config, logger, templateService, buildInfo, seoService),
+		BaseHandler:     NewBaseHandler(cfg, logger, templateService, buildInfo, seoService),
 		articleService:  articleService,
 		emailService:    emailService,
 		startTime:       startTime,
