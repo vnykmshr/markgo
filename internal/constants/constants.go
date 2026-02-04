@@ -7,7 +7,7 @@ import "time"
 // Application metadata
 const (
 	AppName    = "MarkGo"
-	AppVersion = "v2.2.0"
+	AppVersion = "v2.3.1"
 )
 
 // Build-time variables injected via ldflags

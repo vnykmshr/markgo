@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.1] - 2026-02-04
+
+### Fixed
+
+- **78 golangci-lint issues resolved**: httpNoBody (25), importShadow (14), hugeParam (8), paramTypeCombine (3), unnecessaryBlock (3), errcheck (3), gosec G602 (1), gocyclo (1), emptyStringTest (1), misspell (1), revive naming (1), sprintfQuotedString nolint (3)
+- **Static export 404 page**: Export now generates `404.html` for GitHub Pages custom error handling
+- **Static export BuildInfo**: Footer shows actual version instead of "unknown" in exported sites
+- **Contact page title**: Now includes blog title suffix consistent with all other pages
+- **Page header layout inconsistency**: Standardized all pages to full-width hero pattern (categories, tags, contact, about)
+- **Page header spacing**: Added breathing space between hero sections and body content across all breakpoints
+- **Navbar tagline overflow**: Removed fallback to long description; empty tagline renders nothing
+- **Placeholder GitHub links**: Replaced `@yourusername` in contact and about templates with actual project URL
+
+### Changed
+
+- **Serve command refactored**: Extracted `setupServer` and `configureGinMode` to reduce `Run()` complexity (gocyclo fix)
+- **Export command**: `ExportConfig` renamed to `Config` to avoid package stutter (`export.Config`)
+
+---
+
 ## [2.3.0] - 2026-02-04
 
 ### Added
