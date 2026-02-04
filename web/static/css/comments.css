@@ -2,7 +2,7 @@
 .comments-section {
     margin-top: 3rem;
     padding-top: 2rem;
-    border-top: 1px solid var(--border-color, #e5e7eb);
+    border-top: 1px solid var(--color-border);
 }
 
 .comments-header {
@@ -17,16 +17,16 @@
     gap: 0.5rem;
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--text-primary, #1f2937);
+    color: var(--color-text-primary);
     margin: 0 0 0.5rem 0;
 }
 
 .comments-icon {
-    color: var(--accent-color, #3b82f6);
+    color: var(--color-accent);
 }
 
 .comments-description {
-    color: var(--text-secondary, #6b7280);
+    color: var(--color-text-secondary);
     font-size: 0.9rem;
     margin: 0;
     margin-left: auto;
@@ -45,15 +45,15 @@
 
 .comments-noscript {
     padding: 2rem;
-    background-color: var(--bg-secondary, #f9fafb);
-    border: 1px solid var(--border-color, #e5e7eb);
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     text-align: center;
-    color: var(--text-secondary, #6b7280);
+    color: var(--color-text-secondary);
 }
 
 .comments-noscript a {
-    color: var(--accent-color, #3b82f6);
+    color: var(--color-accent);
     text-decoration: none;
 }
 
@@ -64,8 +64,8 @@
 .comments-unavailable {
     padding: 2rem;
     text-align: center;
-    color: var(--text-secondary, #6b7280);
-    background-color: var(--bg-secondary, #f9fafb);
+    color: var(--color-text-secondary);
+    background-color: var(--color-bg-secondary);
     border-radius: 8px;
 }
 
@@ -74,40 +74,6 @@
     width: 100%;
     border: none;
     color-scheme: light dark;
-}
-
-/* Dark mode adjustments — system preference */
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .comments-title {
-        color: var(--text-primary-dark, #f9fafb);
-    }
-
-    :root:not([data-theme="light"]) .comments-description {
-        color: var(--text-secondary-dark, #9ca3af);
-    }
-
-    :root:not([data-theme="light"]) .comments-noscript,
-    :root:not([data-theme="light"]) .comments-unavailable {
-        background-color: var(--bg-secondary-dark, #1f2937);
-        border-color: var(--border-color-dark, #374151);
-        color: var(--text-secondary-dark, #9ca3af);
-    }
-}
-
-/* Dark mode adjustments — manual toggle */
-[data-theme="dark"] .comments-title {
-    color: var(--text-primary-dark, #f9fafb);
-}
-
-[data-theme="dark"] .comments-description {
-    color: var(--text-secondary-dark, #9ca3af);
-}
-
-[data-theme="dark"] .comments-noscript,
-[data-theme="dark"] .comments-unavailable {
-    background-color: var(--bg-secondary-dark, #1f2937);
-    border-color: var(--border-color-dark, #374151);
-    color: var(--text-secondary-dark, #9ca3af);
 }
 
 /* Responsive (Mobile-first) */
@@ -124,9 +90,9 @@
 
 /* Giscus Widget Styling */
 .giscus {
-    background: var(--bg-primary, #ffffff);
+    background: var(--color-bg-primary);
     border-radius: 6px;
-    border: 1px solid var(--border-color, #e5e7eb);
+    border: 1px solid var(--color-border);
     padding: 0.75rem;
     margin-top: 0.75rem;
 }
@@ -137,20 +103,6 @@
     border: none;
     width: 100%;
     background: transparent;
-}
-
-/* Dark mode container styling — system preference */
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .giscus {
-        background: var(--bg-primary-dark, #111827);
-        border-color: var(--border-color-dark, #374151);
-    }
-}
-
-/* Dark mode container styling — manual toggle */
-[data-theme="dark"] .giscus {
-    background: var(--bg-primary-dark, #111827);
-    border-color: var(--border-color-dark, #374151);
 }
 
 /* Giscus — tablet+ */
@@ -178,58 +130,26 @@
     justify-content: center;
     gap: 0.5rem;
     padding: 1rem;
-    color: var(--text-secondary, #6b7280);
+    color: var(--color-text-secondary);
     text-decoration: none;
-    border: 1px solid var(--border-color, #e5e7eb);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     font-size: 0.9rem;
     transition: all 0.2s ease;
-    background-color: var(--bg-primary, #ffffff);
+    background-color: var(--color-bg-primary);
 }
 
 .nav-back:hover,
 .nav-comments:hover {
-    color: var(--accent-color, #3b82f6);
-    border-color: var(--accent-color, #3b82f6);
-    background-color: var(--bg-secondary, #f9fafb);
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    background-color: var(--color-bg-secondary);
     text-decoration: none;
 }
 
 .nav-back svg,
 .nav-comments svg {
     flex-shrink: 0;
-}
-
-/* Dark mode for navigation — system preference */
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .nav-back,
-    :root:not([data-theme="light"]) .nav-comments {
-        color: var(--text-secondary-dark, #9ca3af);
-        border-color: var(--border-color-dark, #374151);
-        background-color: var(--bg-primary-dark, #111827);
-    }
-
-    :root:not([data-theme="light"]) .nav-back:hover,
-    :root:not([data-theme="light"]) .nav-comments:hover {
-        color: var(--accent-color-dark, #60a5fa);
-        border-color: var(--accent-color-dark, #60a5fa);
-        background-color: var(--bg-secondary-dark, #1f2937);
-    }
-}
-
-/* Dark mode for navigation — manual toggle */
-[data-theme="dark"] .nav-back,
-[data-theme="dark"] .nav-comments {
-    color: var(--text-secondary-dark, #9ca3af);
-    border-color: var(--border-color-dark, #374151);
-    background-color: var(--bg-primary-dark, #111827);
-}
-
-[data-theme="dark"] .nav-back:hover,
-[data-theme="dark"] .nav-comments:hover {
-    color: var(--accent-color-dark, #60a5fa);
-    border-color: var(--accent-color-dark, #60a5fa);
-    background-color: var(--bg-secondary-dark, #1f2937);
 }
 
 /* Article navigation — tablet+ */
