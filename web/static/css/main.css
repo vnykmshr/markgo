@@ -72,6 +72,20 @@
     --radius-2xl: 1rem;
     --radius-full: 9999px;
 
+    /* Feedback colors */
+    --color-success-bg: #d4edda;
+    --color-success-text: #155724;
+    --color-success-border: #c3e6cb;
+    --color-error-bg: #f8d7da;
+    --color-error-text: #721c24;
+    --color-error-border: #f5c6cb;
+
+    /* Focus ring */
+    --color-focus-ring: rgba(37, 99, 235, 0.1);
+
+    /* Scrolled header shadow */
+    --shadow-scrolled: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-base:
@@ -114,6 +128,14 @@
         --color-border: #334155;
         --color-border-light: #475569;
         --color-border-dark: #64748b;
+        --color-success-bg: #1a3a2a;
+        --color-success-text: #86efac;
+        --color-success-border: #2d5a3e;
+        --color-error-bg: #3b1c22;
+        --color-error-text: #fca5a5;
+        --color-error-border: #5a2d35;
+        --color-focus-ring: rgba(37, 99, 235, 0.25);
+        --shadow-scrolled: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
     }
 }
 
@@ -128,6 +150,14 @@
     --color-border: #334155;
     --color-border-light: #475569;
     --color-border-dark: #64748b;
+    --color-success-bg: #1a3a2a;
+    --color-success-text: #86efac;
+    --color-success-border: #2d5a3e;
+    --color-error-bg: #3b1c22;
+    --color-error-text: #fca5a5;
+    --color-error-border: #5a2d35;
+    --color-focus-ring: rgba(37, 99, 235, 0.25);
+    --shadow-scrolled: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
 }
 
 /* ==========================================================================
@@ -420,27 +450,9 @@ hr {
     z-index: var(--z-sticky);
 }
 
-/* Simple scroll shadow effect - no transparency */
+/* Simple scroll shadow effect */
 .navbar.scrolled {
-    box-shadow:
-        0 1px 3px 0 rgba(0, 0, 0, 0.1),
-        0 1px 2px 0 rgba(0, 0, 0, 0.06);
-}
-
-/* Dark mode scrolled header — system preference */
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .navbar.scrolled {
-        box-shadow:
-            0 1px 3px 0 rgba(0, 0, 0, 0.3),
-            0 1px 2px 0 rgba(0, 0, 0, 0.2);
-    }
-}
-
-/* Dark mode scrolled header — manual toggle */
-[data-theme="dark"] .navbar.scrolled {
-    box-shadow:
-        0 1px 3px 0 rgba(0, 0, 0, 0.3),
-        0 1px 2px 0 rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-scrolled);
 }
 
 /* Navbar base styles */
@@ -1288,6 +1300,21 @@ html {
     --color-primary-dark: #7e22ce;
     --color-accent: #a855f7;
     --color-success: #10b981;
+}
+
+/* ==========================================================================
+   Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 /* ==========================================================================

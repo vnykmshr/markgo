@@ -317,11 +317,11 @@
       }
 
       applyTheme(savedMode);
-      updateThemeToggle(getEffectiveMode(savedMode));
+      updateThemeToggle(resolveMode(savedMode));
 
       themeToggle.addEventListener("click", function () {
         try {
-          var currentMode = getEffectiveMode(null);
+          var currentMode = getCurrentMode();
           var newMode = currentMode === "dark" ? "light" : "dark";
 
           try {
@@ -344,7 +344,7 @@
             var saved = localStorage.getItem("theme");
             if (!saved) {
               applyTheme(null);
-              updateThemeToggle(getEffectiveMode(null));
+              updateThemeToggle(getCurrentMode());
             }
           } catch (e) {
             // ignore — localStorage or matchMedia failure
@@ -369,22 +369,27 @@
   }
 
   /**
-   * Get effective light/dark mode considering saved preference and system
+   * Resolve an explicit mode value to "dark" or "light", falling back to system preference.
    */
-  function getEffectiveMode(savedMode) {
-    if (savedMode === "dark" || savedMode === "light") return savedMode;
-    if (!savedMode) {
-      try {
-        savedMode = localStorage.getItem("theme");
-        if (savedMode === "dark" || savedMode === "light") return savedMode;
-      } catch (e) {
-        // ignore
-      }
-    }
+  function resolveMode(mode) {
+    if (mode === "dark" || mode === "light") return mode;
     if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
       return "dark";
     }
     return "light";
+  }
+
+  /**
+   * Get the current effective mode by reading localStorage then system preference.
+   */
+  function getCurrentMode() {
+    try {
+      var saved = localStorage.getItem("theme");
+      if (saved === "dark" || saved === "light") return saved;
+    } catch (e) {
+      // ignore
+    }
+    return resolveMode(null);
   }
 
   /**

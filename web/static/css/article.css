@@ -336,18 +336,3 @@
     }
 }
 
-/* Dark mode — system preference */
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .share-button {
-        background-color: var(--color-bg-secondary);
-        border-color: var(--color-border);
-        color: var(--color-text-secondary);
-    }
-}
-
-/* Dark mode — manual toggle */
-[data-theme="dark"] .share-button {
-    background-color: var(--color-bg-secondary);
-    border-color: var(--color-border);
-    color: var(--color-text-secondary);
-}
