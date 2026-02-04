@@ -71,7 +71,7 @@ func TestSearch_Basic(t *testing.T) {
 	assert.NotEmpty(t, results)
 	// Draft articles should be excluded
 	for _, r := range results {
-		assert.False(t, r.Article.Draft)
+		assert.False(t, r.Draft)
 	}
 }
 

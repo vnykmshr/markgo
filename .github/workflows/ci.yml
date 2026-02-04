@@ -35,8 +35,24 @@ jobs:
           exit 1
         fi
 
+    - name: Lint
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: latest
+        only-new-issues: true
+
     - name: Run tests
       run: go test -v -race -coverprofile=coverage.out ./...
+
+    - name: Check coverage threshold
+      run: |
+        COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+        echo "Total coverage: ${COVERAGE}%"
+        THRESHOLD=45
+        if [ "$(echo "$COVERAGE < $THRESHOLD" | bc -l)" -eq 1 ]; then
+          echo "Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
+          exit 1
+        fi
 
     - name: Security scan
       run: |
