@@ -300,16 +300,9 @@
   /**
    * Theme toggle functionality with error boundary
    *
-   * Two-axis theme system:
-   * 1. Color theme (from BLOG_THEME config via data-blog-theme): "default", "ocean", "forest", etc.
-   * 2. Light/dark mode (user preference or system): "light" or "dark"
-   *
-   * data-theme attribute values:
-   * - (none) — system preference controls light/dark, default color theme
-   * - "dark" — forced dark, default color theme
-   * - "light" — forced light, default color theme
-   * - "ocean" — ocean color theme, light mode
-   * - "ocean-dark" — ocean color theme, dark mode
+   * Two independent axes:
+   * 1. Color theme: data-color-theme attribute (server-rendered from BLOG_THEME config)
+   * 2. Light/dark mode: data-theme attribute ("dark", "light", or absent for auto)
    */
   function initThemeToggle() {
     var themeToggle = document.querySelector(".theme-toggle");
@@ -323,7 +316,6 @@
         console.warn("localStorage access failed:", localStorageError);
       }
 
-      // Apply saved light/dark preference combined with blog theme
       applyTheme(savedMode);
       updateThemeToggle(getEffectiveMode(savedMode));
 
@@ -344,41 +336,35 @@
           console.error("Theme toggle failed:", toggleError);
         }
       });
+
+      // Respond to system preference changes when no explicit choice is saved
+      if (window.matchMedia) {
+        window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
+          try {
+            var saved = localStorage.getItem("theme");
+            if (!saved) {
+              applyTheme(null);
+              updateThemeToggle(getEffectiveMode(null));
+            }
+          } catch (e) {
+            // ignore — localStorage or matchMedia failure
+          }
+        });
+      }
     } catch (error) {
       console.error("Theme toggle initialization failed:", error);
     }
   }
 
   /**
-   * Get the blog color theme from server-rendered attribute
-   */
-  function getBlogTheme() {
-    var blogTheme = document.documentElement.getAttribute("data-blog-theme");
-    if (!blogTheme || blogTheme === "default") return null;
-    return blogTheme;
-  }
-
-  /**
-   * Apply theme by combining blog color theme with light/dark mode
+   * Apply light/dark mode via data-theme attribute.
+   * Color theme is handled separately via data-color-theme (server-rendered).
    */
   function applyTheme(mode) {
-    var blogTheme = getBlogTheme();
-    var effectiveMode = getEffectiveMode(mode);
-
-    if (!blogTheme) {
-      // Default color theme — just set light/dark
-      if (mode === "dark" || mode === "light") {
-        document.documentElement.setAttribute("data-theme", mode);
-      } else {
-        document.documentElement.removeAttribute("data-theme");
-      }
+    if (mode === "dark" || mode === "light") {
+      document.documentElement.setAttribute("data-theme", mode);
     } else {
-      // Named color theme — combine with dark mode
-      if (effectiveMode === "dark") {
-        document.documentElement.setAttribute("data-theme", blogTheme + "-dark");
-      } else {
-        document.documentElement.setAttribute("data-theme", blogTheme);
-      }
+      document.documentElement.removeAttribute("data-theme");
     }
   }
 
@@ -387,7 +373,6 @@
    */
   function getEffectiveMode(savedMode) {
     if (savedMode === "dark" || savedMode === "light") return savedMode;
-    // Check localStorage if not passed
     if (!savedMode) {
       try {
         savedMode = localStorage.getItem("theme");
@@ -396,7 +381,6 @@
         // ignore
       }
     }
-    // Fall back to system preference
     if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
       return "dark";
     }
