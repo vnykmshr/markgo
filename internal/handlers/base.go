@@ -125,8 +125,8 @@ func (h *BaseHandler) enhanceWithSEO(data map[string]any, seoType string) {
 	case "home":
 		seoData = h.seoHelper.GenerateHomeSEOData()
 	case "page":
-		title, _ := data["title"].(string)
-		description, _ := data["description"].(string)
+		title, _ := data["title"].(string)             //nolint:errcheck // safe type assertion with zero-value fallback
+		description, _ := data["description"].(string) //nolint:errcheck // safe type assertion with zero-value fallback
 		path := ""
 		if pageData, ok := data["path"].(string); ok {
 			path = pageData

@@ -94,138 +94,14 @@ func Run(args []string) {
 	logger = loggingService.GetLogger()
 	slog.SetDefault(logger)
 
-	// Initialize services - using modular architecture
-	articleService, err := services.NewArticleService(cfg.ArticlesPath, logger)
+	// Initialize services and configure router
+	router, err := setupServer(cfg, logger)
 	if err != nil {
 		apperrors.HandleCLIError(
-			apperrors.NewCLIError("article service initialization", "Failed to initialize article service", err, 1),
+			apperrors.NewCLIError("server setup", "Failed to set up server", err, 1),
 			cleanup,
 		)
 	}
-
-	// Initialize obcache for handlers with performance optimizations
-	cacheConfig := obcache.NewDefaultConfig()
-	cacheConfig.MaxEntries = cfg.Cache.MaxSize
-	cacheConfig.DefaultTTL = cfg.Cache.TTL
-
-	// Set performance-optimized values for available configuration
-	// Note: obcache-go uses internal optimizations, so we focus on the key settings
-	logger.Info("Initializing cache with performance optimizations",
-		"max_entries", cacheConfig.MaxEntries,
-		"default_ttl", cacheConfig.DefaultTTL,
-		"cache_type", "obcache-go")
-
-	cache, err := obcache.New(cacheConfig)
-	if err != nil {
-		apperrors.HandleCLIError(
-			apperrors.NewCLIError("cache initialization", "Failed to initialize cache", err, 1),
-			cleanup,
-		)
-	}
-	emailService := services.NewEmailService(&cfg.Email, logger)
-	searchService := services.NewSearchService()
-
-	// Initialize SEO helper (stateless utility)
-	siteConfig := services.SiteConfig{
-		Name:        cfg.Blog.Title,
-		Description: cfg.Blog.Description,
-		BaseURL:     cfg.BaseURL,
-		Language:    cfg.Blog.Language,
-		Author:      cfg.Blog.Author,
-	}
-	robotsConfig := services.RobotsConfig{
-		UserAgent:  "*",
-		Allow:      cfg.SEO.RobotsAllowed,
-		Disallow:   cfg.SEO.RobotsDisallowed,
-		CrawlDelay: cfg.SEO.RobotsCrawlDelay,
-		SitemapURL: cfg.BaseURL + "/sitemap.xml",
-	}
-	seoService := seo.NewHelper(articleService, &siteConfig, &robotsConfig, logger, cfg.SEO.Enabled)
-	if cfg.SEO.Enabled {
-		logger.Info("SEO features enabled")
-	}
-
-	// Setup Gin router - ensure Gin mode matches application environment
-	switch cfg.Environment {
-	case "production":
-		gin.SetMode(gin.ReleaseMode)
-		_ = os.Setenv("GIN_MODE", "release")
-		logger.Info("Gin router configured for production", "gin_mode", "release")
-	case "test":
-		gin.SetMode(gin.TestMode)
-		_ = os.Setenv("GIN_MODE", "test")
-		logger.Info("Gin router configured for testing", "gin_mode", "test")
-	default: // development
-		gin.SetMode(gin.DebugMode)
-		_ = os.Setenv("GIN_MODE", "debug")
-		logger.Info("Gin router configured for development", "gin_mode", "debug")
-	}
-
-	router := gin.New()
-
-	// Initialize template service
-	templateService, err := services.NewTemplateService(cfg.TemplatesPath, cfg)
-	if err != nil {
-		apperrors.HandleCLIError(
-			apperrors.NewCLIError("template service initialization", "Failed to initialize template service", err, 1),
-			cleanup,
-		)
-	}
-
-	// Setup HTML templates
-	if err := setupTemplates(router, templateService); err != nil {
-		apperrors.HandleCLIError(
-			apperrors.NewCLIError("template setup", "Failed to setup templates", err, 1),
-			cleanup,
-		)
-	}
-
-	// Log rate limiting configuration
-	logger.Info("Rate limiting configuration",
-		"environment", cfg.Environment,
-		"general_requests", cfg.RateLimit.General.Requests,
-		"general_window", cfg.RateLimit.General.Window,
-		"general_rate_per_sec", float64(cfg.RateLimit.General.Requests)/(cfg.RateLimit.General.Window.Minutes()*60),
-		"contact_requests", cfg.RateLimit.Contact.Requests,
-		"contact_window", cfg.RateLimit.Contact.Window)
-
-	// Global middleware
-	router.Use(
-		middleware.RecoveryWithErrorHandler(logger),                                 // Custom recovery with error handling
-		middleware.Logger(logger),                                                   // Basic request logging
-		middleware.Performance(logger),                                              // Performance monitoring
-		middleware.SmartCacheHeaders(),                                              // Intelligent HTTP cache headers
-		middleware.CORS(cfg.CORS.AllowedOrigins, cfg.Environment == envDevelopment), // Secure CORS with exact origin matching
-		middleware.Security(),
-		middleware.RateLimit(cfg.RateLimit.General.Requests, cfg.RateLimit.General.Window),
-		middleware.ErrorHandler(logger), // Centralized error handling (must be last)
-	)
-
-	// Development-specific enhanced logging
-	if cfg.Environment == envDevelopment {
-		router.Use(middleware.RequestTracker())
-		logger.Info("Development logging enhancements enabled")
-	}
-
-	// Initialize handlers
-	h := handlers.New(&handlers.Config{
-		ArticleService:  articleService,
-		EmailService:    emailService,
-		SearchService:   searchService,
-		TemplateService: templateService,
-		SEOService:      seoService,
-		Config:          cfg,
-		Logger:          logger,
-		Cache:           cache,
-		BuildInfo: &handlers.BuildInfo{
-			Version:   Version,
-			GitCommit: constants.GitCommit,
-			BuildTime: constants.BuildTime,
-		},
-	})
-
-	// Setup routes
-	setupRoutes(router, h, cfg, logger)
 
 	// Create HTTP server
 	server = &http.Server{
@@ -272,6 +148,129 @@ func Run(args []string) {
 	logger.Info("Server exited gracefully")
 }
 
+func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, error) {
+	// Initialize services
+	articleService, err := services.NewArticleService(cfg.ArticlesPath, logger)
+	if err != nil {
+		return nil, fmt.Errorf("article service: %w", err)
+	}
+
+	// Initialize obcache for handlers with performance optimizations
+	cacheConfig := obcache.NewDefaultConfig()
+	cacheConfig.MaxEntries = cfg.Cache.MaxSize
+	cacheConfig.DefaultTTL = cfg.Cache.TTL
+
+	logger.Info("Initializing cache with performance optimizations",
+		"max_entries", cacheConfig.MaxEntries,
+		"default_ttl", cacheConfig.DefaultTTL,
+		"cache_type", "obcache-go")
+
+	cache, err := obcache.New(cacheConfig)
+	if err != nil {
+		return nil, fmt.Errorf("cache initialization: %w", err)
+	}
+
+	emailService := services.NewEmailService(&cfg.Email, logger)
+	searchService := services.NewSearchService()
+
+	// Initialize SEO helper (stateless utility)
+	siteConfig := services.SiteConfig{
+		Name:        cfg.Blog.Title,
+		Description: cfg.Blog.Description,
+		BaseURL:     cfg.BaseURL,
+		Language:    cfg.Blog.Language,
+		Author:      cfg.Blog.Author,
+	}
+	robotsConfig := services.RobotsConfig{
+		UserAgent:  "*",
+		Allow:      cfg.SEO.RobotsAllowed,
+		Disallow:   cfg.SEO.RobotsDisallowed,
+		CrawlDelay: cfg.SEO.RobotsCrawlDelay,
+		SitemapURL: cfg.BaseURL + "/sitemap.xml",
+	}
+	seoService := seo.NewHelper(articleService, &siteConfig, &robotsConfig, logger, cfg.SEO.Enabled)
+	if cfg.SEO.Enabled {
+		logger.Info("SEO features enabled")
+	}
+
+	// Setup Gin router
+	configureGinMode(cfg, logger)
+	router := gin.New()
+
+	// Initialize template service
+	templateService, err := services.NewTemplateService(cfg.TemplatesPath, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("template service: %w", err)
+	}
+
+	if err := setupTemplates(router, templateService); err != nil {
+		return nil, fmt.Errorf("template setup: %w", err)
+	}
+
+	// Log rate limiting configuration
+	logger.Info("Rate limiting configuration",
+		"environment", cfg.Environment,
+		"general_requests", cfg.RateLimit.General.Requests,
+		"general_window", cfg.RateLimit.General.Window,
+		"general_rate_per_sec", float64(cfg.RateLimit.General.Requests)/(cfg.RateLimit.General.Window.Minutes()*60),
+		"contact_requests", cfg.RateLimit.Contact.Requests,
+		"contact_window", cfg.RateLimit.Contact.Window)
+
+	// Global middleware
+	router.Use(
+		middleware.RecoveryWithErrorHandler(logger),
+		middleware.Logger(logger),
+		middleware.Performance(logger),
+		middleware.SmartCacheHeaders(),
+		middleware.CORS(cfg.CORS.AllowedOrigins, cfg.Environment == envDevelopment),
+		middleware.Security(),
+		middleware.RateLimit(cfg.RateLimit.General.Requests, cfg.RateLimit.General.Window),
+		middleware.ErrorHandler(logger),
+	)
+
+	if cfg.Environment == envDevelopment {
+		router.Use(middleware.RequestTracker())
+		logger.Info("Development logging enhancements enabled")
+	}
+
+	// Initialize handlers
+	h := handlers.New(&handlers.Config{
+		ArticleService:  articleService,
+		EmailService:    emailService,
+		SearchService:   searchService,
+		TemplateService: templateService,
+		SEOService:      seoService,
+		Config:          cfg,
+		Logger:          logger,
+		Cache:           cache,
+		BuildInfo: &handlers.BuildInfo{
+			Version:   Version,
+			GitCommit: constants.GitCommit,
+			BuildTime: constants.BuildTime,
+		},
+	})
+
+	setupRoutes(router, h, cfg, logger)
+	return router, nil
+}
+
+func configureGinMode(cfg *config.Config, logger *slog.Logger) {
+	switch cfg.Environment {
+	case "production":
+		gin.SetMode(gin.ReleaseMode)
+		_ = os.Setenv("GIN_MODE", "release")
+		logger.Info("Gin router configured for production", "gin_mode", "release")
+	case "test":
+		gin.SetMode(gin.TestMode)
+		_ = os.Setenv("GIN_MODE", "test")
+		logger.Info("Gin router configured for testing", "gin_mode", "test")
+	default:
+		gin.SetMode(gin.DebugMode)
+		_ = os.Setenv("GIN_MODE", "debug")
+		logger.Info("Gin router configured for development", "gin_mode", "debug")
+	}
+}
+
 func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, logger *slog.Logger) {
 	// Validation middleware removed - keeping it simple
 
@@ -311,10 +310,8 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 	// Contact form with rate limiting and input validation
 	contactGroup := router.Group("/contact")
 	contactGroup.Use(middleware.RateLimit(cfg.RateLimit.Contact.Requests, cfg.RateLimit.Contact.Window))
-	{
-		contactGroup.GET("", h.ContactForm)
-		contactGroup.POST("", h.ContactSubmit)
-	}
+	contactGroup.GET("", h.ContactForm)
+	contactGroup.POST("", h.ContactSubmit)
 
 	// Feeds and SEO
 	router.GET("/feed.xml", h.RSSFeed)
@@ -330,12 +327,10 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 			middleware.BasicAuth(cfg.Admin.Username, cfg.Admin.Password), // Auth second, before any header-writing middleware
 			middleware.NoCache(), // No caching for admin
 		)
-		{
-			adminGroup.GET("", h.AdminHome)
-			adminGroup.POST("/cache/clear", h.ClearCache)
-			adminGroup.GET("/stats", h.AdminStats)
-			adminGroup.POST("/articles/reload", h.ReloadArticles)
-		}
+		adminGroup.GET("", h.AdminHome)
+		adminGroup.POST("/cache/clear", h.ClearCache)
+		adminGroup.GET("/stats", h.AdminStats)
+		adminGroup.POST("/articles/reload", h.ReloadArticles)
 	}
 
 	// Debug endpoints (development only, with auth if admin configured)
@@ -350,28 +345,24 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 			logger.Warn("Debug endpoints enabled WITHOUT authentication - configure ADMIN_USERNAME/PASSWORD for security")
 		}
 
-		{
-			// Memory and runtime debugging
-			debugGroup.GET("/memory", h.DebugMemory)
-			debugGroup.GET("/runtime", h.DebugRuntime)
-			debugGroup.GET("/config", h.DebugConfig)
-			debugGroup.GET("/requests", h.DebugRequests)
+		// Memory and runtime debugging
+		debugGroup.GET("/memory", h.DebugMemory)
+		debugGroup.GET("/runtime", h.DebugRuntime)
+		debugGroup.GET("/config", h.DebugConfig)
+		debugGroup.GET("/requests", h.DebugRequests)
 
-			// Go pprof profiling endpoints at /debug/pprof
-			pprofGroup := debugGroup.Group("/pprof")
-			{
-				pprofGroup.GET("/", h.PprofIndex)
-				pprofGroup.GET("/cmdline", gin.WrapH(http.HandlerFunc(pprof.Cmdline)))
-				pprofGroup.GET("/profile", h.PprofProfile)
-				pprofGroup.GET("/symbol", gin.WrapH(http.HandlerFunc(pprof.Symbol)))
-				pprofGroup.GET("/trace", h.PprofTrace)
-				pprofGroup.GET("/heap", h.PprofHeap)
-				pprofGroup.GET("/goroutine", h.PprofGoroutine)
-				pprofGroup.GET("/allocs", h.PprofAllocs)
-				pprofGroup.GET("/block", h.PprofBlock)
-				pprofGroup.GET("/mutex", h.PprofMutex)
-			}
-		}
+		// Go pprof profiling endpoints at /debug/pprof
+		pprofGroup := debugGroup.Group("/pprof")
+		pprofGroup.GET("/", h.PprofIndex)
+		pprofGroup.GET("/cmdline", gin.WrapH(http.HandlerFunc(pprof.Cmdline)))
+		pprofGroup.GET("/profile", h.PprofProfile)
+		pprofGroup.GET("/symbol", gin.WrapH(http.HandlerFunc(pprof.Symbol)))
+		pprofGroup.GET("/trace", h.PprofTrace)
+		pprofGroup.GET("/heap", h.PprofHeap)
+		pprofGroup.GET("/goroutine", h.PprofGoroutine)
+		pprofGroup.GET("/allocs", h.PprofAllocs)
+		pprofGroup.GET("/block", h.PprofBlock)
+		pprofGroup.GET("/mutex", h.PprofMutex)
 	}
 
 	// 404 handler

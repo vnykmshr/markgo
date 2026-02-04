@@ -114,7 +114,5 @@ func RegisterSEORoutes(router *gin.Engine, handler *SEOHandler) {
 
 	// Admin SEO endpoints (should be protected by auth middleware)
 	admin := router.Group("/admin/seo")
-	{
-		admin.POST("/analyze", handler.AnalyzeContent)
-	}
+	admin.POST("/analyze", handler.AnalyzeContent)
 }

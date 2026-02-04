@@ -28,6 +28,9 @@ func formatBytes(bytes uint64) string {
 		exp++
 	}
 	units := []string{"KB", "MB", "GB", "TB"}
+	if exp >= len(units) {
+		exp = len(units) - 1
+	}
 	return fmt.Sprintf("%.1f %s", float64(bytes)/float64(div), units[exp])
 }
 

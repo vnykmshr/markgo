@@ -52,7 +52,12 @@ func Run(args []string) {
 		// Add any necessary cleanup here (file handles, temp files, etc.)
 	}
 
-	_ = fs.Parse(args[1:])
+	if err := fs.Parse(args[1:]); err != nil {
+		apperrors.HandleCLIError(
+			apperrors.NewCLIError("flag parsing", "Failed to parse command flags", err, 1),
+			cleanup,
+		)
+	}
 
 	if *help {
 		showHelp()
@@ -161,8 +166,8 @@ func runInteractiveMode(title, description, tags, category, author, template *st
 	defaultAuthor := getDefaultAuthor()
 
 	// Check if input is piped
-	stat, _ := os.Stdin.Stat()
-	isPiped := (stat.Mode() & os.ModeCharDevice) == 0
+	stat, err := os.Stdin.Stat()
+	isPiped := err == nil && (stat.Mode()&os.ModeCharDevice) == 0
 
 	var inputs []string
 	if isPiped {

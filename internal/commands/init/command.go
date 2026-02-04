@@ -45,7 +45,12 @@ func Run(args []string) {
 		// Cleanup function for error handling
 	}
 
-	_ = fs.Parse(args[1:])
+	if err := fs.Parse(args[1:]); err != nil {
+		apperrors.HandleCLIError(
+			apperrors.NewCLIError("flag parsing", "Failed to parse command flags", err, 1),
+			cleanup,
+		)
+	}
 
 	if *help {
 		showHelp()
@@ -134,11 +139,11 @@ func isAlreadyInitialized(dir string) bool {
 }
 
 func getQuickDefaults() BlogConfig {
-	currentUser, _ := user.Current()
+	currentUser, err := user.Current()
 	username := "Blog Author"
 	email := "author@example.com"
 
-	if currentUser != nil {
+	if err == nil && currentUser != nil {
 		username = currentUser.Username
 		if currentUser.Name != "" {
 			username = currentUser.Name

@@ -15,7 +15,7 @@ import (
 	"github.com/vnykmshr/markgo/internal/services/export"
 )
 
-type ExportConfig struct {
+type Config struct {
 	OutputDir     string
 	BaseURL       string
 	IncludeDrafts bool
@@ -114,8 +114,8 @@ func Run(args []string) {
 	fmt.Printf("✅ Static site exported successfully to: %s\n", exportConfig.OutputDir)
 }
 
-func parseFlags(args []string) *ExportConfig {
-	exportCfg := &ExportConfig{
+func parseFlags(args []string) *Config {
+	exportCfg := &Config{
 		OutputDir:     "./dist",
 		BaseURL:       "",
 		IncludeDrafts: false,
