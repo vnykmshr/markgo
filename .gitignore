@@ -30,6 +30,10 @@ logs/
 *.bak
 *.orig
 
+# Secrets and certificates
+*.pem
+*.key
+
 # OS generated files
 .DS_Store
 ._*
@@ -37,6 +41,11 @@ logs/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Other languages (defense-in-depth)
+node_modules/
+*.pyc
+__pycache__/
 
 # Development and testing
 coverage.*
