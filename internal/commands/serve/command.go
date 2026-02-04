@@ -36,6 +36,7 @@ var Version = constants.AppVersion
 func Run(args []string) {
 	// Parse command-line flags
 	fs := flag.NewFlagSet("serve", flag.ContinueOnError)
+	fs.SetOutput(os.Stdout)
 	port := fs.Int("port", 0, "Override server port (default: from .env or 3000)")
 	fs.Usage = printUsage
 
@@ -74,6 +75,10 @@ func Run(args []string) {
 
 	// Apply CLI overrides
 	if *port != 0 {
+		if *port < 1 || *port > 65535 {
+			fmt.Fprintf(os.Stderr, "Error: port must be between 1 and 65535, got %d\n", *port)
+			os.Exit(1)
+		}
 		cfg.Port = *port
 	}
 
