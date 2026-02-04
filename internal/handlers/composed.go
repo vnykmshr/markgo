@@ -200,7 +200,7 @@ func (h *Handlers) AboutArticle(c *gin.Context) {
 // ContactForm handles the contact form route.
 func (h *Handlers) ContactForm(c *gin.Context) {
 	// Render contact form template
-	data := h.ArticleHandler.buildBaseTemplateData("Contact")
+	data := h.ArticleHandler.buildBaseTemplateData("Contact - " + h.ArticleHandler.config.Blog.Title)
 	data["recent"] = h.ArticleHandler.getRecentArticles()
 	data["template"] = "contact"
 	h.ArticleHandler.renderHTML(c, 200, "base.html", data)

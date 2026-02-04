@@ -46,6 +46,7 @@ type Config struct {
 	Config          *config.Config
 	Logger          *slog.Logger
 	IncludeDrafts   bool
+	BuildInfo       *handlers.BuildInfo
 }
 
 // NewStaticExportService creates a new StaticExportService instance.
@@ -211,6 +212,7 @@ func (s *StaticExportService) generatePages(_ context.Context) error {
 		Config:          s.appConfig,
 		Logger:          s.logger,
 		Cache:           nil, // No cache for static export
+		BuildInfo:       s.config.BuildInfo,
 	})
 
 	// Setup routes
@@ -242,6 +244,7 @@ func (s *StaticExportService) getPagesToGenerate() []Page {
 		{Path: "/about", FilePath: "about/index.html"},
 		{Path: "/contact", FilePath: "contact/index.html"},
 		{Path: "/search", FilePath: "search/index.html"},
+		{Path: "/404", FilePath: "404.html"},
 	}
 
 	// Add article pages
@@ -295,11 +298,11 @@ func (s *StaticExportService) generatePage(router *gin.Engine, page Page) error 
 	// Execute request
 	router.ServeHTTP(w, req)
 
-	// Check response
-	if w.Code != http.StatusOK {
+	// Check response — allow 404 status for the explicit /404 error page
+	is404Page := page.Path == "/404" && w.Code == http.StatusNotFound
+	if w.Code != http.StatusOK && !is404Page {
 		s.logger.Warn("Non-200 response for page", "path", page.Path, "code", w.Code)
 		if w.Code == http.StatusNotFound {
-			// Skip 404 pages - they might be expected
 			return nil
 		}
 		return fmt.Errorf("received status code %d for path %s", w.Code, page.Path)
@@ -362,6 +365,9 @@ func (s *StaticExportService) setupRoutes(router *gin.Engine, h *handlers.Handle
 	router.GET("/about", h.AboutArticle)
 	router.GET("/contact", h.ContactForm)
 
+	// 404 page for static export
+	router.NoRoute(h.NotFound)
+
 	// Feeds and SEO - handled separately in generateFeeds
 	router.GET("/feed.xml", h.RSSFeed)
 	router.GET("/feed.json", h.JSONFeed)
@@ -379,6 +385,7 @@ func (s *StaticExportService) generateFeeds(_ context.Context) error {
 		Config:          s.appConfig,
 		Logger:          s.logger,
 		Cache:           nil,
+		BuildInfo:       s.config.BuildInfo,
 	})
 
 	router.GET("/feed.xml", h.RSSFeed)

@@ -10,7 +10,9 @@ import (
 	"strings"
 
 	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/constants"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
+	"github.com/vnykmshr/markgo/internal/handlers"
 	"github.com/vnykmshr/markgo/internal/services"
 	"github.com/vnykmshr/markgo/internal/services/export"
 )
@@ -88,6 +90,11 @@ func Run(args []string) {
 		Config:          cfg,
 		Logger:          logger,
 		IncludeDrafts:   exportConfig.IncludeDrafts,
+		BuildInfo: &handlers.BuildInfo{
+			Version:   constants.AppVersion,
+			GitCommit: constants.GitCommit,
+			BuildTime: constants.BuildTime,
+		},
 	})
 	if err != nil {
 		apperrors.HandleCLIError(
