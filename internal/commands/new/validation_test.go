@@ -24,6 +24,9 @@ func TestSanitizeForYAML(t *testing.T) {
 		{"empty string", "", ""},
 		{"only quotes", `"""`, `\"\"\"`},
 		{"only backslashes", `\\\`, `\\\\\\`},
+		{"newline", "line1\nline2", `line1\nline2`},
+		{"carriage return", "line1\rline2", `line1\rline2`},
+		{"crlf", "line1\r\nline2", `line1\r\nline2`},
 	}
 
 	for _, tt := range tests {

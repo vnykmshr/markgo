@@ -95,10 +95,6 @@ func validateTitle(title string) *ValidationError {
 		}
 	}
 
-	// Note: We check for potentially problematic characters that could break YAML
-	// but YAML can handle quotes if escaped, which we do in the generator
-	_ = strings.ContainsAny(title, `"'`) // Future: could add warning if needed
-
 	return nil
 }
 
@@ -295,6 +291,8 @@ func SanitizeInput(input string) string {
 func SanitizeForYAML(input string) string {
 	input = strings.ReplaceAll(input, `\`, `\\`)
 	input = strings.ReplaceAll(input, `"`, `\"`)
+	input = strings.ReplaceAll(input, "\n", `\n`)
+	input = strings.ReplaceAll(input, "\r", `\r`)
 	return input
 }
 

@@ -119,7 +119,9 @@ func (s *StaticExportService) createOutputDir() error {
 	if err := os.Rename(tmpDir, s.outputDir); err != nil {
 		// Attempt to restore the old directory
 		if _, statErr := os.Stat(oldDir); statErr == nil {
-			_ = os.Rename(oldDir, s.outputDir)
+			if restoreErr := os.Rename(oldDir, s.outputDir); restoreErr != nil {
+				return fmt.Errorf("failed to rename temp directory to output: %w; additionally, failed to restore previous output from %s: %v", err, oldDir, restoreErr)
+			}
 		}
 		return fmt.Errorf("failed to rename temp directory to output: %w", err)
 	}

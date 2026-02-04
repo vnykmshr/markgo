@@ -114,10 +114,8 @@ func (c *CacheCoordinator) GetArticle(slug string) (*models.Article, bool) {
 		return article, true
 	}
 
-	// Invalid type in cache, remove it
-	if err := c.obcache.Delete(key); err != nil {
-		c.logger.Warn("Failed to delete invalid article from cache", "key", key, "error", err)
-	}
+	// Invalid type in cache — log and return miss (cannot Delete under RLock)
+	c.logger.Warn("Invalid type in article cache entry", "key", key)
 	return nil, false
 }
 
@@ -166,10 +164,8 @@ func (c *CacheCoordinator) GetSearchResults(query string, limit int) ([]*models.
 		return results, true
 	}
 
-	// Invalid type in cache, remove it
-	if err := c.obcache.Delete(key); err != nil {
-		c.logger.Warn("Failed to delete invalid search results from cache", "key", key, "error", err)
-	}
+	// Invalid type in cache — log and return miss (cannot Delete under RLock)
+	c.logger.Warn("Invalid type in search cache entry", "key", key)
 	return nil, false
 }
 
@@ -220,10 +216,8 @@ func (c *CacheCoordinator) GetProcessedContent(contentHash string) (string, bool
 		return content, true
 	}
 
-	// Invalid type in cache, remove it
-	if err := c.obcache.Delete(key); err != nil {
-		c.logger.Warn("Failed to delete invalid content from cache", "key", key, "error", err)
-	}
+	// Invalid type in cache — log and return miss (cannot Delete under RLock)
+	c.logger.Warn("Invalid type in content cache entry", "key", key)
 	return "", false
 }
 
@@ -260,10 +254,8 @@ func (c *CacheCoordinator) GetStats() (*models.Stats, bool) {
 		return stats, true
 	}
 
-	// Invalid type in cache, remove it
-	if err := c.obcache.Delete(c.statsKey); err != nil {
-		c.logger.Warn("Failed to delete invalid stats from cache", "error", err)
-	}
+	// Invalid type in cache — log and return miss (cannot Delete under RLock)
+	c.logger.Warn("Invalid type in stats cache entry")
 	return nil, false
 }
 
@@ -301,8 +293,8 @@ func (c *CacheCoordinator) InvalidateByTag(tag string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// For now, clear all search cache since we can't efficiently find tag-related entries
-	// In a production system, you might want to maintain tag-to-key mappings
+	// Clears the entire cache since obcache doesn't support prefix-based deletion.
+	// In a production system, you might want to maintain tag-to-key mappings.
 	c.logger.Debug("Invalidating cache for tag", "tag", tag)
 	if err := c.obcache.Clear(); err != nil { // This is aggressive but safe
 		c.logger.Warn("Failed to clear cache for tag", "tag", tag, "error", err)
@@ -509,9 +501,8 @@ func (cr *CachedRepository) GetStats() *models.Stats {
 func (cr *CachedRepository) UpdateDraftStatus(slug string, isDraft bool) error {
 	err := cr.repository.UpdateDraftStatus(slug, isDraft)
 	if err == nil {
-		// Invalidate cache since article status changed
-		cr.cache.InvalidateArticle(slug)
-		cr.cache.InvalidateAll() // Also invalidate lists that might include this article
+		// Invalidate all cache since article status affects lists, tags, categories, etc.
+		cr.cache.InvalidateAll()
 	}
 	return err
 }
