@@ -50,19 +50,19 @@ This checklist ensures all critical validations are performed before creating a 
 
 - [ ] **Docker Compose starts successfully:**
   ```bash
-  docker-compose up -d
-  docker-compose ps  # Should show "Up"
-  docker-compose logs markgo | tail -20
-  docker-compose down
+  docker compose up -d
+  docker compose ps  # Should show "Up"
+  docker compose logs markgo | tail -20
+  docker compose down
   ```
 
 - [ ] **Docker healthcheck passes:**
   ```bash
-  docker-compose up -d
+  docker compose up -d
   sleep 30
   docker inspect --format='{{.State.Health.Status}}' markgo-app
   # Should show: healthy
-  docker-compose down
+  docker compose down
   ```
 
 ### 4. Functional Testing ✅
@@ -141,7 +141,7 @@ This checklist ensures all critical validations are performed before creating a 
   # Update these if version changed:
   # - README.md badges
   # - docs/GETTING-STARTED.md examples
-  # - docker-compose.yml image tags (if publishing)
+  # - docker compose.yml image tags (if publishing)
   ```
 
 ### 8. Configuration & Environment 🔧
@@ -154,7 +154,7 @@ This checklist ensures all critical validations are performed before creating a 
   ```
 
 - [ ] **Deployment configs validated:**
-  - [ ] docker-compose.yml environment variables match .env.example
+  - [ ] docker compose.yml environment variables match .env.example
   - [ ] Dockerfile.dev (if exists) uses correct paths
   - [ ] systemd service file (if exists) references correct binary
 

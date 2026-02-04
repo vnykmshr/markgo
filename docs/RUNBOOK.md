@@ -1,7 +1,7 @@
 # MarkGo Operational Runbook
 
-**Version:** 2.1.0
-**Last Updated:** October 23, 2025
+**Version:** 2.3.0
+**Last Updated:** February 2026
 **Target Audience:** Operations, DevOps, SREs running MarkGo in production
 
 This runbook provides procedures for common operational tasks, troubleshooting, and incident response for MarkGo deployments.
@@ -57,7 +57,7 @@ curl http://localhost:3000/health
 sudo systemctl restart markgo
 
 # Restart service (Docker)
-docker-compose restart markgo
+docker compose restart markgo
 
 # Clear cache (requires restart)
 # No action needed - cache is in-memory
@@ -156,21 +156,21 @@ curl http://localhost:3000/health
 
 ```bash
 # 1. Pull new image or rebuild
-docker-compose pull  # if using registry
+docker compose pull  # if using registry
 # or
-docker-compose build  # if building locally
+docker compose build  # if building locally
 
 # 2. Stop and remove old container
-docker-compose down
+docker compose down
 
 # 3. Start new container
-docker-compose up -d
+docker compose up -d
 
 # 4. Check logs
-docker-compose logs -f markgo
+docker compose logs -f markgo
 
 # 5. Health check
-curl http://localhost:8080/health
+curl http://localhost:3000/health
 ```
 
 ### Configuration Changes
@@ -185,7 +185,7 @@ vim .env
 # 3. Restart service
 sudo systemctl restart markgo
 # or
-docker-compose restart markgo
+docker compose restart markgo
 
 # 4. Verify changes took effect
 curl http://localhost:3000/admin/config  # if admin enabled
@@ -324,7 +324,7 @@ docker stats markgo-app
 
 4. **Increase container limits (Docker)**
    ```yaml
-   # docker-compose.yml
+   # docker compose.yml
    services:
      markgo:
        mem_limit: 128m
@@ -535,14 +535,14 @@ GIN_MODE=release
 1. **Check service status**
    ```bash
    sudo systemctl status markgo
-   docker-compose ps
+   docker compose ps
    ```
 
 2. **Attempt restart**
    ```bash
    sudo systemctl restart markgo
    # or
-   docker-compose restart markgo
+   docker compose restart markgo
    ```
 
 3. **Check health**
@@ -639,16 +639,16 @@ curl http://localhost:3000/health
 # 1. Check previous image tag
 docker images markgo
 
-# 2. Update docker-compose.yml to previous tag
-vim docker-compose.yml
+# 2. Update docker compose.yml to previous tag
+vim docker compose.yml
 # Change: image: markgo:v2.1.0 -> image: markgo:v2.0.0
 
 # 3. Restart with old image
-docker-compose down
-docker-compose up -d
+docker compose down
+docker compose up -d
 
 # 4. Verify
-curl http://localhost:8080/health
+curl http://localhost:3000/health
 ```
 
 **Time to rollback:** ~3 minutes

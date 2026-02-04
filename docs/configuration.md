@@ -35,13 +35,13 @@ Sets the runtime environment. This affects default values for other settings and
 - **Test:** Minimal output, sets `GIN_MODE=test`, optimized for testing
 
 #### `PORT`
-**Default:** `8080`  
+**Default:** `3000`
 **Range:** `1-65535`
 
 The port number the server will listen on.
 
 #### `BASE_URL`
-**Default:** `http://localhost:8080`  
+**Default:** `http://localhost:3000`
 **Format:** Full URL with protocol
 
 The base URL of your blog. Used for:
@@ -443,8 +443,8 @@ Enable logging and consider:
 ### Development
 ```bash
 ENVIRONMENT=development
-PORT=8080
-BASE_URL=http://localhost:8080
+PORT=3000
+BASE_URL=http://localhost:3000
 CACHE_TTL=300
 LOG_LEVEL=debug
 TEMPLATE_HOT_RELOAD=true
@@ -454,7 +454,7 @@ DEBUG=true
 ### Staging
 ```bash
 ENVIRONMENT=production
-PORT=8080
+PORT=3000
 BASE_URL=https://staging.yourdomain.com
 CACHE_TTL=3600
 LOG_LEVEL=info
@@ -465,7 +465,7 @@ LOG_FILE=/var/log/markgo-staging/app.log
 ### Production
 ```bash
 ENVIRONMENT=production
-PORT=8080
+PORT=3000
 BASE_URL=https://yourdomain.com
 CACHE_TTL=86400
 LOG_LEVEL=warn
@@ -494,7 +494,7 @@ Run with `-validate` flag to see validation results:
 ### Common Issues
 
 **Server won't start:**
-- Check port availability: `lsof -i :8080`
+- Check port availability: `lsof -i :3000`
 - Verify file permissions on paths
 - Check configuration validation output
 

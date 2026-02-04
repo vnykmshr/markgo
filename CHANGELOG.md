@@ -9,6 +9,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.0] - 2026-02-04
+
+### Fixed
+
+- **YAML injection in article creation**: `SanitizeForYAML()` now escapes backslashes and newlines; frontmatter templates pass title, description, and author through sanitization
+- **Destructive static export**: Replaced `os.RemoveAll` with safe directory swap pattern (export to `.tmp`, rename on success, preserve original on failure)
+- **Cache race condition**: Counter increments (`hits`, `misses`) now use `atomic.AddInt64` instead of mutating under `RLock`
+- **Cache goroutine leak**: Cleanup goroutine now stops cleanly via `stopCh` channel, signaled by `Shutdown()`
+
+### Added
+
+- **Article repository tests** (`internal/services/article/repository_test.go`): LoadAll, GetBySlug, GetByTag, GetByCategory, slug generation, reading time
+- **Search service tests** (`internal/services/article/search_test.go`): Basic search, scoring, filters, suggestions, stop words
+- **Cache coordinator tests** (`internal/services/article/cache_test.go`): CRUD, concurrent access with race detector, shutdown cleanup
+- **Content processor tests** (`internal/services/article/content_test.go`): Markdown processing, excerpts, duplicate titles, image/link extraction
+- **CI lint step**: golangci-lint now runs in CI with `only-new-issues: true`
+- **CI coverage threshold**: Build fails if coverage drops below 45%
+
+### Changed
+
+- **golangci-lint v1 to v2 migration**: Config schema updated to v2 format, action upgraded to v7 with golangci-lint v2.8.0
+- **quic-go updated** to v0.57.0 (resolves CVE)
+- **GitHub Actions pinned**: `softprops/action-gh-release` pinned to SHA `a06a81a03ee405af7f2048a818ed3f03bbf83c7b`
+- **Documentation accuracy**: Fixed broken links, stale coverage numbers, nonexistent Makefile targets, wrong PORT defaults, and obsolete binary references across all docs
+
+### Technical Details
+
+- Coverage: ~46.5% (up from ~21%)
+- 10 atomic commits
+- All quality gates passing: lint, test, test-race, govulncheck
+
+---
+
 ## [2.2.0] - 2025-10-24
 
 ### Major Changes

@@ -224,18 +224,11 @@ markgo new
 ### Testing Performance
 
 ```bash
-# Build stress test tool
-make stress-test
+# Run Go benchmarks
+go test -bench=. -benchmem ./...
 
-# Test your blog
-markgo stress-test --url http://localhost:3000
+# For load testing, see https://github.com/vnykmshr/webstress
 ```
-
-Expected results:
-- **Throughput**: ≥1000 req/s
-- **95th Percentile**: <50ms
-- **Average Response**: <30ms
-- **Success Rate**: >99%
 
 ## 📊 Monitoring & Analytics
 
@@ -293,13 +286,14 @@ MarkGo includes powerful SEO features out of the box:
 
    **Docker**:
    ```bash
-   make docker-build
-   make docker-run
+   make docker
    ```
 
    **Systemd** (Linux):
    ```bash
-   make systemd-install
+   sudo cp deployments/etc/systemd/system/markgo.service /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl enable markgo
    sudo systemctl start markgo
    ```
 
@@ -368,10 +362,10 @@ Now that you're up and running:
 
 ## 📚 Advanced Guides
 
-- [Configuration Reference](./CONFIGURATION.md)
-- [Template Development](./TEMPLATES.md)
-- [Performance Optimization](./PERFORMANCE.md)
-- [Deployment Guide](./DEPLOYMENT.md)
+- [Configuration Reference](./configuration.md)
+- [Architecture Guide](./architecture.md)
+- [Deployment Guide](./deployment.md)
+- [API Documentation](./API.md)
 - [Contributing](../CONTRIBUTING.md)
 
 ---

@@ -45,9 +45,9 @@ What you expected to happen.
 If applicable, add screenshots or log output.
 
 **Environment**
-- OS: [e.g., macOS 14.0]
-- Go Version: [e.g., go1.24.4]
-- MarkGo Version: [e.g., v1.0.0]
+- OS: [e.g., macOS 15.0]
+- Go Version: [e.g., go1.25.0]
+- MarkGo Version: [e.g., v2.3.0]
 ```
 
 ### Suggesting Features
@@ -72,7 +72,7 @@ We welcome feature suggestions! Please:
 2. **Install dependencies and tools**:
    ```bash
    make deps
-   make install-dev-tools
+   make tidy
    ```
 
 3. **Set up pre-commit hooks** (recommended):
@@ -100,7 +100,7 @@ We welcome feature suggestions! Please:
 3. **Update documentation** if needed
 4. **Run quality checks**:
    ```bash
-   make check  # Runs fmt, vet, lint, and tests
+   make fmt && make lint && make test  # Format, lint, and test
    ```
 
 #### Coding Standards
@@ -114,7 +114,7 @@ We welcome feature suggestions! Please:
 
 **Testing Requirements**:
 - Add unit tests for new functionality
-- Maintain or improve code coverage (aim for 80%+)
+- Maintain or improve code coverage (current baseline: ~46%)
 - Use table-driven tests for multiple scenarios
 - Mock external dependencies appropriately
 

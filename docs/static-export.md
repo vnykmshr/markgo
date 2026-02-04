@@ -8,13 +8,13 @@ MarkGo now supports exporting your dynamic blog as a static site, perfect for ho
 
 ```bash
 # Basic export
-make export-static
+markgo export --output ./dist
 
 # Export for GitHub Pages
-make export-github-pages
+markgo export --output ./dist --base-url https://username.github.io/repo-name
 
-# Manual export with custom options
-markgo-export --output ./public --base-url https://yourdomain.com
+# Custom configuration
+markgo export --output ./public --base-url https://yourdomain.com
 ```
 
 ### 2. Deploy to GitHub Pages
@@ -28,7 +28,7 @@ The easiest way is to use the included GitHub Actions workflow:
 ## Export Command Options
 
 ```bash
-markgo-export [options]
+markgo export [options]
 
 Options:
   -o, --output DIR        Output directory (default: ./dist)
@@ -42,16 +42,16 @@ Options:
 
 ```bash
 # Export to custom directory
-markgo-export --output ./public
+markgo export --output ./public
 
 # Export with custom base URL
-markgo-export --base-url https://blog.example.com
+markgo export --base-url https://blog.example.com
 
 # Include draft articles
-markgo-export --include-drafts --verbose
+markgo export --include-drafts --verbose
 
 # GitHub Pages export
-markgo-export --base-url https://username.github.io/repo-name
+markgo export --base-url https://username.github.io/repo-name
 ```
 
 ## What Gets Exported
@@ -106,7 +106,7 @@ The static export includes:
 
 ```bash
 # Deploy to Netlify
-make export-static
+markgo export --output ./dist
 cd dist
 # Drag & drop to Netlify dashboard
 ```
@@ -128,7 +128,7 @@ Deploy to any web server:
 
 ```bash
 # Export and upload
-make export-static
+markgo export --output ./dist
 rsync -av dist/ user@server:/var/www/html/
 ```
 
@@ -164,10 +164,10 @@ The included workflow (`.github/workflows/deploy.yml`) automatically:
 
 ```bash
 # Production site
-markgo-export --base-url https://blog.example.com
+markgo export --base-url https://blog.example.com
 
 # Subdirectory deployment  
-markgo-export --base-url https://example.com/blog
+markgo export --base-url https://example.com/blog
 ```
 
 ### Environment Variables
@@ -191,7 +191,7 @@ CONTACT_ENABLED=true
 
 ```bash
 # Production build with optimizations
-make export-static
+markgo export --output ./dist
 
 # The export automatically:
 # - Minifies HTML
@@ -229,7 +229,7 @@ make export-static
 
 ```bash
 # Include drafts in export
-markgo-export --include-drafts
+markgo export --include-drafts
 ```
 
 Draft articles (with `published: false`) are normally excluded.
@@ -266,7 +266,7 @@ make test
 ls web/static/
 
 # Verify base URL
-markgo-export --base-url https://correct-domain.com
+markgo export --base-url https://correct-domain.com
 ```
 
 **Search not working**:
@@ -279,7 +279,7 @@ Search is client-side JavaScript. Ensure:
 
 ```bash
 # Verbose logging
-markgo-export --verbose
+markgo export --verbose
 
 # Check export output
 ls -la dist/
@@ -291,7 +291,7 @@ ls -la dist/
 
 1. **Test locally**:
    ```bash
-   make export-static
+   markgo export --output ./dist
    cd dist
    python -m http.server 8000
    # Visit http://localhost:8000
@@ -346,8 +346,8 @@ articles/
 
 For more advanced features, see:
 - [Configuration Guide](configuration.md)
-- [Theme Customization](themes.md)
 - [Deployment Guide](deployment.md)
+- [Architecture Guide](architecture.md)
 
 ---
 

@@ -38,10 +38,12 @@ A high-performance blog engine built with Go. MarkGo combines file-based content
 
 ### Option 1: Download Release
 
+Download the latest binary for your platform from [GitHub Releases](https://github.com/vnykmshr/markgo/releases):
+
 ```bash
-# Download and extract
-wget https://github.com/vnykmshr/markgo/releases/latest
-tar -xzf markgo-*.tar.gz && cd markgo
+# Linux (amd64)
+curl -L -o markgo https://github.com/vnykmshr/markgo/releases/latest/download/markgo-linux-amd64
+chmod +x markgo
 
 # Initialize and start
 ./markgo init --quick
@@ -157,13 +159,7 @@ See [Configuration Guide](docs/configuration.md) for complete options.
 ### Static Sites
 
 ```bash
-# GitHub Pages (auto-detects repo URL)
-make export-github-pages
-
-# Any static host
-make export-static
-
-# Custom configuration
+# Export to static site
 ./build/markgo export --output ./public --base-url https://yourdomain.com
 ```
 
@@ -174,17 +170,17 @@ See [Static Export Guide](docs/static-export.md) for hosting options.
 ### Docker
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Manual Deployment
 
 ```bash
 # Build for production
-make prod-build
+make build
 
 # Deploy to server
-scp build/markgo-linux server:/usr/local/bin/
+scp build/markgo server:/usr/local/bin/
 
 # Install systemd service (Linux)
 sudo cp deployments/markgo.service /etc/systemd/system/
@@ -196,10 +192,7 @@ sudo systemctl start markgo
 
 ```bash
 make build          # Build for current platform
-make build-linux    # Build for Linux
-make build-all      # Build all tools
-make export         # Build static export tool
-make export-static  # Export site to ./dist/
+make build-release  # Build for all platforms (Linux, macOS, Windows)
 make docker         # Build and run Docker container
 ```
 
@@ -209,8 +202,7 @@ make docker         # Build and run Docker container
 make test           # Run tests
 make test-race      # Run tests with race detection
 make coverage       # Generate coverage report
-make benchmark      # Run benchmarks
-make check          # Run all quality checks
+make lint           # Run linter (golangci-lint v2)
 ```
 
 ## Documentation
@@ -231,10 +223,9 @@ See [docs/](docs/) for complete documentation.
 ### Prerequisites
 
 ```bash
-make install-dev-tools    # Install development tools
-make lint                 # Run linting
+make lint                 # Run linting (requires golangci-lint)
 make fmt                  # Format code
-make check                # Run all checks
+make test                 # Run all tests
 ```
 
 ### Hot Reload
@@ -252,7 +243,7 @@ Contributions welcome. See [Contributing Guide](CONTRIBUTING.md) for details.
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/name`
 3. Make changes and add tests
-4. Run `make check`
+4. Run `make fmt && make lint && make test`
 5. Commit: `git commit -m 'Add feature'`
 6. Push: `git push origin feature/name`
 7. Open a Pull Request

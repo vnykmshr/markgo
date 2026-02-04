@@ -24,12 +24,12 @@ Complete documentation for MarkGo - a high-performance file-based blog engine bu
 ## 📚 Reference Documentation
 
 - [API Documentation](API.md) - HTTP endpoints and responses
-- [Benchmarks](../BENCHMARKS.md) - Performance metrics
+- [Benchmarks](BENCHMARKS.md) - Performance metrics
 
 ## 🔐 Security & Quality
 
 - [Security Guide](../SECURITY.md) - Security best practices and reporting
-- [Code of Conduct](../CODE_OF_CONDUCT.md) - Community guidelines
+- [Code of Conduct](CODE_OF_CONDUCT.md) - Community guidelines
 
 ## 📝 Release Information
 

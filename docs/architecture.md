@@ -1,7 +1,7 @@
 # MarkGo Technical Architecture
 
-**Version:** 2.1.0
-**Last Updated:** October 2025
+**Version:** 2.3.0
+**Last Updated:** February 2026
 
 ## Overview
 
@@ -196,7 +196,7 @@ MarkGo follows a pragmatic testing approach:
 **Integration Tests:** Handlers with mock services
 **Coverage Target:** Focus on critical paths over percentages
 
-Current coverage: ~21% overall, 50%+ on handlers (user-facing code).
+Current coverage: ~46% overall, with focused coverage on handlers, article services, and content processing.
 
 Test files follow the `*_test.go` convention and use:
 - Standard library `testing` package
@@ -324,5 +324,5 @@ v2.1.0:
 
 ---
 
-**Last Updated:** October 2025 (v2.1.0)
+**Last Updated:** February 2026 (v2.3.0)
 **Questions?** See [GitHub Issues](https://github.com/vnykmshr/markgo/issues)

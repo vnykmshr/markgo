@@ -1,6 +1,6 @@
 # MarkGo Deployment Guide
 
-**Version:** 2.1.0
+**Version:** 2.3.0
 
 This guide covers production deployment of MarkGo using various methods.
 
@@ -14,18 +14,18 @@ cd markgo
 cp .env.example .env  # Edit with your settings
 
 # Deploy with Docker Compose
-docker-compose up -d
+docker compose up -d
 
-# Access: http://localhost:8080
+# Access: http://localhost:3000
 ```
 
 ### Option 2: Binary Deployment
 ```bash
 # Download or build binary
-make build-linux
+make build-release
 
 # Copy to server
-scp build/markgo-linux server:/usr/local/bin/markgo
+scp build/markgo-linux-amd64 server:/usr/local/bin/markgo
 
 # Install systemd service
 sudo cp deployments/etc/systemd/system/markgo.service /etc/systemd/system/
@@ -210,7 +210,7 @@ sudo systemctl reload markgo
 For high availability, deploy multiple instances:
 
 ```yaml
-# docker-compose.yml
+# docker compose.yml
 version: '3.8'
 services:
   markgo1:
@@ -230,9 +230,9 @@ services:
 
 - **Documentation**: [GitHub Repository](https://github.com/vnykmshr/markgo)
 - **Issues**: [GitHub Issues](https://github.com/vnykmshr/markgo/issues)
-- **Performance**: 17ms cold start, sub-microsecond responses
-- **Architecture**: Single 26MB binary, zero external dependencies
+- **Performance**: Sub-second cold start, single-digit ms cached responses
+- **Architecture**: Single ~27MB binary, zero external dependencies
 
 ---
 
-**MarkGo Engine v1.0.0** - Production-ready, high-performance blog engine built with Go 🚀
+**MarkGo Engine** - Production-ready, high-performance blog engine built with Go

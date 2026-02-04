@@ -1,6 +1,6 @@
 # MarkGo HTTP API Reference
 
-**Version:** 2.1.0
+**Version:** 2.3.0
 
 ## Overview
 
@@ -354,4 +354,4 @@ CORS is enabled with configurable allowed origins (via `CORS_ALLOWED_ORIGINS`).
 
 ---
 
-**Last Updated:** October 2025 (v2.1.0)
+**Last Updated:** February 2026 (v2.3.0)
