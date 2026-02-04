@@ -76,10 +76,15 @@ Path to HTML templates directory.
 
 The title of your blog, displayed in the header and used in metadata.
 
+#### `BLOG_TAGLINE`
+**Default:** *(empty — falls back to `BLOG_DESCRIPTION`)*
+
+A short tagline displayed below the blog title in the navbar. Keep it concise (3-5 words). If not set, the full description is used instead.
+
 #### `BLOG_DESCRIPTION`
 **Default:** `Your blog description goes here`
 
-A brief description of your blog, used for SEO metadata and RSS feeds.
+A brief description of your blog, used for SEO metadata, RSS feeds, footer, and hero sections.
 
 #### `BLOG_AUTHOR`
 **Default:** `Your Name`

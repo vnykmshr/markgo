@@ -99,6 +99,7 @@ type AdminConfig struct {
 // BlogConfig holds blog-specific configuration options.
 type BlogConfig struct {
 	Title        string `json:"title"`
+	Tagline      string `json:"tagline"`
 	Description  string `json:"description"`
 	Author       string `json:"author"`
 	AuthorEmail  string `json:"author_email"`
@@ -247,6 +248,7 @@ func Load() (*Config, error) {
 
 		Blog: BlogConfig{
 			Title:        getEnv("BLOG_TITLE", "Your Blog Title"),
+			Tagline:      getEnv("BLOG_TAGLINE", ""),
 			Description:  getEnv("BLOG_DESCRIPTION", "Your blog description goes here"),
 			Author:       getEnv("BLOG_AUTHOR", "Your Name"),
 			AuthorEmail:  getEnv("BLOG_AUTHOR_EMAIL", "your.email@example.com"),

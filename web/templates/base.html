@@ -204,7 +204,7 @@
                 <div class="navbar-brand">
                     <a href="/" class="brand-link">
                         <h1 class="brand-title">{{ .config.Blog.Title }}</h1>
-                        <p class="brand-subtitle">{{ .config.Blog.Description }}</p>
+                        <p class="brand-subtitle">{{ if .config.Blog.Tagline }}{{ .config.Blog.Tagline }}{{ else }}{{ .config.Blog.Description }}{{ end }}</p>
                     </a>
                 </div>
 
