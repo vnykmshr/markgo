@@ -67,6 +67,7 @@ bin/
 
 # Todo tracking (personal development notes)
 todos/
+.claude/
 
 # Temporary generated articles (for testing)
 temp_articles/
