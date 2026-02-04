@@ -289,9 +289,11 @@ func SanitizeInput(input string) string {
 	return input
 }
 
-// SanitizeForYAML sanitizes strings for safe YAML output
+// SanitizeForYAML sanitizes strings for safe YAML output within double-quoted scalars.
+// Escapes backslashes first (to avoid double-escaping), then double quotes.
+// Other special YAML characters (:, #, |, etc.) are safe inside double-quoted strings.
 func SanitizeForYAML(input string) string {
-	// Escape quotes in YAML strings
+	input = strings.ReplaceAll(input, `\`, `\\`)
 	input = strings.ReplaceAll(input, `"`, `\"`)
 	return input
 }

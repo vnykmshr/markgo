@@ -40,7 +40,9 @@ fi
 echo "🔬 Running go vet..."
 GO_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$' || true)
 if [ -n "$GO_FILES" ]; then
-    if ! go vet ./... 2>&1 | grep -v "no Go files"; then
+    VET_OUTPUT=$(go vet ./... 2>&1 | grep -v "no Go files" || true)
+    if [ -n "$VET_OUTPUT" ]; then
+        echo "$VET_OUTPUT"
         echo -e "${RED}✗ go vet found issues${NC}"
         FAILED=1
     fi

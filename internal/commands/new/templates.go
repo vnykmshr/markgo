@@ -516,7 +516,11 @@ func generateArticleWithTemplate(title, description, tagsStr, category, author s
 	content = strings.ReplaceAll(content, "{{.Author}}", templateData.Author)
 	content = strings.ReplaceAll(content, "{{.FormattedDate}}", templateData.FormattedDate)
 
-	// Generate frontmatter
+	// Generate frontmatter — sanitize values interpolated into double-quoted YAML scalars
+	safeTitle := SanitizeForYAML(title)
+	safeDescription := SanitizeForYAML(description)
+	safeAuthor := SanitizeForYAML(author)
+
 	frontmatter := fmt.Sprintf(`---
 title: "%s"
 description: "%s"
@@ -525,10 +529,10 @@ tags: [%s]
 categories: [%s]
 featured: %v
 draft: %v
-author: %s
+author: "%s"
 ---
 
-`, title, description, templateData.Date, formattedTags, category, isFeatured, isDraft, author)
+`, safeTitle, safeDescription, templateData.Date, formattedTags, category, isFeatured, isDraft, safeAuthor)
 
 	return frontmatter + content
 }
