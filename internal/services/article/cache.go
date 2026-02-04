@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/vnykmshr/obcache-go/pkg/obcache"
@@ -29,9 +30,12 @@ type CacheCoordinator struct {
 	contentPrefix string
 	statsKey      string
 
-	// Cache statistics
+	// Cache statistics — accessed atomically to avoid data races under RLock
 	hits   int64
 	misses int64
+
+	// Lifecycle
+	stopCh chan struct{}
 }
 
 // CacheConfig holds configuration for the cache coordinator
@@ -80,6 +84,7 @@ func NewCacheCoordinator(config *CacheConfig, logger *slog.Logger) (*CacheCoordi
 		searchPrefix:  "search:",
 		contentPrefix: "content:",
 		statsKey:      "stats",
+		stopCh:        make(chan struct{}),
 	}
 
 	// Start background cleanup if configured
@@ -100,11 +105,11 @@ func (c *CacheCoordinator) GetArticle(slug string) (*models.Article, bool) {
 	key := c.articlePrefix + slug
 	value, found := c.obcache.Get(key)
 	if !found {
-		c.misses++
+		atomic.AddInt64(&c.misses, 1)
 		return nil, false
 	}
 
-	c.hits++
+	atomic.AddInt64(&c.hits, 1)
 	if article, ok := value.(*models.Article); ok {
 		return article, true
 	}
@@ -152,11 +157,11 @@ func (c *CacheCoordinator) GetSearchResults(query string, limit int) ([]*models.
 	key := fmt.Sprintf("%s%s:%d", c.searchPrefix, query, limit)
 	value, found := c.obcache.Get(key)
 	if !found {
-		c.misses++
+		atomic.AddInt64(&c.misses, 1)
 		return nil, false
 	}
 
-	c.hits++
+	atomic.AddInt64(&c.hits, 1)
 	if results, ok := value.([]*models.SearchResult); ok {
 		return results, true
 	}
@@ -206,11 +211,11 @@ func (c *CacheCoordinator) GetProcessedContent(contentHash string) (string, bool
 	key := c.contentPrefix + contentHash
 	value, found := c.obcache.Get(key)
 	if !found {
-		c.misses++
+		atomic.AddInt64(&c.misses, 1)
 		return "", false
 	}
 
-	c.hits++
+	atomic.AddInt64(&c.hits, 1)
 	if content, ok := value.(string); ok {
 		return content, true
 	}
@@ -246,11 +251,11 @@ func (c *CacheCoordinator) GetStats() (*models.Stats, bool) {
 
 	value, found := c.obcache.Get(c.statsKey)
 	if !found {
-		c.misses++
+		atomic.AddInt64(&c.misses, 1)
 		return nil, false
 	}
 
-	c.hits++
+	atomic.AddInt64(&c.hits, 1)
 	if stats, ok := value.(*models.Stats); ok {
 		return stats, true
 	}
@@ -287,8 +292,8 @@ func (c *CacheCoordinator) InvalidateAll() {
 	if err := c.obcache.Clear(); err != nil {
 		c.logger.Warn("Failed to clear all cache", "error", err)
 	}
-	c.hits = 0
-	c.misses = 0
+	atomic.StoreInt64(&c.hits, 0)
+	atomic.StoreInt64(&c.misses, 0)
 }
 
 // InvalidateByTag invalidates cache entries related to a specific tag
@@ -312,14 +317,16 @@ func (c *CacheCoordinator) GetCacheStats() map[string]interface{} {
 	obcacheStats := c.obcache.Stats()
 
 	hitRate := float64(0)
-	total := c.hits + c.misses
+	hits := atomic.LoadInt64(&c.hits)
+	misses := atomic.LoadInt64(&c.misses)
+	total := hits + misses
 	if total > 0 {
-		hitRate = float64(c.hits) / float64(total)
+		hitRate = float64(hits) / float64(total)
 	}
 
 	return map[string]interface{}{
-		"hits":     c.hits,
-		"misses":   c.misses,
+		"hits":     hits,
+		"misses":   misses,
 		"hit_rate": hitRate,
 		"obcache_stats": map[string]interface{}{
 			"key_count":        obcacheStats.KeyCount(),
@@ -341,13 +348,19 @@ func (c *CacheCoordinator) IsHealthy() bool {
 
 // Cleanup and lifecycle management
 
-// startCleanup starts a background goroutine that periodically cleans up expired entries
+// startCleanup starts a background goroutine that periodically cleans up expired entries.
+// It stops when Shutdown closes stopCh.
 func (c *CacheCoordinator) startCleanup(period time.Duration) {
 	ticker := time.NewTicker(period)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		c.cleanup()
+	for {
+		select {
+		case <-ticker.C:
+			c.cleanup()
+		case <-c.stopCh:
+			return
+		}
 	}
 }
 
@@ -360,15 +373,25 @@ func (c *CacheCoordinator) cleanup() {
 	c.obcache.Cleanup()
 }
 
-// Shutdown gracefully shuts down the cache coordinator
+// Shutdown gracefully shuts down the cache coordinator.
+// It signals the cleanup goroutine to stop and closes the underlying cache.
 func (c *CacheCoordinator) Shutdown(_ context.Context) error {
+	c.logger.Info("Shutting down cache coordinator")
+
+	// Signal cleanup goroutine to stop (safe to call even if cleanup isn't running)
+	select {
+	case <-c.stopCh:
+		// Already closed
+	default:
+		close(c.stopCh)
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.logger.Info("Shutting down cache coordinator")
-
 	if c.obcache != nil {
 		_ = c.obcache.Close()
+		c.obcache = nil
 	}
 
 	return nil
