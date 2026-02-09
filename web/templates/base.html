@@ -232,7 +232,7 @@
                         <li class="nav-item">
                             <a href="/contact" class="nav-link">Contact</a>
                         </li>
-                        {{ if and .config.Admin.Username .config.Admin.Password }}
+                        {{ if and (ne .config.Admin.Username "") (ne .config.Admin.Password "") }}
                         <li class="nav-item">
                             <a href="/compose" class="nav-link">Compose</a>
                         </li>
