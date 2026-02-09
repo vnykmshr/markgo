@@ -1,185 +1,45 @@
 {{ define "articles-content" }}
 <div class="articles-page">
-    <!-- Page Header -->
-    <header class="page-header">
-        <div class="container">
-            <h1 class="page-title">All Articles</h1>
-            <p class="page-description">
-                Explore all {{ .pagination.TotalItems }} articles on technology, programming, and life experiences.
-            </p>
-        </div>
-    </header>
+    <div class="container">
+        <!-- Page Header -->
+        <header class="page-header">
+            <h1 class="page-title">Writing</h1>
+            <p class="page-subtitle">{{ .pagination.TotalItems }} posts</p>
+        </header>
 
-    <!-- Articles Content -->
-    <div class="page-content">
-        <div class="container">
-            <!-- Articles Grid -->
+        <!-- Articles Stream -->
         {{ if .articles }}
-        <div class="articles-grid">
+        <div class="card-stream">
             {{ range .articles }}
-            <article class="article-card">
-                <div class="card-content">
-                    <h2 class="card-title">
-                        <a href="/articles/{{ .Slug }}">{{ .Title }}</a>
-                    </h2>
-
-                    {{ if .Description }}
-                    <p class="card-description">{{ .Description }}</p>
-                    {{ end }}
-
-                    <p class="card-excerpt">{{ .Excerpt }}</p>
-
-                    <div class="card-meta">
-                        <time class="card-date" datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
-                            {{ .Date.Format "January 2, 2006" }}
-                        </time>
-                        <span class="card-reading-time">{{ .ReadingTime }} min read</span>
-                        {{ if .WordCount }}
-                        <span class="card-word-count">{{ .WordCount }} words</span>
-                        {{ end }}
-                        {{ if .Featured }}
-                        <span class="featured-badge">Featured</span>
-                        {{ end }}
-                    </div>
-
-                    {{ if .Tags }}
-                    <div class="card-tags">
-                        {{ range .Tags }}
-                        <a href="/tags/{{ . | urlquery }}" class="tag">{{ . }}</a>
-                        {{ end }}
-                    </div>
-                    {{ end }}
-
-                    {{ if .Categories }}
-                    <div class="card-categories">
-                        {{ range .Categories }}
-                        <a href="/categories/{{ . | urlquery }}" class="category">{{ . }}</a>
-                        {{ end }}
-                    </div>
-                    {{ end }}
-
-                    <div class="card-actions">
-                        <a href="/articles/{{ .Slug }}" class="read-more">
-                            Read More
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-            </article>
+                {{ if eq .Type "thought" }}
+                    {{ template "card-thought" . }}
+                {{ else if eq .Type "link" }}
+                    {{ template "card-link" . }}
+                {{ else }}
+                    {{ template "card-article" . }}
+                {{ end }}
             {{ end }}
         </div>
 
         <!-- Pagination -->
-        {{ if gt .pagination.TotalPages 1 }}
-        <nav class="pagination" aria-label="Articles pagination">
-            <div class="pagination-info">
-                <p>
-                    Showing {{ add (mul (sub .pagination.CurrentPage 1) .pagination.ItemsPerPage) 1 }} -
-                    {{ if lt (mul .pagination.CurrentPage .pagination.ItemsPerPage) .pagination.TotalItems }}
-                        {{ mul .pagination.CurrentPage .pagination.ItemsPerPage }}
-                    {{ else }}
-                        {{ .pagination.TotalItems }}
-                    {{ end }}
-                    of {{ .pagination.TotalItems }} articles
-                </p>
-            </div>
-
-            <div class="pagination-controls">
-                {{ if .pagination.HasPrevious }}
-                <a href="/articles?page={{ .pagination.PreviousPage }}" class="pagination-link pagination-prev">
-                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
-                    </svg>
-                    Previous
-                </a>
-                {{ end }}
-
-                <div class="pagination-numbers">
-                    {{ $currentPage := .pagination.CurrentPage }}
-                    {{ $totalPages := .pagination.TotalPages }}
-
-                    {{ if gt $currentPage 3 }}
-                    <a href="/articles?page=1" class="pagination-number">1</a>
-                    {{ if gt $currentPage 4 }}
-                    <span class="pagination-ellipsis">...</span>
-                    {{ end }}
-                    {{ end }}
-
-                    {{ range $i := seq (max 1 (sub $currentPage 2)) (min $totalPages (add $currentPage 2)) }}
-                    {{ if eq $i $currentPage }}
-                    <span class="pagination-number current" aria-current="page">{{ $i }}</span>
-                    {{ else }}
-                    <a href="/articles?page={{ $i }}" class="pagination-number">{{ $i }}</a>
-                    {{ end }}
-                    {{ end }}
-
-                    {{ if lt $currentPage (sub $totalPages 2) }}
-                    {{ if lt $currentPage (sub $totalPages 3) }}
-                    <span class="pagination-ellipsis">...</span>
-                    {{ end }}
-                    <a href="/articles?page={{ $totalPages }}" class="pagination-number">{{ $totalPages }}</a>
-                    {{ end }}
-                </div>
-
-                {{ if .pagination.HasNext }}
-                <a href="/articles?page={{ .pagination.NextPage }}" class="pagination-link pagination-next">
-                    Next
-                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
-                    </svg>
-                </a>
-                {{ end }}
-            </div>
+        {{ if or .pagination.HasPrevious .pagination.HasNext }}
+        <nav class="simple-pagination" aria-label="Articles pagination">
+            {{ if .pagination.HasPrevious }}
+            <a href="/articles?page={{ .pagination.PreviousPage }}" class="simple-pagination-link">← Newer</a>
+            {{ end }}
+            <span class="simple-pagination-info">Page {{ .pagination.CurrentPage }} of {{ .pagination.TotalPages }}</span>
+            {{ if .pagination.HasNext }}
+            <a href="/articles?page={{ .pagination.NextPage }}" class="simple-pagination-link">Older →</a>
+            {{ end }}
         </nav>
         {{ end }}
 
         {{ else }}
-        <!-- Empty State -->
-        <div class="empty-state">
-            <div class="empty-content">
-                <h2>No articles found</h2>
-                <p>It looks like there are no articles to display at the moment.</p>
-                <a href="/" class="btn btn-primary">Go Home</a>
-            </div>
+        <div class="articles-empty">
+            <h3>No posts yet</h3>
+            <p>Nothing here yet.</p>
         </div>
         {{ end }}
-
-        <!-- Quick Links -->
-        <aside class="quick-links">
-            <h3>Explore More</h3>
-            <div class="quick-links-grid">
-                <a href="/tags" class="quick-link">
-                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M3 2v4.586l7 7L14.586 9l-7-7H3zM2 2a1 1 0 0 1 1-1h4.586a1 1 0 0 1 .707.293l7 7a1 1 0 0 1 0 1.414l-4.586 4.586a1 1 0 0 1-1.414 0l-7-7A1 1 0 0 1 2 6.586V2z"/>
-                        <path d="M5.5 5a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm0 1a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM1 7.086a1 1 0 0 0 .293.707L8.75 15.25l-.043.043a1 1 0 0 1-1.414 0l-7-7A1 1 0 0 1 0 7.586V3a1 1 0 0 1 1-1v5.086z"/>
-                    </svg>
-                    Browse Tags
-                </a>
-                <a href="/categories" class="quick-link">
-                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zM2.5 2a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zm6.5.5A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zM1 10.5A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zm6.5.5A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3z"/>
-                    </svg>
-                    Browse Categories
-                </a>
-                <a href="/search" class="quick-link">
-                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-                    </svg>
-                    Search Articles
-                </a>
-                <a href="/feed.xml" class="quick-link">
-                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M3.429 2.776c7.729 0 10.367 2.714 10.367 10.368H11.07c0-5.585-1.909-7.494-7.494-7.494V2.776Z"/>
-                        <path d="M3.429 6.205c4.373 0 6.938 2.565 6.938 6.938h-2.727c0-2.31-1.9-4.21-4.21-4.21V6.205Z"/>
-                        <circle cx="4.571" cy="11.429" r="1.143"/>
-                    </svg>
-                    RSS Feed
-                </a>
-            </div>
-        </aside>
-        </div>
     </div>
 </div>
 
@@ -188,8 +48,8 @@
 {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "name": "All Articles",
-    "description": "Complete collection of articles on {{ .config.Blog.Title }}",
+    "name": "Writing",
+    "description": "All posts on {{ .config.Blog.Title }}",
     "url": "{{ .config.BaseURL }}/articles",
     "mainEntity": {
         "@type": "ItemList",
@@ -200,7 +60,7 @@
             {
                 "@type": "BlogPosting",
                 "position": {{ add $index 1 }},
-                "headline": "{{ $article.Title }}",
+                "headline": "{{ displayTitle $article }}",
                 "description": "{{ $article.Excerpt }}",
                 "url": "{{ $.config.BaseURL }}/articles/{{ $article.Slug }}",
                 "datePublished": "{{ $article.Date.Format "2006-01-02T15:04:05Z07:00" }}",
@@ -218,8 +78,8 @@
 {{ end }}
 
 {{ define "articles-head" }}
-<meta name="description" content="Browse all articles on {{ .config.Blog.Title }}. Discover insights on technology, programming, and personal experiences.">
-<meta name="keywords" content="blog, articles, technology, programming, {{ .config.Blog.Author }}">
+<meta name="description" content="All posts on {{ .config.Blog.Title }}.">
+<meta name="keywords" content="blog, posts, technology, programming, {{ .config.Blog.Author }}">
 
 <!-- Pagination meta tags -->
 {{ if .pagination.HasPrevious }}
@@ -229,7 +89,4 @@
 <link rel="next" href="{{ .config.BaseURL }}/articles?page={{ .pagination.NextPage }}">
 {{ end }}
 
-
 {{ end }}
-
-{{ define "body-class" }}articles-page{{ end }}
