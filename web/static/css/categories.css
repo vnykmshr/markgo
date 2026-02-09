@@ -1,340 +1,58 @@
-/* Categories Page Styles */
+/* ==========================================================================
+   Categories Index Page
+   Simple link list with counts.
+   ========================================================================== */
 
-.categories-page {
-}
-
-/* Page header styles removed - handled by main.css for consistency */
-
-.page-description {
-    font-size: var(--font-size-lg);
-    color: var(--color-text-secondary);
-    max-width: 600px;
+.categories-index-page {
+    max-width: 42rem;
     margin: 0 auto;
-    line-height: 1.6;
+    padding: var(--spacing-6) var(--spacing-4);
 }
 
-.categories-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--spacing-4);
-    margin-bottom: var(--spacing-12);
-}
-
-.category-card {
-    background-color: var(--color-bg-primary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-xl);
-    padding: var(--spacing-4);
-    transition: all var(--transition-fast);
-    position: relative;
-    overflow: hidden;
-}
-
-.category-card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    background: linear-gradient(
-        180deg,
-        var(--color-primary),
-        var(--color-primary-dark)
-    );
-}
-
-.category-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--color-primary);
-}
-
-.category-header {
+/* Category Links */
+.categories-list {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: var(--spacing-3);
-    margin-bottom: var(--spacing-4);
-}
-
-.category-icon {
-    background: linear-gradient(
-        135deg,
-        var(--color-primary),
-        var(--color-primary-dark)
-    );
-    color: var(--color-text-inverse);
-    width: 40px;
-    height: 40px;
-    font-size: var(--font-size-base);
-    border-radius: var(--radius-lg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--font-size-lg);
-    flex-shrink: 0;
-}
-
-.category-info h3 {
-    font-size: var(--font-size-xl);
-    font-weight: 600;
-    color: var(--color-text-primary);
-    margin: 0 0 var(--spacing-1) 0;
-}
-
-.category-count {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-muted);
-    margin: 0;
-}
-
-.category-description {
-    color: var(--color-text-secondary);
-    line-height: 1.6;
-    margin-bottom: var(--spacing-4);
-}
-
-.category-stats {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-2);
-    align-items: flex-start;
-    padding-top: var(--spacing-4);
-    border-top: 1px solid var(--color-border-light);
-    font-size: var(--font-size-sm);
-}
-
-.latest-post {
-    color: var(--color-text-muted);
-    flex: 1;
-}
-
-.view-category {
-    color: var(--color-primary);
-    text-decoration: none;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
     gap: var(--spacing-1);
 }
 
-.view-category:hover {
-    text-decoration: underline;
-}
-
-.categories-stats {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: var(--spacing-4);
-    margin-bottom: var(--spacing-8);
-    padding: var(--spacing-6);
-    background-color: var(--color-bg-secondary);
-    border-radius: var(--radius-xl);
-}
-
-.stat-item {
-    text-align: center;
-}
-
-.stat-number {
-    display: block;
-    font-size: var(--font-size-2xl);
-    font-weight: 800;
-    color: var(--color-primary);
-    margin-bottom: var(--spacing-1);
-}
-
-.stat-label {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-muted);
-    text-transform: uppercase;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
-
-.featured-categories {
-    margin-bottom: var(--spacing-12);
-}
-
-.featured-categories h2 {
-    font-size: var(--font-size-2xl);
-    margin-bottom: var(--spacing-6);
-    color: var(--color-text-primary);
-    text-align: center;
-}
-
-.featured-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--spacing-6);
-}
-
-.featured-category {
-    background: linear-gradient(
-        135deg,
-        var(--color-primary),
-        var(--color-primary-dark)
-    );
-    color: var(--color-text-inverse);
-    border-radius: var(--radius-xl);
-    padding: var(--spacing-4);
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.featured-category::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.1),
-        rgba(255, 255, 255, 0.05)
-    );
-    pointer-events: none;
-}
-
-.featured-category h3 {
-    font-size: var(--font-size-xl);
-    margin-bottom: var(--spacing-3);
-    position: relative;
-    z-index: 1;
-}
-
-.featured-category p {
-    margin-bottom: var(--spacing-4);
-    opacity: 0.9;
-    position: relative;
-    z-index: 1;
-}
-
-.featured-badge {
-    position: absolute;
-    top: var(--spacing-3);
-    right: var(--spacing-3);
-    background-color: var(--color-accent);
-    color: var(--color-text-inverse);
-    padding: var(--spacing-1) var(--spacing-2);
-    border-radius: var(--radius-base);
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.categories-list {
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.categories-list h2 {
-    font-size: var(--font-size-2xl);
-    margin-bottom: var(--spacing-6);
-    color: var(--color-text-primary);
-    text-align: center;
-}
-
-.category-item {
+.categories-link {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-4);
-    background-color: var(--color-bg-primary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    margin-bottom: var(--spacing-3);
-    transition: all var(--transition-fast);
-}
-
-.category-item:hover {
-    background-color: var(--color-bg-secondary);
-    border-color: var(--color-primary);
-}
-
-.category-name {
+    padding: var(--spacing-3) var(--spacing-2);
+    text-decoration: none;
     color: var(--color-text-primary);
-    text-decoration: none;
+    border-radius: var(--radius-base);
+    transition: background-color var(--transition-fast);
+}
+
+.categories-link:hover {
+    background-color: var(--color-bg-secondary);
+}
+
+.categories-link-name {
     font-weight: 500;
-    font-size: var(--font-size-lg);
 }
 
-.category-name:hover {
-    color: var(--color-primary);
-    text-decoration: none;
-}
-
-.category-meta {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-4);
+.categories-link-count {
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);
 }
 
-.no-categories {
-    text-align: center;
-    padding: var(--spacing-16) 0;
+/* Empty State */
+.categories-empty {
+    padding: var(--spacing-8) 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
 }
 
-.no-categories h3 {
-    font-size: var(--font-size-2xl);
-    color: var(--color-text-primary);
-    margin-bottom: var(--spacing-4);
-}
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
 
-.no-categories p {
-    color: var(--color-text-secondary);
-    margin-bottom: var(--spacing-8);
-}
-
-/* Responsive Design (Mobile-first) */
-/* Large phones and up */
 @media (min-width: 481px) {
-    .category-card {
-        padding: var(--spacing-6);
-    }
-
-    .category-icon {
-        width: 48px;
-        height: 48px;
-        font-size: var(--font-size-lg);
-    }
-
-    .featured-category {
-        padding: var(--spacing-6);
-    }
-}
-
-/* Tablet and up */
-@media (min-width: 769px) {
-    .categories-grid {
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: var(--spacing-6);
-    }
-
-    .categories-stats {
-        flex-direction: row;
-        gap: var(--spacing-8);
-    }
-
-    .featured-grid {
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    }
-
-    .category-header {
-        flex-direction: row;
-        text-align: left;
-    }
-
-    .category-stats {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
+    .categories-index-page {
+        padding: var(--spacing-8) var(--spacing-4);
     }
 }

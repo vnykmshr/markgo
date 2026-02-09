@@ -1,98 +1,55 @@
 {{ define "tags-content" }}
-<div class="tags-page">
-    <!-- Page Header -->
-    <header class="page-header">
-        <div class="container">
-            <h1 class="page-title">All Tags</h1>
-            <p class="page-description">
-                Explore articles by topic. {{ .count }} tags covering various
-                aspects of technology, programming, and life.
-            </p>
-        </div>
-    </header>
-
+<div class="tags-index-page">
     <div class="container">
-        <!-- Tags Cloud -->
-        <div class="tags-content">
-            {{ if .tags }}
-            <div class="tags-grid">
-                {{ range .tags }}
-                <div class="tag-card">
-                    <a href="/tags/{{ .Tag | urlquery }}" class="tag-link">
-                        <h3 class="tag-name">{{ .Tag }}</h3>
-                        <span class="tag-count"
-                            >{{ .Count }} article{{ if ne .Count 1 }}s{{ end
-                            }}</span
-                        >
-                    </a>
-                </div>
-                {{ end }}
-            </div>
-            {{ else }}
-            <div class="empty-state">
-                <h3>No tags yet</h3>
-                <p>Tags will appear here as articles are published.</p>
-                <a href="/" class="btn btn-primary">Browse Articles</a>
-            </div>
+        <header class="page-header">
+            <h1 class="page-title">Tags</h1>
+        </header>
+
+        {{ if .tags }}
+        <div class="tags-flow">
+            {{ range .tags }}
+            <a href="/tags/{{ .Tag | urlquery }}" class="feed-tag">{{ .Tag }} ({{ .Count }})</a>
             {{ end }}
         </div>
-
-        <!-- Popular Tags Section -->
-        {{ if .tags }}
-        <section class="popular-tags-section">
-            <h2 class="section-title">Popular Tags</h2>
-            <div class="tags-cloud">
-                {{ range (slice .tags 0 (min (len .tags) 15)) }}
-                <a
-                    href="/tags/{{ .Tag | urlquery }}"
-                    class="tag-cloud-item"
-                    style="font-size: {{ add 1 (div (mul .Count 2) 10) }}em"
-                >
-                    {{ .Tag }}
-                </a>
-                {{ end }}
-            </div>
-        </section>
+        {{ else }}
+        <div class="tags-empty">
+            <p>No tags yet. Tags appear as you publish.</p>
+        </div>
         {{ end }}
     </div>
 </div>
 
 <!-- Structured Data -->
 <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "CollectionPage",
-        "name": "Tags - {{ .config.Blog.Title }}",
-        "description": "Browse articles by tags on {{ .config.Blog.Title }}",
-        "url": "{{ .config.BaseURL }}/tags",
-        "mainEntity": {
-            "@type": "ItemList",
-            "numberOfItems": {{ .count }},
-            "itemListElement": [
-                {{ range $index, $tag := .tags }}
-                {{ if $index }},{{ end }}
-                {
-                    "@type": "ListItem",
-                    "position": {{ add $index 1 }},
-                    "item": {
-                        "@type": "Thing",
-                        "name": "{{ $tag.Tag }}",
-                        "url": "{{ $.config.BaseURL }}/tags/{{ $tag.Tag | urlquery }}"
-                    }
+{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Tags - {{ .config.Blog.Title }}",
+    "description": "Browse posts by tag on {{ .config.Blog.Title }}",
+    "url": "{{ .config.BaseURL }}/tags",
+    "mainEntity": {
+        "@type": "ItemList",
+        "numberOfItems": {{ .count }},
+        "itemListElement": [
+            {{ range $index, $tag := .tags }}
+            {{ if $index }},{{ end }}
+            {
+                "@type": "ListItem",
+                "position": {{ add $index 1 }},
+                "item": {
+                    "@type": "Thing",
+                    "name": "{{ $tag.Tag }}",
+                    "url": "{{ $.config.BaseURL }}/tags/{{ $tag.Tag | urlquery }}"
                 }
-                {{ end }}
-            ]
-        }
+            }
+            {{ end }}
+        ]
     }
+}
 </script>
-{{ end }} {{ define "tags-head" }}
-<meta
-    name="description"
-    content="Browse all tags on {{ .config.Blog.Title }}. Find articles about {{ range $index, $tag := (slice .tags 0 (min (len .tags) 5)) }}{{ if $index }}, {{ end }}{{ $tag.Tag }}{{ end }} and more."
-/>
-<meta
-    name="keywords"
-    content="tags, topics, {{ range $index, $tag := (slice .tags 0 (min (len .tags) 10)) }}{{ if $index }}, {{ end }}{{ $tag.Tag }}{{ end }}"
-/>
+{{ end }}
 
-{{ end }} {{ define "body-class" }}tags-page{{ end }}
+{{ define "tags-head" }}
+<meta name="description" content="Browse posts by tag on {{ .config.Blog.Title }}.">
+
+{{ end }}

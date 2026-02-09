@@ -1,140 +1,58 @@
 {{ define "categories-content" }}
-<div class="categories-page">
-    <!-- Page Header -->
-    <header class="page-header">
-        <div class="container">
-            <h1 class="page-title">All Categories</h1>
-            <p class="page-description">
-                Browse articles by category. {{ .count }} categories covering
-                different areas of interest.
-            </p>
-        </div>
-    </header>
-
+<div class="categories-index-page">
     <div class="container">
-        <!-- Categories Grid -->
-        <div class="categories-content">
-            {{ if .categories }}
-            <div class="categories-grid">
-                {{ range .categories }}
-                <div class="category-card">
-                    <a href="/categories/{{ .Category | urlquery }}" class="category-link">
-                        <div class="category-icon">
-                            <svg
-                                width="32"
-                                height="32"
-                                fill="currentColor"
-                                viewBox="0 0 16 16"
-                            >
-                                <path
-                                    d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2z"
-                                />
-                                <path
-                                    d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1z"
-                                />
-                            </svg>
-                        </div>
-                        <div class="category-info">
-                            <h3 class="category-name">{{ .Category }}</h3>
-                            <span class="category-count"
-                                >{{ .Count }} article{{ if ne .Count 1 }}s{{ end
-                                }}</span
-                            >
-                        </div>
-                        <div class="category-arrow">
-                            <svg
-                                width="16"
-                                height="16"
-                                fill="currentColor"
-                                viewBox="0 0 16 16"
-                            >
-                                <path
-                                    fill-rule="evenodd"
-                                    d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"
-                                />
-                            </svg>
-                        </div>
-                    </a>
-                </div>
-                {{ end }}
-            </div>
-            {{ else }}
-            <div class="empty-state">
-                <div class="empty-icon">
-                    <svg
-                        width="64"
-                        height="64"
-                        fill="currentColor"
-                        viewBox="0 0 16 16"
-                    >
-                        <path
-                            d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2z"
-                        />
-                        <path
-                            d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1z"
-                        />
-                    </svg>
-                </div>
-                <h3>No categories yet</h3>
-                <p>
-                    Categories will appear here as articles are published and
-                    organized.
-                </p>
-                <a href="/" class="btn btn-primary">Browse Articles</a>
-            </div>
+        <header class="page-header">
+            <h1 class="page-title">Categories</h1>
+        </header>
+
+        {{ if .categories }}
+        <div class="categories-list">
+            {{ range .categories }}
+            <a href="/categories/{{ .Category | urlquery }}" class="categories-link">
+                <span class="categories-link-name">{{ .Category }}</span>
+                <span class="categories-link-count">{{ .Count }}</span>
+            </a>
             {{ end }}
         </div>
-
-        <!-- Categories Stats -->
-        {{ if .categories }}
-        <section class="categories-stats">
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number">{{ .count }}</div>
-                    <div class="stat-label">Total Categories</div>
-                </div>
-            </div>
-        </section>
+        {{ else }}
+        <div class="categories-empty">
+            <p>No categories yet. Categories appear as you publish.</p>
+        </div>
         {{ end }}
     </div>
 </div>
 
 <!-- Structured Data -->
 <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "CollectionPage",
-        "name": "Categories - {{ .config.Blog.Title }}",
-        "description": "Browse articles by categories on {{ .config.Blog.Title }}",
-        "url": "{{ .config.BaseURL }}/categories",
-        "mainEntity": {
-            "@type": "ItemList",
-            "numberOfItems": {{ .count }},
-            "itemListElement": [
-                {{ range $index, $category := .categories }}
-                {{ if $index }},{{ end }}
-                {
-                    "@type": "ListItem",
-                    "position": {{ add $index 1 }},
-                    "item": {
-                        "@type": "Thing",
-                        "name": "{{ $category.Category }}",
-                        "url": "{{ $.config.BaseURL }}/categories/{{ $category.Category | urlquery }}"
-                    }
+{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Categories - {{ .config.Blog.Title }}",
+    "description": "Browse posts by category on {{ .config.Blog.Title }}",
+    "url": "{{ .config.BaseURL }}/categories",
+    "mainEntity": {
+        "@type": "ItemList",
+        "numberOfItems": {{ .count }},
+        "itemListElement": [
+            {{ range $index, $category := .categories }}
+            {{ if $index }},{{ end }}
+            {
+                "@type": "ListItem",
+                "position": {{ add $index 1 }},
+                "item": {
+                    "@type": "Thing",
+                    "name": "{{ $category.Category }}",
+                    "url": "{{ $.config.BaseURL }}/categories/{{ $category.Category | urlquery }}"
                 }
-                {{ end }}
-            ]
-        }
+            }
+            {{ end }}
+        ]
     }
+}
 </script>
-{{ end }} {{ define "categories-head" }}
-<meta
-    name="description"
-    content="Browse all categories on {{ .config.Blog.Title }}. Find articles organized by {{ range $index, $category := (slice .categories 0 (min (len .categories) 5)) }}{{ if $index }}, {{ end }}{{ $category.Category }}{{ end }} and more."
-/>
-<meta
-    name="keywords"
-    content="categories, topics, {{ range $index, $category := (slice .categories 0 (min (len .categories) 10)) }}{{ if $index }}, {{ end }}{{ $category.Category }}{{ end }}"
-/>
+{{ end }}
 
-{{ end }} {{ define "body-class" }}categories-page{{ end }}
+{{ define "categories-head" }}
+<meta name="description" content="Browse posts by category on {{ .config.Blog.Title }}.">
+
+{{ end }}
