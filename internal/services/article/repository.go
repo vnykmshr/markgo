@@ -364,7 +364,7 @@ func (r *FileSystemRepository) parseArticleFile(filePath string) (*models.Articl
 			article.Slug = generateSlug(article.Title)
 		} else {
 			// Titleless posts (thoughts): use timestamp-based slug
-			article.Slug = fmt.Sprintf("thought-%d", article.Date.Unix())
+			article.Slug = fmt.Sprintf("thought-%d", article.Date.UnixMilli())
 		}
 	}
 

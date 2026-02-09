@@ -108,7 +108,7 @@ func TestThoughtSlugGeneration(t *testing.T) {
 	assert.Equal(t, "", emptySlug)
 
 	// Titleless posts use timestamp-based slug (as done in repository.go)
-	thoughtSlug := fmt.Sprintf("thought-%d", fixedDate.Unix())
+	thoughtSlug := fmt.Sprintf("thought-%d", fixedDate.UnixMilli())
 	assert.Contains(t, thoughtSlug, "thought-")
 	assert.Regexp(t, `^thought-\d+$`, thoughtSlug)
 }

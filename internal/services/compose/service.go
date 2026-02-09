@@ -43,7 +43,7 @@ func (s *Service) CreatePost(input Input) (string, error) {
 	if input.Title != "" {
 		slug = generateSlug(input.Title)
 	} else {
-		slug = fmt.Sprintf("thought-%d", now.Unix())
+		slug = fmt.Sprintf("thought-%d", now.UnixMilli())
 	}
 
 	// Parse comma-separated tags
@@ -88,9 +88,18 @@ func (s *Service) CreatePost(input Input) (string, error) {
 	filename := fmt.Sprintf("%s-%s.md", dateStr, slug)
 	filePath := filepath.Join(s.articlesPath, filename)
 
-	// Write file
-	if err := os.WriteFile(filePath, []byte(content), 0o644); err != nil { //nolint:gosec // article files should be world-readable
-		return "", fmt.Errorf("failed to write article file: %w", err)
+	// Write file (O_EXCL prevents overwriting an existing post)
+	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644) //nolint:gosec // article files should be world-readable
+	if err != nil {
+		return "", fmt.Errorf("failed to create article file (may already exist): %w", err)
+	}
+	_, writeErr := f.WriteString(content)
+	closeErr := f.Close()
+	if writeErr != nil {
+		return "", fmt.Errorf("failed to write article file: %w", writeErr)
+	}
+	if closeErr != nil {
+		return "", fmt.Errorf("failed to close article file: %w", closeErr)
 	}
 
 	return slug, nil

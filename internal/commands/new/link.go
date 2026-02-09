@@ -34,7 +34,7 @@ func runLink(args []string) {
 	}
 
 	now := time.Now()
-	slug := fmt.Sprintf("link-%d", now.Unix())
+	slug := fmt.Sprintf("link-%d", now.UnixMilli())
 	title := parsed.Host // Use domain as title
 
 	// Build frontmatter
@@ -65,8 +65,26 @@ func runLink(args []string) {
 	filename := fmt.Sprintf("%s-%s.md", dateStr, slug)
 	filePath := filepath.Join(articlesDir, filename)
 
-	if err := os.WriteFile(filePath, []byte(fileContent), 0o600); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: failed to write file: %v\n", err)
+	// Verify articles directory exists
+	if info, statErr := os.Stat(articlesDir); statErr != nil || !info.IsDir() {
+		fmt.Fprintf(os.Stderr, "Error: articles directory does not exist: %s\n", articlesDir)
+		os.Exit(1)
+	}
+
+	// Use O_EXCL to prevent overwriting existing files
+	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644) //nolint:gosec // article files should be world-readable
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to create file (may already exist): %v\n", err)
+		os.Exit(1)
+	}
+	_, writeErr := f.WriteString(fileContent)
+	closeErr := f.Close()
+	if writeErr != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to write file: %v\n", writeErr)
+		os.Exit(1)
+	}
+	if closeErr != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to close file: %v\n", closeErr)
 		os.Exit(1)
 	}
 
