@@ -1,342 +1,133 @@
 {{ define "contact-content" }}
 <div class="contact-page">
-    <!-- Page Header -->
-    <header class="page-header">
-        <div class="container">
-            <h1 class="page-title">Get In Touch</h1>
-            <p class="page-description">
-                Have a question, suggestion, or just want to say hello? I'd love
-                to hear from you. Whether it's about technology, development, or
-                anything else on your mind.
-            </p>
-        </div>
-    </header>
-
     <div class="container">
-        <div class="contact-content">
-            <!-- Contact Form -->
-            <div class="contact-form-section">
-                <form class="contact-form" id="contactForm" novalidate>
-                    <div class="form-group">
-                        <label for="name" class="form-label">
-                            Name <span class="required">*</span>
-                        </label>
+        <!-- Page Header -->
+        <header class="page-header">
+            <h1 class="page-title">Get in touch</h1>
+        </header>
+
+        <!-- Message Container -->
+        <div id="messageContainer" class="message-container"></div>
+
+        <!-- Contact Form -->
+        <div class="contact-form-container">
+            <form class="contact-form" id="contactForm" novalidate>
+                <div class="form-group">
+                    <label for="name" class="form-label">
+                        Name <span class="required">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        class="form-input"
+                        placeholder="Your name"
+                        required
+                        minlength="2"
+                        maxlength="50"
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">
+                        Email <span class="required">*</span>
+                    </label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        class="form-input"
+                        placeholder="you@example.com"
+                        required
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label for="subject" class="form-label">
+                        What's this about? <span class="required">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="subject"
+                        name="subject"
+                        class="form-input"
+                        required
+                        minlength="5"
+                        maxlength="100"
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label for="message" class="form-label">
+                        Message <span class="required">*</span>
+                    </label>
+                    <textarea
+                        id="message"
+                        name="message"
+                        class="form-textarea"
+                        required
+                        minlength="10"
+                        maxlength="2000"
+                        rows="6"
+                    ></textarea>
+                </div>
+
+                <!-- Captcha -->
+                <div class="form-group">
+                    <label for="captcha" class="form-label">
+                        Security check <span class="required">*</span>
+                    </label>
+                    <div class="captcha-container">
+                        <span class="captcha-question" id="captchaQuestion">
+                            What is <span id="num1">5</span> + <span id="num2">3</span>?
+                        </span>
+                        <input type="hidden" id="captchaQuestionField" name="captcha_question" value="" />
                         <input
                             type="text"
-                            id="name"
-                            name="name"
-                            class="form-input"
-                            placeholder="Your full name"
+                            id="captcha"
+                            name="captcha_answer"
+                            class="form-input captcha-input"
+                            placeholder="Answer"
                             required
-                            minlength="2"
-                            maxlength="50"
+                            pattern="[0-9]+"
+                            inputmode="numeric"
                         />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="email" class="form-label">
-                            Email <span class="required">*</span>
-                        </label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            class="form-input"
-                            placeholder="your.email@example.com"
-                            required
-                        />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="subject" class="form-label">
-                            Subject <span class="required">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            id="subject"
-                            name="subject"
-                            class="form-input"
-                            placeholder="What's this about?"
-                            required
-                            minlength="5"
-                            maxlength="100"
-                        />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="message" class="form-label">
-                            Message <span class="required">*</span>
-                        </label>
-                        <textarea
-                            id="message"
-                            name="message"
-                            class="form-textarea"
-                            placeholder="Your message here..."
-                            required
-                            minlength="10"
-                            maxlength="2000"
-                            rows="6"
-                        ></textarea>
-                        <div class="character-count">
-                            <span id="charCount">0</span> / 2000 characters
-                        </div>
-                    </div>
-
-                    <!-- Simple Captcha -->
-                    <div class="form-group">
-                        <label for="captcha" class="form-label">
-                            Security Check <span class="required">*</span>
-                        </label>
-                        <div class="captcha-container">
-                            <span class="captcha-question" id="captchaQuestion">
-                                What is <span id="num1">5</span> +
-                                <span id="num2">3</span>?
-                            </span>
-                            <input
-                                type="hidden"
-                                id="captchaQuestionField"
-                                name="captcha_question"
-                                value=""
-                            />
-                            <input
-                                type="text"
-                                id="captcha"
-                                name="captcha_answer"
-                                class="form-input captcha-input"
-                                placeholder="Answer"
-                                required
-                                pattern="[0-9]+"
-                                inputmode="numeric"
-                            />
-                            <button
-                                type="button"
-                                class="captcha-refresh"
-                                id="refreshCaptcha"
-                                title="New question"
-                            >
-                                <svg
-                                    width="16"
-                                    height="16"
-                                    fill="currentColor"
-                                    viewBox="0 0 16 16"
-                                >
-                                    <path
-                                        fill-rule="evenodd"
-                                        d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"
-                                    />
-                                    <path
-                                        d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="form-actions">
-                        <button
-                            type="submit"
-                            class="btn btn-primary btn-submit"
-                        >
-                            <svg
-                                width="16"
-                                height="16"
-                                fill="currentColor"
-                                viewBox="0 0 16 16"
-                            >
-                                <path
-                                    d="M15.854.146a.5.5 0 0 1 .11.54L13.026 8.74a.5.5 0 0 1-.708.251L9 7.5 7.5 9l-1.49-3.318a.5.5 0 0 1 .251-.708L14.31 2.036a.5.5 0 0 1 .54.11z"
-                                />
-                                <path
-                                    d="M2.5 3a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5V6.5a.5.5 0 0 0-1 0V12H3V4h5.5a.5.5 0 0 0 0-1H2.5z"
-                                />
+                        <button type="button" class="captcha-refresh" id="refreshCaptcha" title="New question">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
                             </svg>
-                            Send Message
                         </button>
-                        <button type="reset" class="btn btn-secondary">
-                            Clear Form
-                        </button>
-                    </div>
-
-                    <p class="form-note">
-                        <svg
-                            width="14"
-                            height="14"
-                            fill="currentColor"
-                            viewBox="0 0 16 16"
-                        >
-                            <path
-                                d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"
-                            />
-                            <path
-                                d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"
-                            />
-                        </svg>
-                        Your information will never be shared. Messages typically
-                        receive a response within 24 hours.
-                    </p>
-                </form>
-            </div>
-
-            <!-- Contact Info -->
-            <aside class="contact-info">
-                <div class="contact-card">
-                    <h3 class="contact-title">Let's Connect</h3>
-                    <p class="contact-description">
-                        Always interested in hearing about new opportunities, 
-                        collaboration ideas, or just having a good conversation 
-                        about technology and development.
-                    </p>
-
-                    <div class="contact-methods">
-                        <div class="contact-method">
-                            <div class="method-icon">
-                                <svg
-                                    width="20"
-                                    height="20"
-                                    fill="currentColor"
-                                    viewBox="0 0 16 16"
-                                >
-                                    <path
-                                        d="M2 2A2 2 0 0 0 0 4v.5L8 8l8-3.5V4a2 2 0 0 0-2-2H2Z"
-                                    />
-                                    <path
-                                        d="M0 5.618V14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5.618L8 9.982 0 5.618Z"
-                                    />
-                                </svg>
-                            </div>
-                            <div class="method-info">
-                                <h4>Email</h4>
-                                <p>{{ .config.Blog.AuthorEmail }}</p>
-                            </div>
-                        </div>
-
-                        <div class="contact-method">
-                            <div class="method-icon">
-                                <svg
-                                    width="20"
-                                    height="20"
-                                    fill="currentColor"
-                                    viewBox="0 0 16 16"
-                                >
-                                    <path
-                                        fill-rule="evenodd"
-                                        d="M1.885.511a1.745 1.745 0 0 1 2.61.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.678.678 0 0 0 .178.643l2.457 2.457a.678.678 0 0 0 .644.178l2.189-.547a1.745 1.745 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.634 18.634 0 0 1-7.01-4.42 18.634 18.634 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877L1.885.511z"
-                                    />
-                                </svg>
-                            </div>
-                            <div class="method-info">
-                                <h4>Location</h4>
-                                <p>Available worldwide</p>
-                            </div>
-                        </div>
-
-                        <div class="contact-method">
-                            <div class="method-icon">
-                                <svg
-                                    width="20"
-                                    height="20"
-                                    fill="currentColor"
-                                    viewBox="0 0 16 16"
-                                >
-                                    <path
-                                        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"
-                                    />
-                                </svg>
-                            </div>
-                            <div class="method-info">
-                                <h4>GitHub</h4>
-                                <p>
-                                    <a
-                                        href="https://github.com/vnykmshr/markgo"
-                                        target="_blank"
-                                        rel="noopener"
-                                        >vnykmshr/markgo</a
-                                    >
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="contact-method">
-                            <div class="method-icon">
-                                <svg
-                                    width="20"
-                                    height="20"
-                                    fill="currentColor"
-                                    viewBox="0 0 16 16"
-                                >
-                                    <path
-                                        d="M3.429 2.776c7.729 0 10.367 2.714 10.367 10.368H11.07c0-5.585-1.909-7.494-7.494-7.494V2.776Z"
-                                    />
-                                    <path
-                                        d="M3.429 6.205c4.373 0 6.938 2.565 6.938 6.938h-2.727c0-2.31-1.9-4.21-4.21-4.21V6.205Z"
-                                    />
-                                    <circle cx="4.571" cy="11.429" r="1.143" />
-                                </svg>
-                            </div>
-                            <div class="method-info">
-                                <h4>RSS Feed</h4>
-                                <p>
-                                    <a href="/feed.xml">Subscribe to updates</a>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="response-time">
-                        <h4>Response Time</h4>
-                        <p>
-                            Messages are typically answered within 24 hours
-                            during weekdays. For urgent matters, please mention
-                            it in your subject line.
-                        </p>
-                    </div>
-
-                    <div class="topics">
-                        <h4>Great Topics to Discuss</h4>
-                        <ul>
-                            <li>Software architecture and development</li>
-                            <li>Technology trends and innovations</li>
-                            <li>Programming languages and frameworks</li>
-                            <li>Open source collaboration</li>
-                            <li>Career advice and mentoring</li>
-                        </ul>
                     </div>
                 </div>
-            </aside>
+
+                <button type="submit" class="contact-submit">Send</button>
+
+                <p class="form-note">Your information will never be shared.</p>
+            </form>
         </div>
     </div>
 </div>
 
-<!-- Success/Error Messages -->
-<div id="messageContainer" class="message-container"></div>
-
 <!-- Structured Data -->
 <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "ContactPage",
-        "name": "Contact {{ .config.Blog.Author }}",
-        "description": "Get in touch with {{ .config.Blog.Author }} for discussions about technology, development, and more.",
-        "url": "{{ .config.BaseURL }}/contact",
-        "mainEntity": {
-            "@type": "Person",
-            "name": "{{ .config.Blog.Author }}",
-            "email": "{{ .config.Blog.AuthorEmail }}",
-            "jobTitle": "Software Professional",
-            "url": "{{ .config.BaseURL }}"
-        }
+{
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    "name": "Contact {{ .config.Blog.Author }}",
+    "description": "Get in touch with {{ .config.Blog.Author }}",
+    "url": "{{ .config.BaseURL }}/contact",
+    "mainEntity": {
+        "@type": "Person",
+        "name": "{{ .config.Blog.Author }}",
+        "email": "{{ .config.Blog.AuthorEmail }}",
+        "url": "{{ .config.BaseURL }}"
     }
+}
 </script>
-{{ end }} {{ define "contact-head" }}
-<meta
-    name="description"
-    content="Contact {{ .config.Blog.Author }} - Software Professional. Get in touch for discussions about technology, development, and more."
-/>
-<meta
-    name="keywords"
-    content="contact, {{ .config.Blog.Author }}, software developer, technology, programming"
-/>
-<link rel="stylesheet" href="/static/css/contact.css" />
-{{ end }} {{ define "scripts" }}
-<script src="/static/js/contact.js"></script>
+{{ end }}
+
+{{ define "contact-head" }}
+<meta name="description" content="Get in touch with {{ .config.Blog.Author }}.">
+
 {{ end }}

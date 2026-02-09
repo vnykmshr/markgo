@@ -37,6 +37,7 @@ document.addEventListener("DOMContentLoaded", function () {
    * Changes color based on character count thresholds
    */
   function updateCharCount() {
+    if (!charCount) return;
     const count = messageTextarea.value.length;
     charCount.textContent = count;
     charCount.style.color =
@@ -83,7 +84,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function handleSubmit(e) {
     e.preventDefault();
 
-    const submitBtn = contactForm.querySelector(".btn-submit");
+    const submitBtn = contactForm.querySelector(".contact-submit");
     const formData = new FormData(contactForm);
 
     // Basic validation
