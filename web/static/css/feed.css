@@ -6,11 +6,11 @@
 /* Feed Header */
 .feed-header {
     text-align: center;
-    padding: var(--spacing-8) 0 var(--spacing-6);
+    padding: var(--spacing-6) 0 var(--spacing-4);
 }
 
 .feed-title {
-    font-size: var(--font-size-3xl);
+    font-size: var(--font-size-2xl);
     font-weight: 700;
     margin: 0 0 var(--spacing-2);
     color: var(--color-text-primary);
@@ -39,7 +39,7 @@
 .feed-card {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-5);
+    padding: var(--spacing-4);
     background-color: var(--color-bg-primary);
     transition: box-shadow var(--transition-fast);
 }
@@ -131,12 +131,12 @@
 }
 
 .feed-card-thought .feed-card-body {
-    padding: var(--spacing-5);
+    padding: var(--spacing-4);
     flex: 1;
 }
 
 .thought-content {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-base);
     line-height: 1.7;
     color: var(--color-text-primary);
 }
@@ -228,24 +228,24 @@
    Responsive
    ========================================================================== */
 
-@media (max-width: 480px) {
+@media (min-width: 481px) {
     .feed-header {
-        padding: var(--spacing-6) 0 var(--spacing-4);
+        padding: var(--spacing-8) 0 var(--spacing-6);
     }
 
     .feed-title {
-        font-size: var(--font-size-2xl);
+        font-size: var(--font-size-3xl);
     }
 
     .feed-card {
-        padding: var(--spacing-4);
+        padding: var(--spacing-5);
     }
 
     .feed-card-thought .feed-card-body {
-        padding: var(--spacing-4);
+        padding: var(--spacing-5);
     }
 
     .thought-content {
-        font-size: var(--font-size-base);
+        font-size: var(--font-size-lg);
     }
 }
