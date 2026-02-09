@@ -175,7 +175,6 @@
     {{ if eq $tpl "compose" }}<link rel="stylesheet" href="/static/css/compose.css">{{ end }}
 
     <!-- Additional head content -->
-    {{ if eq $tpl "index" }}{{ template "index-head" . }}{{ end }}
     {{ if eq $tpl "feed" }}{{ template "feed-head" . }}{{ end }}
     {{ if eq $tpl "compose" }}{{ template "compose-head" . }}{{ end }}
     {{ if eq $tpl "articles" }}{{ template "articles-head" . }}{{ end }}
@@ -189,9 +188,8 @@
     {{ if eq $tpl "admin_home" }}{{ template "admin_home-head" . }}{{ end }}
     {{ if eq $tpl "404" }}{{ template "404-head" . }}{{ end }}
 </head>
-<body class="{{- $tpl := .template | default "index" -}}
-    {{- if eq $tpl "index" -}}homepage
-    {{- else if eq $tpl "articles" -}}articles-page
+<body class="{{- $tpl := .template | default "feed" -}}
+    {{- if eq $tpl "articles" -}}articles-page
     {{- else if eq $tpl "article" -}}article-page-body
     {{- else if eq $tpl "search" -}}search-page
     {{- else if eq $tpl "contact" -}}contact-page
@@ -218,37 +216,34 @@
                 <div class="navbar-menu" id="navbar-menu">
                     <ul class="navbar-nav">
                         <li class="nav-item">
-                            <a href="/" class="nav-link">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/articles" class="nav-link">Articles</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/tags" class="nav-link">Tags</a>
+                            <a href="/articles" class="nav-link">Writing</a>
                         </li>
                         <li class="nav-item">
                             <a href="/about" class="nav-link">About</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/contact" class="nav-link">Contact</a>
                         </li>
                         {{ if and (ne .config.Admin.Username "") (ne .config.Admin.Password "") }}
                         <li class="nav-item">
                             <a href="/compose" class="nav-link">Compose</a>
                         </li>
                         {{ end }}
-                        <li class="nav-item">
-                            <a href="/search" class="nav-link search-link">
-                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-                                </svg>
-                                Search
-                            </a>
-                        </li>
                     </ul>
                 </div>
 
                 <div class="navbar-actions">
+                    <a href="/search" class="nav-action-btn" aria-label="Search" title="Search">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                        </svg>
+                        <span class="sr-only">Search</span>
+                    </a>
+                    <a href="/feed.xml" class="nav-action-btn" aria-label="RSS Feed" title="Subscribe via RSS">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M3.429 2.776c7.729 0 10.367 2.714 10.367 10.368H11.07c0-5.585-1.909-7.494-7.494-7.494V2.776Z"/>
+                            <path d="M3.429 6.205c4.373 0 6.938 2.565 6.938 6.938h-2.727c0-2.31-1.9-4.21-4.21-4.21V6.205Z"/>
+                            <circle cx="4.571" cy="11.429" r="1.143"/>
+                        </svg>
+                        <span class="sr-only">RSS Feed</span>
+                    </a>
                     <button class="theme-toggle" aria-label="Switch to dark mode" title="Toggle theme">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
@@ -266,8 +261,7 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        {{ $tpl := .template | default "index" }}
-        {{ if eq $tpl "index" }}{{ template "index-content" . }}{{ end }}
+        {{ $tpl := .template | default "feed" }}
         {{ if eq $tpl "feed" }}{{ template "feed-content" . }}{{ end }}
         {{ if eq $tpl "compose" }}{{ template "compose-content" . }}{{ end }}
         {{ if eq $tpl "articles" }}{{ template "articles-content" . }}{{ end }}
@@ -287,57 +281,16 @@
     <!-- Footer -->
     <footer class="site-footer">
         <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h3>{{ .config.Blog.Title }}</h3>
-                    <p>{{ .config.Blog.Description }}</p>
-                    <div class="social-links">
-                        <a href="/feed.xml" class="social-link" title="RSS Feed">
-                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M3.429 2.776c7.729 0 10.367 2.714 10.367 10.368H11.07c0-5.585-1.909-7.494-7.494-7.494V2.776Z"/>
-                                <path d="M3.429 6.205c4.373 0 6.938 2.565 6.938 6.938h-2.727c0-2.31-1.9-4.21-4.21-4.21V6.205Z"/>
-                                <circle cx="4.571" cy="11.429" r="1.143"/>
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="footer-section">
-                    <h4>Navigate</h4>
-                    <ul class="footer-links">
-                        <li><a href="/articles">All Articles</a></li>
-                        <li><a href="/tags">Tags</a></li>
-                        <li><a href="/categories">Categories</a></li>
-                        <li><a href="/about">About</a></li>
-                        <li><a href="/contact">Contact</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-section">
-                    <h4>Recent Posts</h4>
-                    <ul class="footer-posts">
-                        {{ if .recent }}
-                            {{ range (slice .recent 0 3) }}
-                            <li>
-                                <a href="/articles/{{ .Slug }}" class="footer-post-link">{{ .Title }}</a>
-                                <time class="footer-post-date">{{ .Date.Format "Jan 2, 2006" }}</time>
-                            </li>
-                            {{ end }}
-                        {{ end }}
-                    </ul>
-                </div>
-            </div>
-
-            <div class="footer-bottom">
-                <div class="footer-info">
-                    <p>&copy; {{ now.Year }} {{ .config.Blog.Author }}. All rights reserved.</p>
-                    <p>Powered by <a href="https://github.com/vnykmshr/markgo" target="_blank" rel="noopener">MarkGo Engine</a></p>
-                </div>
-
-                <div class="footer-meta">
-                    <span class="build-info">{{ .app_version }}</span>
-                </div>
-            </div>
+            <nav class="footer-nav" aria-label="Footer navigation">
+                <a href="/feed.xml" class="footer-link footer-subscribe">Subscribe</a>
+                <a href="/tags" class="footer-link">Tags</a>
+                <a href="/categories" class="footer-link">Categories</a>
+                <a href="/contact" class="footer-link">Contact</a>
+                <a href="/articles" class="footer-link">Writing</a>
+            </nav>
+            <p class="footer-colophon">
+                &copy; {{ now.Year }} {{ .config.Blog.Author }} · Written in Markdown, published with <a href="https://github.com/vnykmshr/markgo" target="_blank" rel="noopener">MarkGo</a> · <span class="footer-version">{{ .app_version }}</span>
+            </p>
         </div>
     </footer>
 
@@ -346,7 +299,7 @@
     <script src="/static/js/main.js"></script>
 
     <!-- Template-specific JavaScript -->
-    {{ $tpl := .template | default "index" }}
+    {{ $tpl := .template | default "feed" }}
     {{ if eq $tpl "404" }}<script src="/static/js/404.js"></script>{{ end }}
     {{ if eq $tpl "article" }}<script src="/static/js/article.js"></script>{{ end }}
     {{ if eq $tpl "about-article" }}<script src="/static/js/about-article.js"></script>{{ end }}

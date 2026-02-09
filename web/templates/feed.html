@@ -11,6 +11,14 @@
             {{ end }}
         </header>
 
+        <!-- Feed Type Filters -->
+        <nav class="feed-filters" aria-label="Filter by type">
+            <a href="/" class="feed-filter{{ if eq .activeFilter "" }} active{{ end }}">All</a>
+            <a href="/?type=thought" class="feed-filter{{ if eq .activeFilter "thought" }} active{{ end }}">Thoughts</a>
+            <a href="/?type=link" class="feed-filter{{ if eq .activeFilter "link" }} active{{ end }}">Links</a>
+            <a href="/?type=article" class="feed-filter{{ if eq .activeFilter "article" }} active{{ end }}">Articles</a>
+        </nav>
+
         <!-- Feed Stream -->
         <div class="feed-stream">
             {{ if .posts }}
@@ -34,14 +42,15 @@
         <!-- Pagination -->
         {{ if .pagination }}
         {{ $p := .pagination }}
+        {{ $f := .activeFilter }}
         {{ if or $p.HasPrevious $p.HasNext }}
         <nav class="feed-pagination">
             {{ if $p.HasPrevious }}
-            <a href="/?page={{ $p.PreviousPage }}" class="feed-pagination-link feed-pagination-prev">← Newer</a>
+            <a href="/?page={{ $p.PreviousPage }}{{ if $f }}&type={{ $f | urlquery }}{{ end }}" class="feed-pagination-link feed-pagination-prev">← Newer</a>
             {{ end }}
             <span class="feed-pagination-info">Page {{ $p.CurrentPage }} of {{ $p.TotalPages }}</span>
             {{ if $p.HasNext }}
-            <a href="/?page={{ $p.NextPage }}" class="feed-pagination-link feed-pagination-next">Older →</a>
+            <a href="/?page={{ $p.NextPage }}{{ if $f }}&type={{ $f | urlquery }}{{ end }}" class="feed-pagination-link feed-pagination-next">Older →</a>
             {{ end }}
         </nav>
         {{ end }}

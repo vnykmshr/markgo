@@ -61,10 +61,23 @@ func (h *ArticleHandler) Home(c *gin.Context) {
 	if err != nil || page < 1 {
 		page = 1
 	}
+	typeFilter := c.Query("type")
+	switch typeFilter {
+	case "", templateArticle, "thought", "link":
+		// valid
+	default:
+		typeFilter = ""
+	}
+
+	// Only use cache for unfiltered page 1 — cache key has no awareness of query params
+	var cachedFunc func() (map[string]any, error)
+	if typeFilter == "" && page == 1 {
+		cachedFunc = h.cachedFunctions.GetHomeData
+	}
 
 	h.withCachedFallback(c,
-		h.cachedFunctions.GetHomeData,
-		func() (map[string]any, error) { return h.getHomeDataUncached(page) },
+		cachedFunc,
+		func() (map[string]any, error) { return h.getHomeDataUncached(page, typeFilter) },
 		"base.html",
 		"Failed to get home data")
 }
@@ -213,37 +226,23 @@ func (h *ArticleHandler) Search(c *gin.Context) {
 // Helper methods
 
 const (
-	recentArticlesLimit = 5
-
 	// Template names
 	templateArticle = "article"
 )
 
-// getRecentArticles returns the most recent published articles for footer display
-func (h *ArticleHandler) getRecentArticles() []*models.Article {
-	allArticles := h.articleService.GetAllArticles()
-	var recent []*models.Article
-	for _, article := range allArticles {
-		if !article.Draft && len(recent) < recentArticlesLimit {
-			recent = append(recent, article)
-		}
-	}
-	return recent
-}
-
 // Uncached data generation methods (to be extracted from original handlers.go)
 
-func (h *ArticleHandler) getHomeDataUncached(page int) (map[string]any, error) {
+func (h *ArticleHandler) getHomeDataUncached(page int, typeFilter string) (map[string]any, error) {
 	allArticles := h.articleService.GetAllArticles()
 
-	// Collect published posts (all types)
+	// Collect published posts, optionally filtered by type
 	postsPerPage := h.config.Blog.PostsPerPage
 	if postsPerPage <= 0 {
 		postsPerPage = 20
 	}
 	var posts []*models.Article
 	for _, a := range allArticles {
-		if !a.Draft {
+		if !a.Draft && (typeFilter == "" || a.Type == typeFilter) {
 			posts = append(posts, a)
 		}
 	}
@@ -265,6 +264,7 @@ func (h *ArticleHandler) getHomeDataUncached(page int) (map[string]any, error) {
 	data["description"] = h.config.Blog.Description
 	data["posts"] = pagePosts
 	data["pagination"] = pagination
+	data["activeFilter"] = typeFilter
 	data["template"] = "feed"
 
 	return data, nil
@@ -347,7 +347,7 @@ func (h *ArticleHandler) getArticlesPageUncached(page int) (map[string]any, erro
 	data["description"] = "Articles from " + h.config.Blog.Title
 	data["articles"] = articles
 	data["pagination"] = pagination
-	data["recent"] = h.getRecentArticles()
+
 	data["template"] = "articles"
 
 	return data, nil
@@ -369,7 +369,7 @@ func (h *ArticleHandler) getTagArticlesUncached(tag string) (map[string]any, err
 	data["articles"] = published
 	data["tag"] = tag
 	data["totalCount"] = len(published)
-	data["recent"] = h.getRecentArticles()
+
 	data["template"] = "tag"
 
 	return data, nil
@@ -391,7 +391,7 @@ func (h *ArticleHandler) getCategoryArticlesUncached(category string) (map[strin
 	data["articles"] = published
 	data["category"] = category
 	data["totalCount"] = len(published)
-	data["recent"] = h.getRecentArticles()
+
 	data["template"] = "category"
 
 	return data, nil
@@ -404,7 +404,7 @@ func (h *ArticleHandler) getTagsPageUncached() (map[string]any, error) {
 	data["description"] = "All tags from " + h.config.Blog.Title
 	data["tags"] = tagCounts
 	data["count"] = len(tagCounts)
-	data["recent"] = h.getRecentArticles()
+
 	data["template"] = "tags"
 
 	return data, nil
@@ -417,7 +417,7 @@ func (h *ArticleHandler) getCategoriesPageUncached() (map[string]any, error) {
 	data["description"] = "All categories from " + h.config.Blog.Title
 	data["categories"] = categoryCounts
 	data["count"] = len(categoryCounts)
-	data["recent"] = h.getRecentArticles()
+
 	data["template"] = "categories"
 
 	return data, nil
@@ -455,7 +455,7 @@ func (h *ArticleHandler) getSearchResultsUncached(query string) (map[string]any,
 	data["query"] = query
 	data["count"] = len(results)
 	data["totalCount"] = len(published)
-	data["recent"] = h.getRecentArticles()
+
 	data["template"] = "search"
 
 	return data, nil
