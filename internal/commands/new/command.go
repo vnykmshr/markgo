@@ -30,6 +30,20 @@ const (
 
 // Run executes the new article command
 func Run(args []string) {
+	// Subcommand dispatch for quick-post types
+	if len(args) > 1 {
+		switch args[1] {
+		case "thought":
+			runThought(args[2:])
+			return
+		case "link":
+			runLink(args[2:])
+			return
+		case "article":
+			args = append(args[:1], args[2:]...) // strip "article", fall through
+		}
+	}
+
 	// Create a new flag set for this command
 	fs := flag.NewFlagSet("new", flag.ExitOnError)
 
@@ -342,6 +356,11 @@ func showHelp() {
 	fmt.Println("  markgo new [OPTIONS]")
 	fmt.Println("  markgo new                    # Interactive mode")
 	fmt.Println("  markgo new --interactive      # Force interactive mode")
+	fmt.Println()
+	fmt.Println("QUICK POST COMMANDS:")
+	fmt.Println("  markgo new thought \"text\"      # Create a thought (no title)")
+	fmt.Println("  markgo new link <url> [text]   # Create a link post")
+	fmt.Println("  markgo new article [OPTIONS]   # Create an article (same as markgo new)")
 	fmt.Println()
 	fmt.Println("CONTENT OPTIONS:")
 	fmt.Printf("  --title       Article title (default: %q)\n", defaultTitle)
