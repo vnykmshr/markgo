@@ -1,0 +1,251 @@
+/* ==========================================================================
+   Feed Page Styles
+   Mixed-content feed with type-specific card layouts
+   ========================================================================== */
+
+/* Feed Header */
+.feed-header {
+    text-align: center;
+    padding: var(--spacing-8) 0 var(--spacing-6);
+}
+
+.feed-title {
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+    margin: 0 0 var(--spacing-2);
+    color: var(--color-text-primary);
+}
+
+.feed-tagline {
+    font-size: var(--font-size-lg);
+    color: var(--color-text-muted);
+    margin: 0;
+    max-width: 36rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Feed Stream */
+.feed-stream {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+    max-width: 42rem;
+    margin: 0 auto;
+    padding-bottom: var(--spacing-8);
+}
+
+/* Base Card */
+.feed-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-5);
+    background-color: var(--color-bg-primary);
+    transition: box-shadow var(--transition-fast);
+}
+
+.feed-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.feed-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+}
+
+.feed-card-title {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.feed-card-title a {
+    color: var(--color-text-primary);
+    text-decoration: none;
+}
+
+.feed-card-title a:hover {
+    color: var(--color-primary);
+}
+
+.feed-card-description,
+.feed-card-excerpt {
+    font-size: var(--font-size-base);
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.6;
+}
+
+.feed-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-3);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.feed-card-time {
+    color: var(--color-text-muted);
+}
+
+.feed-card-reading-time {
+    color: var(--color-text-muted);
+}
+
+.feed-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-1);
+}
+
+.feed-tag {
+    font-size: var(--font-size-xs);
+    color: var(--color-primary);
+    text-decoration: none;
+    padding: 0.125rem var(--spacing-2);
+    border-radius: var(--radius-full);
+    background-color: var(--color-bg-tertiary);
+    transition: background-color var(--transition-fast);
+}
+
+.feed-tag:hover {
+    background-color: var(--color-border);
+}
+
+/* Thought Card */
+.feed-card-thought {
+    display: flex;
+    flex-direction: row;
+    padding: 0;
+    overflow: hidden;
+}
+
+.feed-card-accent {
+    width: 4px;
+    flex-shrink: 0;
+    background-color: var(--color-primary);
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+
+.feed-card-thought .feed-card-body {
+    padding: var(--spacing-5);
+    flex: 1;
+}
+
+.thought-content {
+    font-size: var(--font-size-lg);
+    line-height: 1.7;
+    color: var(--color-text-primary);
+}
+
+.thought-content p {
+    margin: 0;
+}
+
+/* Link Card */
+.feed-card-link-url {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    font-size: var(--font-size-sm);
+    color: var(--color-primary);
+    text-decoration: none;
+    padding: var(--spacing-1) var(--spacing-3);
+    background-color: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+    width: fit-content;
+    transition: background-color var(--transition-fast);
+}
+
+.feed-card-link-url:hover {
+    background-color: var(--color-border);
+}
+
+.feed-card-domain {
+    font-weight: 500;
+}
+
+.feed-card-external-icon {
+    font-size: var(--font-size-xs);
+    opacity: 0.7;
+}
+
+/* Article Card */
+.feed-card-article .feed-card-title {
+    font-size: var(--font-size-xl);
+}
+
+/* Feed Empty State */
+.feed-empty {
+    text-align: center;
+    padding: var(--spacing-16) 0;
+    color: var(--color-text-muted);
+}
+
+.feed-empty h3 {
+    font-size: var(--font-size-xl);
+    margin: 0 0 var(--spacing-2);
+}
+
+.feed-empty p {
+    margin: 0;
+}
+
+/* Pagination */
+.feed-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-4);
+    padding: var(--spacing-6) 0;
+    max-width: 42rem;
+    margin: 0 auto;
+}
+
+.feed-pagination-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+    padding: var(--spacing-2) var(--spacing-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: background-color var(--transition-fast);
+}
+
+.feed-pagination-link:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+.feed-pagination-info {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 480px) {
+    .feed-header {
+        padding: var(--spacing-6) 0 var(--spacing-4);
+    }
+
+    .feed-title {
+        font-size: var(--font-size-2xl);
+    }
+
+    .feed-card {
+        padding: var(--spacing-4);
+    }
+
+    .feed-card-thought .feed-card-body {
+        padding: var(--spacing-4);
+    }
+
+    .thought-content {
+        font-size: var(--font-size-base);
+    }
+}

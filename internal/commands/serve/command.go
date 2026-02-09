@@ -395,7 +395,7 @@ EXAMPLES:
 func setupTemplates(router *gin.Engine, templateService *services.TemplateService) error {
 	// Validate that required templates exist
 	requiredTemplates := []string{
-		"base.html", "index.html", "article.html", "articles.html",
+		"base.html", "index.html", "feed.html", "article.html", "articles.html",
 		"404.html", "contact.html", "search.html", "tags.html", "categories.html",
 	}
 

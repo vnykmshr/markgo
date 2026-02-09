@@ -230,43 +230,29 @@ func (h *ArticleHandler) getRecentArticles() []*models.Article {
 func (h *ArticleHandler) getHomeDataUncached() (map[string]any, error) {
 	allArticles := h.articleService.GetAllArticles()
 
-	// Get featured articles (first 5 published articles)
-	var featured []*models.Article
-	for _, article := range allArticles {
-		if !article.Draft && len(featured) < 5 {
-			featured = append(featured, article)
+	// Collect published posts (all types)
+	postsPerPage := h.config.Blog.PostsPerPage
+	if postsPerPage <= 0 {
+		postsPerPage = 20
+	}
+	var posts []*models.Article
+	for _, a := range allArticles {
+		if !a.Draft {
+			posts = append(posts, a)
 		}
 	}
 
-	// Get recent articles (first 12 published articles)
-	var recent []*models.Article
-	for _, article := range allArticles {
-		if !article.Draft && len(recent) < 12 {
-			recent = append(recent, article)
-		}
-	}
+	pagination := models.NewPagination(1, len(posts), postsPerPage)
 
-	tagCounts := h.articleService.GetTagCounts()
-	categoryCounts := h.articleService.GetCategoryCounts()
-
-	// Count published articles only for totalCount
-	publishedCount := 0
-	for _, article := range allArticles {
-		if !article.Draft {
-			publishedCount++
-		}
-	}
+	// Slice to current page
+	end := min(postsPerPage, len(posts))
+	pagePosts := posts[:end]
 
 	data := h.buildBaseTemplateData(h.config.Blog.Title)
 	data["description"] = h.config.Blog.Description
-	data["featured"] = featured
-	data["recent"] = recent
-	data["tags"] = tagCounts[:min(10, len(tagCounts))]
-	data["categories"] = categoryCounts[:min(10, len(categoryCounts))]
-	data["totalCount"] = publishedCount
-	data["totalCats"] = len(categoryCounts)
-	data["totalTags"] = len(tagCounts)
-	data["template"] = "index"
+	data["posts"] = pagePosts
+	data["pagination"] = pagination
+	data["template"] = "feed"
 
 	return data, nil
 }

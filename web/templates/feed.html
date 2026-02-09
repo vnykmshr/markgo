@@ -1,0 +1,142 @@
+{{ define "feed-content" }}
+<div class="feed-page">
+    <div class="container">
+        <!-- Feed Header -->
+        <header class="feed-header">
+            <h1 class="feed-title">{{ .config.Blog.Title }}</h1>
+            {{ if .config.Blog.Tagline }}
+            <p class="feed-tagline">{{ .config.Blog.Tagline }}</p>
+            {{ else if .config.Blog.Description }}
+            <p class="feed-tagline">{{ .config.Blog.Description }}</p>
+            {{ end }}
+        </header>
+
+        <!-- Feed Stream -->
+        <div class="feed-stream">
+            {{ if .posts }}
+                {{ range .posts }}
+                    {{ if eq .Type "thought" }}
+                        {{ template "card-thought" . }}
+                    {{ else if eq .Type "link" }}
+                        {{ template "card-link" . }}
+                    {{ else }}
+                        {{ template "card-article" . }}
+                    {{ end }}
+                {{ end }}
+            {{ else }}
+            <div class="feed-empty">
+                <h3>No posts yet</h3>
+                <p>Check back later for new content!</p>
+            </div>
+            {{ end }}
+        </div>
+
+        <!-- Pagination -->
+        {{ if .pagination }}
+        {{ $p := .pagination }}
+        {{ if or $p.HasPrevious $p.HasNext }}
+        <nav class="feed-pagination">
+            {{ if $p.HasPrevious }}
+            <a href="/?page={{ $p.PreviousPage }}" class="feed-pagination-link feed-pagination-prev">← Newer</a>
+            {{ end }}
+            <span class="feed-pagination-info">Page {{ $p.CurrentPage }} of {{ $p.TotalPages }}</span>
+            {{ if $p.HasNext }}
+            <a href="/?page={{ $p.NextPage }}" class="feed-pagination-link feed-pagination-next">Older →</a>
+            {{ end }}
+        </nav>
+        {{ end }}
+        {{ end }}
+    </div>
+</div>
+{{ end }}
+
+{{ define "card-thought" }}
+<article class="feed-card feed-card-thought">
+    <div class="feed-card-accent"></div>
+    <div class="feed-card-body">
+        <div class="feed-card-content thought-content">
+            {{ if .ProcessedContent }}
+                {{ .ProcessedContent | safeHTML }}
+            {{ else }}
+                {{ .Content | safeHTML }}
+            {{ end }}
+        </div>
+        <div class="feed-card-meta">
+            <time class="feed-card-time" datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
+                {{ relativeTime .Date }}
+            </time>
+            {{ if .Tags }}
+            <div class="feed-card-tags">
+                {{ range .Tags }}
+                <a href="/tags/{{ . | urlquery }}" class="feed-tag">{{ . }}</a>
+                {{ end }}
+            </div>
+            {{ end }}
+        </div>
+    </div>
+</article>
+{{ end }}
+
+{{ define "card-link" }}
+<article class="feed-card feed-card-link">
+    <div class="feed-card-body">
+        <h3 class="feed-card-title">
+            <a href="/articles/{{ .Slug }}">{{ .Title }}</a>
+        </h3>
+        {{ if .LinkURL }}
+        <a href="{{ .LinkURL }}" class="feed-card-link-url" target="_blank" rel="noopener">
+            <span class="feed-card-domain">{{ extractDomain .LinkURL }}</span>
+            <span class="feed-card-external-icon">→</span>
+        </a>
+        {{ end }}
+        {{ if .Excerpt }}
+        <p class="feed-card-excerpt">{{ .Excerpt }}</p>
+        {{ end }}
+        <div class="feed-card-meta">
+            <time class="feed-card-time" datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
+                {{ relativeTime .Date }}
+            </time>
+            {{ if .Tags }}
+            <div class="feed-card-tags">
+                {{ range .Tags }}
+                <a href="/tags/{{ . | urlquery }}" class="feed-tag">{{ . }}</a>
+                {{ end }}
+            </div>
+            {{ end }}
+        </div>
+    </div>
+</article>
+{{ end }}
+
+{{ define "card-article" }}
+<article class="feed-card feed-card-article">
+    <div class="feed-card-body">
+        <h3 class="feed-card-title">
+            <a href="/articles/{{ .Slug }}">{{ .Title }}</a>
+        </h3>
+        {{ if .Description }}
+        <p class="feed-card-description">{{ .Description }}</p>
+        {{ else if .Excerpt }}
+        <p class="feed-card-excerpt">{{ .Excerpt }}</p>
+        {{ end }}
+        <div class="feed-card-meta">
+            <time class="feed-card-time" datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
+                {{ .Date.Format "Jan 2, 2006" }}
+            </time>
+            <span class="feed-card-reading-time">{{ .ReadingTime }} min read</span>
+            {{ if .Tags }}
+            <div class="feed-card-tags">
+                {{ range .Tags }}
+                <a href="/tags/{{ . | urlquery }}" class="feed-tag">{{ . }}</a>
+                {{ end }}
+            </div>
+            {{ end }}
+        </div>
+    </div>
+</article>
+{{ end }}
+
+{{ define "feed-head" }}
+<meta name="description" content="{{ .config.Blog.Description }}">
+<meta name="keywords" content="blog, technology, programming, development, {{ .config.Blog.Author }}">
+{{ end }}

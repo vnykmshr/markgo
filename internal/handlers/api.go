@@ -12,6 +12,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"strings"
+
 	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/constants"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
@@ -161,6 +163,25 @@ func (h *APIHandler) Contact(c *gin.Context) {
 	})
 }
 
+// feedTitle returns a display title for feed items. For articles with titles,
+// returns the title directly. For titleless posts (thoughts), synthesizes a
+// title from the first ~60 characters of content.
+func feedTitle(article *models.Article) string {
+	if article.Title != "" {
+		return article.Title
+	}
+	content := article.Content
+	if len(content) > 60 {
+		if idx := strings.LastIndex(content[:60], " "); idx > 20 {
+			content = content[:idx]
+		} else {
+			content = content[:60]
+		}
+		content += "..."
+	}
+	return content
+}
+
 // Uncached data generation methods
 
 func (h *APIHandler) getRSSFeedUncached() (string, error) {
@@ -189,7 +210,7 @@ func (h *APIHandler) getRSSFeedUncached() (string, error) {
 	for _, article := range published {
 		item := models.FeedItem{
 			ID:          h.config.BaseURL + "/articles/" + article.Slug,
-			Title:       article.Title,
+			Title:       feedTitle(article),
 			ContentHTML: article.Content,
 			URL:         h.config.BaseURL + "/articles/" + article.Slug,
 			Summary:     article.Description,
@@ -252,7 +273,7 @@ func (h *APIHandler) getJSONFeedUncached() (string, error) {
 		item := models.FeedItem{
 			ID:        h.config.BaseURL + "/articles/" + article.Slug,
 			URL:       h.config.BaseURL + "/articles/" + article.Slug,
-			Title:     article.Title,
+			Title:     feedTitle(article),
 			Summary:   article.Description,
 			Published: article.Date,
 			Tags:      article.Tags,

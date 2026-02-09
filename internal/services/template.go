@@ -25,8 +25,11 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/unicode/norm"
 
+	"net/url"
+
 	"github.com/vnykmshr/markgo/internal/config"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
+	"github.com/vnykmshr/markgo/internal/models"
 )
 
 var (
@@ -691,6 +694,48 @@ var templateFuncs = template.FuncMap{
 		baseURL = strings.TrimRight(baseURL, "/")
 		path = strings.TrimLeft(path, "/")
 		return fmt.Sprintf("%s/%s", baseURL, path)
+	},
+	"relativeTime": func(t time.Time) string {
+		duration := time.Since(t)
+		switch {
+		case duration < time.Hour:
+			m := int(duration.Minutes())
+			if m <= 1 {
+				return "just now"
+			}
+			return fmt.Sprintf("%dm ago", m)
+		case duration < 24*time.Hour:
+			return fmt.Sprintf("%dh ago", int(duration.Hours()))
+		case duration < 7*24*time.Hour:
+			return fmt.Sprintf("%dd ago", int(duration.Hours()/24))
+		default:
+			return t.Format("Jan 2")
+		}
+	},
+	"extractDomain": func(urlStr string) string {
+		u, err := url.Parse(urlStr)
+		if err != nil {
+			return urlStr
+		}
+		host := u.Hostname()
+		// Strip www. prefix
+		host = strings.TrimPrefix(host, "www.")
+		return host
+	},
+	"displayTitle": func(a *models.Article) string {
+		if a.Title != "" {
+			return a.Title
+		}
+		content := a.Content
+		if len(content) > 60 {
+			if idx := strings.LastIndex(content[:60], " "); idx > 20 {
+				content = content[:idx]
+			} else {
+				content = content[:60]
+			}
+			content += "..."
+		}
+		return content
 	},
 }
 
