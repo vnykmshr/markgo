@@ -19,6 +19,7 @@ Complete documentation for MarkGo - a high-performance file-based blog engine bu
 ## 🏗️ Architecture & Development
 
 - [Architecture Guide](architecture.md) - Technical architecture and design
+- [Design Language](design.md) - Design principles, voice, visual language, and anti-patterns
 - [Contributing Guide](../.github/CONTRIBUTING.md) - How to contribute
 
 ## 📚 Reference Documentation
