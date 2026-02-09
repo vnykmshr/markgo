@@ -63,12 +63,7 @@
 
             <div class="compose-field compose-field-inline">
                 <label class="compose-checkbox-label">
-                    <input
-                        type="checkbox"
-                        name="draft"
-                        class="compose-checkbox"
-                        {{ if and .input .input.Draft }}checked{{ end }}
-                    >
+                    <input type="checkbox" name="draft" value="on" class="compose-checkbox">
                     Save as draft
                 </label>
             </div>
