@@ -17,6 +17,8 @@ type Article struct {
 	Draft        bool      `yaml:"draft" json:"draft"`
 	Featured     bool      `yaml:"featured" json:"featured"`
 	Author       string    `yaml:"author" json:"author"`
+	Type         string    `yaml:"type,omitempty" json:"type"`
+	LinkURL      string    `yaml:"link_url,omitempty" json:"link_url,omitempty"`
 	Content      string    `yaml:"-" json:"content"`
 	ReadingTime  int       `yaml:"-" json:"reading_time"`
 	WordCount    int       `yaml:"-" json:"word_count"`
@@ -63,6 +65,8 @@ type ArticleList struct {
 	Excerpt     string    `json:"excerpt"`
 	ReadingTime int       `json:"reading_time"`
 	Featured    bool      `json:"featured"`
+	Type        string    `json:"type"`
+	LinkURL     string    `json:"link_url,omitempty"`
 }
 
 // ToListView converts an Article to ArticleList
@@ -77,6 +81,8 @@ func (a *Article) ToListView() *ArticleList {
 		Excerpt:     a.Excerpt,
 		ReadingTime: a.ReadingTime,
 		Featured:    a.Featured,
+		Type:        a.Type,
+		LinkURL:     a.LinkURL,
 	}
 }
 

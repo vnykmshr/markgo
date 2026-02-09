@@ -360,7 +360,17 @@ func (r *FileSystemRepository) parseArticleFile(filePath string) (*models.Articl
 
 	// Generate slug if not provided
 	if article.Slug == "" {
-		article.Slug = generateSlug(article.Title)
+		if article.Title != "" {
+			article.Slug = generateSlug(article.Title)
+		} else {
+			// Titleless posts (thoughts): use timestamp-based slug
+			article.Slug = fmt.Sprintf("thought-%d", article.Date.Unix())
+		}
+	}
+
+	// Infer post type if not explicitly set
+	if article.Type == "" {
+		article.Type = inferPostType(&article)
 	}
 
 	return &article, nil
