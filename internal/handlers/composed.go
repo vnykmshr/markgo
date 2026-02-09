@@ -339,16 +339,20 @@ func (h *Handlers) PprofMutex(c *gin.Context) {
 
 // ShowCompose handles the GET /compose route.
 func (h *Handlers) ShowCompose(c *gin.Context) {
-	if h.ComposeHandler != nil {
-		h.ComposeHandler.ShowCompose(c)
+	if h.ComposeHandler == nil {
+		h.NotFound(c)
+		return
 	}
+	h.ComposeHandler.ShowCompose(c)
 }
 
 // HandleCompose handles the POST /compose route.
 func (h *Handlers) HandleCompose(c *gin.Context) {
-	if h.ComposeHandler != nil {
-		h.ComposeHandler.HandleSubmit(c)
+	if h.ComposeHandler == nil {
+		h.NotFound(c)
+		return
 	}
+	h.ComposeHandler.HandleSubmit(c)
 }
 
 // Logger returns the logger instance (used by middleware)

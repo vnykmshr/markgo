@@ -71,15 +71,17 @@ func (h *ComposeHandler) HandleSubmit(c *gin.Context) {
 		h.logger.Error("Failed to create post", "error", err)
 		data := h.buildBaseTemplateData("Compose - " + h.config.Blog.Title)
 		data["template"] = templateCompose
-		data["error"] = "Failed to create post: " + err.Error()
+		data["error"] = "Failed to create post. Please try again."
 		data["input"] = input
 		h.renderHTML(c, http.StatusInternalServerError, "base.html", data)
 		return
 	}
 
 	// Reload articles so the new post appears in the feed
+	reloadOK := true
 	if err := h.articleService.ReloadArticles(); err != nil {
-		h.logger.Warn("Failed to reload articles after compose", "error", err)
+		h.logger.Error("Failed to reload articles after compose", "error", err)
+		reloadOK = false
 	}
 
 	// Clear cache so stale pages aren't served
@@ -87,8 +89,8 @@ func (h *ComposeHandler) HandleSubmit(c *gin.Context) {
 		h.cacheService.Clear()
 	}
 
-	// Redirect to the new post (or feed for thoughts)
-	if input.Title == "" {
+	// Redirect to the new post, or feed if reload failed (article won't be in memory)
+	if !reloadOK || input.Title == "" {
 		c.Redirect(http.StatusSeeOther, "/")
 	} else {
 		c.Redirect(http.StatusSeeOther, "/articles/"+slug)
