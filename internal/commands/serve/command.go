@@ -22,6 +22,7 @@ import (
 	"github.com/vnykmshr/markgo/internal/handlers"
 	"github.com/vnykmshr/markgo/internal/middleware"
 	"github.com/vnykmshr/markgo/internal/services"
+	"github.com/vnykmshr/markgo/internal/services/compose"
 	"github.com/vnykmshr/markgo/internal/services/seo"
 )
 
@@ -172,6 +173,7 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, error) {
 
 	emailService := services.NewEmailService(&cfg.Email, logger)
 	searchService := services.NewSearchService()
+	composeService := compose.NewService(cfg.ArticlesPath, cfg.Blog.Author)
 
 	// Initialize SEO helper (stateless utility)
 	siteConfig := services.SiteConfig{
@@ -240,6 +242,7 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, error) {
 		SearchService:   searchService,
 		TemplateService: templateService,
 		SEOService:      seoService,
+		ComposeService:  composeService,
 		Config:          cfg,
 		Logger:          logger,
 		Cache:           cache,
@@ -318,6 +321,18 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 	router.GET("/feed.json", h.JSONFeed)
 	router.GET("/sitemap.xml", h.Sitemap)
 
+	// Compose routes (authenticated)
+	if cfg.Admin.Username != "" && cfg.Admin.Password != "" {
+		composeGroup := router.Group("/compose")
+		composeGroup.Use(
+			middleware.RecoveryWithErrorHandler(logger),
+			middleware.BasicAuth(cfg.Admin.Username, cfg.Admin.Password),
+			middleware.NoCache(),
+		)
+		composeGroup.GET("", h.ShowCompose)
+		composeGroup.POST("", h.HandleCompose)
+	}
+
 	// Admin routes (optional) - with minimal middleware chain to avoid header conflicts
 	if cfg.Admin.Username != "" && cfg.Admin.Password != "" {
 		adminGroup := router.Group("/admin")
@@ -395,7 +410,7 @@ EXAMPLES:
 func setupTemplates(router *gin.Engine, templateService *services.TemplateService) error {
 	// Validate that required templates exist
 	requiredTemplates := []string{
-		"base.html", "index.html", "feed.html", "article.html", "articles.html",
+		"base.html", "index.html", "feed.html", "compose.html", "article.html", "articles.html",
 		"404.html", "contact.html", "search.html", "tags.html", "categories.html",
 	}
 

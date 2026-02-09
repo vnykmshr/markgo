@@ -1,0 +1,87 @@
+{{ define "compose-content" }}
+<div class="compose-page">
+    <div class="container">
+        <header class="compose-header">
+            <h1 class="compose-title">Compose</h1>
+            <p class="compose-subtitle">Write a thought, share a link, or publish an article.</p>
+        </header>
+
+        {{ if .error }}
+        <div class="compose-error">
+            <p>{{ .error }}</p>
+        </div>
+        {{ end }}
+
+        <form class="compose-form" method="POST" action="/compose">
+            <div class="compose-field">
+                <label for="content" class="compose-label">Content <span class="compose-required">*</span></label>
+                <textarea
+                    id="content"
+                    name="content"
+                    class="compose-textarea"
+                    placeholder="What's on your mind? Write in Markdown..."
+                    required
+                    autofocus
+                >{{ if .input }}{{ .input.Content }}{{ end }}</textarea>
+            </div>
+
+            <div class="compose-field">
+                <label for="title" class="compose-label">Title <span class="compose-hint">(optional — leave empty for thoughts)</span></label>
+                <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    class="compose-input"
+                    placeholder="Article title"
+                    value="{{ if .input }}{{ .input.Title }}{{ end }}"
+                >
+            </div>
+
+            <div class="compose-field">
+                <label for="link_url" class="compose-label">Link URL <span class="compose-hint">(optional — add a URL to create a link post)</span></label>
+                <input
+                    type="url"
+                    id="link_url"
+                    name="link_url"
+                    class="compose-input"
+                    placeholder="https://example.com"
+                    value="{{ if .input }}{{ .input.LinkURL }}{{ end }}"
+                >
+            </div>
+
+            <div class="compose-field">
+                <label for="tags" class="compose-label">Tags <span class="compose-hint">(optional — comma-separated)</span></label>
+                <input
+                    type="text"
+                    id="tags"
+                    name="tags"
+                    class="compose-input"
+                    placeholder="golang, web, tutorial"
+                    value="{{ if .input }}{{ .input.Tags }}{{ end }}"
+                >
+            </div>
+
+            <div class="compose-field compose-field-inline">
+                <label class="compose-checkbox-label">
+                    <input
+                        type="checkbox"
+                        name="draft"
+                        class="compose-checkbox"
+                        {{ if and .input .input.Draft }}checked{{ end }}
+                    >
+                    Save as draft
+                </label>
+            </div>
+
+            <div class="compose-actions">
+                <button type="submit" class="compose-submit">Publish</button>
+                <a href="/" class="compose-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{{ end }}
+
+{{ define "compose-head" }}
+<meta name="robots" content="noindex">
+{{ end }}

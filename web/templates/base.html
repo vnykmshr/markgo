@@ -171,10 +171,12 @@
     {{ if eq $tpl "tags" }}<link rel="stylesheet" href="/static/css/tags.css">{{ end }}
     {{ if eq $tpl "categories" }}<link rel="stylesheet" href="/static/css/categories.css">{{ end }}
     {{ if eq $tpl "feed" }}<link rel="stylesheet" href="/static/css/feed.css">{{ end }}
+    {{ if eq $tpl "compose" }}<link rel="stylesheet" href="/static/css/compose.css">{{ end }}
 
     <!-- Additional head content -->
     {{ if eq $tpl "index" }}{{ template "index-head" . }}{{ end }}
     {{ if eq $tpl "feed" }}{{ template "feed-head" . }}{{ end }}
+    {{ if eq $tpl "compose" }}{{ template "compose-head" . }}{{ end }}
     {{ if eq $tpl "articles" }}{{ template "articles-head" . }}{{ end }}
     {{ if eq $tpl "article" }}{{ template "article-head" . }}{{ end }}
     {{ if eq $tpl "search" }}{{ template "search-head" . }}{{ end }}
@@ -197,6 +199,7 @@
     {{- else if eq $tpl "tags" -}}tags-page
     {{- else if eq $tpl "categories" -}}categories-page
     {{- else if eq $tpl "feed" -}}feed-page
+    {{- else if eq $tpl "compose" -}}compose-page
     {{- else if eq $tpl "admin_home" -}}admin-dashboard-page
     {{- else if eq $tpl "404" -}}error-page
     {{- end -}}">
@@ -227,6 +230,9 @@
                         </li>
                         <li class="nav-item">
                             <a href="/contact" class="nav-link">Contact</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/compose" class="nav-link">Compose</a>
                         </li>
                         <li class="nav-item">
                             <a href="/search" class="nav-link search-link">
@@ -260,6 +266,7 @@
         {{ $tpl := .template | default "index" }}
         {{ if eq $tpl "index" }}{{ template "index-content" . }}{{ end }}
         {{ if eq $tpl "feed" }}{{ template "feed-content" . }}{{ end }}
+        {{ if eq $tpl "compose" }}{{ template "compose-content" . }}{{ end }}
         {{ if eq $tpl "articles" }}{{ template "articles-content" . }}{{ end }}
         {{ if eq $tpl "article" }}{{ template "article-content" . }}{{ end }}
         {{ if eq $tpl "search" }}{{ template "search-content" . }}{{ end }}

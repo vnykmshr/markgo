@@ -1,0 +1,176 @@
+/* ==========================================================================
+   Compose Page Styles
+   Auth-gated form for creating new posts
+   ========================================================================== */
+
+.compose-header {
+    text-align: center;
+    padding: var(--spacing-8) 0 var(--spacing-4);
+}
+
+.compose-title {
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+    margin: 0 0 var(--spacing-2);
+    color: var(--color-text-primary);
+}
+
+.compose-subtitle {
+    font-size: var(--font-size-base);
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+/* Error Display */
+.compose-error {
+    max-width: 48rem;
+    margin: 0 auto var(--spacing-4);
+    padding: var(--spacing-3) var(--spacing-4);
+    background-color: var(--color-error-bg);
+    color: var(--color-error-text);
+    border: 1px solid var(--color-error-border);
+    border-radius: var(--radius-md);
+}
+
+.compose-error p {
+    margin: 0;
+}
+
+/* Form */
+.compose-form {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: var(--spacing-6);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-bg-primary);
+}
+
+.compose-field {
+    margin-bottom: var(--spacing-5);
+}
+
+.compose-label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: var(--spacing-2);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
+}
+
+.compose-required {
+    color: var(--color-error);
+}
+
+.compose-hint {
+    font-weight: 400;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.compose-input,
+.compose-textarea {
+    width: 100%;
+    padding: var(--spacing-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-base);
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-primary);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    box-sizing: border-box;
+}
+
+.compose-input:focus,
+.compose-textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.compose-textarea {
+    font-family: var(--font-family-mono);
+    min-height: 200px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+/* Checkbox */
+.compose-field-inline {
+    display: flex;
+    align-items: center;
+}
+
+.compose-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.compose-checkbox {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--color-primary);
+}
+
+/* Actions */
+.compose-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    padding-top: var(--spacing-4);
+    border-top: 1px solid var(--color-border-light);
+}
+
+.compose-submit {
+    padding: var(--spacing-2) var(--spacing-6);
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.compose-submit:hover {
+    background-color: var(--color-primary-dark);
+}
+
+.compose-cancel {
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: var(--font-size-sm);
+}
+
+.compose-cancel:hover {
+    color: var(--color-text-secondary);
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 480px) {
+    .compose-form {
+        padding: var(--spacing-4);
+    }
+
+    .compose-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .compose-submit {
+        text-align: center;
+    }
+
+    .compose-cancel {
+        text-align: center;
+    }
+}

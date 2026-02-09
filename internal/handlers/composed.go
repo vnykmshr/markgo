@@ -11,6 +11,7 @@ import (
 
 	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/services"
+	"github.com/vnykmshr/markgo/internal/services/compose"
 )
 
 // CacheAdapter defines the interface for cache operations
@@ -77,6 +78,7 @@ type Handlers struct {
 	ArticleHandler *ArticleHandler
 	AdminHandler   *AdminHandler
 	APIHandler     *APIHandler
+	ComposeHandler *ComposeHandler
 	cacheService   CacheAdapter
 }
 
@@ -94,6 +96,7 @@ type Config struct {
 	SearchService   services.SearchServiceInterface
 	TemplateService services.TemplateServiceInterface
 	SEOService      services.SEOServiceInterface
+	ComposeService  *compose.Service
 	Config          *config.Config
 	Logger          *slog.Logger
 	Cache           *obcache.Cache
@@ -142,10 +145,25 @@ func New(cfg *Config) *Handlers {
 		cfg.SEOService,
 	)
 
+	var composeHandler *ComposeHandler
+	if cfg.ComposeService != nil {
+		composeHandler = NewComposeHandler(
+			cfg.Config,
+			cfg.Logger,
+			cfg.TemplateService,
+			cfg.ComposeService,
+			cfg.ArticleService,
+			cacheService,
+			cfg.BuildInfo,
+			cfg.SEOService,
+		)
+	}
+
 	return &Handlers{
 		ArticleHandler: articleHandler,
 		AdminHandler:   adminHandler,
 		APIHandler:     apiHandler,
+		ComposeHandler: composeHandler,
 		cacheService:   cacheService,
 	}
 }
@@ -317,6 +335,20 @@ func (h *Handlers) PprofBlock(c *gin.Context) {
 // PprofMutex handles pprof mutex requests.
 func (h *Handlers) PprofMutex(c *gin.Context) {
 	h.AdminHandler.ProfileMutex(c)
+}
+
+// ShowCompose handles the GET /compose route.
+func (h *Handlers) ShowCompose(c *gin.Context) {
+	if h.ComposeHandler != nil {
+		h.ComposeHandler.ShowCompose(c)
+	}
+}
+
+// HandleCompose handles the POST /compose route.
+func (h *Handlers) HandleCompose(c *gin.Context) {
+	if h.ComposeHandler != nil {
+		h.ComposeHandler.HandleSubmit(c)
+	}
 }
 
 // Logger returns the logger instance (used by middleware)
