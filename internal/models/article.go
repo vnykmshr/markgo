@@ -3,6 +3,8 @@
 package models
 
 import (
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -27,6 +29,39 @@ type Article struct {
 	// Processed fields - populated when article is loaded
 	ProcessedContent string `yaml:"-" json:"-"`
 	Excerpt          string `yaml:"-" json:"-"`
+}
+
+// mdSyntax matches common markdown formatting syntax for stripping.
+var mdSyntax = regexp.MustCompile(`[*_~` + "`" + `\[\]#>]+`)
+
+// DisplayTitle returns the article title, or synthesizes one from content
+// for titleless posts (thoughts). Strips markdown syntax for clean display
+// in meta tags, feeds, and other plain-text contexts.
+func (a *Article) DisplayTitle() string {
+	if a.Title != "" {
+		return a.Title
+	}
+	content := stripMarkdown(a.Content)
+	if len(content) > 60 {
+		if idx := strings.LastIndex(content[:60], " "); idx > 20 {
+			content = content[:idx]
+		} else {
+			content = content[:60]
+		}
+		content += "..."
+	}
+	return content
+}
+
+// stripMarkdown removes common markdown formatting from text.
+func stripMarkdown(s string) string {
+	// Remove markdown links [text](url) → text
+	s = regexp.MustCompile(`\[([^\]]+)\]\([^)]+\)`).ReplaceAllString(s, "$1")
+	// Remove inline formatting: *, _, ~, `, [, ], #, >
+	s = mdSyntax.ReplaceAllString(s, "")
+	// Collapse whitespace
+	s = strings.Join(strings.Fields(s), " ")
+	return s
 }
 
 // ContactMessage represents a contact form submission

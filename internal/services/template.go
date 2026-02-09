@@ -723,19 +723,7 @@ var templateFuncs = template.FuncMap{
 		return host
 	},
 	"displayTitle": func(a *models.Article) string {
-		if a.Title != "" {
-			return a.Title
-		}
-		content := a.Content
-		if len(content) > 60 {
-			if idx := strings.LastIndex(content[:60], " "); idx > 20 {
-				content = content[:idx]
-			} else {
-				content = content[:60]
-			}
-			content += "..."
-		}
-		return content
+		return a.DisplayTitle()
 	},
 }
 

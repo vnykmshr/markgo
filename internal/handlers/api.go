@@ -12,8 +12,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"strings"
-
 	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/constants"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
@@ -163,23 +161,10 @@ func (h *APIHandler) Contact(c *gin.Context) {
 	})
 }
 
-// feedTitle returns a display title for feed items. For articles with titles,
-// returns the title directly. For titleless posts (thoughts), synthesizes a
-// title from the first ~60 characters of content.
+// feedTitle returns a display title for feed items, delegating to the
+// Article model's DisplayTitle method.
 func feedTitle(article *models.Article) string {
-	if article.Title != "" {
-		return article.Title
-	}
-	content := article.Content
-	if len(content) > 60 {
-		if idx := strings.LastIndex(content[:60], " "); idx > 20 {
-			content = content[:idx]
-		} else {
-			content = content[:60]
-		}
-		content += "..."
-	}
-	return content
+	return article.DisplayTitle()
 }
 
 // Uncached data generation methods
