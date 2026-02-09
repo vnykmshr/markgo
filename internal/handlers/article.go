@@ -56,9 +56,15 @@ func NewArticleHandler(
 
 // Home handles the home page request
 func (h *ArticleHandler) Home(c *gin.Context) {
+	pageStr := c.DefaultQuery("page", "1")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+
 	h.withCachedFallback(c,
 		h.cachedFunctions.GetHomeData,
-		h.getHomeDataUncached,
+		func() (map[string]any, error) { return h.getHomeDataUncached(page) },
 		"base.html",
 		"Failed to get home data")
 }
@@ -227,7 +233,7 @@ func (h *ArticleHandler) getRecentArticles() []*models.Article {
 
 // Uncached data generation methods (to be extracted from original handlers.go)
 
-func (h *ArticleHandler) getHomeDataUncached() (map[string]any, error) {
+func (h *ArticleHandler) getHomeDataUncached(page int) (map[string]any, error) {
 	allArticles := h.articleService.GetAllArticles()
 
 	// Collect published posts (all types)
@@ -242,11 +248,18 @@ func (h *ArticleHandler) getHomeDataUncached() (map[string]any, error) {
 		}
 	}
 
-	pagination := models.NewPagination(1, len(posts), postsPerPage)
+	pagination := models.NewPagination(page, len(posts), postsPerPage)
 
 	// Slice to current page
-	end := min(postsPerPage, len(posts))
-	pagePosts := posts[:end]
+	start := (page - 1) * postsPerPage
+	if start > len(posts) {
+		start = len(posts)
+	}
+	end := start + postsPerPage
+	if end > len(posts) {
+		end = len(posts)
+	}
+	pagePosts := posts[start:end]
 
 	data := h.buildBaseTemplateData(h.config.Blog.Title)
 	data["description"] = h.config.Blog.Description
