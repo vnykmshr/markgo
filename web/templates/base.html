@@ -160,12 +160,14 @@
     <link rel="stylesheet" href="/static/css/main.css">
     {{ if .config.Blog.Style }}<link rel="stylesheet" href="/static/css/themes/{{ .config.Blog.Style }}.css">{{ end }}
 
-    <!-- Template-specific CSS -->
+    <!-- Shared card CSS (pages that use feed card partials) -->
     {{ $tpl := .template }}
+    {{ if or (eq $tpl "feed") (eq $tpl "articles") (eq $tpl "search") (eq $tpl "tag") (eq $tpl "category") }}<link rel="stylesheet" href="/static/css/cards.css">{{ end }}
+
+    <!-- Template-specific CSS -->
     {{ if eq $tpl "404" }}<link rel="stylesheet" href="/static/css/404.css">{{ end }}
     {{ if eq $tpl "article" }}<link rel="stylesheet" href="/static/css/article.css">{{ end }}
     {{ if eq $tpl "articles" }}<link rel="stylesheet" href="/static/css/articles.css">{{ end }}
-
     {{ if eq $tpl "about-article" }}<link rel="stylesheet" href="/static/css/about-article.css">{{ end }}
     {{ if eq $tpl "contact" }}<link rel="stylesheet" href="/static/css/contact.css">{{ end }}
     {{ if eq $tpl "search" }}<link rel="stylesheet" href="/static/css/search.css">{{ end }}
@@ -173,6 +175,7 @@
     {{ if eq $tpl "categories" }}<link rel="stylesheet" href="/static/css/categories.css">{{ end }}
     {{ if eq $tpl "feed" }}<link rel="stylesheet" href="/static/css/feed.css">{{ end }}
     {{ if eq $tpl "compose" }}<link rel="stylesheet" href="/static/css/compose.css">{{ end }}
+    {{ if eq $tpl "admin_home" }}<link rel="stylesheet" href="/static/css/admin.css">{{ end }}
 
     <!-- Additional head content -->
     {{ if eq $tpl "feed" }}{{ template "feed-head" . }}{{ end }}
@@ -197,6 +200,8 @@
     {{- else if eq $tpl "about-article" -}}about-article-page
     {{- else if eq $tpl "tags" -}}tags-page
     {{- else if eq $tpl "categories" -}}categories-page
+    {{- else if eq $tpl "tag" -}}tag-page
+    {{- else if eq $tpl "category" -}}category-page
     {{- else if eq $tpl "feed" -}}feed-page
     {{- else if eq $tpl "compose" -}}compose-page
     {{- else if eq $tpl "admin_home" -}}admin-dashboard-page
