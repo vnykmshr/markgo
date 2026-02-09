@@ -188,6 +188,8 @@
     {{ if eq $tpl "about-article" }}{{ template "about-article-head" . }}{{ end }}
     {{ if eq $tpl "tags" }}{{ template "tags-head" . }}{{ end }}
     {{ if eq $tpl "categories" }}{{ template "categories-head" . }}{{ end }}
+    {{ if eq $tpl "tag" }}{{ template "tag-head" . }}{{ end }}
+    {{ if eq $tpl "category" }}{{ template "category-head" . }}{{ end }}
     {{ if eq $tpl "admin_home" }}{{ template "admin_home-head" . }}{{ end }}
     {{ if eq $tpl "404" }}{{ template "404-head" . }}{{ end }}
 </head>
