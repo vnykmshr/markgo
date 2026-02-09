@@ -162,7 +162,7 @@
 
     <!-- Shared card CSS (pages that use feed card partials) -->
     {{ $tpl := .template }}
-    {{ if or (eq $tpl "feed") (eq $tpl "articles") (eq $tpl "search") (eq $tpl "tag") (eq $tpl "category") }}<link rel="stylesheet" href="/static/css/cards.css">{{ end }}
+    {{ if or (eq $tpl "feed") (eq $tpl "article") (eq $tpl "articles") (eq $tpl "search") (eq $tpl "tag") (eq $tpl "category") }}<link rel="stylesheet" href="/static/css/cards.css">{{ end }}
 
     <!-- Template-specific CSS -->
     {{ if eq $tpl "404" }}<link rel="stylesheet" href="/static/css/404.css">{{ end }}
@@ -306,8 +306,7 @@
     <!-- Template-specific JavaScript -->
     {{ $tpl := .template | default "feed" }}
     {{ if eq $tpl "404" }}<script src="/static/js/404.js"></script>{{ end }}
-    {{ if eq $tpl "article" }}<script src="/static/js/article.js"></script>{{ end }}
-    {{ if eq $tpl "about-article" }}<script src="/static/js/about-article.js"></script>{{ end }}
+{{ if eq $tpl "about-article" }}<script src="/static/js/about-article.js"></script>{{ end }}
     {{ if eq $tpl "contact" }}<script src="/static/js/contact.js"></script>{{ end }}
     {{ if eq $tpl "search" }}<script src="/static/js/search.js"></script>{{ end }}
 

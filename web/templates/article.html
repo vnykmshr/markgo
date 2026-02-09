@@ -2,65 +2,44 @@
 <div class="article-page">
     <article class="article-detail">
         <div class="container">
-            <!-- Article Header -->
+            {{ if eq .article.Type "thought" }}
+            <!-- Thought detail -->
+            <header class="article-header article-header-thought">
+                <div class="article-meta">
+                    <time class="article-date" datetime="{{ .article.Date.Format "2006-01-02T15:04:05Z07:00" }}">
+                        {{ relativeTime .article.Date }}
+                    </time>
+                </div>
+            </header>
+            <div class="article-content article-content-thought">
+                <div class="thought-accent"></div>
+                <div class="thought-body">
+                    {{ if .article.ProcessedContent }}
+                        {{ .article.ProcessedContent | safeHTML }}
+                    {{ else }}
+                        {{ .article.Content | safeHTML }}
+                    {{ end }}
+                </div>
+            </div>
+
+            {{ else if eq .article.Type "link" }}
+            <!-- Link detail -->
             <header class="article-header">
                 <div class="article-meta">
                     <time class="article-date" datetime="{{ .article.Date.Format "2006-01-02T15:04:05Z07:00" }}">
-                        {{ .article.Date.Format "January 2, 2006" }}
+                        {{ .article.Date.Format "Jan 2, 2006" }}
                     </time>
-                    {{ if ne .article.Type "thought" }}
-                    <span class="article-reading-time">{{ .article.ReadingTime }} min read</span>
-                    {{ if .article.WordCount }}
-                    <span class="article-word-count">{{ .article.WordCount }} words</span>
-                    {{ end }}
-                    {{ end }}
                 </div>
-
                 {{ if .article.Title }}
                 <h1 class="article-title">{{ .article.Title }}</h1>
                 {{ end }}
-
                 {{ if .article.LinkURL }}
-                <div class="article-link-url">
-                    <a href="{{ .article.LinkURL }}" target="_blank" rel="noopener">
-                        {{ extractDomain .article.LinkURL }} →
-                    </a>
-                </div>
-                {{ end }}
-
-                {{ if .article.Description }}
-                <p class="article-description">{{ .article.Description }}</p>
-                {{ end }}
-
-                <div class="article-tags-categories">
-                    {{ if .article.Tags }}
-                    <div class="article-tags">
-                        <span class="tags-label">Tags:</span>
-                        {{ range .article.Tags }}
-                        <a href="/tags/{{ . | urlquery }}" class="tag">{{ . }}</a>
-                        {{ end }}
-                    </div>
-                    {{ end }}
-
-                    {{ if .article.Categories }}
-                    <div class="article-categories">
-                        <span class="categories-label">Categories:</span>
-                        {{ range .article.Categories }}
-                        <a href="/categories/{{ . | urlquery }}" class="category">{{ . }}</a>
-                        {{ end }}
-                    </div>
-                    {{ end }}
-                </div>
-
-                {{ if .article.Author }}
-                <div class="article-author">
-                    <span class="author-label">By</span>
-                    <span class="author-name">{{ .article.Author }}</span>
-                </div>
+                <a href="{{ .article.LinkURL }}" class="article-link-pill" target="_blank" rel="noopener">
+                    <span class="article-link-domain">{{ extractDomain .article.LinkURL }}</span>
+                    <span class="article-link-arrow">→</span>
+                </a>
                 {{ end }}
             </header>
-
-            <!-- Article Content -->
             <div class="article-content">
                 {{ if .article.ProcessedContent }}
                     {{ .article.ProcessedContent | safeHTML }}
@@ -69,105 +48,60 @@
                 {{ end }}
             </div>
 
-            <!-- Article Footer -->
+            {{ else }}
+            <!-- Article detail -->
+            <header class="article-header">
+                <div class="article-meta">
+                    <time class="article-date" datetime="{{ .article.Date.Format "2006-01-02T15:04:05Z07:00" }}">
+                        {{ .article.Date.Format "Jan 2, 2006" }}
+                    </time>
+                    <span class="article-reading-time">{{ .article.ReadingTime }} min read</span>
+                </div>
+                {{ if .article.Title }}
+                <h1 class="article-title">{{ .article.Title }}</h1>
+                {{ end }}
+                {{ if .article.Description }}
+                <p class="article-description">{{ .article.Description }}</p>
+                {{ end }}
+            </header>
+            <div class="content-separator"></div>
+            <div class="article-content">
+                {{ if .article.ProcessedContent }}
+                    {{ .article.ProcessedContent | safeHTML }}
+                {{ else }}
+                    {{ .article.Content | safeHTML }}
+                {{ end }}
+            </div>
+            {{ end }}
+
+            <!-- Tags (all types) -->
+            {{ if .article.Tags }}
+            <div class="article-tags">
+                {{ range .article.Tags }}
+                <a href="/tags/{{ . | urlquery }}" class="feed-tag">{{ . }}</a>
+                {{ end }}
+            </div>
+            {{ end }}
+
+            <!-- Footer -->
             <footer class="article-footer">
-                <div class="article-meta-footer">
+                <div class="content-separator"></div>
+                <div class="article-footer-content">
+                    <a href="/articles" class="page-back-link">← Writing</a>
                     {{ if .article.LastModified }}
-                    <p class="last-modified">
-                        Last updated: <time datetime="{{ .article.LastModified.Format "2006-01-02T15:04:05Z07:00" }}">
-                            {{ .article.LastModified.Format "January 2, 2006" }}
+                    <p class="article-last-modified">
+                        Updated <time datetime="{{ .article.LastModified.Format "2006-01-02T15:04:05Z07:00" }}">
+                            {{ .article.LastModified.Format "Jan 2, 2006" }}
                         </time>
                     </p>
                     {{ end }}
                 </div>
-
-                <!-- Share Buttons -->
-                <div class="article-share">
-                    <h3 class="share-title">Share this article</h3>
-                    <div class="share-buttons">
-                        <a href="https://twitter.com/intent/tweet?text={{ .article.Title }}&url={{ .config.BaseURL }}/articles/{{ .article.Slug }}"
-                           class="share-button twitter" target="_blank" rel="noopener">
-                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                            </svg>
-                            Twitter
-                        </a>
-                        <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ .config.BaseURL }}/articles/{{ .article.Slug }}"
-                           class="share-button linkedin" target="_blank" rel="noopener">
-                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                            </svg>
-                            LinkedIn
-                        </a>
-                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ .config.BaseURL }}/articles/{{ .article.Slug }}"
-                           class="share-button facebook" target="_blank" rel="noopener">
-                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                            </svg>
-                            Facebook
-                        </a>
-                        <button class="share-button copy-link" onclick="copyToClipboard('{{ .config.BaseURL }}/articles/{{ .article.Slug }}')">
-                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-                            </svg>
-                            Copy Link
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Navigation -->
-                <nav class="article-navigation">
-                    <a href="/articles" class="nav-back">
-                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
-                        </svg>
-                        Back to Articles
-                    </a>
-                    {{ if .config.Comments.Enabled }}
-                    <a href="#comments" class="nav-comments">
-                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
-                        </svg>
-                        Comments
-                    </a>
-                    {{ end }}
-                </nav>
             </footer>
         </div>
     </article>
 
     <!-- Comments Section -->
     {{ template "comments" . }}
-
-    <!-- Related Articles -->
-    {{ if .related }}
-    <section class="related-articles">
-        <div class="container">
-            <h2 class="section-title">Related Articles</h2>
-            <div class="related-grid">
-                {{ range .related }}
-                <article class="related-card">
-                    <h3 class="related-title">
-                        <a href="/articles/{{ .Slug }}">{{ .Title }}</a>
-                    </h3>
-                    <p class="related-excerpt">{{ .Excerpt }}</p>
-                    <div class="related-meta">
-                        <time class="related-date">{{ .Date.Format "Jan 2, 2006" }}</time>
-                        <span class="related-reading-time">{{ .ReadingTime }} min read</span>
-                    </div>
-                    {{ if .Tags }}
-                    <div class="related-tags">
-                        {{ range (slice .Tags 0 3) }}
-                        <span class="tag">{{ . }}</span>
-                        {{ end }}
-                    </div>
-                    {{ end }}
-                </article>
-                {{ end }}
-            </div>
-        </div>
-    </section>
-    {{ end }}
 </div>
 
 <!-- Structured Data -->
@@ -230,12 +164,7 @@
 <meta name="twitter:title" content="{{ displayTitle .article }}">
 <meta name="twitter:description" content="{{ if .article.Description }}{{ .article.Description }}{{ else }}{{ .article.Excerpt }}{{ end }}">
 
-<!-- Additional CSS for article -->
+<!-- Comments CSS -->
 {{ template "comments-css" }}
 
 {{ end }}
-
-{{ define "scripts" }}
-{{ end }}
-
-{{ define "body-class" }}article-page{{ end }}
