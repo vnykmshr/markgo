@@ -307,7 +307,6 @@
 
     <!-- Template-specific JavaScript -->
     {{ $tpl := .template | default "feed" }}
-    {{ if eq $tpl "404" }}<script src="/static/js/404.js"></script>{{ end }}
     {{ if eq $tpl "contact" }}<script src="/static/js/contact.js"></script>{{ end }}
     {{ if eq $tpl "search" }}<script src="/static/js/search.js"></script>{{ end }}
 
