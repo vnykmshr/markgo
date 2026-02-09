@@ -1,0 +1,14 @@
+/* ==========================================================================
+   Bold Theme — High contrast, modern
+   Coming soon. Stub with key overrides to prove the theme system works.
+   ========================================================================== */
+
+:root {
+    --theme-primary: #dc2626;
+    --theme-primary-dark: #b91c1c;
+    --theme-secondary: #525252;
+    --theme-accent: #f87171;
+
+    --theme-text-primary: #030712;
+    --theme-bg-primary: #fafafa;
+}

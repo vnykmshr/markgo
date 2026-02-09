@@ -105,6 +105,7 @@ type BlogConfig struct {
 	AuthorEmail  string `json:"author_email"`
 	Language     string `json:"language"`
 	Theme        string `json:"theme"`
+	Style        string `json:"style"`
 	PostsPerPage int    `json:"posts_per_page"`
 }
 
@@ -254,6 +255,7 @@ func Load() (*Config, error) {
 			AuthorEmail:  getEnv("BLOG_AUTHOR_EMAIL", "your.email@example.com"),
 			Language:     getEnv("BLOG_LANGUAGE", "en"),
 			Theme:        getEnv("BLOG_THEME", "default"),
+			Style:        getEnv("BLOG_STYLE", "minimal"),
 			PostsPerPage: getEnvInt("BLOG_POSTS_PER_PAGE", 10),
 		},
 
@@ -593,6 +595,13 @@ func (b *BlogConfig) Validate() error {
 		return apperrors.NewConfigError("language", b.Language,
 			"Blog language must be a valid language code (e.g., 'en', 'en-US')",
 			apperrors.ErrConfigValidation)
+	}
+
+	// Validate style
+	validStyles := []string{"minimal", "editorial", "bold"}
+	if b.Style != "" && !contains(validStyles, b.Style) {
+		return apperrors.NewConfigError("style", b.Style,
+			"Blog style must be one of: minimal, editorial, bold", apperrors.ErrConfigValidation)
 	}
 
 	// Validate author email if provided

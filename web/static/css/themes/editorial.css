@@ -1,0 +1,15 @@
+/* ==========================================================================
+   Editorial Theme — Serif, warm, magazine-like
+   Coming soon. Stub with key overrides to prove the theme system works.
+   ========================================================================== */
+
+:root {
+    --theme-primary: #b45309;
+    --theme-primary-dark: #92400e;
+    --theme-secondary: #78716c;
+    --theme-accent: #d97706;
+
+    --theme-font-sans:
+        "Georgia", "Palatino Linotype", "Book Antiqua", Palatino,
+        "Times New Roman", Times, serif;
+}
