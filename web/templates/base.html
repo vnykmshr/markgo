@@ -160,9 +160,9 @@
     <link rel="stylesheet" href="/static/css/main.css">
     {{ if .config.Blog.Style }}<link rel="stylesheet" href="/static/css/themes/{{ .config.Blog.Style }}.css">{{ end }}
 
-    <!-- Shared card CSS (pages that use feed card partials) -->
+    <!-- Shared card CSS (used by feed, articles, search, tag, category pages) -->
     {{ $tpl := .template }}
-    {{ if or (eq $tpl "feed") (eq $tpl "article") (eq $tpl "articles") (eq $tpl "search") (eq $tpl "tag") (eq $tpl "category") (eq $tpl "tags") }}<link rel="stylesheet" href="/static/css/cards.css">{{ end }}
+    <link rel="stylesheet" href="/static/css/cards.css">
 
     <!-- Template-specific CSS -->
     {{ if eq $tpl "404" }}<link rel="stylesheet" href="/static/css/404.css">{{ end }}

@@ -30,7 +30,7 @@
                 {{ end }}
             </form>
 
-            {{ if not .query }}
+            {{ if eq .query "" }}
             <p class="search-context">Search across {{ .totalCount }} posts</p>
             {{ end }}
         </div>
