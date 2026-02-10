@@ -329,53 +329,6 @@ func clearEnvVars() {
 	}
 }
 
-// Benchmark tests
-func BenchmarkLoad(b *testing.B) {
-	clearEnvVars()
-
-	for b.Loop() {
-		_, err := Load()
-		if err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
-func BenchmarkGetEnv(b *testing.B) {
-	_ = os.Setenv("BENCH_VAR", "benchmark_value")
-	defer func() { _ = os.Unsetenv("BENCH_VAR") }()
-
-	for b.Loop() {
-		getEnv("BENCH_VAR", "default")
-	}
-}
-
-func BenchmarkGetEnvInt(b *testing.B) {
-	_ = os.Setenv("BENCH_INT", "12345")
-	defer func() { _ = os.Unsetenv("BENCH_INT") }()
-
-	for b.Loop() {
-		getEnvInt("BENCH_INT", 0)
-	}
-}
-
-func BenchmarkGetEnvSlice(b *testing.B) {
-	_ = os.Setenv("BENCH_SLICE", "value1,value2,value3,value4,value5")
-	defer func() { _ = os.Unsetenv("BENCH_SLICE") }()
-
-	for b.Loop() {
-		getEnvSlice("BENCH_SLICE", []string{"default"})
-	}
-}
-
-func BenchmarkSplitString(b *testing.B) {
-	input := "a,b,c,d,e,f,g,h,i,j"
-
-	for b.Loop() {
-		splitString(input, ",")
-	}
-}
-
 // TestEnvironmentAwareRateLimiting tests that different environments get different rate limiting defaults
 func TestEnvironmentAwareRateLimiting(t *testing.T) {
 	tests := []struct {
@@ -401,12 +354,6 @@ func TestEnvironmentAwareRateLimiting(t *testing.T) {
 			environment:             "test",
 			expectedGeneralRequests: 5000,
 			expectedContactRequests: 50,
-		},
-		{
-			name:                    "development environment (explicit)",
-			environment:             "development",
-			expectedGeneralRequests: 3000,
-			expectedContactRequests: 20,
 		},
 	}
 

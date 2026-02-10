@@ -374,34 +374,6 @@ func TestLoggingServiceClose(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// Test environment-based log level override (similar to original behavior)
-func TestEnvironmentLogLevelOverride(t *testing.T) {
-	// Test that development environment defaults to debug if not explicitly set
-	cfg := config.LoggingConfig{
-		Level:   "info", // Default to info
-		Format:  "text",
-		Output:  "stdout",
-		MaxSize: 100,
-	}
-
-	// In a real scenario, you might want to override based on environment
-	// This test demonstrates how the system should work
-	environment := "development"
-	if environment == "development" && cfg.Level == "info" {
-		cfg.Level = "debug" // Override to debug for development
-	}
-
-	service, err := NewLoggingService(&cfg)
-	require.NoError(t, err)
-
-	logger := service.GetLogger()
-	assert.NotNil(t, logger)
-
-	// The service should now use debug level
-	// We can't easily test this without inspecting internal state,
-	// but the concept is demonstrated
-}
-
 func TestLoggingServiceFormats(t *testing.T) {
 	formats := []string{"json", "text"}
 

@@ -82,24 +82,6 @@ func (m *MockEmailService) ValidateConfig() []string                        { re
 func (m *MockEmailService) GetConfig() map[string]any                       { return nil }
 func (m *MockEmailService) Shutdown()                                       {}
 
-type MockSearchService struct{}
-
-func (m *MockSearchService) Search(articles []*models.Article, query string, limit int) []*models.SearchResult {
-	return nil
-}
-func (m *MockSearchService) SearchInTitle(articles []*models.Article, query string, limit int) []*models.SearchResult {
-	return nil
-}
-func (m *MockSearchService) SearchByTag(articles []*models.Article, tag string) []*models.Article {
-	return nil
-}
-func (m *MockSearchService) SearchByCategory(articles []*models.Article, category string) []*models.Article {
-	return nil
-}
-func (m *MockSearchService) GetSuggestions(articles []*models.Article, query string, limit int) []string {
-	return nil
-}
-
 type MockTemplateService struct{}
 
 func (m *MockTemplateService) Render(w io.Writer, templateName string, data any) error { return nil }

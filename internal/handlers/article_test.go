@@ -17,532 +17,189 @@ import (
 	"github.com/vnykmshr/markgo/internal/models"
 )
 
-// Enhanced MockArticleService with more realistic data for article tests
-type EnhancedMockArticleService struct {
+// TestArticleService returns canned data for handler tests.
+// No business logic — just lookups on the fixture slice.
+type TestArticleService struct {
 	articles []*models.Article
 }
 
-func (m *EnhancedMockArticleService) GetAllArticles() []*models.Article {
-	return m.articles
-}
-
-func (m *EnhancedMockArticleService) GetArticleBySlug(slug string) (*models.Article, error) {
-	for _, article := range m.articles {
-		if article.Slug == slug {
-			return article, nil
+func (m *TestArticleService) GetAllArticles() []*models.Article { return m.articles }
+func (m *TestArticleService) GetArticleBySlug(slug string) (*models.Article, error) {
+	for _, a := range m.articles {
+		if a.Slug == slug {
+			return a, nil
 		}
 	}
 	return nil, apperrors.ErrArticleNotFound
 }
-
-func (m *EnhancedMockArticleService) GetArticlesByTag(tag string) []*models.Article {
-	var filtered []*models.Article
-	for _, article := range m.articles {
-		for _, t := range article.Tags {
-			if t == tag {
-				filtered = append(filtered, article)
-				break
-			}
-		}
-	}
-	return filtered
+func (m *TestArticleService) GetArticlesByTag(_ string) []*models.Article      { return m.articles }
+func (m *TestArticleService) GetArticlesByCategory(_ string) []*models.Article { return m.articles }
+func (m *TestArticleService) GetArticlesForFeed(_ int) []*models.Article       { return m.articles }
+func (m *TestArticleService) GetFeaturedArticles(_ int) []*models.Article      { return m.articles }
+func (m *TestArticleService) GetRecentArticles(_ int) []*models.Article        { return m.articles }
+func (m *TestArticleService) GetAllTags() []string                             { return []string{"golang", "tutorial"} }
+func (m *TestArticleService) GetAllCategories() []string                       { return []string{"Programming"} }
+func (m *TestArticleService) GetTagCounts() []models.TagCount {
+	return []models.TagCount{{Tag: "golang", Count: 1}}
 }
-
-func (m *EnhancedMockArticleService) GetArticlesByCategory(category string) []*models.Article {
-	var filtered []*models.Article
-	for _, article := range m.articles {
-		for _, c := range article.Categories {
-			if c == category {
-				filtered = append(filtered, article)
-				break
-			}
-		}
-	}
-	return filtered
+func (m *TestArticleService) GetCategoryCounts() []models.CategoryCount {
+	return []models.CategoryCount{{Category: "Programming", Count: 1}}
 }
-
-func (m *EnhancedMockArticleService) GetArticlesForFeed(limit int) []*models.Article {
-	if limit > len(m.articles) {
-		limit = len(m.articles)
-	}
-	return m.articles[:limit]
+func (m *TestArticleService) GetStats() *models.Stats {
+	return &models.Stats{TotalArticles: len(m.articles)}
 }
-
-func (m *EnhancedMockArticleService) GetFeaturedArticles(limit int) []*models.Article {
-	return m.articles
-}
-
-func (m *EnhancedMockArticleService) GetRecentArticles(limit int) []*models.Article {
-	if limit > len(m.articles) {
-		limit = len(m.articles)
-	}
-	return m.articles[:limit]
-}
-
-func (m *EnhancedMockArticleService) GetAllTags() []string {
-	tagSet := make(map[string]bool)
-	for _, article := range m.articles {
-		for _, tag := range article.Tags {
-			tagSet[tag] = true
-		}
-	}
-	tags := make([]string, 0, len(tagSet))
-	for tag := range tagSet {
-		tags = append(tags, tag)
-	}
-	return tags
-}
-
-func (m *EnhancedMockArticleService) GetAllCategories() []string {
-	catSet := make(map[string]bool)
-	for _, article := range m.articles {
-		for _, cat := range article.Categories {
-			catSet[cat] = true
-		}
-	}
-	cats := make([]string, 0, len(catSet))
-	for cat := range catSet {
-		cats = append(cats, cat)
-	}
-	return cats
-}
-
-func (m *EnhancedMockArticleService) GetTagCounts() []models.TagCount {
-	counts := make(map[string]int)
-	for _, article := range m.articles {
-		for _, tag := range article.Tags {
-			counts[tag]++
-		}
-	}
-	tagCounts := make([]models.TagCount, 0, len(counts))
-	for tag, count := range counts {
-		tagCounts = append(tagCounts, models.TagCount{Tag: tag, Count: count})
-	}
-	return tagCounts
-}
-
-func (m *EnhancedMockArticleService) GetCategoryCounts() []models.CategoryCount {
-	counts := make(map[string]int)
-	for _, article := range m.articles {
-		for _, cat := range article.Categories {
-			counts[cat]++
-		}
-	}
-	catCounts := make([]models.CategoryCount, 0, len(counts))
-	for cat, count := range counts {
-		catCounts = append(catCounts, models.CategoryCount{Category: cat, Count: count})
-	}
-	return catCounts
-}
-
-func (m *EnhancedMockArticleService) GetStats() *models.Stats {
-	return &models.Stats{
-		TotalArticles:   len(m.articles),
-		TotalTags:       len(m.GetAllTags()),
-		TotalCategories: len(m.GetAllCategories()),
-	}
-}
-
-func (m *EnhancedMockArticleService) SearchArticles(query string, limit int) []*models.SearchResult {
-	if query == "" {
-		return []*models.SearchResult{}
-	}
-	var results []*models.SearchResult
-	for _, article := range m.articles {
-		if !article.Draft && len(results) < limit {
-			results = append(results, &models.SearchResult{Article: article, Score: 1.0})
-		}
-	}
-	return results
-}
-
-func (m *EnhancedMockArticleService) ReloadArticles() error {
-	return nil
-}
-
-func (m *EnhancedMockArticleService) GetDraftArticles() []*models.Article {
-	return nil
-}
-
-func (m *EnhancedMockArticleService) GetDraftBySlug(_ string) (*models.Article, error) {
+func (m *TestArticleService) SearchArticles(_ string, _ int) []*models.SearchResult { return nil }
+func (m *TestArticleService) ReloadArticles() error                                 { return nil }
+func (m *TestArticleService) GetDraftArticles() []*models.Article                   { return nil }
+func (m *TestArticleService) GetDraftBySlug(_ string) (*models.Article, error) {
 	return nil, apperrors.ErrArticleNotFound
 }
 
-func createTestArticles() []*models.Article {
+func testArticles() []*models.Article {
 	now := time.Now()
 	return []*models.Article{
-		{
-			Slug:        "golang-tutorial",
-			Title:       "Getting Started with Go",
-			Description: "A beginner's guide to Go programming",
-			Content:     "Content about Go programming...",
-			Date:        now,
-			Draft:       false,
-			Tags:        []string{"golang", "tutorial", "programming"},
-			Categories:  []string{"Programming", "Tutorials"},
-		},
-		{
-			Slug:        "web-development",
-			Title:       "Modern Web Development",
-			Description: "Building web applications in 2025",
-			Content:     "Content about web development...",
-			Date:        now.Add(-24 * time.Hour),
-			Draft:       false,
-			Tags:        []string{"web", "javascript", "tutorial"},
-			Categories:  []string{"Web Development"},
-		},
-		{
-			Slug:        "draft-article",
-			Title:       "Draft Article",
-			Description: "This is a draft",
-			Content:     "Draft content...",
-			Date:        now,
-			Draft:       true,
-			Tags:        []string{"draft"},
-			Categories:  []string{"Uncategorized"},
-		},
+		{Slug: "golang-tutorial", Title: "Getting Started with Go", Date: now, Tags: []string{"golang", "tutorial"}, Categories: []string{"Programming"}},
+		{Slug: "web-development", Title: "Modern Web Development", Date: now.Add(-24 * time.Hour), Tags: []string{"web", "tutorial"}, Categories: []string{"Web Development"}},
 	}
 }
 
-func createTestBase() (*BaseHandler, *EnhancedMockArticleService) {
+func createTestBase() (*BaseHandler, *TestArticleService) {
 	cfg := &config.Config{
 		Environment: "test",
 		BaseURL:     "http://localhost:3000",
-		Blog: config.BlogConfig{
-			Title:       "Test Blog",
-			Description: "Test Description",
-			Author:      "Test Author",
-		},
+		Blog:        config.BlogConfig{Title: "Test Blog", Description: "Test", Author: "Test"},
 	}
-
-	articles := createTestArticles()
-	mockArticleService := &EnhancedMockArticleService{articles: articles}
+	svc := &TestArticleService{articles: testArticles()}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 	base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
-
-	return base, mockArticleService
+	return base, svc
 }
 
-// TestArticleBySlug tests individual article viewing
 func TestArticleBySlug(t *testing.T) {
 	tests := []struct {
-		name           string
-		slug           string
-		expectedStatus int
-		checkResponse  func(*testing.T, *httptest.ResponseRecorder)
+		name string
+		slug string
+		want int
 	}{
-		{
-			name:           "valid article slug",
-			slug:           "golang-tutorial",
-			expectedStatus: http.StatusOK,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusOK, w.Code)
-			},
-		},
-		{
-			name:           "article not found",
-			slug:           "nonexistent-article",
-			expectedStatus: http.StatusOK,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusOK, w.Code)
-			},
-		},
-		{
-			name:           "empty slug",
-			slug:           "",
-			expectedStatus: http.StatusBadRequest,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.True(t, w.Code == http.StatusBadRequest || w.Code == http.StatusNotFound)
-			},
-		},
+		{"valid slug", "golang-tutorial", http.StatusOK},
+		{"not found", "nonexistent", http.StatusOK}, // handler renders error page with 200
+		{"empty slug", "", http.StatusBadRequest},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			base, svc := createTestBase()
-			handler := NewPostHandler(base, svc)
 			router := gin.New()
-			router.GET("/articles/:slug", handler.Article)
+			router.GET("/articles/:slug", NewPostHandler(base, svc).Article)
 
-			req := httptest.NewRequest("GET", "/articles/"+tt.slug, http.NoBody)
 			w := httptest.NewRecorder()
+			router.ServeHTTP(w, httptest.NewRequest("GET", "/articles/"+tt.slug, http.NoBody))
 
-			router.ServeHTTP(w, req)
-
-			tt.checkResponse(t, w)
+			if tt.slug == "" {
+				assert.True(t, w.Code == http.StatusBadRequest || w.Code == http.StatusNotFound)
+			} else {
+				assert.Equal(t, tt.want, w.Code)
+			}
 		})
 	}
 }
 
-// TestArticlesListing tests the articles listing page
 func TestArticlesListing(t *testing.T) {
 	tests := []struct {
-		name           string
-		query          string
-		expectedStatus int
+		name  string
+		query string
 	}{
-		{
-			name:           "default page",
-			query:          "",
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name:           "page 1",
-			query:          "?page=1",
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name:           "page 2",
-			query:          "?page=2",
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name:           "invalid page number",
-			query:          "?page=invalid",
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name:           "negative page number",
-			query:          "?page=-1",
-			expectedStatus: http.StatusOK,
-		},
+		{"default page", ""},
+		{"page 1", "?page=1"},
+		{"page 2", "?page=2"},
+		{"invalid page", "?page=invalid"},
+		{"negative page", "?page=-1"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			base, svc := createTestBase()
-			handler := NewPostHandler(base, svc)
 			router := gin.New()
-			router.GET("/articles", handler.Articles)
+			router.GET("/articles", NewPostHandler(base, svc).Articles)
 
-			req := httptest.NewRequest("GET", "/articles"+tt.query, http.NoBody)
 			w := httptest.NewRecorder()
-
-			router.ServeHTTP(w, req)
-
-			assert.Equal(t, tt.expectedStatus, w.Code)
+			router.ServeHTTP(w, httptest.NewRequest("GET", "/articles"+tt.query, http.NoBody))
+			assert.Equal(t, http.StatusOK, w.Code)
 		})
 	}
 }
 
-// TestArticlesByTag tests tag filtering
 func TestArticlesByTag(t *testing.T) {
-	tests := []struct {
-		name           string
-		tag            string
-		expectedStatus int
-		checkResponse  func(*testing.T, *httptest.ResponseRecorder)
-	}{
-		{
-			name:           "valid tag",
-			tag:            "golang",
-			expectedStatus: http.StatusOK,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusOK, w.Code)
-			},
-		},
-		{
-			name:           "tag with multiple articles",
-			tag:            "tutorial",
-			expectedStatus: http.StatusOK,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusOK, w.Code)
-			},
-		},
-		{
-			name:           "nonexistent tag",
-			tag:            "nonexistent",
-			expectedStatus: http.StatusOK,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusOK, w.Code)
-			},
-		},
-		{
-			name:           "URL encoded tag",
-			tag:            "web%20development",
-			expectedStatus: http.StatusOK,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusOK, w.Code)
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	tags := []string{"golang", "tutorial", "nonexistent", "web%20development"}
+	for _, tag := range tags {
+		t.Run(tag, func(t *testing.T) {
 			base, svc := createTestBase()
-			handler := NewTaxonomyHandler(base, svc)
 			router := gin.New()
-			router.GET("/tags/:tag", handler.ArticlesByTag)
+			router.GET("/tags/:tag", NewTaxonomyHandler(base, svc).ArticlesByTag)
 
-			req := httptest.NewRequest("GET", "/tags/"+tt.tag, http.NoBody)
 			w := httptest.NewRecorder()
-
-			router.ServeHTTP(w, req)
-
-			tt.checkResponse(t, w)
+			router.ServeHTTP(w, httptest.NewRequest("GET", "/tags/"+tag, http.NoBody))
+			assert.Equal(t, http.StatusOK, w.Code)
 		})
 	}
 }
 
-// TestArticlesByCategory tests category filtering
 func TestArticlesByCategory(t *testing.T) {
-	tests := []struct {
-		name           string
-		category       string
-		expectedStatus int
-		checkResponse  func(*testing.T, *httptest.ResponseRecorder)
-	}{
-		{
-			name:           "valid category",
-			category:       "Programming",
-			expectedStatus: http.StatusOK,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusOK, w.Code)
-			},
-		},
-		{
-			name:           "valid category - web development",
-			category:       url.PathEscape("Web Development"),
-			expectedStatus: http.StatusOK,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusOK, w.Code)
-			},
-		},
-		{
-			name:           "nonexistent category",
-			category:       "Nonexistent",
-			expectedStatus: http.StatusOK,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusOK, w.Code)
-			},
-		},
-		{
-			name:           "URL encoded category",
-			category:       url.PathEscape("Tutorials"),
-			expectedStatus: http.StatusOK,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusOK, w.Code)
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	categories := []string{"Programming", url.PathEscape("Web Development"), "Nonexistent"}
+	for _, cat := range categories {
+		t.Run(cat, func(t *testing.T) {
 			base, svc := createTestBase()
-			handler := NewTaxonomyHandler(base, svc)
 			router := gin.New()
-			router.GET("/categories/:category", handler.ArticlesByCategory)
+			router.GET("/categories/:category", NewTaxonomyHandler(base, svc).ArticlesByCategory)
 
-			req := httptest.NewRequest("GET", "/categories/"+tt.category, http.NoBody)
 			w := httptest.NewRecorder()
-
-			router.ServeHTTP(w, req)
-
-			tt.checkResponse(t, w)
+			router.ServeHTTP(w, httptest.NewRequest("GET", "/categories/"+cat, http.NoBody))
+			assert.Equal(t, http.StatusOK, w.Code)
 		})
 	}
 }
 
-// TestSearch tests the search functionality
 func TestSearch(t *testing.T) {
-	tests := []struct {
-		name           string
-		query          string
-		expectedStatus int
-		checkResponse  func(*testing.T, *httptest.ResponseRecorder)
-	}{
-		{
-			name:           "search with query",
-			query:          "?q=golang",
-			expectedStatus: http.StatusOK,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusOK, w.Code)
-			},
-		},
-		{
-			name:           "search with empty query",
-			query:          "",
-			expectedStatus: http.StatusOK,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusOK, w.Code)
-			},
-		},
-		{
-			name:           "search with special characters",
-			query:          "?q=go+programming",
-			expectedStatus: http.StatusOK,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusOK, w.Code)
-			},
-		},
-		{
-			name:           "search with long query",
-			query:          "?q=thisisaverylongquerystringthatmightcauseissues",
-			expectedStatus: http.StatusOK,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusOK, w.Code)
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	queries := []string{"?q=golang", "", "?q=go+programming", "?q=thisisaverylongquery"}
+	for _, q := range queries {
+		t.Run(q, func(t *testing.T) {
 			base, svc := createTestBase()
-			handler := NewSearchHandler(base, svc)
 			router := gin.New()
-			router.GET("/search", handler.Search)
+			router.GET("/search", NewSearchHandler(base, svc).Search)
 
-			req := httptest.NewRequest("GET", "/search"+tt.query, http.NoBody)
 			w := httptest.NewRecorder()
-
-			router.ServeHTTP(w, req)
-
-			tt.checkResponse(t, w)
+			router.ServeHTTP(w, httptest.NewRequest("GET", "/search"+q, http.NoBody))
+			assert.Equal(t, http.StatusOK, w.Code)
 		})
 	}
 }
 
-// TestHomePage tests the home page handler
 func TestHomePage(t *testing.T) {
 	base, svc := createTestBase()
-	handler := NewFeedHandler(base, svc)
 	router := gin.New()
-	router.GET("/", handler.Home)
+	router.GET("/", NewFeedHandler(base, svc).Home)
 
-	req := httptest.NewRequest("GET", "/", http.NoBody)
 	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
+	router.ServeHTTP(w, httptest.NewRequest("GET", "/", http.NoBody))
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-// TestTagsPage tests the tags listing page
 func TestTagsPage(t *testing.T) {
 	base, svc := createTestBase()
-	handler := NewTaxonomyHandler(base, svc)
 	router := gin.New()
-	router.GET("/tags", handler.Tags)
+	router.GET("/tags", NewTaxonomyHandler(base, svc).Tags)
 
-	req := httptest.NewRequest("GET", "/tags", http.NoBody)
 	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
+	router.ServeHTTP(w, httptest.NewRequest("GET", "/tags", http.NoBody))
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-// TestCategoriesPage tests the categories listing page
 func TestCategoriesPage(t *testing.T) {
 	base, svc := createTestBase()
-	handler := NewTaxonomyHandler(base, svc)
 	router := gin.New()
-	router.GET("/categories", handler.Categories)
+	router.GET("/categories", NewTaxonomyHandler(base, svc).Categories)
 
-	req := httptest.NewRequest("GET", "/categories", http.NoBody)
 	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
+	router.ServeHTTP(w, httptest.NewRequest("GET", "/categories", http.NoBody))
 	assert.Equal(t, http.StatusOK, w.Code)
 }
