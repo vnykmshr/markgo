@@ -30,7 +30,6 @@ type StaticExportService struct {
 	baseURL         string
 	articleService  services.ArticleServiceInterface
 	templateService *services.TemplateService
-	searchService   services.SearchServiceInterface
 	appConfig       *config.Config
 	includeDrafts   bool
 }
@@ -42,7 +41,6 @@ type Config struct {
 	BaseURL         string
 	ArticleService  services.ArticleServiceInterface
 	TemplateService *services.TemplateService
-	SearchService   services.SearchServiceInterface
 	Config          *config.Config
 	Logger          *slog.Logger
 	IncludeDrafts   bool
@@ -62,7 +60,6 @@ func NewStaticExportService(cfg *Config) (*StaticExportService, error) {
 		baseURL:         cfg.BaseURL,
 		articleService:  cfg.ArticleService,
 		templateService: cfg.TemplateService,
-		searchService:   cfg.SearchService,
 		appConfig:       cfg.Config,
 		includeDrafts:   cfg.IncludeDrafts,
 	}, nil
@@ -208,7 +205,6 @@ func (s *StaticExportService) generatePages(_ context.Context) error {
 	h := handlers.New(&handlers.Config{
 		ArticleService:  s.articleService,
 		TemplateService: s.templateService,
-		SearchService:   s.searchService,
 		Config:          s.appConfig,
 		Logger:          s.logger,
 		BuildInfo:       s.config.BuildInfo,
@@ -380,7 +376,6 @@ func (s *StaticExportService) generateFeeds(_ context.Context) error {
 	h := handlers.New(&handlers.Config{
 		ArticleService:  s.articleService,
 		TemplateService: s.templateService,
-		SearchService:   s.searchService,
 		Config:          s.appConfig,
 		Logger:          s.logger,
 		BuildInfo:       s.config.BuildInfo,

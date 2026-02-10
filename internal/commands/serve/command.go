@@ -156,7 +156,6 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, error) {
 	}
 
 	emailService := services.NewEmailService(&cfg.Email, logger)
-	searchService := services.NewSearchService()
 	composeService := compose.NewService(cfg.ArticlesPath, cfg.Blog.Author)
 
 	// Initialize SEO helper (stateless utility)
@@ -223,7 +222,6 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, error) {
 	h := handlers.New(&handlers.Config{
 		ArticleService:  articleService,
 		EmailService:    emailService,
-		SearchService:   searchService,
 		TemplateService: templateService,
 		SEOService:      seoService,
 		ComposeService:  composeService,

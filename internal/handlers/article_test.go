@@ -143,6 +143,19 @@ func (m *EnhancedMockArticleService) GetStats() *models.Stats {
 	}
 }
 
+func (m *EnhancedMockArticleService) SearchArticles(query string, limit int) []*models.SearchResult {
+	if query == "" {
+		return []*models.SearchResult{}
+	}
+	var results []*models.SearchResult
+	for _, article := range m.articles {
+		if !article.Draft && len(results) < limit {
+			results = append(results, &models.SearchResult{Article: article, Score: 1.0})
+		}
+	}
+	return results
+}
+
 func (m *EnhancedMockArticleService) ReloadArticles() error {
 	return nil
 }
@@ -244,7 +257,7 @@ func createTestArticleHandler() *ArticleHandler {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 	base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
 
-	return NewArticleHandler(base, mockArticleService, &EnhancedMockSearchService{})
+	return NewArticleHandler(base, mockArticleService)
 }
 
 // TestArticleBySlug tests individual article viewing

@@ -63,6 +63,9 @@ type ArticleServiceInterface interface {
 	GetTagCounts() []models.TagCount
 	GetCategoryCounts() []models.CategoryCount
 
+	// Search
+	SearchArticles(query string, limit int) []*models.SearchResult
+
 	// Statistics and management
 	GetStats() *models.Stats
 	ReloadArticles() error

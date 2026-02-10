@@ -17,19 +17,16 @@ import (
 type ArticleHandler struct {
 	*BaseHandler
 	articleService services.ArticleServiceInterface
-	searchService  services.SearchServiceInterface
 }
 
 // NewArticleHandler creates a new article handler
 func NewArticleHandler(
 	base *BaseHandler,
 	articleService services.ArticleServiceInterface,
-	searchService services.SearchServiceInterface,
 ) *ArticleHandler {
 	return &ArticleHandler{
 		BaseHandler:    base,
 		articleService: articleService,
-		searchService:  searchService,
 	}
 }
 
@@ -385,27 +382,23 @@ func (h *ArticleHandler) getCategoriesPageUncached() (map[string]any, error) {
 }
 
 func (h *ArticleHandler) getSearchResultsUncached(query string) (map[string]any, error) {
-	allArticles := h.articleService.GetAllArticles()
+	var results []*models.SearchResult
+	var title, description string
+	var totalCount int
 
-	// Filter published articles for search
-	var published []*models.Article
-	for _, article := range allArticles {
-		if !article.Draft {
-			published = append(published, article)
+	allArticles := h.articleService.GetAllArticles()
+	for _, a := range allArticles {
+		if !a.Draft {
+			totalCount++
 		}
 	}
 
-	var results []*models.SearchResult
-	var title, description string
-
 	if query == "" {
-		// Empty query - show search page without results
 		results = []*models.SearchResult{}
 		title = "Search - " + h.config.Blog.Title
 		description = "Search through articles on " + h.config.Blog.Title
 	} else {
-		// Perform search with query
-		results = h.searchService.Search(published, query, 50)
+		results = h.articleService.SearchArticles(query, 50)
 		title = "Search results for \"" + query + "\" - " + h.config.Blog.Title
 		description = "Search results for \"" + query + "\""
 	}
@@ -415,7 +408,7 @@ func (h *ArticleHandler) getSearchResultsUncached(query string) (map[string]any,
 	data["results"] = results
 	data["query"] = query
 	data["count"] = len(results)
-	data["totalCount"] = len(published)
+	data["totalCount"] = totalCount
 
 	data["template"] = "search"
 

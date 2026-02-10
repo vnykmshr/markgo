@@ -32,7 +32,6 @@ type BuildInfo struct {
 type Config struct {
 	ArticleService  services.ArticleServiceInterface
 	EmailService    services.EmailServiceInterface
-	SearchService   services.SearchServiceInterface
 	TemplateService services.TemplateServiceInterface
 	SEOService      services.SEOServiceInterface
 	ComposeService  *compose.Service
@@ -45,7 +44,7 @@ type Config struct {
 func New(cfg *Config) *Handlers {
 	base := NewBaseHandler(cfg.Config, cfg.Logger, cfg.TemplateService, cfg.BuildInfo, cfg.SEOService)
 
-	articleHandler := NewArticleHandler(base, cfg.ArticleService, cfg.SearchService)
+	articleHandler := NewArticleHandler(base, cfg.ArticleService)
 	adminHandler := NewAdminHandler(base, cfg.ArticleService, time.Now())
 	apiHandler := NewAPIHandler(base, cfg.ArticleService, cfg.EmailService, time.Now())
 

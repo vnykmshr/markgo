@@ -51,6 +51,9 @@ func (m *MockArticleService) GetTagCounts() []models.TagCount                   
 func (m *MockArticleService) GetCategoryCounts() []models.CategoryCount {
 	return []models.CategoryCount{}
 }
+func (m *MockArticleService) SearchArticles(_ string, _ int) []*models.SearchResult {
+	return nil
+}
 func (m *MockArticleService) GetStats() *models.Stats                             { return &models.Stats{} }
 func (m *MockArticleService) ReloadArticles() error                               { return nil }
 func (m *MockArticleService) GetDraftArticles() []*models.Article                 { return nil }

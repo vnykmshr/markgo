@@ -77,8 +77,6 @@ func Run(args []string) {
 		)
 	}
 
-	searchService := services.NewSearchService()
-
 	// Initialize export service
 	exportService, err := export.NewStaticExportService(&export.Config{
 		OutputDir:       exportConfig.OutputDir,
@@ -86,7 +84,6 @@ func Run(args []string) {
 		BaseURL:         cfg.BaseURL,
 		ArticleService:  articleService,
 		TemplateService: templateService,
-		SearchService:   searchService,
 		Config:          cfg,
 		Logger:          logger,
 		IncludeDrafts:   exportConfig.IncludeDrafts,

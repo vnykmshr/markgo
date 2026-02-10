@@ -30,19 +30,20 @@ func (m *MockArticleService) GetArticleBySlug(slug string) (*models.Article, err
 }
 
 // Implement other required methods as no-ops
-func (m *MockArticleService) GetArticlesByTag(_ string) []*models.Article      { return nil }
-func (m *MockArticleService) GetArticlesByCategory(_ string) []*models.Article { return nil }
-func (m *MockArticleService) GetArticlesForFeed(_ int) []*models.Article       { return nil }
-func (m *MockArticleService) GetFeaturedArticles(_ int) []*models.Article      { return nil }
-func (m *MockArticleService) GetRecentArticles(_ int) []*models.Article        { return nil }
-func (m *MockArticleService) GetAllTags() []string                             { return nil }
-func (m *MockArticleService) GetAllCategories() []string                       { return nil }
-func (m *MockArticleService) GetTagCounts() []models.TagCount                  { return nil }
-func (m *MockArticleService) GetCategoryCounts() []models.CategoryCount        { return nil }
-func (m *MockArticleService) GetStats() *models.Stats                          { return nil }
-func (m *MockArticleService) ReloadArticles() error                            { return nil }
-func (m *MockArticleService) GetDraftArticles() []*models.Article              { return nil }
-func (m *MockArticleService) GetDraftBySlug(_ string) (*models.Article, error) { return nil, nil }
+func (m *MockArticleService) GetArticlesByTag(_ string) []*models.Article           { return nil }
+func (m *MockArticleService) GetArticlesByCategory(_ string) []*models.Article      { return nil }
+func (m *MockArticleService) GetArticlesForFeed(_ int) []*models.Article            { return nil }
+func (m *MockArticleService) GetFeaturedArticles(_ int) []*models.Article           { return nil }
+func (m *MockArticleService) GetRecentArticles(_ int) []*models.Article             { return nil }
+func (m *MockArticleService) GetAllTags() []string                                  { return nil }
+func (m *MockArticleService) GetAllCategories() []string                            { return nil }
+func (m *MockArticleService) GetTagCounts() []models.TagCount                       { return nil }
+func (m *MockArticleService) GetCategoryCounts() []models.CategoryCount             { return nil }
+func (m *MockArticleService) SearchArticles(_ string, _ int) []*models.SearchResult { return nil }
+func (m *MockArticleService) GetStats() *models.Stats                               { return nil }
+func (m *MockArticleService) ReloadArticles() error                                 { return nil }
+func (m *MockArticleService) GetDraftArticles() []*models.Article                   { return nil }
+func (m *MockArticleService) GetDraftBySlug(_ string) (*models.Article, error)      { return nil, nil }
 
 func createTestHelper() (*Helper, *MockArticleService) {
 	mockArticles := &MockArticleService{
