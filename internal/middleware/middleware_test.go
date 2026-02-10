@@ -4,12 +4,15 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func init() {
@@ -297,6 +300,104 @@ func TestNoCache(t *testing.T) {
 	assert.Equal(t, "no-cache, no-store, must-revalidate", w.Header().Get("Cache-Control"))
 	assert.Equal(t, "no-cache", w.Header().Get("Pragma"))
 	assert.Equal(t, "0", w.Header().Get("Expires"))
+}
+
+// TestCSRF tests the CSRF middleware
+func TestCSRF(t *testing.T) {
+	t.Run("GET sets token cookie and context", func(t *testing.T) {
+		router := setupTestRouter()
+		router.Use(CSRF())
+		var token string
+		router.GET("/form", func(c *gin.Context) {
+			if v, exists := c.Get("csrf_token"); exists {
+				token, _ = v.(string)
+			}
+			c.String(200, "ok")
+		})
+
+		req := httptest.NewRequest("GET", "/form", http.NoBody)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, 200, w.Code)
+		assert.NotEmpty(t, token)
+		// Cookie should be set
+		cookies := w.Result().Cookies()
+		var csrfCookie *http.Cookie
+		for _, cookie := range cookies {
+			if cookie.Name == "_csrf" {
+				csrfCookie = cookie
+			}
+		}
+		require.NotNil(t, csrfCookie)
+		assert.Equal(t, token, csrfCookie.Value)
+		assert.True(t, csrfCookie.HttpOnly)
+		assert.True(t, csrfCookie.Secure)
+	})
+
+	t.Run("POST with valid token succeeds", func(t *testing.T) {
+		router := setupTestRouter()
+		router.Use(CSRF())
+		var token string
+		router.GET("/form", func(c *gin.Context) {
+			if v, exists := c.Get("csrf_token"); exists {
+				token, _ = v.(string)
+			}
+			c.String(200, "ok")
+		})
+		router.POST("/form", func(c *gin.Context) {
+			c.String(200, "posted")
+		})
+
+		// GET to get the token
+		getReq := httptest.NewRequest("GET", "/form", http.NoBody)
+		getW := httptest.NewRecorder()
+		router.ServeHTTP(getW, getReq)
+		require.Equal(t, 200, getW.Code)
+		require.NotEmpty(t, token)
+
+		// POST with the token
+		form := url.Values{"_csrf": {token}}
+		postReq := httptest.NewRequest("POST", "/form", strings.NewReader(form.Encode()))
+		postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		postReq.AddCookie(&http.Cookie{Name: "_csrf", Value: token})
+		postW := httptest.NewRecorder()
+		router.ServeHTTP(postW, postReq)
+
+		assert.Equal(t, 200, postW.Code)
+		assert.Equal(t, "posted", postW.Body.String())
+	})
+
+	t.Run("POST without token is rejected", func(t *testing.T) {
+		router := setupTestRouter()
+		router.Use(CSRF())
+		router.POST("/form", func(c *gin.Context) {
+			c.String(200, "posted")
+		})
+
+		postReq := httptest.NewRequest("POST", "/form", http.NoBody)
+		postW := httptest.NewRecorder()
+		router.ServeHTTP(postW, postReq)
+
+		assert.Equal(t, http.StatusForbidden, postW.Code)
+	})
+
+	t.Run("POST with mismatched token is rejected", func(t *testing.T) {
+		router := setupTestRouter()
+		router.Use(CSRF())
+		router.POST("/form", func(c *gin.Context) {
+			c.String(200, "posted")
+		})
+
+		form := url.Values{"_csrf": {"wrong-token"}}
+		postReq := httptest.NewRequest("POST", "/form", strings.NewReader(form.Encode()))
+		postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		postReq.AddCookie(&http.Cookie{Name: "_csrf", Value: "different-token"})
+		postW := httptest.NewRecorder()
+		router.ServeHTTP(postW, postReq)
+
+		assert.Equal(t, http.StatusForbidden, postW.Code)
+	})
 }
 
 // TestSmartCacheHeaders tests the smart cache headers middleware

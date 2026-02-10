@@ -4,7 +4,9 @@ package middleware
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -253,4 +255,52 @@ func ErrorHandler(logger *slog.Logger) gin.HandlerFunc {
 			logger.Error("Request error", "errors", c.Errors.String())
 		}
 	}
+}
+
+const (
+	csrfCookieName = "_csrf"
+	csrfFormField  = "_csrf"
+	csrfTokenBytes = 32
+)
+
+// CSRF implements double-submit cookie CSRF protection.
+// On GET/HEAD: generates a token, sets it as a Secure/HttpOnly cookie, and stores it in gin context as "csrf_token".
+// On other methods (POST, PUT, DELETE): verifies the form field matches the cookie value.
+func CSRF() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.Method == http.MethodGet || c.Request.Method == http.MethodHead {
+			token := generateCSRFToken()
+			if token == "" {
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			c.SetSameSite(http.SameSiteStrictMode)
+			c.SetCookie(csrfCookieName, token, 3600, "", "", true, true)
+			c.Set("csrf_token", token)
+			c.Next()
+			return
+		}
+
+		cookieToken, err := c.Cookie(csrfCookieName)
+		if err != nil || cookieToken == "" {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+
+		formToken := c.PostForm(csrfFormField)
+		if formToken == "" || subtle.ConstantTimeCompare([]byte(formToken), []byte(cookieToken)) != 1 {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+
+		c.Next()
+	}
+}
+
+func generateCSRFToken() string {
+	b := make([]byte, csrfTokenBytes)
+	if _, err := rand.Read(b); err != nil {
+		return ""
+	}
+	return hex.EncodeToString(b)
 }

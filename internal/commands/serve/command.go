@@ -299,10 +299,13 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, cfg *config.Config, log
 			middleware.RecoveryWithErrorHandler(logger),
 			middleware.BasicAuth(cfg.Admin.Username, cfg.Admin.Password),
 			middleware.NoCache(),
+			middleware.CSRF(),
 		)
 		if h.Compose != nil {
 			composeGroup.GET("", h.Compose.ShowCompose)
 			composeGroup.POST("", h.Compose.HandleSubmit)
+			composeGroup.GET("/:slug", h.Compose.ShowEdit)
+			composeGroup.POST("/:slug", h.Compose.HandleEdit)
 		}
 	}
 

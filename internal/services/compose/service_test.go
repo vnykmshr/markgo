@@ -112,6 +112,104 @@ func TestCreatePost_EmptyTags(t *testing.T) {
 	assert.NotContains(t, s, "author:")
 }
 
+func TestLoadArticle(t *testing.T) {
+	dir := t.TempDir()
+	svc := NewService(dir, "Test Author")
+
+	// Create a post first
+	slug, err := svc.CreatePost(Input{
+		Title:   "Test Article",
+		Content: "Some markdown **content** here.",
+		LinkURL: "https://example.com",
+		Tags:    "go, test",
+		Draft:   true,
+	})
+	require.NoError(t, err)
+
+	// Load it back
+	input, err := svc.LoadArticle(slug)
+	require.NoError(t, err)
+
+	assert.Equal(t, "Test Article", input.Title)
+	assert.Equal(t, "Some markdown **content** here.", input.Content)
+	assert.Equal(t, "https://example.com", input.LinkURL)
+	assert.Contains(t, input.Tags, "go")
+	assert.Contains(t, input.Tags, "test")
+	assert.True(t, input.Draft)
+}
+
+func TestLoadArticle_NotFound(t *testing.T) {
+	dir := t.TempDir()
+	svc := NewService(dir, "")
+
+	_, err := svc.LoadArticle("nonexistent")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "article not found")
+}
+
+func TestUpdateArticle(t *testing.T) {
+	dir := t.TempDir()
+	svc := NewService(dir, "Test Author")
+
+	// Create a post
+	slug, err := svc.CreatePost(Input{
+		Title:   "Original Title",
+		Content: "Original content.",
+		Tags:    "go",
+	})
+	require.NoError(t, err)
+
+	// Update it
+	err = svc.UpdateArticle(slug, Input{
+		Title:   "Updated Title",
+		Content: "Updated content with **markdown**.",
+		Tags:    "go, updated",
+		Draft:   true,
+	})
+	require.NoError(t, err)
+
+	// Load it back and verify
+	input, err := svc.LoadArticle(slug)
+	require.NoError(t, err)
+
+	assert.Equal(t, "Updated Title", input.Title)
+	assert.Equal(t, "Updated content with **markdown**.", input.Content)
+	assert.Contains(t, input.Tags, "updated")
+	assert.True(t, input.Draft)
+}
+
+func TestUpdateArticle_PreservesMetadata(t *testing.T) {
+	dir := t.TempDir()
+	svc := NewService(dir, "Test Author")
+
+	// Create a post
+	slug, err := svc.CreatePost(Input{
+		Title:   "Metadata Test",
+		Content: "Content here.",
+	})
+	require.NoError(t, err)
+
+	// Update only content
+	err = svc.UpdateArticle(slug, Input{
+		Title:   "Metadata Test",
+		Content: "New content.",
+	})
+	require.NoError(t, err)
+
+	// Verify the file still has slug, date, and author
+	files, _ := filepath.Glob(filepath.Join(dir, "*.md"))
+	require.Len(t, files, 1)
+
+	content, err := os.ReadFile(files[0])
+	require.NoError(t, err)
+
+	s := string(content)
+	assert.Contains(t, s, "slug: "+slug)
+	assert.Contains(t, s, "author: Test Author")
+	assert.Contains(t, s, "date:")
+	assert.Contains(t, s, "New content.")
+}
+
 func TestGenerateSlug(t *testing.T) {
 	tests := []struct {
 		input    string

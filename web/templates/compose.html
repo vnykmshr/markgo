@@ -2,8 +2,13 @@
 <div class="compose-page">
     <div class="container">
         <header class="compose-header">
+            {{ if .editing }}
+            <h1 class="compose-title">Edit</h1>
+            <p class="compose-subtitle">Update your post.</p>
+            {{ else }}
             <h1 class="compose-title">Compose</h1>
             <p class="compose-subtitle">Write a thought, share a link, or publish an article.</p>
+            {{ end }}
         </header>
 
         {{ if .error }}
@@ -12,7 +17,8 @@
         </div>
         {{ end }}
 
-        <form class="compose-form" method="POST" action="/compose">
+        <form class="compose-form" method="POST" action="{{ if .editing }}/compose/{{ .slug }}{{ else }}/compose{{ end }}">
+            <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
             <div class="compose-field">
                 <label for="content" class="compose-label">Content <span class="compose-required">*</span></label>
                 <textarea
@@ -62,19 +68,34 @@
             </div>
 
             <div class="compose-field compose-field-inline">
-                <label class="compose-checkbox-label">
-                    <input type="checkbox" name="draft" value="on" class="compose-checkbox">
+                <label class="compose-checkbox-label" id="draft-label">
+                    <input type="checkbox" name="draft" value="on" class="compose-checkbox" id="draft-checkbox">
                     Save as draft
                 </label>
             </div>
 
             <div class="compose-actions">
+                {{ if .editing }}
+                <button type="submit" class="compose-submit">Update</button>
+                <a href="/articles/{{ .slug }}" class="compose-cancel">Cancel</a>
+                {{ else }}
                 <button type="submit" class="compose-submit">Publish</button>
                 <a href="/" class="compose-cancel">Cancel</a>
+                {{ end }}
             </div>
         </form>
     </div>
 </div>
+{{ if .editing }}
+<script>
+    (function() {
+        var isDraft = {{ .input.Draft }};
+        if (isDraft) {
+            document.getElementById('draft-checkbox').checked = true;
+        }
+    })();
+</script>
+{{ end }}
 {{ end }}
 
 {{ define "compose-head" }}

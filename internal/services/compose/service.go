@@ -105,6 +105,172 @@ func (s *Service) CreatePost(input Input) (string, error) {
 	return slug, nil
 }
 
+// LoadArticle reads an existing article file by slug and returns its content for editing.
+func (s *Service) LoadArticle(slug string) (*Input, error) {
+	filePath, err := s.findFileBySlug(slug)
+	if err != nil {
+		return nil, err
+	}
+
+	content, err := os.ReadFile(filePath) // #nosec G304 -- filePath is built from articlesPath + directory entry
+	if err != nil {
+		return nil, fmt.Errorf("failed to read article file: %w", err)
+	}
+
+	parts := strings.SplitN(string(content), "---", 3)
+	if len(parts) < 3 {
+		return nil, fmt.Errorf("invalid article format: missing frontmatter")
+	}
+
+	var fm map[string]any
+	if err := yaml.Unmarshal([]byte(parts[1]), &fm); err != nil {
+		return nil, fmt.Errorf("failed to parse frontmatter: %w", err)
+	}
+
+	input := &Input{
+		Content: strings.TrimSpace(parts[2]),
+	}
+	if title, ok := fm["title"].(string); ok {
+		input.Title = title
+	}
+	if linkURL, ok := fm["link_url"].(string); ok {
+		input.LinkURL = linkURL
+	}
+	if tags, ok := fm["tags"].([]any); ok {
+		var tagStrs []string
+		for _, t := range tags {
+			if s, ok := t.(string); ok {
+				tagStrs = append(tagStrs, s)
+			}
+		}
+		input.Tags = strings.Join(tagStrs, ", ")
+	}
+	if draft, ok := fm["draft"].(bool); ok {
+		input.Draft = draft
+	}
+
+	return input, nil
+}
+
+// UpdateArticle overwrites an existing article file with updated content.
+// Preserves fields not exposed in the compose form (slug, date, author, categories).
+func (s *Service) UpdateArticle(slug string, input Input) error {
+	filePath, err := s.findFileBySlug(slug)
+	if err != nil {
+		return err
+	}
+
+	existingContent, err := os.ReadFile(filePath) // #nosec G304 -- filePath is built from articlesPath + directory entry
+	if err != nil {
+		return fmt.Errorf("failed to read existing article: %w", err)
+	}
+
+	parts := strings.SplitN(string(existingContent), "---", 3)
+	if len(parts) < 3 {
+		return fmt.Errorf("invalid article format: missing frontmatter")
+	}
+
+	var fm map[string]any
+	if unmarshalErr := yaml.Unmarshal([]byte(parts[1]), &fm); unmarshalErr != nil {
+		return fmt.Errorf("failed to parse frontmatter: %w", unmarshalErr)
+	}
+
+	// Update editable fields, preserve everything else (slug, date, author, categories)
+	if input.Title != "" {
+		fm["title"] = input.Title
+	} else {
+		delete(fm, "title")
+	}
+	if input.LinkURL != "" {
+		fm["link_url"] = input.LinkURL
+	} else {
+		delete(fm, "link_url")
+	}
+
+	var tags []string
+	for _, t := range strings.Split(input.Tags, ",") {
+		t = strings.TrimSpace(t)
+		if t != "" {
+			tags = append(tags, t)
+		}
+	}
+	if len(tags) > 0 {
+		fm["tags"] = tags
+	} else {
+		delete(fm, "tags")
+	}
+
+	fm["draft"] = input.Draft
+
+	yamlBytes, err := yaml.Marshal(fm)
+	if err != nil {
+		return fmt.Errorf("failed to marshal frontmatter: %w", err)
+	}
+
+	fileContent := fmt.Sprintf("---\n%s---\n\n%s\n", string(yamlBytes), strings.TrimSpace(input.Content))
+
+	// Atomic write: temp file + rename prevents data loss on crash
+	tmpFile, err := os.CreateTemp(filepath.Dir(filePath), ".markgo-*.tmp")
+	if err != nil {
+		return fmt.Errorf("failed to create temp file: %w", err)
+	}
+	tmpPath := tmpFile.Name()
+
+	if _, err := tmpFile.WriteString(fileContent); err != nil {
+		tmpFile.Close()    //nolint:gosec // best-effort cleanup
+		os.Remove(tmpPath) //nolint:gosec // best-effort cleanup
+		return fmt.Errorf("failed to write temp file: %w", err)
+	}
+	if err := tmpFile.Close(); err != nil {
+		os.Remove(tmpPath) //nolint:gosec // best-effort cleanup
+		return fmt.Errorf("failed to close temp file: %w", err)
+	}
+	if err := os.Rename(tmpPath, filePath); err != nil {
+		os.Remove(tmpPath) //nolint:gosec // best-effort cleanup
+		return fmt.Errorf("failed to rename temp file: %w", err)
+	}
+
+	return nil
+}
+
+// findFileBySlug scans the articles directory for a file with matching slug in frontmatter.
+func (s *Service) findFileBySlug(slug string) (string, error) {
+	entries, err := os.ReadDir(s.articlesPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read articles directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
+			continue
+		}
+
+		filePath := filepath.Join(s.articlesPath, entry.Name())
+		content, err := os.ReadFile(filePath) // #nosec G304 -- filePath is built from articlesPath + directory entry
+		if err != nil {
+			continue // Skip unreadable files — effectively non-existent for this scan
+		}
+
+		parts := strings.SplitN(string(content), "---", 3)
+		if len(parts) < 3 {
+			continue
+		}
+
+		var fm struct {
+			Slug string `yaml:"slug"`
+		}
+		if err := yaml.Unmarshal([]byte(parts[1]), &fm); err != nil {
+			continue
+		}
+
+		if fm.Slug == slug {
+			return filePath, nil
+		}
+	}
+
+	return "", fmt.Errorf("article not found: %s", slug)
+}
+
 // generateSlug creates a URL-friendly slug from a title.
 func generateSlug(title string) string {
 	slug := strings.ToLower(title)
