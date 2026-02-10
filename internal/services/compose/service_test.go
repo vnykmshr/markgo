@@ -14,7 +14,7 @@ func TestCreatePost_Thought(t *testing.T) {
 	dir := t.TempDir()
 	svc := NewService(dir, "Test Author")
 
-	slug, err := svc.CreatePost(Input{
+	slug, err := svc.CreatePost(&Input{
 		Content: "Just a quick thought about Go.",
 	})
 
@@ -40,7 +40,7 @@ func TestCreatePost_Link(t *testing.T) {
 	dir := t.TempDir()
 	svc := NewService(dir, "Test Author")
 
-	slug, err := svc.CreatePost(Input{
+	slug, err := svc.CreatePost(&Input{
 		Title:   "Interesting Read",
 		Content: "This article is worth checking out.",
 		LinkURL: "https://example.com/article",
@@ -67,7 +67,7 @@ func TestCreatePost_Article(t *testing.T) {
 	dir := t.TempDir()
 	svc := NewService(dir, "Test Author")
 
-	slug, err := svc.CreatePost(Input{
+	slug, err := svc.CreatePost(&Input{
 		Title:   "Getting Started with Go",
 		Content: "Go is a statically typed language...",
 		Tags:    "golang, tutorial",
@@ -93,7 +93,7 @@ func TestCreatePost_EmptyTags(t *testing.T) {
 	dir := t.TempDir()
 	svc := NewService(dir, "")
 
-	slug, err := svc.CreatePost(Input{
+	slug, err := svc.CreatePost(&Input{
 		Content: "No tags here.",
 	})
 
@@ -117,12 +117,14 @@ func TestLoadArticle(t *testing.T) {
 	svc := NewService(dir, "Test Author")
 
 	// Create a post first
-	slug, err := svc.CreatePost(Input{
-		Title:   "Test Article",
-		Content: "Some markdown **content** here.",
-		LinkURL: "https://example.com",
-		Tags:    "go, test",
-		Draft:   true,
+	slug, err := svc.CreatePost(&Input{
+		Title:       "Test Article",
+		Description: "A test article description",
+		Content:     "Some markdown **content** here.",
+		LinkURL:     "https://example.com",
+		Tags:        "go, test",
+		Categories:  "programming, tutorials",
+		Draft:       true,
 	})
 	require.NoError(t, err)
 
@@ -131,10 +133,13 @@ func TestLoadArticle(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "Test Article", input.Title)
+	assert.Equal(t, "A test article description", input.Description)
 	assert.Equal(t, "Some markdown **content** here.", input.Content)
 	assert.Equal(t, "https://example.com", input.LinkURL)
 	assert.Contains(t, input.Tags, "go")
 	assert.Contains(t, input.Tags, "test")
+	assert.Contains(t, input.Categories, "programming")
+	assert.Contains(t, input.Categories, "tutorials")
 	assert.True(t, input.Draft)
 }
 
@@ -152,19 +157,21 @@ func TestUpdateArticle(t *testing.T) {
 	svc := NewService(dir, "Test Author")
 
 	// Create a post
-	slug, err := svc.CreatePost(Input{
+	slug, err := svc.CreatePost(&Input{
 		Title:   "Original Title",
 		Content: "Original content.",
 		Tags:    "go",
 	})
 	require.NoError(t, err)
 
-	// Update it
-	err = svc.UpdateArticle(slug, Input{
-		Title:   "Updated Title",
-		Content: "Updated content with **markdown**.",
-		Tags:    "go, updated",
-		Draft:   true,
+	// Update it with description and categories
+	err = svc.UpdateArticle(slug, &Input{
+		Title:       "Updated Title",
+		Description: "Updated description for SEO",
+		Content:     "Updated content with **markdown**.",
+		Tags:        "go, updated",
+		Categories:  "tech, tutorials",
+		Draft:       true,
 	})
 	require.NoError(t, err)
 
@@ -173,8 +180,11 @@ func TestUpdateArticle(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "Updated Title", input.Title)
+	assert.Equal(t, "Updated description for SEO", input.Description)
 	assert.Equal(t, "Updated content with **markdown**.", input.Content)
 	assert.Contains(t, input.Tags, "updated")
+	assert.Contains(t, input.Categories, "tech")
+	assert.Contains(t, input.Categories, "tutorials")
 	assert.True(t, input.Draft)
 }
 
@@ -183,14 +193,14 @@ func TestUpdateArticle_PreservesMetadata(t *testing.T) {
 	svc := NewService(dir, "Test Author")
 
 	// Create a post
-	slug, err := svc.CreatePost(Input{
+	slug, err := svc.CreatePost(&Input{
 		Title:   "Metadata Test",
 		Content: "Content here.",
 	})
 	require.NoError(t, err)
 
 	// Update only content
-	err = svc.UpdateArticle(slug, Input{
+	err = svc.UpdateArticle(slug, &Input{
 		Title:   "Metadata Test",
 		Content: "New content.",
 	})

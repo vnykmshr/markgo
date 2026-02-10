@@ -104,11 +104,13 @@ func (h *ComposeHandler) HandleEdit(c *gin.Context) {
 	}
 
 	input := compose.Input{
-		Content: c.PostForm("content"),
-		Title:   c.PostForm("title"),
-		LinkURL: c.PostForm("link_url"),
-		Tags:    c.PostForm("tags"),
-		Draft:   c.PostForm("draft") == "on",
+		Content:     c.PostForm("content"),
+		Title:       c.PostForm("title"),
+		Description: c.PostForm("description"),
+		LinkURL:     c.PostForm("link_url"),
+		Tags:        c.PostForm("tags"),
+		Categories:  c.PostForm("categories"),
+		Draft:       c.PostForm("draft") == "on",
 	}
 
 	if input.Content == "" {
@@ -126,7 +128,7 @@ func (h *ComposeHandler) HandleEdit(c *gin.Context) {
 		return
 	}
 
-	if err := h.composeService.UpdateArticle(slug, input); err != nil {
+	if err := h.composeService.UpdateArticle(slug, &input); err != nil {
 		h.logger.Error("Failed to update post", "error", err, "slug", slug)
 		data := h.buildBaseTemplateData("Edit - " + h.config.Blog.Title)
 		data["template"] = templateCompose
@@ -159,11 +161,13 @@ func (h *ComposeHandler) HandleEdit(c *gin.Context) {
 // HandleSubmit processes the compose form submission.
 func (h *ComposeHandler) HandleSubmit(c *gin.Context) {
 	input := compose.Input{
-		Content: c.PostForm("content"),
-		Title:   c.PostForm("title"),
-		LinkURL: c.PostForm("link_url"),
-		Tags:    c.PostForm("tags"),
-		Draft:   c.PostForm("draft") == "on",
+		Content:     c.PostForm("content"),
+		Title:       c.PostForm("title"),
+		Description: c.PostForm("description"),
+		LinkURL:     c.PostForm("link_url"),
+		Tags:        c.PostForm("tags"),
+		Categories:  c.PostForm("categories"),
+		Draft:       c.PostForm("draft") == "on",
 	}
 
 	if input.Content == "" {
@@ -179,7 +183,7 @@ func (h *ComposeHandler) HandleSubmit(c *gin.Context) {
 		return
 	}
 
-	slug, err := h.composeService.CreatePost(input)
+	slug, err := h.composeService.CreatePost(&input)
 	if err != nil {
 		h.logger.Error("Failed to create post", "error", err)
 		data := h.buildBaseTemplateData("Compose - " + h.config.Blog.Title)

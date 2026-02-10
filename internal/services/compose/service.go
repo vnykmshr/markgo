@@ -26,16 +26,18 @@ func NewService(articlesPath, defaultAuthor string) *Service {
 
 // Input represents the compose form submission.
 type Input struct {
-	Content string
-	Title   string
-	LinkURL string
-	Tags    string
-	Draft   bool
+	Content     string
+	Title       string
+	Description string
+	LinkURL     string
+	Tags        string
+	Categories  string
+	Draft       bool
 }
 
 // CreatePost creates a new markdown post file from compose input.
 // Returns the generated slug.
-func (s *Service) CreatePost(input Input) (string, error) {
+func (s *Service) CreatePost(input *Input) (string, error) {
 	now := time.Now()
 
 	// Generate slug (fall back to timestamp if title produces empty slug, e.g. non-ASCII titles)
@@ -64,11 +66,25 @@ func (s *Service) CreatePost(input Input) (string, error) {
 	if input.Title != "" {
 		fm["title"] = input.Title
 	}
+	if input.Description != "" {
+		fm["description"] = input.Description
+	}
 	if input.LinkURL != "" {
 		fm["link_url"] = input.LinkURL
 	}
+	// Parse comma-separated categories
+	var categories []string
+	for _, cat := range strings.Split(input.Categories, ",") {
+		cat = strings.TrimSpace(cat)
+		if cat != "" {
+			categories = append(categories, cat)
+		}
+	}
 	if len(tags) > 0 {
 		fm["tags"] = tags
+	}
+	if len(categories) > 0 {
+		fm["categories"] = categories
 	}
 	if s.defaultAuthor != "" {
 		fm["author"] = s.defaultAuthor
@@ -129,6 +145,9 @@ func (s *Service) LoadArticle(slug string) (*Input, error) {
 	if title, ok := fm["title"].(string); ok {
 		input.Title = title
 	}
+	if desc, ok := fm["description"].(string); ok {
+		input.Description = desc
+	}
 	if linkURL, ok := fm["link_url"].(string); ok {
 		input.LinkURL = linkURL
 	}
@@ -141,6 +160,15 @@ func (s *Service) LoadArticle(slug string) (*Input, error) {
 		}
 		input.Tags = strings.Join(tagStrs, ", ")
 	}
+	if cats, ok := fm["categories"].([]any); ok {
+		var catStrs []string
+		for _, c := range cats {
+			if str, ok := c.(string); ok {
+				catStrs = append(catStrs, str)
+			}
+		}
+		input.Categories = strings.Join(catStrs, ", ")
+	}
 	if draft, ok := fm["draft"].(bool); ok {
 		input.Draft = draft
 	}
@@ -150,7 +178,7 @@ func (s *Service) LoadArticle(slug string) (*Input, error) {
 
 // UpdateArticle overwrites an existing article file with updated content.
 // Preserves fields not exposed in the compose form (slug, date, author, categories).
-func (s *Service) UpdateArticle(slug string, input Input) error {
+func (s *Service) UpdateArticle(slug string, input *Input) error {
 	filePath, existingContent, err := s.findFileBySlug(slug)
 	if err != nil {
 		return err
@@ -166,11 +194,16 @@ func (s *Service) UpdateArticle(slug string, input Input) error {
 		return fmt.Errorf("failed to parse frontmatter: %w", unmarshalErr)
 	}
 
-	// Update editable fields, preserve everything else (slug, date, author, categories)
+	// Update editable fields, preserve everything else (slug, date, author)
 	if input.Title != "" {
 		fm["title"] = input.Title
 	} else {
 		delete(fm, "title")
+	}
+	if input.Description != "" {
+		fm["description"] = input.Description
+	} else {
+		delete(fm, "description")
 	}
 	if input.LinkURL != "" {
 		fm["link_url"] = input.LinkURL
@@ -189,6 +222,19 @@ func (s *Service) UpdateArticle(slug string, input Input) error {
 		fm["tags"] = tags
 	} else {
 		delete(fm, "tags")
+	}
+
+	var categories []string
+	for _, cat := range strings.Split(input.Categories, ",") {
+		cat = strings.TrimSpace(cat)
+		if cat != "" {
+			categories = append(categories, cat)
+		}
+	}
+	if len(categories) > 0 {
+		fm["categories"] = categories
+	} else {
+		delete(fm, "categories")
 	}
 
 	fm["draft"] = input.Draft

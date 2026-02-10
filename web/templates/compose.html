@@ -44,6 +44,18 @@
             </div>
 
             <div class="compose-field">
+                <label for="description" class="compose-label">Description <span class="compose-hint">(optional — used for SEO and social previews)</span></label>
+                <input
+                    type="text"
+                    id="description"
+                    name="description"
+                    class="compose-input"
+                    placeholder="A brief description of your post"
+                    value="{{ if .input }}{{ .input.Description }}{{ end }}"
+                >
+            </div>
+
+            <div class="compose-field">
                 <label for="link_url" class="compose-label">Link URL <span class="compose-hint">(optional — add a URL to create a link post)</span></label>
                 <input
                     type="url"
@@ -64,6 +76,18 @@
                     class="compose-input"
                     placeholder="golang, web, tutorial"
                     value="{{ if .input }}{{ .input.Tags }}{{ end }}"
+                >
+            </div>
+
+            <div class="compose-field">
+                <label for="categories" class="compose-label">Categories <span class="compose-hint">(optional — comma-separated)</span></label>
+                <input
+                    type="text"
+                    id="categories"
+                    name="categories"
+                    class="compose-input"
+                    placeholder="technology, programming"
+                    value="{{ if .input }}{{ .input.Categories }}{{ end }}"
                 >
             </div>
 
