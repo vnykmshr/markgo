@@ -2,6 +2,7 @@ package compose
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -177,7 +178,7 @@ func (s *Service) LoadArticle(slug string) (*Input, error) {
 }
 
 // UpdateArticle overwrites an existing article file with updated content.
-// Preserves fields not exposed in the compose form (slug, date, author, categories).
+// Preserves fields not exposed in the compose form (slug, date, author).
 func (s *Service) UpdateArticle(slug string, input *Input) error {
 	filePath, existingContent, err := s.findFileBySlug(slug)
 	if err != nil {
@@ -286,7 +287,8 @@ func (s *Service) findFileBySlug(slug string) (string, []byte, error) {
 		filePath := filepath.Join(s.articlesPath, entry.Name())
 		content, err := os.ReadFile(filePath) // #nosec G304 -- filePath is built from articlesPath + directory entry
 		if err != nil {
-			continue // Skip unreadable files — effectively non-existent for this scan
+			slog.Warn("Skipping unreadable article file", "path", filePath, "error", err)
+			continue
 		}
 
 		parts := strings.SplitN(string(content), "---", 3)

@@ -182,7 +182,7 @@ func RateLimit(requests int, window time.Duration) gin.HandlerFunc {
 func generateRequestID() string {
 	bytes := make([]byte, 8)
 	if _, err := rand.Read(bytes); err != nil {
-		// Fallback to timestamp-based ID if random fails
+		slog.Warn("Request ID generation failed, using timestamp fallback", "error", err)
 		return fmt.Sprintf("req_%d", time.Now().UnixNano())
 	}
 	return base64.URLEncoding.EncodeToString(bytes)
@@ -236,13 +236,18 @@ func NoCache() gin.HandlerFunc {
 	}
 }
 
-// RecoveryWithErrorHandler provides recovery with error handling
+// RecoveryWithErrorHandler provides recovery with error handling for all panic types
 func RecoveryWithErrorHandler(logger *slog.Logger) gin.HandlerFunc {
 	return gin.RecoveryWithWriter(gin.DefaultWriter, func(c *gin.Context, recovered interface{}) {
-		if err, ok := recovered.(string); ok {
-			logger.Error("Panic recovered", "error", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+		switch v := recovered.(type) {
+		case string:
+			logger.Error("Panic recovered", "error", v)
+		case error:
+			logger.Error("Panic recovered", "error", v.Error())
+		default:
+			logger.Error("Panic recovered", "error", fmt.Sprintf("%v", v))
 		}
+		c.AbortWithStatus(http.StatusInternalServerError)
 	})
 }
 
@@ -264,10 +269,13 @@ const (
 )
 
 // CSRF implements double-submit cookie CSRF protection.
-// On GET/HEAD: generates a token, sets it as a Secure/HttpOnly cookie, and stores it in gin context as "csrf_token".
+// On GET/HEAD: generates a token, sets it as an HttpOnly cookie, and stores it in gin context as "csrf_token".
 // On other methods (POST, PUT, DELETE): verifies the form field matches the cookie value.
-func CSRF() gin.HandlerFunc {
+// secureCookie controls the Secure flag — set false for localhost/HTTP development.
+func CSRF(secureCookie bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		c.Set("csrf_secure", secureCookie)
+
 		if c.Request.Method == http.MethodGet || c.Request.Method == http.MethodHead {
 			token := generateCSRFToken()
 			if token == "" {
@@ -275,7 +283,7 @@ func CSRF() gin.HandlerFunc {
 				return
 			}
 			c.SetSameSite(http.SameSiteStrictMode)
-			c.SetCookie(csrfCookieName, token, 3600, "", "", true, true)
+			c.SetCookie(csrfCookieName, token, 3600, "", "", secureCookie, true)
 			c.Set("csrf_token", token)
 			c.Next()
 			return
@@ -300,6 +308,7 @@ func CSRF() gin.HandlerFunc {
 func generateCSRFToken() string {
 	b := make([]byte, csrfTokenBytes)
 	if _, err := rand.Read(b); err != nil {
+		slog.Error("CSRF token generation failed", "error", err)
 		return ""
 	}
 	return hex.EncodeToString(b)

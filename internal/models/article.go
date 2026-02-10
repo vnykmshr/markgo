@@ -206,6 +206,9 @@ type Pagination struct {
 
 // NewPagination creates a new pagination struct
 func NewPagination(currentPage, totalItems, itemsPerPage int) *Pagination {
+	if itemsPerPage <= 0 {
+		itemsPerPage = 10
+	}
 	totalPages := (totalItems + itemsPerPage - 1) / itemsPerPage
 	if totalPages == 0 {
 		totalPages = 1

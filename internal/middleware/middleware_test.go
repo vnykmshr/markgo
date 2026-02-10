@@ -306,7 +306,7 @@ func TestNoCache(t *testing.T) {
 func TestCSRF(t *testing.T) {
 	t.Run("GET sets token cookie and context", func(t *testing.T) {
 		router := setupTestRouter()
-		router.Use(CSRF())
+		router.Use(CSRF(true))
 		var token string
 		router.GET("/form", func(c *gin.Context) {
 			if v, exists := c.Get("csrf_token"); exists {
@@ -337,7 +337,7 @@ func TestCSRF(t *testing.T) {
 
 	t.Run("POST with valid token succeeds", func(t *testing.T) {
 		router := setupTestRouter()
-		router.Use(CSRF())
+		router.Use(CSRF(true))
 		var token string
 		router.GET("/form", func(c *gin.Context) {
 			if v, exists := c.Get("csrf_token"); exists {
@@ -370,7 +370,7 @@ func TestCSRF(t *testing.T) {
 
 	t.Run("POST without token is rejected", func(t *testing.T) {
 		router := setupTestRouter()
-		router.Use(CSRF())
+		router.Use(CSRF(true))
 		router.POST("/form", func(c *gin.Context) {
 			c.String(200, "posted")
 		})
@@ -384,7 +384,7 @@ func TestCSRF(t *testing.T) {
 
 	t.Run("POST with mismatched token is rejected", func(t *testing.T) {
 		router := setupTestRouter()
-		router.Use(CSRF())
+		router.Use(CSRF(true))
 		router.POST("/form", func(c *gin.Context) {
 			c.String(200, "posted")
 		})

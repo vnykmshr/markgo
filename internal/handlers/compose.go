@@ -90,8 +90,14 @@ func refreshCSRFToken(c *gin.Context) string {
 		return ""
 	}
 	token := hex.EncodeToString(b)
+	var isSecure bool
+	if secureCookie, exists := c.Get("csrf_secure"); exists {
+		if v, ok := secureCookie.(bool); ok {
+			isSecure = v
+		}
+	}
 	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie("_csrf", token, 3600, "", "", true, true)
+	c.SetCookie("_csrf", token, 3600, "", "", isSecure, true)
 	return token
 }
 
@@ -99,7 +105,7 @@ func refreshCSRFToken(c *gin.Context) string {
 func (h *ComposeHandler) HandleEdit(c *gin.Context) {
 	slug := c.Param("slug")
 	if !validSlug.MatchString(slug) {
-		c.Status(http.StatusNotFound)
+		h.handleError(c, fmt.Errorf("invalid slug %q: %w", slug, apperrors.ErrArticleNotFound), "Article not found")
 		return
 	}
 

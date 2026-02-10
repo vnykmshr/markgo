@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"log/slog"
+
 	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/models"
 	"github.com/vnykmshr/markgo/internal/services"
@@ -32,6 +34,8 @@ func (h *SEODataHelper) GenerateArticleSEOData(article *models.Article) map[stri
 	// Generate meta tags
 	if metaTags, err := h.seoService.GenerateMetaTags(article); err == nil {
 		seoData["seoMetaTags"] = metaTags
+	} else {
+		slog.Debug("SEO meta tag generation failed", "slug", article.Slug, "error", err)
 	}
 
 	// Generate Open Graph tags
@@ -44,6 +48,8 @@ func (h *SEODataHelper) GenerateArticleSEOData(article *models.Article) map[stri
 		} else {
 			seoData["seoMetaTags"] = ogTags
 		}
+	} else {
+		slog.Debug("SEO OpenGraph generation failed", "slug", article.Slug, "error", err)
 	}
 
 	// Generate Twitter Card tags
@@ -54,16 +60,22 @@ func (h *SEODataHelper) GenerateArticleSEOData(article *models.Article) map[stri
 				seoMetaTags[key] = value
 			}
 		}
+	} else {
+		slog.Debug("SEO Twitter Card generation failed", "slug", article.Slug, "error", err)
 	}
 
 	// Generate Article Schema
 	if articleSchema, err := h.seoService.GenerateArticleSchema(article, baseURL); err == nil {
 		seoData["articleSchema"] = articleSchema
+	} else {
+		slog.Debug("SEO article schema generation failed", "slug", article.Slug, "error", err)
 	}
 
 	// Generate Website Schema
 	if websiteSchema, err := h.seoService.GenerateWebsiteSchema(); err == nil {
 		seoData["websiteSchema"] = websiteSchema
+	} else {
+		slog.Debug("SEO website schema generation failed", "error", err)
 	}
 
 	// Generate Breadcrumb Schema for article

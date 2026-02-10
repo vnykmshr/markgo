@@ -402,6 +402,13 @@ var templateFuncs = template.FuncMap{
 		return date.Format(format)
 	},
 	"formatDateInZone": func(date time.Time, zone, format string) string {
+		if timeZoneCache == nil {
+			loc, err := time.LoadLocation(zone)
+			if err != nil {
+				return date.Format(format)
+			}
+			return date.In(loc).Format(format)
+		}
 		if cachedLoc, found := timeZoneCache.Get(zone); found {
 			if loc, ok := cachedLoc.(*time.Location); ok {
 				return date.In(loc).Format(format)

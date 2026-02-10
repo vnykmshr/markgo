@@ -148,7 +148,9 @@ func Run(args []string) {
 		)
 	}
 
-	templateService.Shutdown()
+	if templateService != nil {
+		templateService.Shutdown()
+	}
 	logger.Info("Server exited gracefully")
 }
 
@@ -302,7 +304,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, cfg *config.Config, log
 			middleware.RecoveryWithErrorHandler(logger),
 			middleware.BasicAuth(cfg.Admin.Username, cfg.Admin.Password),
 			middleware.NoCache(),
-			middleware.CSRF(),
+			middleware.CSRF(cfg.Environment != envDevelopment),
 		)
 		if h.Compose != nil {
 			composeGroup.GET("", h.Compose.ShowCompose)
