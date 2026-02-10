@@ -238,16 +238,8 @@ func (h *AdminHandler) Debug(c *gin.Context) {
 		"uptime": time.Since(h.startTime).String(),
 	}
 
-	if h.shouldReturnJSON(c) {
-		c.JSON(http.StatusOK, debugInfo)
-		return
-	}
-
-	data := h.buildBaseTemplateData("Debug Information")
-	data["debug"] = debugInfo
-	data["template"] = "debug"
-
-	h.renderHTML(c, http.StatusOK, "base.html", data)
+	// Debug endpoints always return JSON (no template exists for debug data)
+	c.JSON(http.StatusOK, debugInfo)
 }
 
 // ReloadArticles handles reloading articles (development only)

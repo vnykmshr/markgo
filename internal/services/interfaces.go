@@ -94,18 +94,6 @@ type EmailServiceInterface interface {
 	Shutdown()
 }
 
-// SearchServiceInterface defines the interface for search operations
-type SearchServiceInterface interface {
-	// Search methods
-	Search(articles []*models.Article, query string, limit int) []*models.SearchResult
-	SearchInTitle(articles []*models.Article, query string, limit int) []*models.SearchResult
-	SearchByTag(articles []*models.Article, tag string) []*models.Article
-	SearchByCategory(articles []*models.Article, category string) []*models.Article
-
-	// Suggestions
-	GetSuggestions(articles []*models.Article, query string, limit int) []string
-}
-
 // TemplateServiceInterface defines the interface for template operations
 type TemplateServiceInterface interface {
 	// Template rendering
@@ -216,17 +204,6 @@ type SEOAnalysis struct {
 	Keywords     []string `json:"keywords"`
 	Suggestions  []string `json:"suggestions"`
 	Score        float64  `json:"score"`
-}
-
-// SEOMetrics represents SEO performance metrics
-type SEOMetrics struct {
-	SitemapSize        int       `json:"sitemap_size"`
-	LastGenerated      time.Time `json:"last_generated"`
-	ArticlesIndexed    int       `json:"articles_indexed"`
-	AvgContentScore    float64   `json:"avg_content_score"`
-	SchemaValidation   bool      `json:"schema_validation"`
-	OpenGraphEnabled   bool      `json:"open_graph_enabled"`
-	TwitterCardEnabled bool      `json:"twitter_card_enabled"`
 }
 
 // RobotsConfig represents robots.txt configuration

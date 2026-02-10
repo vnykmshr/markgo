@@ -258,40 +258,6 @@ func (t *TemplateService) renderToStringUncached(templateName string, data any) 
 	return buf.String(), nil
 }
 
-// GetCacheStats returns template cache statistics
-func (t *TemplateService) GetCacheStats() map[string]int {
-	if t.obcache == nil {
-		return map[string]int{}
-	}
-
-	stats := t.obcache.Stats()
-	return map[string]int{
-		"templates_cached": int(stats.KeyCount()),
-		"cache_hits":       int(stats.Hits()),
-		"cache_misses":     int(stats.Misses()),
-		"hit_ratio":        int(stats.HitRate() * 100),
-	}
-}
-
-// GetTimezoneCacheStats returns timezone cache statistics
-func GetTimezoneCacheStats() map[string]any {
-	if timeZoneCache == nil {
-		return map[string]any{
-			"error": "timezone cache not initialized",
-		}
-	}
-
-	stats := timeZoneCache.Stats()
-	return map[string]any{
-		"timezones_cached": int(stats.KeyCount()),
-		"cache_hits":       int(stats.Hits()),
-		"cache_misses":     int(stats.Misses()),
-		"hit_ratio":        stats.HitRate() * 100,
-		"evictions":        int(stats.Evictions()),
-		"cache_type":       "obcache-go",
-	}
-}
-
 // Shutdown gracefully shuts down the template service
 func (t *TemplateService) Shutdown() {
 	if t.cancel != nil {

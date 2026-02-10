@@ -21,7 +21,6 @@
     initThemeToggle();
     initScrollBehavior();
     initLazyLoading();
-    initAnalytics();
   }
 
   /**
@@ -180,22 +179,6 @@
     const searchResults = document.querySelector(".search-results");
 
     if (searchForm && searchInput) {
-      // Real-time search suggestions
-      let searchTimeout;
-
-      searchInput.addEventListener("input", function () {
-        clearTimeout(searchTimeout);
-        const query = this.value.trim();
-
-        if (query.length > 2) {
-          searchTimeout = setTimeout(function () {
-            fetchSearchSuggestions(query);
-          }, 300);
-        } else {
-          hideSearchSuggestions();
-        }
-      });
-
       // Handle search form submission
       searchForm.addEventListener("submit", function (e) {
         e.preventDefault();
@@ -208,85 +191,9 @@
       // Keyboard navigation for search
       searchInput.addEventListener("keydown", function (e) {
         if (e.key === "Escape") {
-          hideSearchSuggestions();
           this.blur();
         }
       });
-
-      // Close suggestions when clicking outside
-      document.addEventListener("click", function (e) {
-        if (!e.target.closest(".search-container")) {
-          hideSearchSuggestions();
-        }
-      });
-    }
-  }
-
-  /**
-   * Fetch search suggestions with error boundary
-   */
-  function fetchSearchSuggestions(query) {
-    try {
-      // Placeholder for search suggestions API
-
-      // Future API implementation with proper error boundary:
-      /*
-      fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`Search API failed: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => showSearchSuggestions(data))
-        .catch(err => {
-          console.error('Search suggestions failed:', err);
-          // Graceful fallback - hide suggestions instead of crashing
-          hideSearchSuggestions();
-          // Optional: Show user-friendly message
-          // showMessage('Search suggestions temporarily unavailable', 'warning');
-        });
-      */
-    } catch (error) {
-      console.error('Search suggestions error:', error);
-      hideSearchSuggestions();
-    }
-  }
-
-  /**
-   * Show search suggestions
-   */
-  function showSearchSuggestions(suggestions) {
-    const searchContainer = document.querySelector(".search-container");
-    if (!searchContainer) return;
-
-    let suggestionsEl = searchContainer.querySelector(".search-suggestions");
-    if (!suggestionsEl) {
-      suggestionsEl = document.createElement("div");
-      suggestionsEl.className = "search-suggestions";
-      searchContainer.appendChild(suggestionsEl);
-    }
-
-    if (suggestions && suggestions.length > 0) {
-      suggestionsEl.innerHTML = suggestions
-        .map(
-          (suggestion) =>
-            `<a href="/search?q=${encodeURIComponent(suggestion)}" class="suggestion-item">${suggestion}</a>`,
-        )
-        .join("");
-      suggestionsEl.style.display = "block";
-    } else {
-      suggestionsEl.style.display = "none";
-    }
-  }
-
-  /**
-   * Hide search suggestions
-   */
-  function hideSearchSuggestions() {
-    const suggestions = document.querySelector(".search-suggestions");
-    if (suggestions) {
-      suggestions.style.display = "none";
     }
   }
 
@@ -533,52 +440,6 @@
   }
 
   /**
-   * Analytics initialization with error boundary
-   */
-  function initAnalytics() {
-    try {
-      // Simple page view tracking with error boundary
-      if (typeof gtag !== "undefined") {
-        try {
-          gtag("config", "GA_MEASUREMENT_ID", {
-            page_title: document.title,
-            page_location: window.location.href,
-          });
-        } catch (gtagError) {
-          console.error("Google Analytics configuration failed:", gtagError);
-        }
-      }
-
-      // Track outbound links with error boundary
-      document.addEventListener("click", function (e) {
-        try {
-          if (
-            e.target.matches('a[href^="http"]') &&
-            !e.target.href.includes(window.location.hostname)
-          ) {
-            if (typeof gtag !== "undefined") {
-              try {
-                gtag("event", "click", {
-                  event_category: "outbound",
-                  event_label: e.target.href,
-                });
-              } catch (eventError) {
-                console.error("Analytics event tracking failed:", eventError);
-              }
-            }
-          }
-        } catch (clickError) {
-          console.error("Outbound link tracking failed:", clickError);
-          // Don't prevent the link from working
-        }
-      });
-    } catch (error) {
-      console.error("Analytics initialization failed:", error);
-      // App continues to work without analytics
-    }
-  }
-
-  /**
    * Utility Functions
    */
 
@@ -667,21 +528,6 @@
   }
 
   /**
-   * Debounce function
-   */
-  function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
-  }
-
-  /**
    * Throttle function
    */
   function throttle(func, limit) {
@@ -701,7 +547,6 @@
   window.markgo = {
     copyToClipboard,
     showMessage,
-    debounce,
     throttle,
   };
 })();
