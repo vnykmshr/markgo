@@ -346,29 +346,26 @@ func (s *StaticExportService) getHostFromBaseURL() string {
 	return parsedURL.Host
 }
 
-func (s *StaticExportService) setupRoutes(router *gin.Engine, h *handlers.Handlers) {
-	// Static files - not needed for export as we copy them separately
-	// router.Static("/static", s.appConfig.StaticPath)
-
+func (s *StaticExportService) setupRoutes(router *gin.Engine, h *handlers.Router) {
 	// Main routes
-	router.GET("/", h.Home)
-	router.GET("/articles", h.Articles)
-	router.GET("/articles/:slug", h.Article)
-	router.GET("/tags", h.Tags)
-	router.GET("/tags/:tag", h.ArticlesByTag)
-	router.GET("/categories", h.Categories)
-	router.GET("/categories/:category", h.ArticlesByCategory)
-	router.GET("/search", h.Search)
+	router.GET("/", h.Feed.Home)
+	router.GET("/articles", h.Post.Articles)
+	router.GET("/articles/:slug", h.Post.Article)
+	router.GET("/tags", h.Taxonomy.Tags)
+	router.GET("/tags/:tag", h.Taxonomy.ArticlesByTag)
+	router.GET("/categories", h.Taxonomy.Categories)
+	router.GET("/categories/:category", h.Taxonomy.ArticlesByCategory)
+	router.GET("/search", h.Search.Search)
 	router.GET("/about", h.AboutArticle)
-	router.GET("/contact", h.ContactForm)
+	router.GET("/contact", h.Contact.ShowForm)
 
 	// 404 page for static export
 	router.NoRoute(h.NotFound)
 
-	// Feeds and SEO - handled separately in generateFeeds
-	router.GET("/feed.xml", h.RSSFeed)
-	router.GET("/feed.json", h.JSONFeed)
-	router.GET("/sitemap.xml", h.Sitemap)
+	// Feeds and SEO
+	router.GET("/feed.xml", h.Syndication.RSS)
+	router.GET("/feed.json", h.Syndication.JSONFeed)
+	router.GET("/sitemap.xml", h.Syndication.Sitemap)
 }
 
 func (s *StaticExportService) generateFeeds(_ context.Context) error {
@@ -384,9 +381,9 @@ func (s *StaticExportService) generateFeeds(_ context.Context) error {
 		BuildInfo:       s.config.BuildInfo,
 	})
 
-	router.GET("/feed.xml", h.RSSFeed)
-	router.GET("/feed.json", h.JSONFeed)
-	router.GET("/sitemap.xml", h.Sitemap)
+	router.GET("/feed.xml", h.Syndication.RSS)
+	router.GET("/feed.json", h.Syndication.JSONFeed)
+	router.GET("/sitemap.xml", h.Syndication.Sitemap)
 	router.StaticFile("/robots.txt", filepath.Join(s.appConfig.StaticPath, "robots.txt"))
 
 	feeds := []struct {

@@ -260,52 +260,37 @@ func configureGinMode(cfg *config.Config, logger *slog.Logger) {
 	}
 }
 
-func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, logger *slog.Logger) {
-	// Validation middleware removed - keeping it simple
-
+func setupRoutes(router *gin.Engine, h *handlers.Router, cfg *config.Config, logger *slog.Logger) {
 	// Static files
 	router.Static("/static", cfg.StaticPath)
 	router.StaticFile("/favicon.ico", cfg.StaticPath+"/img/favicon.ico")
-
-	router.StaticFile("/robots.txt", cfg.StaticPath+"/robots.txt") // Keep static for now, can be made dynamic later
+	router.StaticFile("/robots.txt", cfg.StaticPath+"/robots.txt")
 
 	// Health check and metrics
-	router.GET("/health", h.Health)
-	router.GET("/metrics", h.Metrics)
+	router.GET("/health", h.Health.Health)
+	router.GET("/metrics", h.Admin.Metrics)
 
-	// Main routes
-	router.GET("/", h.Home)
-
-	// Articles with pagination validation
-	router.GET("/articles", h.Articles)
-
-	// Article by slug with slug validation
-	router.GET("/articles/:slug", h.Article)
-
-	router.GET("/tags", h.Tags)
-
-	// Tag filtering with tag validation and pagination
-	router.GET("/tags/:tag", h.ArticlesByTag)
-
-	router.GET("/categories", h.Categories)
-
-	// Category filtering with category validation and pagination
-	router.GET("/categories/:category", h.ArticlesByCategory)
-
-	// Search with query validation and pagination
-	router.GET("/search", h.Search)
+	// Public routes
+	router.GET("/", h.Feed.Home)
+	router.GET("/articles", h.Post.Articles)
+	router.GET("/articles/:slug", h.Post.Article)
+	router.GET("/tags", h.Taxonomy.Tags)
+	router.GET("/tags/:tag", h.Taxonomy.ArticlesByTag)
+	router.GET("/categories", h.Taxonomy.Categories)
+	router.GET("/categories/:category", h.Taxonomy.ArticlesByCategory)
+	router.GET("/search", h.Search.Search)
 	router.GET("/about", h.AboutArticle)
 
-	// Contact form with rate limiting and input validation
+	// Contact form with rate limiting
 	contactGroup := router.Group("/contact")
 	contactGroup.Use(middleware.RateLimit(cfg.RateLimit.Contact.Requests, cfg.RateLimit.Contact.Window))
-	contactGroup.GET("", h.ContactForm)
-	contactGroup.POST("", h.ContactSubmit)
+	contactGroup.GET("", h.Contact.ShowForm)
+	contactGroup.POST("", h.Contact.Submit)
 
 	// Feeds and SEO
-	router.GET("/feed.xml", h.RSSFeed)
-	router.GET("/feed.json", h.JSONFeed)
-	router.GET("/sitemap.xml", h.Sitemap)
+	router.GET("/feed.xml", h.Syndication.RSS)
+	router.GET("/feed.json", h.Syndication.JSONFeed)
+	router.GET("/sitemap.xml", h.Syndication.Sitemap)
 
 	// Compose routes (authenticated)
 	if cfg.Admin.Username != "" && cfg.Admin.Password != "" {
@@ -315,30 +300,30 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 			middleware.BasicAuth(cfg.Admin.Username, cfg.Admin.Password),
 			middleware.NoCache(),
 		)
-		composeGroup.GET("", h.ShowCompose)
-		composeGroup.POST("", h.HandleCompose)
+		if h.Compose != nil {
+			composeGroup.GET("", h.Compose.ShowCompose)
+			composeGroup.POST("", h.Compose.HandleSubmit)
+		}
 	}
 
-	// Admin routes (optional) - with minimal middleware chain to avoid header conflicts
+	// Admin routes (optional)
 	if cfg.Admin.Username != "" && cfg.Admin.Password != "" {
 		adminGroup := router.Group("/admin")
-		// Use only essential middleware for admin routes to avoid header conflicts
 		adminGroup.Use(
-			middleware.RecoveryWithErrorHandler(logger),                  // Recovery first
-			middleware.BasicAuth(cfg.Admin.Username, cfg.Admin.Password), // Auth second, before any header-writing middleware
-			middleware.NoCache(), // No caching for admin
+			middleware.RecoveryWithErrorHandler(logger),
+			middleware.BasicAuth(cfg.Admin.Username, cfg.Admin.Password),
+			middleware.NoCache(),
 		)
-		adminGroup.GET("", h.AdminHome)
+		adminGroup.GET("", h.Admin.AdminHome)
 		adminGroup.POST("/cache/clear", h.ClearCache)
-		adminGroup.GET("/stats", h.AdminStats)
-		adminGroup.POST("/articles/reload", h.ReloadArticles)
+		adminGroup.GET("/stats", h.Admin.Stats)
+		adminGroup.POST("/articles/reload", h.Admin.ReloadArticles)
 	}
 
-	// Debug endpoints (development only, with auth if admin configured)
+	// Debug endpoints (development only)
 	if cfg.Environment == envDevelopment {
 		debugGroup := router.Group("/debug")
 
-		// Add Basic Auth if admin credentials are configured
 		if cfg.Admin.Username != "" && cfg.Admin.Password != "" {
 			debugGroup.Use(middleware.BasicAuth(cfg.Admin.Username, cfg.Admin.Password))
 			logger.Info("Debug endpoints enabled with authentication", "environment", cfg.Environment)
@@ -346,24 +331,23 @@ func setupRoutes(router *gin.Engine, h *handlers.Handlers, cfg *config.Config, l
 			logger.Warn("Debug endpoints enabled WITHOUT authentication - configure ADMIN_USERNAME/PASSWORD for security")
 		}
 
-		// Memory and runtime debugging
-		debugGroup.GET("/memory", h.DebugMemory)
-		debugGroup.GET("/runtime", h.DebugRuntime)
-		debugGroup.GET("/config", h.DebugConfig)
-		debugGroup.GET("/requests", h.DebugRequests)
+		debugGroup.GET("/memory", h.Admin.Debug)
+		debugGroup.GET("/runtime", h.Admin.Debug)
+		debugGroup.GET("/config", h.Admin.Debug)
+		debugGroup.GET("/requests", h.Admin.Debug)
 
-		// Go pprof profiling endpoints at /debug/pprof
+		// Go pprof profiling endpoints
 		pprofGroup := debugGroup.Group("/pprof")
-		pprofGroup.GET("/", h.PprofIndex)
+		pprofGroup.GET("/", h.Admin.ProfileIndex)
 		pprofGroup.GET("/cmdline", gin.WrapH(http.HandlerFunc(pprof.Cmdline)))
-		pprofGroup.GET("/profile", h.PprofProfile)
+		pprofGroup.GET("/profile", h.Admin.ProfileProfile)
 		pprofGroup.GET("/symbol", gin.WrapH(http.HandlerFunc(pprof.Symbol)))
-		pprofGroup.GET("/trace", h.PprofTrace)
-		pprofGroup.GET("/heap", h.PprofHeap)
-		pprofGroup.GET("/goroutine", h.PprofGoroutine)
-		pprofGroup.GET("/allocs", h.PprofAllocs)
-		pprofGroup.GET("/block", h.PprofBlock)
-		pprofGroup.GET("/mutex", h.PprofMutex)
+		pprofGroup.GET("/trace", h.Admin.ProfileTrace)
+		pprofGroup.GET("/heap", h.Admin.ProfileHeap)
+		pprofGroup.GET("/goroutine", h.Admin.ProfileGoroutine)
+		pprofGroup.GET("/allocs", h.Admin.ProfileAllocs)
+		pprofGroup.GET("/block", h.Admin.ProfileBlock)
+		pprofGroup.GET("/mutex", h.Admin.ProfileMutex)
 	}
 
 	// 404 handler
