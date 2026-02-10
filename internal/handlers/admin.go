@@ -94,8 +94,6 @@ func (h *AdminHandler) AdminHome(c *gin.Context) {
 		{"name": "Statistics", "url": "/admin/stats", "method": "GET"},
 		{"name": "Clear Cache", "url": "/admin/cache/clear", "method": "POST"},
 		{"name": "Reload Articles", "url": "/admin/articles/reload", "method": "POST"},
-		{"name": "Draft Articles", "url": "/admin/drafts", "method": "GET"},
-		{"name": "Preview Sessions", "url": "/api/preview/sessions", "method": "GET"},
 		{"name": "System Metrics", "url": "/metrics", "method": "GET"},
 		{"name": "Health Check", "url": "/health", "method": "GET"},
 	}

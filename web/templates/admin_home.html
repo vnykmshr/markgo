@@ -31,11 +31,6 @@
                     <div class="card-content">
                         <h3>{{ .system_info.articles_drafts }}</h3>
                         <p>Drafts</p>
-                        {{ if gt .system_info.articles_drafts 0 }}
-                        <button class="card-action-btn create-preview-btn" onclick="showCreatePreviewDialog()">
-                            👁️ Create Preview
-                        </button>
-                        {{ end }}
                     </div>
                 </div>
 
@@ -123,36 +118,6 @@
             </div>
         </div>
 
-        <!-- Draft Articles Management -->
-        {{ if gt .system_info.articles_drafts 0 }}
-        <div class="admin-drafts-section">
-            <h2>Draft Articles</h2>
-            <div class="drafts-container">
-                <div class="drafts-header">
-                    <span>Manage your draft articles and create preview sessions</span>
-                    <button class="btn btn-primary" onclick="refreshDraftList()">🔄 Refresh</button>
-                </div>
-                <div class="draft-table-container">
-                    <table class="draft-table" id="drafts-table">
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Date</th>
-                                <th>Categories</th>
-                                <th>Tags</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="drafts-table-body">
-                            <tr>
-                                <td colspan="5" class="loading-row">Loading drafts...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        {{ end }}
     </div>
 </div>
 
