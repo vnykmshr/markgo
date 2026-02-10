@@ -1,56 +1,34 @@
-// Package handlers provides HTTP request handlers for the MarkGo blog engine.
-// It includes handlers for admin operations, article management, API endpoints, and more.
 package handlers
 
 import (
 	"fmt"
-	"log/slog"
+	"net/http"
 	"net/url"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/models"
 	"github.com/vnykmshr/markgo/internal/services"
 )
 
-// CachedArticleFunctions holds cached functions for article operations
-type CachedArticleFunctions struct {
-	GetHomeData         func() (map[string]any, error)
-	GetArticleData      func(string) (map[string]any, error)
-	GetArticlesPage     func(int) (map[string]any, error)
-	GetTagArticles      func(string) (map[string]any, error)
-	GetCategoryArticles func(string) (map[string]any, error)
-	GetSearchResults    func(string) (map[string]any, error)
-	GetTagsPage         func() (map[string]any, error)
-	GetCategoriesPage   func() (map[string]any, error)
-}
-
 // ArticleHandler handles article-related HTTP requests
 type ArticleHandler struct {
 	*BaseHandler
-	articleService  services.ArticleServiceInterface
-	searchService   services.SearchServiceInterface
-	cachedFunctions CachedArticleFunctions
+	articleService services.ArticleServiceInterface
+	searchService  services.SearchServiceInterface
 }
 
 // NewArticleHandler creates a new article handler
 func NewArticleHandler(
-	cfg *config.Config,
-	logger *slog.Logger,
-	templateService services.TemplateServiceInterface,
+	base *BaseHandler,
 	articleService services.ArticleServiceInterface,
 	searchService services.SearchServiceInterface,
-	cachedFunctions CachedArticleFunctions,
-	buildInfo *BuildInfo,
-	seoService services.SEOServiceInterface,
 ) *ArticleHandler {
 	return &ArticleHandler{
-		BaseHandler:     NewBaseHandler(cfg, logger, templateService, buildInfo, seoService),
-		articleService:  articleService,
-		searchService:   searchService,
-		cachedFunctions: cachedFunctions,
+		BaseHandler:    base,
+		articleService: articleService,
+		searchService:  searchService,
 	}
 }
 
@@ -69,17 +47,14 @@ func (h *ArticleHandler) Home(c *gin.Context) {
 		typeFilter = ""
 	}
 
-	// Only use cache for unfiltered page 1 — cache key has no awareness of query params
-	var cachedFunc func() (map[string]any, error)
-	if typeFilter == "" && page == 1 {
-		cachedFunc = h.cachedFunctions.GetHomeData
+	data, err := h.getHomeDataUncached(page, typeFilter)
+	if err != nil {
+		h.handleError(c, err, "Failed to get home data")
+		return
 	}
 
-	h.withCachedFallback(c,
-		cachedFunc,
-		func() (map[string]any, error) { return h.getHomeDataUncached(page, typeFilter) },
-		"base.html",
-		"Failed to get home data")
+	h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
+	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
 // Articles handles the articles listing page
@@ -90,18 +65,14 @@ func (h *ArticleHandler) Articles(c *gin.Context) {
 		page = 1
 	}
 
-	cachedFunc := func() (map[string]any, error) {
-		if h.cachedFunctions.GetArticlesPage != nil {
-			return h.cachedFunctions.GetArticlesPage(page)
-		}
-		return nil, fmt.Errorf("cache not available")
+	data, err := h.getArticlesPageUncached(page)
+	if err != nil {
+		h.handleError(c, err, "Failed to get articles page")
+		return
 	}
 
-	uncachedFunc := func() (map[string]any, error) {
-		return h.getArticlesPageUncached(page)
-	}
-
-	h.withCachedFallback(c, cachedFunc, uncachedFunc, "base.html", "Failed to get articles page")
+	h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
+	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
 // Article handles individual article requests
@@ -112,18 +83,14 @@ func (h *ArticleHandler) Article(c *gin.Context) {
 		return
 	}
 
-	cachedFunc := func() (map[string]any, error) {
-		if h.cachedFunctions.GetArticleData != nil {
-			return h.cachedFunctions.GetArticleData(slug)
-		}
-		return nil, fmt.Errorf("cache not available")
+	data, err := h.getArticleDataUncached(slug)
+	if err != nil {
+		h.handleError(c, err, "Failed to get article")
+		return
 	}
 
-	uncachedFunc := func() (map[string]any, error) {
-		return h.getArticleDataUncached(slug)
-	}
-
-	h.withCachedFallback(c, cachedFunc, uncachedFunc, "base.html", "Failed to get article")
+	h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
+	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
 // ArticlesByTag handles articles filtered by tag
@@ -142,18 +109,14 @@ func (h *ArticleHandler) ArticlesByTag(c *gin.Context) {
 	}
 	tag = decodedTag
 
-	cachedFunc := func() (map[string]any, error) {
-		if h.cachedFunctions.GetTagArticles != nil {
-			return h.cachedFunctions.GetTagArticles(tag)
-		}
-		return nil, fmt.Errorf("cache not available")
+	data, err := h.getTagArticlesUncached(tag)
+	if err != nil {
+		h.handleError(c, err, "Failed to get articles by tag")
+		return
 	}
 
-	uncachedFunc := func() (map[string]any, error) {
-		return h.getTagArticlesUncached(tag)
-	}
-
-	h.withCachedFallback(c, cachedFunc, uncachedFunc, "base.html", "Failed to get articles by tag")
+	h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
+	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
 // ArticlesByCategory handles articles filtered by category
@@ -172,55 +135,52 @@ func (h *ArticleHandler) ArticlesByCategory(c *gin.Context) {
 	}
 	category = decodedCategory
 
-	cachedFunc := func() (map[string]any, error) {
-		if h.cachedFunctions.GetCategoryArticles != nil {
-			return h.cachedFunctions.GetCategoryArticles(category)
-		}
-		return nil, fmt.Errorf("cache not available")
+	data, err := h.getCategoryArticlesUncached(category)
+	if err != nil {
+		h.handleError(c, err, "Failed to get articles by category")
+		return
 	}
 
-	uncachedFunc := func() (map[string]any, error) {
-		return h.getCategoryArticlesUncached(category)
-	}
-
-	h.withCachedFallback(c, cachedFunc, uncachedFunc, "base.html", "Failed to get articles by category")
+	h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
+	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
 // Tags handles the tags page
 func (h *ArticleHandler) Tags(c *gin.Context) {
-	h.withCachedFallback(c,
-		h.cachedFunctions.GetTagsPage,
-		h.getTagsPageUncached,
-		"base.html",
-		"Failed to get tags")
+	data, err := h.getTagsPageUncached()
+	if err != nil {
+		h.handleError(c, err, "Failed to get tags")
+		return
+	}
+
+	h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
+	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
 // Categories handles the categories page
 func (h *ArticleHandler) Categories(c *gin.Context) {
-	h.withCachedFallback(c,
-		h.cachedFunctions.GetCategoriesPage,
-		h.getCategoriesPageUncached,
-		"base.html",
-		"Failed to get categories")
+	data, err := h.getCategoriesPageUncached()
+	if err != nil {
+		h.handleError(c, err, "Failed to get categories")
+		return
+	}
+
+	h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
+	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
 // Search handles search requests
 func (h *ArticleHandler) Search(c *gin.Context) {
 	query := c.Query("q")
 
-	// Allow empty queries for initial search page visit
-	cachedFunc := func() (map[string]any, error) {
-		if h.cachedFunctions.GetSearchResults != nil {
-			return h.cachedFunctions.GetSearchResults(query)
-		}
-		return nil, fmt.Errorf("cache not available")
+	data, err := h.getSearchResultsUncached(query)
+	if err != nil {
+		h.handleError(c, err, "Failed to perform search")
+		return
 	}
 
-	uncachedFunc := func() (map[string]any, error) {
-		return h.getSearchResultsUncached(query)
-	}
-
-	h.withCachedFallback(c, cachedFunc, uncachedFunc, "base.html", "Failed to perform search")
+	h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
+	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
 // Helper methods
@@ -230,7 +190,7 @@ const (
 	templateArticle = "article"
 )
 
-// Uncached data generation methods (to be extracted from original handlers.go)
+// Uncached data generation methods
 
 func (h *ArticleHandler) getHomeDataUncached(page int, typeFilter string) (map[string]any, error) {
 	allArticles := h.articleService.GetAllArticles()

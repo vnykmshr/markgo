@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/vnykmshr/obcache-go/pkg/obcache"
 
 	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/constants"
@@ -156,21 +155,6 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, error) {
 		return nil, fmt.Errorf("article service: %w", err)
 	}
 
-	// Initialize obcache for handlers with performance optimizations
-	cacheConfig := obcache.NewDefaultConfig()
-	cacheConfig.MaxEntries = cfg.Cache.MaxSize
-	cacheConfig.DefaultTTL = cfg.Cache.TTL
-
-	logger.Info("Initializing cache with performance optimizations",
-		"max_entries", cacheConfig.MaxEntries,
-		"default_ttl", cacheConfig.DefaultTTL,
-		"cache_type", "obcache-go")
-
-	cache, err := obcache.New(cacheConfig)
-	if err != nil {
-		return nil, fmt.Errorf("cache initialization: %w", err)
-	}
-
 	emailService := services.NewEmailService(&cfg.Email, logger)
 	searchService := services.NewSearchService()
 	composeService := compose.NewService(cfg.ArticlesPath, cfg.Blog.Author)
@@ -245,7 +229,6 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, error) {
 		ComposeService:  composeService,
 		Config:          cfg,
 		Logger:          logger,
-		Cache:           cache,
 		BuildInfo: &handlers.BuildInfo{
 			Version:   Version,
 			GitCommit: constants.GitCommit,

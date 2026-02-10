@@ -211,7 +211,6 @@ func (s *StaticExportService) generatePages(_ context.Context) error {
 		SearchService:   s.searchService,
 		Config:          s.appConfig,
 		Logger:          s.logger,
-		Cache:           nil, // No cache for static export
 		BuildInfo:       s.config.BuildInfo,
 	})
 
@@ -384,7 +383,6 @@ func (s *StaticExportService) generateFeeds(_ context.Context) error {
 		SearchService:   s.searchService,
 		Config:          s.appConfig,
 		Logger:          s.logger,
-		Cache:           nil,
 		BuildInfo:       s.config.BuildInfo,
 	})
 

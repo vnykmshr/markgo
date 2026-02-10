@@ -242,17 +242,9 @@ func createTestArticleHandler() *ArticleHandler {
 	articles := createTestArticles()
 	mockArticleService := &EnhancedMockArticleService{articles: articles}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
 
-	return NewArticleHandler(
-		cfg,
-		logger,
-		&MockTemplateService{},
-		mockArticleService,
-		&EnhancedMockSearchService{},
-		CachedArticleFunctions{},
-		&BuildInfo{Version: "test"},
-		&MockSEOService{},
-	)
+	return NewArticleHandler(base, mockArticleService, &EnhancedMockSearchService{})
 }
 
 // TestArticleBySlug tests individual article viewing

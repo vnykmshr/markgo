@@ -48,68 +48,6 @@ func NewBaseHandler(
 	}
 }
 
-// withCachedFallback provides the cached/fallback pattern for map[string]any data
-func (h *BaseHandler) withCachedFallback(
-	c *gin.Context,
-	cachedFunc func() (map[string]any, error),
-	uncachedFunc func() (map[string]any, error),
-	template string,
-	errorMsg string,
-) {
-	// Try cached function first
-	if cachedFunc != nil {
-		if data, err := cachedFunc(); err == nil {
-			// Enhance with SEO data before rendering
-			h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
-			h.renderHTML(c, http.StatusOK, template, data)
-			return
-		} else {
-			h.logger.Warn("Cache retrieval failed, falling back to uncached", "template", template, "error", err)
-		}
-	}
-
-	// Fallback to uncached
-	data, err := uncachedFunc()
-	if err != nil {
-		h.handleError(c, err, errorMsg)
-		return
-	}
-
-	// Enhance with SEO data before rendering
-	h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
-	h.renderHTML(c, http.StatusOK, template, data)
-}
-
-// withCachedStringFallback provides the cached/fallback pattern for string data (RSS, JSON, etc.)
-func (h *BaseHandler) withCachedStringFallback(
-	c *gin.Context,
-	cachedFunc func() (string, error),
-	uncachedFunc func() (string, error),
-	contentType string,
-	errorMsg string,
-) {
-	// Try cached function first
-	if cachedFunc != nil {
-		if data, err := cachedFunc(); err == nil && data != "" {
-			c.Header("Content-Type", contentType)
-			c.String(http.StatusOK, data)
-			return
-		} else if err != nil {
-			h.logger.Warn("Cache retrieval failed, falling back to uncached", "content_type", contentType, "error", err)
-		}
-	}
-
-	// Fallback to uncached
-	data, err := uncachedFunc()
-	if err != nil {
-		h.handleError(c, err, errorMsg)
-		return
-	}
-
-	c.Header("Content-Type", contentType)
-	c.String(http.StatusOK, data)
-}
-
 // enhanceWithSEO adds SEO data to template data
 func (h *BaseHandler) enhanceWithSEO(data map[string]any, seoType string) {
 	if h.seoHelper == nil || h.seoService == nil || !h.seoService.IsEnabled() {

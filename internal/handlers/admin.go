@@ -4,7 +4,6 @@ package handlers
 
 import (
 	"fmt"
-	"log/slog"
 	"math"
 	"net/http"
 	"net/http/pprof"
@@ -13,7 +12,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/services"
 )
 
@@ -34,35 +32,23 @@ func formatBytes(bytes uint64) string {
 	return fmt.Sprintf("%.1f %s", float64(bytes)/float64(div), units[exp])
 }
 
-// CachedAdminFunctions holds cached functions for admin operations
-type CachedAdminFunctions struct {
-	GetStatsData func() (map[string]any, error)
-}
-
 // AdminHandler handles administrative HTTP requests
 type AdminHandler struct {
 	*BaseHandler
-	articleService  services.ArticleServiceInterface
-	startTime       time.Time
-	cachedFunctions CachedAdminFunctions
+	articleService services.ArticleServiceInterface
+	startTime      time.Time
 }
 
 // NewAdminHandler creates a new admin handler
 func NewAdminHandler(
-	cfg *config.Config,
-	logger *slog.Logger,
-	templateService services.TemplateServiceInterface,
+	base *BaseHandler,
 	articleService services.ArticleServiceInterface,
 	startTime time.Time,
-	cachedFunctions CachedAdminFunctions,
-	buildInfo *BuildInfo,
-	seoService services.SEOServiceInterface,
 ) *AdminHandler {
 	return &AdminHandler{
-		BaseHandler:     NewBaseHandler(cfg, logger, templateService, buildInfo, seoService),
-		articleService:  articleService,
-		startTime:       startTime,
-		cachedFunctions: cachedFunctions,
+		BaseHandler:    base,
+		articleService: articleService,
+		startTime:      startTime,
 	}
 }
 
@@ -182,13 +168,15 @@ func (h *AdminHandler) Metrics(c *gin.Context) {
 	})
 }
 
-// Stats handles the stats endpoint with cached/fallback pattern
+// Stats handles the stats endpoint
 func (h *AdminHandler) Stats(c *gin.Context) {
-	h.withCachedFallback(c,
-		h.cachedFunctions.GetStatsData,
-		h.getStatsDataUncached,
-		"admin_stats.html", // This would be JSON for API endpoint
-		"Failed to get stats")
+	data, err := h.getStatsDataUncached()
+	if err != nil {
+		h.handleError(c, err, "Failed to get stats")
+		return
+	}
+
+	c.JSON(http.StatusOK, data)
 }
 
 // Debug handles debug information endpoint

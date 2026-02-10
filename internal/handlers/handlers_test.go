@@ -159,17 +159,8 @@ func createTestAPIHandler(emailService *MockEmailService) *APIHandler {
 		emailService = &MockEmailService{}
 	}
 
-	return NewAPIHandler(
-		cfg,
-		logger,
-		&MockTemplateService{},
-		&MockArticleService{},
-		emailService,
-		time.Now(),
-		CachedAPIFunctions{},
-		&BuildInfo{Version: "test"},
-		&MockSEOService{},
-	)
+	base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
+	return NewAPIHandler(base, &MockArticleService{}, emailService, time.Now())
 }
 
 // TestContact tests the contact form handler
@@ -312,16 +303,8 @@ func TestAdminEndpoints(t *testing.T) {
 		cfg := createTestConfig()
 		logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
-		adminHandler := NewAdminHandler(
-			cfg,
-			logger,
-			&MockTemplateService{},
-			&MockArticleService{},
-			time.Now(),
-			CachedAdminFunctions{},
-			&BuildInfo{Version: "test"},
-			&MockSEOService{},
-		)
+		base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
+		adminHandler := NewAdminHandler(base, &MockArticleService{}, time.Now())
 
 		router := gin.New()
 		router.GET("/admin/stats", adminHandler.Stats)

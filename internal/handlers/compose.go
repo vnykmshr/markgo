@@ -1,12 +1,10 @@
 package handlers
 
 import (
-	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/services"
 	"github.com/vnykmshr/markgo/internal/services/compose"
 )
@@ -18,25 +16,18 @@ type ComposeHandler struct {
 	*BaseHandler
 	composeService *compose.Service
 	articleService services.ArticleServiceInterface
-	cacheService   CacheAdapter
 }
 
 // NewComposeHandler creates a new compose handler.
 func NewComposeHandler(
-	cfg *config.Config,
-	logger *slog.Logger,
-	templateService services.TemplateServiceInterface,
+	base *BaseHandler,
 	composeService *compose.Service,
 	articleService services.ArticleServiceInterface,
-	cacheService CacheAdapter,
-	buildInfo *BuildInfo,
-	seoService services.SEOServiceInterface,
 ) *ComposeHandler {
 	return &ComposeHandler{
-		BaseHandler:    NewBaseHandler(cfg, logger, templateService, buildInfo, seoService),
+		BaseHandler:    base,
 		composeService: composeService,
 		articleService: articleService,
-		cacheService:   cacheService,
 	}
 }
 
@@ -82,11 +73,6 @@ func (h *ComposeHandler) HandleSubmit(c *gin.Context) {
 	if err := h.articleService.ReloadArticles(); err != nil {
 		h.logger.Error("Failed to reload articles after compose", "error", err)
 		reloadOK = false
-	}
-
-	// Clear cache so stale pages aren't served
-	if h.cacheService != nil {
-		h.cacheService.Clear()
 	}
 
 	// Redirect to the new post, or feed if reload failed (article won't be in memory)

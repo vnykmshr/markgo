@@ -1,5 +1,3 @@
-// Package handlers provides HTTP request handlers for the MarkGo blog engine.
-// It includes handlers for admin operations, article management, API endpoints, and more.
 package handlers
 
 import (
@@ -7,71 +5,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/vnykmshr/obcache-go/pkg/obcache"
 
 	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/services"
 	"github.com/vnykmshr/markgo/internal/services/compose"
 )
-
-// CacheAdapter defines the interface for cache operations
-type CacheAdapter interface {
-	Clear()
-	Get(key string) (interface{}, bool)
-	Set(key string, value interface{}, ttl time.Duration)
-	Delete(key string)
-	Stats() map[string]interface{}
-}
-
-// ObcacheAdapter provides cache interface using obcache
-type ObcacheAdapter struct {
-	cache *obcache.Cache
-}
-
-// Clear clears all entries from the cache.
-func (a *ObcacheAdapter) Clear() {
-	if a.cache != nil {
-		_ = a.cache.Clear() //nolint:errcheck // Ignore error: cache clear is non-critical
-	}
-}
-
-// Get retrieves a value from the cache by key.
-func (a *ObcacheAdapter) Get(key string) (interface{}, bool) {
-	if a.cache == nil {
-		return nil, false
-	}
-	return a.cache.Get(key)
-}
-
-// Set stores a value in the cache with the specified TTL.
-func (a *ObcacheAdapter) Set(key string, value interface{}, ttl time.Duration) {
-	if a.cache != nil {
-		_ = a.cache.Set(key, value, ttl) //nolint:errcheck // Ignore error: cache set is non-critical
-	}
-}
-
-// Delete removes a value from the cache by key.
-func (a *ObcacheAdapter) Delete(key string) {
-	if a.cache != nil {
-		_ = a.cache.Delete(key) //nolint:errcheck // Ignore error: cache delete is non-critical
-	}
-}
-
-// Stats returns cache statistics.
-func (a *ObcacheAdapter) Stats() map[string]interface{} {
-	if a.cache == nil {
-		return map[string]interface{}{}
-	}
-	stats := a.cache.Stats()
-	return map[string]interface{}{
-		"hits":        stats.Hits(),
-		"misses":      stats.Misses(),
-		"evictions":   stats.Evictions(),
-		"hit_rate":    stats.HitRate(),
-		"key_count":   stats.KeyCount(),
-		"memory_used": "N/A", // obcache doesn't expose memory usage
-	}
-}
 
 // Handlers composes all handler types for route registration
 type Handlers struct {
@@ -79,7 +17,8 @@ type Handlers struct {
 	AdminHandler   *AdminHandler
 	APIHandler     *APIHandler
 	ComposeHandler *ComposeHandler
-	cacheService   CacheAdapter
+	base           *BaseHandler
+	articleService services.ArticleServiceInterface
 }
 
 // BuildInfo contains build-time information
@@ -99,64 +38,20 @@ type Config struct {
 	ComposeService  *compose.Service
 	Config          *config.Config
 	Logger          *slog.Logger
-	Cache           *obcache.Cache
 	BuildInfo       *BuildInfo
 }
 
 // New creates a new composed handlers instance
 func New(cfg *Config) *Handlers {
-	cacheService := &ObcacheAdapter{cache: cfg.Cache}
+	base := NewBaseHandler(cfg.Config, cfg.Logger, cfg.TemplateService, cfg.BuildInfo, cfg.SEOService)
 
-	// Initialize cached functions for each handler
-	cachedFunctions := CachedArticleFunctions{}
-
-	// Create specialized handlers
-	articleHandler := NewArticleHandler(
-		cfg.Config,
-		cfg.Logger,
-		cfg.TemplateService,
-		cfg.ArticleService,
-		cfg.SearchService,
-		cachedFunctions,
-		cfg.BuildInfo,
-		cfg.SEOService,
-	)
-
-	adminHandler := NewAdminHandler(
-		cfg.Config,
-		cfg.Logger,
-		cfg.TemplateService,
-		cfg.ArticleService,
-		time.Now(),
-		CachedAdminFunctions{},
-		cfg.BuildInfo,
-		cfg.SEOService,
-	)
-
-	apiHandler := NewAPIHandler(
-		cfg.Config,
-		cfg.Logger,
-		cfg.TemplateService,
-		cfg.ArticleService,
-		cfg.EmailService,
-		time.Now(),
-		CachedAPIFunctions{},
-		cfg.BuildInfo,
-		cfg.SEOService,
-	)
+	articleHandler := NewArticleHandler(base, cfg.ArticleService, cfg.SearchService)
+	adminHandler := NewAdminHandler(base, cfg.ArticleService, time.Now())
+	apiHandler := NewAPIHandler(base, cfg.ArticleService, cfg.EmailService, time.Now())
 
 	var composeHandler *ComposeHandler
 	if cfg.ComposeService != nil {
-		composeHandler = NewComposeHandler(
-			cfg.Config,
-			cfg.Logger,
-			cfg.TemplateService,
-			cfg.ComposeService,
-			cfg.ArticleService,
-			cacheService,
-			cfg.BuildInfo,
-			cfg.SEOService,
-		)
+		composeHandler = NewComposeHandler(base, cfg.ComposeService, cfg.ArticleService)
 	}
 
 	return &Handlers{
@@ -164,7 +59,8 @@ func New(cfg *Config) *Handlers {
 		AdminHandler:   adminHandler,
 		APIHandler:     apiHandler,
 		ComposeHandler: composeHandler,
-		cacheService:   cacheService,
+		base:           base,
+		articleService: cfg.ArticleService,
 	}
 }
 
@@ -217,10 +113,9 @@ func (h *Handlers) AboutArticle(c *gin.Context) {
 
 // ContactForm handles the contact form route.
 func (h *Handlers) ContactForm(c *gin.Context) {
-	// Render contact form template
-	data := h.ArticleHandler.buildBaseTemplateData("Contact - " + h.ArticleHandler.config.Blog.Title)
+	data := h.base.buildBaseTemplateData("Contact - " + h.base.config.Blog.Title)
 	data["template"] = "contact"
-	h.ArticleHandler.renderHTML(c, 200, "base.html", data)
+	h.base.renderHTML(c, 200, "base.html", data)
 }
 
 // ContactSubmit handles contact form submission.
@@ -268,10 +163,12 @@ func (h *Handlers) ReloadArticles(c *gin.Context) {
 	h.AdminHandler.ReloadArticles(c)
 }
 
-// ClearCache handles cache clearing requests.
+// ClearCache triggers a full article reload from disk.
 func (h *Handlers) ClearCache(c *gin.Context) {
-	if h.cacheService != nil {
-		h.cacheService.Clear()
+	if err := h.articleService.ReloadArticles(); err != nil {
+		h.base.logger.Error("Failed to reload articles", "error", err)
+		c.JSON(500, gin.H{"error": "Failed to reload articles"})
+		return
 	}
 	c.JSON(200, gin.H{"message": "Cache cleared"})
 }
@@ -356,13 +253,13 @@ func (h *Handlers) HandleCompose(c *gin.Context) {
 
 // Logger returns the logger instance (used by middleware)
 func (h *Handlers) Logger() *slog.Logger {
-	return h.ArticleHandler.logger
+	return h.base.logger
 }
 
 // NotFound handles 404 errors
 func (h *Handlers) NotFound(c *gin.Context) {
-	data := h.ArticleHandler.buildBaseTemplateData("Page Not Found")
+	data := h.base.buildBaseTemplateData("Page Not Found")
 	data["template"] = "404"
 	data["description"] = "The page you're looking for was not found"
-	h.ArticleHandler.renderHTML(c, 404, "base.html", data)
+	h.base.renderHTML(c, 404, "base.html", data)
 }

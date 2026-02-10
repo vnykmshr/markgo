@@ -1,58 +1,40 @@
-// Package handlers provides HTTP request handlers for the MarkGo blog engine.
-// It includes handlers for admin operations, article management, API endpoints, and more.
 package handlers
 
 import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
-	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/constants"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/models"
 	"github.com/vnykmshr/markgo/internal/services"
 )
 
-// CachedAPIFunctions holds cached functions for API operations
-type CachedAPIFunctions struct {
-	GetRSSFeed  func() (string, error)
-	GetJSONFeed func() (string, error)
-	GetSitemap  func() (string, error)
-}
-
 // APIHandler handles API HTTP requests (RSS, JSON Feed, Sitemap, Health)
 type APIHandler struct {
 	*BaseHandler
-	articleService  services.ArticleServiceInterface
-	emailService    services.EmailServiceInterface
-	startTime       time.Time
-	cachedFunctions CachedAPIFunctions
+	articleService services.ArticleServiceInterface
+	emailService   services.EmailServiceInterface
+	startTime      time.Time
 }
 
 // NewAPIHandler creates a new API handler
 func NewAPIHandler(
-	cfg *config.Config,
-	logger *slog.Logger,
-	templateService services.TemplateServiceInterface,
+	base *BaseHandler,
 	articleService services.ArticleServiceInterface,
 	emailService services.EmailServiceInterface,
 	startTime time.Time,
-	cachedFunctions CachedAPIFunctions,
-	buildInfo *BuildInfo,
-	seoService services.SEOServiceInterface,
 ) *APIHandler {
 	return &APIHandler{
-		BaseHandler:     NewBaseHandler(cfg, logger, templateService, buildInfo, seoService),
-		articleService:  articleService,
-		emailService:    emailService,
-		startTime:       startTime,
-		cachedFunctions: cachedFunctions,
+		BaseHandler:    base,
+		articleService: articleService,
+		emailService:   emailService,
+		startTime:      startTime,
 	}
 }
 
@@ -67,8 +49,8 @@ func (h *APIHandler) Health(c *gin.Context) {
 		"version":     constants.AppVersion,
 		"environment": h.config.Environment,
 		"services": map[string]any{
-			"articles": "healthy", // Could check article service health
-			"cache":    "healthy", // Could check cache connectivity
+			"articles": "healthy",
+			"cache":    "healthy",
 		},
 	}
 
@@ -77,41 +59,38 @@ func (h *APIHandler) Health(c *gin.Context) {
 
 // RSS handles RSS feed generation
 func (h *APIHandler) RSS(c *gin.Context) {
-	cachedFunc := func() (string, error) {
-		if h.cachedFunctions.GetRSSFeed != nil {
-			return h.cachedFunctions.GetRSSFeed()
-		}
-		return "", nil
+	data, err := h.getRSSFeedUncached()
+	if err != nil {
+		h.handleError(c, err, "Failed to generate RSS feed")
+		return
 	}
 
-	h.withCachedStringFallback(c, cachedFunc, h.getRSSFeedUncached,
-		"application/rss+xml; charset=utf-8", "Failed to generate RSS feed")
+	c.Header("Content-Type", "application/rss+xml; charset=utf-8")
+	c.String(http.StatusOK, data)
 }
 
 // JSONFeed handles JSON feed generation
 func (h *APIHandler) JSONFeed(c *gin.Context) {
-	cachedFunc := func() (string, error) {
-		if h.cachedFunctions.GetJSONFeed != nil {
-			return h.cachedFunctions.GetJSONFeed()
-		}
-		return "", nil
+	data, err := h.getJSONFeedUncached()
+	if err != nil {
+		h.handleError(c, err, "Failed to generate JSON feed")
+		return
 	}
 
-	h.withCachedStringFallback(c, cachedFunc, h.getJSONFeedUncached,
-		"application/feed+json; charset=utf-8", "Failed to generate JSON feed")
+	c.Header("Content-Type", "application/feed+json; charset=utf-8")
+	c.String(http.StatusOK, data)
 }
 
 // Sitemap handles sitemap.xml generation
 func (h *APIHandler) Sitemap(c *gin.Context) {
-	cachedFunc := func() (string, error) {
-		if h.cachedFunctions.GetSitemap != nil {
-			return h.cachedFunctions.GetSitemap()
-		}
-		return "", nil
+	data, err := h.getSitemapUncached()
+	if err != nil {
+		h.handleError(c, err, "Failed to generate sitemap")
+		return
 	}
 
-	h.withCachedStringFallback(c, cachedFunc, h.getSitemapUncached,
-		"application/xml; charset=utf-8", "Failed to generate sitemap")
+	c.Header("Content-Type", "application/xml; charset=utf-8")
+	c.String(http.StatusOK, data)
 }
 
 // Contact handles contact form submissions
@@ -161,8 +140,7 @@ func (h *APIHandler) Contact(c *gin.Context) {
 	})
 }
 
-// feedTitle returns a display title for feed items, delegating to the
-// Article model's DisplayTitle method.
+// feedTitle returns a display title for feed items
 func feedTitle(article *models.Article) string {
 	return article.DisplayTitle()
 }
