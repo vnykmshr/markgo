@@ -5,6 +5,7 @@ package handlers
 import (
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -62,9 +63,9 @@ func (h *BaseHandler) withCachedFallback(
 			h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
 			h.renderHTML(c, http.StatusOK, template, data)
 			return
+		} else {
+			h.logger.Warn("Cache retrieval failed, falling back to uncached", "template", template, "error", err)
 		}
-		// Log cache miss but don't fail - fallback to uncached
-		h.logger.Debug("Cache miss, falling back to uncached", "template", template)
 	}
 
 	// Fallback to uncached
@@ -93,9 +94,9 @@ func (h *BaseHandler) withCachedStringFallback(
 			c.Header("Content-Type", contentType)
 			c.String(http.StatusOK, data)
 			return
+		} else if err != nil {
+			h.logger.Warn("Cache retrieval failed, falling back to uncached", "content_type", contentType, "error", err)
 		}
-		// Log cache miss but don't fail - fallback to uncached
-		h.logger.Debug("Cache miss, falling back to uncached", "content_type", contentType)
 	}
 
 	// Fallback to uncached
@@ -210,24 +211,22 @@ func (h *BaseHandler) handleError(c *gin.Context, err error, defaultMsg string) 
 	c.Abort()
 }
 
-// shouldReturnJSON determines if response should be JSON based on request
+// shouldReturnJSON determines if response should be JSON based on request.
+// Only returns true for explicit application/json requests or API paths.
+// Accept: */* returns HTML (correct for curl, browsers, and most clients).
 func (h *BaseHandler) shouldReturnJSON(c *gin.Context) bool {
-	// Check Accept header
-	accept := c.GetHeader("Accept")
-	if accept == "application/json" || accept == "application/*" || accept == "*/*" {
-		return true
-	}
-
-	// Check for API paths
+	// API paths always return JSON regardless of Accept header
 	path := c.Request.URL.Path
 	apiPaths := []string{"/health", "/metrics", "/api/", "/admin/stats"}
 	for _, apiPath := range apiPaths {
-		if path == apiPath || (len(path) > len(apiPath) && path[:len(apiPath)] == apiPath) {
+		if path == apiPath || strings.HasPrefix(path, apiPath) {
 			return true
 		}
 	}
 
-	return false
+	// Only return JSON for explicit application/json requests
+	accept := c.GetHeader("Accept")
+	return strings.Contains(accept, "application/json")
 }
 
 // requireDevelopmentEnv checks if we're in development environment
