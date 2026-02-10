@@ -164,45 +164,8 @@ func (m *EnhancedMockArticleService) GetDraftArticles() []*models.Article {
 	return nil
 }
 
-func (m *EnhancedMockArticleService) GetDraftBySlug(slug string) (*models.Article, error) {
+func (m *EnhancedMockArticleService) GetDraftBySlug(_ string) (*models.Article, error) {
 	return nil, apperrors.ErrArticleNotFound
-}
-
-// MockSearchService implementation for testing
-type EnhancedMockSearchService struct{}
-
-func (m *EnhancedMockSearchService) Search(articles []*models.Article, query string, limit int) []*models.SearchResult {
-	// Simple mock: return first article if query matches
-	if query == "" {
-		return []*models.SearchResult{}
-	}
-	results := []*models.SearchResult{}
-	for _, article := range articles {
-		if len(results) >= limit {
-			break
-		}
-		results = append(results, &models.SearchResult{
-			Article: article,
-			Score:   1.0,
-		})
-	}
-	return results
-}
-
-func (m *EnhancedMockSearchService) SearchInTitle(articles []*models.Article, query string, limit int) []*models.SearchResult {
-	return m.Search(articles, query, limit)
-}
-
-func (m *EnhancedMockSearchService) SearchByTag(articles []*models.Article, tag string) []*models.Article {
-	return nil
-}
-
-func (m *EnhancedMockSearchService) SearchByCategory(articles []*models.Article, category string) []*models.Article {
-	return nil
-}
-
-func (m *EnhancedMockSearchService) GetSuggestions(articles []*models.Article, query string, limit int) []string {
-	return []string{}
 }
 
 func createTestArticles() []*models.Article {
@@ -241,7 +204,7 @@ func createTestArticles() []*models.Article {
 	}
 }
 
-func createTestArticleHandler() *ArticleHandler {
+func createTestBase() (*BaseHandler, *EnhancedMockArticleService) {
 	cfg := &config.Config{
 		Environment: "test",
 		BaseURL:     "http://localhost:3000",
@@ -257,7 +220,7 @@ func createTestArticleHandler() *ArticleHandler {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 	base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
 
-	return NewArticleHandler(base, mockArticleService)
+	return base, mockArticleService
 }
 
 // TestArticleBySlug tests individual article viewing
@@ -273,16 +236,14 @@ func TestArticleBySlug(t *testing.T) {
 			slug:           "golang-tutorial",
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				// For HTML responses, we just verify status
 				assert.Equal(t, http.StatusOK, w.Code)
 			},
 		},
 		{
 			name:           "article not found",
 			slug:           "nonexistent-article",
-			expectedStatus: http.StatusOK, // Returns 200 with error page for missing article
+			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				// Article not found shows error page with 200 status
 				assert.Equal(t, http.StatusOK, w.Code)
 			},
 		},
@@ -291,7 +252,6 @@ func TestArticleBySlug(t *testing.T) {
 			slug:           "",
 			expectedStatus: http.StatusBadRequest,
 			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				// Empty slug should be caught
 				assert.True(t, w.Code == http.StatusBadRequest || w.Code == http.StatusNotFound)
 			},
 		},
@@ -299,7 +259,8 @@ func TestArticleBySlug(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler := createTestArticleHandler()
+			base, svc := createTestBase()
+			handler := NewPostHandler(base, svc)
 			router := gin.New()
 			router.GET("/articles/:slug", handler.Article)
 
@@ -338,18 +299,19 @@ func TestArticlesListing(t *testing.T) {
 		{
 			name:           "invalid page number",
 			query:          "?page=invalid",
-			expectedStatus: http.StatusOK, // Should default to page 1
+			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "negative page number",
 			query:          "?page=-1",
-			expectedStatus: http.StatusOK, // Should default to page 1
+			expectedStatus: http.StatusOK,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler := createTestArticleHandler()
+			base, svc := createTestBase()
+			handler := NewPostHandler(base, svc)
 			router := gin.New()
 			router.GET("/articles", handler.Articles)
 
@@ -390,7 +352,7 @@ func TestArticlesByTag(t *testing.T) {
 		{
 			name:           "nonexistent tag",
 			tag:            "nonexistent",
-			expectedStatus: http.StatusOK, // Should show empty results page
+			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, w.Code)
 			},
@@ -407,7 +369,8 @@ func TestArticlesByTag(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler := createTestArticleHandler()
+			base, svc := createTestBase()
+			handler := NewTaxonomyHandler(base, svc)
 			router := gin.New()
 			router.GET("/tags/:tag", handler.ArticlesByTag)
 
@@ -448,7 +411,7 @@ func TestArticlesByCategory(t *testing.T) {
 		{
 			name:           "nonexistent category",
 			category:       "Nonexistent",
-			expectedStatus: http.StatusOK, // Should show empty results page
+			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, w.Code)
 			},
@@ -465,7 +428,8 @@ func TestArticlesByCategory(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler := createTestArticleHandler()
+			base, svc := createTestBase()
+			handler := NewTaxonomyHandler(base, svc)
 			router := gin.New()
 			router.GET("/categories/:category", handler.ArticlesByCategory)
 
@@ -498,7 +462,7 @@ func TestSearch(t *testing.T) {
 		{
 			name:           "search with empty query",
 			query:          "",
-			expectedStatus: http.StatusOK, // Should show search page with no results
+			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, w.Code)
 			},
@@ -523,7 +487,8 @@ func TestSearch(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler := createTestArticleHandler()
+			base, svc := createTestBase()
+			handler := NewSearchHandler(base, svc)
 			router := gin.New()
 			router.GET("/search", handler.Search)
 
@@ -539,7 +504,8 @@ func TestSearch(t *testing.T) {
 
 // TestHomePage tests the home page handler
 func TestHomePage(t *testing.T) {
-	handler := createTestArticleHandler()
+	base, svc := createTestBase()
+	handler := NewFeedHandler(base, svc)
 	router := gin.New()
 	router.GET("/", handler.Home)
 
@@ -553,7 +519,8 @@ func TestHomePage(t *testing.T) {
 
 // TestTagsPage tests the tags listing page
 func TestTagsPage(t *testing.T) {
-	handler := createTestArticleHandler()
+	base, svc := createTestBase()
+	handler := NewTaxonomyHandler(base, svc)
 	router := gin.New()
 	router.GET("/tags", handler.Tags)
 
@@ -567,7 +534,8 @@ func TestTagsPage(t *testing.T) {
 
 // TestCategoriesPage tests the categories listing page
 func TestCategoriesPage(t *testing.T) {
-	handler := createTestArticleHandler()
+	base, svc := createTestBase()
+	handler := NewTaxonomyHandler(base, svc)
 	router := gin.New()
 	router.GET("/categories", handler.Categories)
 

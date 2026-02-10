@@ -15,6 +15,8 @@ import (
 	"github.com/vnykmshr/markgo/internal/services"
 )
 
+const templateArticle = "article"
+
 // BaseHandler provides common functionality for all handlers
 type BaseHandler struct {
 	config          *config.Config
@@ -57,7 +59,7 @@ func (h *BaseHandler) enhanceWithSEO(data map[string]any, seoType string) {
 	var seoData map[string]interface{}
 
 	switch seoType {
-	case "article":
+	case templateArticle:
 		if article, ok := data["article"].(*models.Article); ok && article != nil {
 			seoData = h.seoHelper.GenerateArticleSEOData(article)
 		}
@@ -90,7 +92,7 @@ func (h *BaseHandler) enhanceTemplateDataWithSEO(data map[string]any, path strin
 
 	// Check if this is an article page
 	if article, ok := data["article"].(*models.Article); ok && article != nil {
-		seoType = "article"
+		seoType = templateArticle
 	} else if path == "/" || path == "" {
 		seoType = "home"
 	}

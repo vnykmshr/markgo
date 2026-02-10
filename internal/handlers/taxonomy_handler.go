@@ -1,0 +1,165 @@
+package handlers
+
+import (
+	"fmt"
+	"net/http"
+	"net/url"
+
+	"github.com/gin-gonic/gin"
+
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
+	"github.com/vnykmshr/markgo/internal/models"
+	"github.com/vnykmshr/markgo/internal/services"
+)
+
+// TaxonomyHandler handles tag and category pages.
+type TaxonomyHandler struct {
+	*BaseHandler
+	articleService services.ArticleServiceInterface
+}
+
+// NewTaxonomyHandler creates a new taxonomy handler.
+func NewTaxonomyHandler(base *BaseHandler, articleService services.ArticleServiceInterface) *TaxonomyHandler {
+	return &TaxonomyHandler{
+		BaseHandler:    base,
+		articleService: articleService,
+	}
+}
+
+// Tags handles the tags listing page.
+func (h *TaxonomyHandler) Tags(c *gin.Context) {
+	data, err := h.getTagsPage()
+	if err != nil {
+		h.handleError(c, err, "Failed to get tags")
+		return
+	}
+
+	h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
+	h.renderHTML(c, http.StatusOK, "base.html", data)
+}
+
+// Categories handles the categories listing page.
+func (h *TaxonomyHandler) Categories(c *gin.Context) {
+	data, err := h.getCategoriesPage()
+	if err != nil {
+		h.handleError(c, err, "Failed to get categories")
+		return
+	}
+
+	h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
+	h.renderHTML(c, http.StatusOK, "base.html", data)
+}
+
+// ArticlesByTag handles articles filtered by tag.
+func (h *TaxonomyHandler) ArticlesByTag(c *gin.Context) {
+	tag := c.Param("tag")
+	if tag == "" {
+		h.handleError(c, apperrors.NewValidationError("tag", "", "tag is required", nil), "Invalid tag")
+		return
+	}
+
+	decodedTag, err := url.QueryUnescape(tag)
+	if err != nil {
+		h.handleError(c, fmt.Errorf("invalid tag format: %v", err), "Invalid tag")
+		return
+	}
+	tag = decodedTag
+
+	data, err := h.getTagArticles(tag)
+	if err != nil {
+		h.handleError(c, err, "Failed to get articles by tag")
+		return
+	}
+
+	h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
+	h.renderHTML(c, http.StatusOK, "base.html", data)
+}
+
+// ArticlesByCategory handles articles filtered by category.
+func (h *TaxonomyHandler) ArticlesByCategory(c *gin.Context) {
+	category := c.Param("category")
+	if category == "" {
+		h.handleError(c, apperrors.NewValidationError("category", "", "category is required", nil), "Invalid category")
+		return
+	}
+
+	decodedCategory, err := url.QueryUnescape(category)
+	if err != nil {
+		h.handleError(c, fmt.Errorf("invalid category format: %v", err), "Invalid category")
+		return
+	}
+	category = decodedCategory
+
+	data, err := h.getCategoryArticles(category)
+	if err != nil {
+		h.handleError(c, err, "Failed to get articles by category")
+		return
+	}
+
+	h.enhanceTemplateDataWithSEO(data, c.Request.URL.Path)
+	h.renderHTML(c, http.StatusOK, "base.html", data)
+}
+
+func (h *TaxonomyHandler) getTagArticles(tag string) (map[string]any, error) {
+	articles := h.articleService.GetArticlesByTag(tag)
+
+	var published []*models.Article
+	for _, article := range articles {
+		if !article.Draft {
+			published = append(published, article)
+		}
+	}
+
+	data := h.buildBaseTemplateData("Articles tagged with " + tag + " - " + h.config.Blog.Title)
+	data["description"] = "Articles tagged with " + tag
+	data["articles"] = published
+	data["tag"] = tag
+	data["totalCount"] = len(published)
+	data["template"] = "tag"
+
+	return data, nil
+}
+
+func (h *TaxonomyHandler) getCategoryArticles(category string) (map[string]any, error) {
+	articles := h.articleService.GetArticlesByCategory(category)
+
+	var published []*models.Article
+	for _, article := range articles {
+		if !article.Draft {
+			published = append(published, article)
+		}
+	}
+
+	data := h.buildBaseTemplateData("Articles in " + category + " - " + h.config.Blog.Title)
+	data["description"] = "Articles in " + category
+	data["articles"] = published
+	data["category"] = category
+	data["totalCount"] = len(published)
+	data["template"] = "category"
+
+	return data, nil
+}
+
+func (h *TaxonomyHandler) getTagsPage() (map[string]any, error) {
+	tagCounts := h.articleService.GetTagCounts()
+
+	data := h.buildBaseTemplateData("Tags - " + h.config.Blog.Title)
+	data["description"] = "All tags from " + h.config.Blog.Title
+	data["tags"] = tagCounts
+	data["count"] = len(tagCounts)
+	data["template"] = "tags"
+
+	return data, nil
+}
+
+func (h *TaxonomyHandler) getCategoriesPage() (map[string]any, error) {
+	categoryCounts := h.articleService.GetCategoryCounts()
+
+	data := h.buildBaseTemplateData("Categories - " + h.config.Blog.Title)
+	data["description"] = "All categories from " + h.config.Blog.Title
+	data["categories"] = categoryCounts
+	data["count"] = len(categoryCounts)
+	data["template"] = "categories"
+
+	return data, nil
+}
