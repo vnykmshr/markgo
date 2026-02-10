@@ -13,15 +13,17 @@ import (
 
 // Handlers composes all handler types for route registration
 type Handlers struct {
-	FeedHandler     *FeedHandler
-	PostHandler     *PostHandler
-	TaxonomyHandler *TaxonomyHandler
-	SearchHandler   *SearchHandler
-	AdminHandler    *AdminHandler
-	APIHandler      *APIHandler
-	ComposeHandler  *ComposeHandler
-	base            *BaseHandler
-	articleService  services.ArticleServiceInterface
+	FeedHandler        *FeedHandler
+	PostHandler        *PostHandler
+	TaxonomyHandler    *TaxonomyHandler
+	SearchHandler      *SearchHandler
+	HealthHandler      *HealthHandler
+	ContactHandler     *ContactHandler
+	SyndicationHandler *SyndicationHandler
+	AdminHandler       *AdminHandler
+	ComposeHandler     *ComposeHandler
+	base               *BaseHandler
+	articleService     services.ArticleServiceInterface
 }
 
 // BuildInfo contains build-time information
@@ -52,8 +54,10 @@ func New(cfg *Config) *Handlers {
 	postHandler := NewPostHandler(base, cfg.ArticleService)
 	taxonomyHandler := NewTaxonomyHandler(base, cfg.ArticleService)
 	searchHandler := NewSearchHandler(base, cfg.ArticleService)
+	healthHandler := NewHealthHandler(base, time.Now())
+	contactHandler := NewContactHandler(base, cfg.EmailService)
+	syndicationHandler := NewSyndicationHandler(base, cfg.FeedService)
 	adminHandler := NewAdminHandler(base, cfg.ArticleService, time.Now())
-	apiHandler := NewAPIHandler(base, cfg.ArticleService, cfg.EmailService, cfg.FeedService, time.Now())
 
 	var composeHandler *ComposeHandler
 	if cfg.ComposeService != nil {
@@ -61,15 +65,17 @@ func New(cfg *Config) *Handlers {
 	}
 
 	return &Handlers{
-		FeedHandler:     feedHandler,
-		PostHandler:     postHandler,
-		TaxonomyHandler: taxonomyHandler,
-		SearchHandler:   searchHandler,
-		AdminHandler:    adminHandler,
-		APIHandler:      apiHandler,
-		ComposeHandler:  composeHandler,
-		base:            base,
-		articleService:  cfg.ArticleService,
+		FeedHandler:        feedHandler,
+		PostHandler:        postHandler,
+		TaxonomyHandler:    taxonomyHandler,
+		SearchHandler:      searchHandler,
+		HealthHandler:      healthHandler,
+		ContactHandler:     contactHandler,
+		SyndicationHandler: syndicationHandler,
+		AdminHandler:       adminHandler,
+		ComposeHandler:     composeHandler,
+		base:               base,
+		articleService:     cfg.ArticleService,
 	}
 }
 
@@ -121,34 +127,32 @@ func (h *Handlers) AboutArticle(c *gin.Context) {
 
 // ContactForm handles the contact form route.
 func (h *Handlers) ContactForm(c *gin.Context) {
-	data := h.base.buildBaseTemplateData("Contact - " + h.base.config.Blog.Title)
-	data["template"] = "contact"
-	h.base.renderHTML(c, 200, "base.html", data)
+	h.ContactHandler.ShowForm(c)
 }
 
 // ContactSubmit handles contact form submission.
 func (h *Handlers) ContactSubmit(c *gin.Context) {
-	h.APIHandler.Contact(c)
+	h.ContactHandler.Submit(c)
 }
 
 // RSSFeed handles RSS feed generation
 func (h *Handlers) RSSFeed(c *gin.Context) {
-	h.APIHandler.RSS(c)
+	h.SyndicationHandler.RSS(c)
 }
 
 // JSONFeed handles JSON feed generation.
 func (h *Handlers) JSONFeed(c *gin.Context) {
-	h.APIHandler.JSONFeed(c)
+	h.SyndicationHandler.JSONFeed(c)
 }
 
 // Sitemap handles sitemap generation.
 func (h *Handlers) Sitemap(c *gin.Context) {
-	h.APIHandler.Sitemap(c)
+	h.SyndicationHandler.Sitemap(c)
 }
 
 // Health handles health check requests.
 func (h *Handlers) Health(c *gin.Context) {
-	h.APIHandler.Health(c)
+	h.HealthHandler.Health(c)
 }
 
 // Metrics handles metrics requests.

@@ -154,13 +154,7 @@ func createTestConfig() *config.Config {
 	}
 }
 
-type MockFeedService struct{}
-
-func (m *MockFeedService) GenerateRSS() (string, error)      { return "", nil }
-func (m *MockFeedService) GenerateJSONFeed() (string, error) { return "", nil }
-func (m *MockFeedService) GenerateSitemap() (string, error)  { return "", nil }
-
-func createTestAPIHandler(emailService *MockEmailService) *APIHandler {
+func createTestContactHandler(emailService *MockEmailService) *ContactHandler {
 	cfg := createTestConfig()
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
@@ -169,17 +163,24 @@ func createTestAPIHandler(emailService *MockEmailService) *APIHandler {
 	}
 
 	base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
-	return NewAPIHandler(base, &MockArticleService{}, emailService, &MockFeedService{}, time.Now())
+	return NewContactHandler(base, emailService)
+}
+
+func createTestHealthHandler() *HealthHandler {
+	cfg := createTestConfig()
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
+	return NewHealthHandler(base, time.Now())
 }
 
 // TestContact tests the contact form handler
 func TestContact(t *testing.T) {
 	t.Run("valid contact form submission", func(t *testing.T) {
 		mockEmail := &MockEmailService{}
-		handler := createTestAPIHandler(mockEmail)
+		handler := createTestContactHandler(mockEmail)
 
 		router := gin.New()
-		router.POST("/contact", handler.Contact)
+		router.POST("/contact", handler.Submit)
 
 		formData := map[string]string{
 			"name":    "John Doe",
@@ -207,10 +208,10 @@ func TestContact(t *testing.T) {
 	})
 
 	t.Run("invalid email address", func(t *testing.T) {
-		handler := createTestAPIHandler(nil)
+		handler := createTestContactHandler(nil)
 
 		router := gin.New()
-		router.POST("/contact", handler.Contact)
+		router.POST("/contact", handler.Submit)
 
 		formData := map[string]string{
 			"name":    "John Doe",
@@ -230,10 +231,10 @@ func TestContact(t *testing.T) {
 	})
 
 	t.Run("missing required fields", func(t *testing.T) {
-		handler := createTestAPIHandler(nil)
+		handler := createTestContactHandler(nil)
 
 		router := gin.New()
-		router.POST("/contact", handler.Contact)
+		router.POST("/contact", handler.Submit)
 
 		formData := map[string]string{
 			"name": "John Doe",
@@ -252,10 +253,10 @@ func TestContact(t *testing.T) {
 
 	t.Run("email service not configured", func(t *testing.T) {
 		mockEmail := &MockEmailService{NotConfigured: true}
-		handler := createTestAPIHandler(mockEmail)
+		handler := createTestContactHandler(mockEmail)
 
 		router := gin.New()
-		router.POST("/contact", handler.Contact)
+		router.POST("/contact", handler.Submit)
 
 		formData := map[string]string{
 			"name":    "John Doe",
@@ -281,10 +282,10 @@ func TestContact(t *testing.T) {
 
 	t.Run("email service failure", func(t *testing.T) {
 		mockEmail := &MockEmailService{ShouldFail: true}
-		handler := createTestAPIHandler(mockEmail)
+		handler := createTestContactHandler(mockEmail)
 
 		router := gin.New()
-		router.POST("/contact", handler.Contact)
+		router.POST("/contact", handler.Submit)
 
 		formData := map[string]string{
 			"name":    "John Doe",
@@ -336,7 +337,7 @@ func TestAdminEndpoints(t *testing.T) {
 
 // TestHealthEndpoint tests the health check endpoint
 func TestHealthEndpoint(t *testing.T) {
-	handler := createTestAPIHandler(nil)
+	handler := createTestHealthHandler()
 
 	router := gin.New()
 	router.GET("/health", handler.Health)
