@@ -37,8 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             searchTimeout = setTimeout(() => {
-                // Implement search suggestions here if needed
-                console.log('Searching for:', query);
+                // Placeholder for search suggestions
             }, 300);
         });
     }

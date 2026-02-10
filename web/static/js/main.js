@@ -227,9 +227,7 @@
    */
   function fetchSearchSuggestions(query) {
     try {
-      // TODO: Implement actual search suggestions API call
-      // For now, we'll implement basic client-side filtering with error boundary
-      console.log("Searching for:", query);
+      // Placeholder for search suggestions API
 
       // Future API implementation with proper error boundary:
       /*
