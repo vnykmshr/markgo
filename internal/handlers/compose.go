@@ -3,17 +3,19 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"regexp"
 
 	"github.com/gin-gonic/gin"
 
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/services"
 	"github.com/vnykmshr/markgo/internal/services/compose"
 )
 
-// validSlug matches URL-safe slugs: lowercase alphanumeric with hyphens, no leading/trailing hyphens.
-var validSlug = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`)
+// validSlug matches URL-safe slugs: lowercase alphanumeric with hyphens, no leading/trailing hyphens, max 200 chars.
+var validSlug = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,198}[a-z0-9])?$`)
 
 const templateCompose = "compose"
 
@@ -49,7 +51,7 @@ func (h *ComposeHandler) ShowCompose(c *gin.Context) {
 func (h *ComposeHandler) ShowEdit(c *gin.Context) {
 	slug := c.Param("slug")
 	if !validSlug.MatchString(slug) {
-		c.Status(http.StatusNotFound)
+		h.handleError(c, fmt.Errorf("invalid slug %q: %w", slug, apperrors.ErrArticleNotFound), "Article not found")
 		return
 	}
 
@@ -80,9 +82,11 @@ func csrfToken(c *gin.Context) string {
 
 // refreshCSRFToken generates a new CSRF token and sets the cookie.
 // Used when re-rendering a form after a POST validation error.
+// Aborts with 500 if token generation fails (crypto/rand failure is a system emergency).
 func refreshCSRFToken(c *gin.Context) string {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return ""
 	}
 	token := hex.EncodeToString(b)
@@ -115,6 +119,9 @@ func (h *ComposeHandler) HandleEdit(c *gin.Context) {
 		data["editing"] = true
 		data["slug"] = slug
 		data["csrf_token"] = refreshCSRFToken(c)
+		if c.IsAborted() {
+			return
+		}
 		h.renderHTML(c, http.StatusBadRequest, "base.html", data)
 		return
 	}
@@ -128,15 +135,25 @@ func (h *ComposeHandler) HandleEdit(c *gin.Context) {
 		data["editing"] = true
 		data["slug"] = slug
 		data["csrf_token"] = refreshCSRFToken(c)
+		if c.IsAborted() {
+			return
+		}
 		h.renderHTML(c, http.StatusInternalServerError, "base.html", data)
 		return
 	}
 
+	reloadOK := true
 	if err := h.articleService.ReloadArticles(); err != nil {
 		h.logger.Error("Failed to reload articles after edit", "error", err)
+		reloadOK = false
 	}
 
-	c.Redirect(http.StatusSeeOther, "/articles/"+slug)
+	// Redirect to the edited article, or feed if reload failed (stale cache would show old version)
+	if reloadOK {
+		c.Redirect(http.StatusSeeOther, "/articles/"+slug)
+	} else {
+		c.Redirect(http.StatusSeeOther, "/")
+	}
 }
 
 // HandleSubmit processes the compose form submission.
@@ -155,6 +172,9 @@ func (h *ComposeHandler) HandleSubmit(c *gin.Context) {
 		data["error"] = "Content is required"
 		data["input"] = input
 		data["csrf_token"] = refreshCSRFToken(c)
+		if c.IsAborted() {
+			return
+		}
 		h.renderHTML(c, http.StatusBadRequest, "base.html", data)
 		return
 	}
@@ -167,6 +187,9 @@ func (h *ComposeHandler) HandleSubmit(c *gin.Context) {
 		data["error"] = "Failed to create post. Please try again."
 		data["input"] = input
 		data["csrf_token"] = refreshCSRFToken(c)
+		if c.IsAborted() {
+			return
+		}
 		h.renderHTML(c, http.StatusInternalServerError, "base.html", data)
 		return
 	}

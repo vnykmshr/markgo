@@ -86,7 +86,7 @@
         </form>
     </div>
 </div>
-{{ if .editing }}
+{{ if and .editing .input }}
 <script>
     (function() {
         var isDraft = {{ .input.Draft }};

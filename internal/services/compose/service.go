@@ -38,11 +38,12 @@ type Input struct {
 func (s *Service) CreatePost(input Input) (string, error) {
 	now := time.Now()
 
-	// Generate slug
+	// Generate slug (fall back to timestamp if title produces empty slug, e.g. non-ASCII titles)
 	var slug string
 	if input.Title != "" {
 		slug = generateSlug(input.Title)
-	} else {
+	}
+	if slug == "" {
 		slug = fmt.Sprintf("thought-%d", now.UnixMilli())
 	}
 
@@ -107,14 +108,9 @@ func (s *Service) CreatePost(input Input) (string, error) {
 
 // LoadArticle reads an existing article file by slug and returns its content for editing.
 func (s *Service) LoadArticle(slug string) (*Input, error) {
-	filePath, err := s.findFileBySlug(slug)
+	_, content, err := s.findFileBySlug(slug)
 	if err != nil {
 		return nil, err
-	}
-
-	content, err := os.ReadFile(filePath) // #nosec G304 -- filePath is built from articlesPath + directory entry
-	if err != nil {
-		return nil, fmt.Errorf("failed to read article file: %w", err)
 	}
 
 	parts := strings.SplitN(string(content), "---", 3)
@@ -139,8 +135,8 @@ func (s *Service) LoadArticle(slug string) (*Input, error) {
 	if tags, ok := fm["tags"].([]any); ok {
 		var tagStrs []string
 		for _, t := range tags {
-			if s, ok := t.(string); ok {
-				tagStrs = append(tagStrs, s)
+			if str, ok := t.(string); ok {
+				tagStrs = append(tagStrs, str)
 			}
 		}
 		input.Tags = strings.Join(tagStrs, ", ")
@@ -155,14 +151,9 @@ func (s *Service) LoadArticle(slug string) (*Input, error) {
 // UpdateArticle overwrites an existing article file with updated content.
 // Preserves fields not exposed in the compose form (slug, date, author, categories).
 func (s *Service) UpdateArticle(slug string, input Input) error {
-	filePath, err := s.findFileBySlug(slug)
+	filePath, existingContent, err := s.findFileBySlug(slug)
 	if err != nil {
 		return err
-	}
-
-	existingContent, err := os.ReadFile(filePath) // #nosec G304 -- filePath is built from articlesPath + directory entry
-	if err != nil {
-		return fmt.Errorf("failed to read existing article: %w", err)
 	}
 
 	parts := strings.SplitN(string(existingContent), "---", 3)
@@ -234,10 +225,11 @@ func (s *Service) UpdateArticle(slug string, input Input) error {
 }
 
 // findFileBySlug scans the articles directory for a file with matching slug in frontmatter.
-func (s *Service) findFileBySlug(slug string) (string, error) {
+// Returns the file path and raw content to avoid a redundant re-read by callers.
+func (s *Service) findFileBySlug(slug string) (string, []byte, error) {
 	entries, err := os.ReadDir(s.articlesPath)
 	if err != nil {
-		return "", fmt.Errorf("failed to read articles directory: %w", err)
+		return "", nil, fmt.Errorf("failed to read articles directory: %w", err)
 	}
 
 	for _, entry := range entries {
@@ -264,11 +256,11 @@ func (s *Service) findFileBySlug(slug string) (string, error) {
 		}
 
 		if fm.Slug == slug {
-			return filePath, nil
+			return filePath, content, nil
 		}
 	}
 
-	return "", fmt.Errorf("article not found: %s", slug)
+	return "", nil, fmt.Errorf("article not found: %s", slug)
 }
 
 // generateSlug creates a URL-friendly slug from a title.
