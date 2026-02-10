@@ -676,6 +676,10 @@ html {
     text-decoration: none;
 }
 
+.page-back-link-container {
+    padding-top: var(--spacing-6);
+}
+
 /* Content separator */
 .content-separator {
     border: none;
@@ -722,6 +726,15 @@ html {
 .simple-pagination .pagination-info {
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);
+}
+
+/* Filtered view empty states (tag, category pages) */
+.tag-empty,
+.category-empty {
+    text-align: center;
+    padding: var(--spacing-8) 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
 }
 
 /* ==========================================================================

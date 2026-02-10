@@ -8,7 +8,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const contactForm = document.getElementById("contactForm");
   const messageContainer = document.getElementById("messageContainer");
   const messageTextarea = document.getElementById("message");
-  const charCount = document.getElementById("charCount");
   const captchaInput = document.getElementById("captcha");
   const captchaQuestionField = document.getElementById("captchaQuestionField");
   const num1Element = document.getElementById("num1");
@@ -30,18 +29,6 @@ document.addEventListener("DOMContentLoaded", function () {
     num2Element.textContent = num2;
     captchaQuestionField.value = `${num1} + ${num2}`;
     captchaInput.value = "";
-  }
-
-  /**
-   * Updates the character counter for the message textarea
-   * Changes color based on character count thresholds
-   */
-  function updateCharCount() {
-    if (!charCount) return;
-    const count = messageTextarea.value.length;
-    charCount.textContent = count;
-    charCount.style.color =
-      count > 2000 ? "#dc3545" : count > 1800 ? "#fd7e14" : "#6c757d";
   }
 
   /**
@@ -134,7 +121,7 @@ document.addEventListener("DOMContentLoaded", function () {
             "success",
           );
           contactForm.reset();
-          updateCharCount();
+
           generateCaptcha();
         } else {
           showMessage(
@@ -151,29 +138,20 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .finally(() => {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = `
-        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M15.854.146a.5.5 0 0 1 .11.54L13.026 8.74a.5.5 0 0 1-.708.251L9 7.5 7.5 9l-1.49-3.318a.5.5 0 0 1 .251-.708L14.31 2.036a.5.5 0 0 1 .54.11z"/>
-          <path d="M2.5 3a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5V6.5a.5.5 0 0 0-1 0V12H3V4h5.5a.5.5 0 0 0 0-1H2.5z"/>
-        </svg>
-        Send Message
-      `;
+        submitBtn.textContent = "Send";
       });
   }
 
   // Event listeners
   refreshBtn.addEventListener("click", generateCaptcha);
   contactForm.addEventListener("submit", handleSubmit);
-  messageTextarea.addEventListener("input", updateCharCount);
 
   contactForm.addEventListener("reset", () => {
     setTimeout(() => {
-      updateCharCount();
       generateCaptcha();
     }, 0);
   });
 
   // Initialize
   generateCaptcha();
-  updateCharCount();
 });
