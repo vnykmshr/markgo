@@ -156,9 +156,8 @@
     <link rel="stylesheet" href="/static/css/main.css">
     {{ if .config.Blog.Style }}<link rel="stylesheet" href="/static/css/themes/{{ .config.Blog.Style }}.css">{{ end }}
 
-    <!-- Shared card CSS (used by feed, articles, search, tag, category pages) -->
     {{ $tpl := .template }}
-    <link rel="stylesheet" href="/static/css/cards.css">
+    {{ if eq $tpl "feed" "articles" "search" "tag" "category" "admin_home" }}<link rel="stylesheet" href="/static/css/cards.css">{{ end }}
 
     <!-- Template-specific CSS -->
     {{ if eq $tpl "404" }}<link rel="stylesheet" href="/static/css/404.css">{{ end }}

@@ -81,6 +81,18 @@ func TestPagination(t *testing.T) {
 	assert.Equal(t, 1, pagination.TotalPages)
 	assert.False(t, pagination.HasNext)
 	assert.False(t, pagination.HasPrevious)
+
+	// Test page exceeds total — clamp to last page
+	pagination = NewPagination(99, 50, 10)
+	assert.Equal(t, 5, pagination.CurrentPage)
+	assert.False(t, pagination.HasNext)
+	assert.True(t, pagination.HasPrevious)
+
+	// Test page below 1 — clamp to first page
+	pagination = NewPagination(0, 50, 10)
+	assert.Equal(t, 1, pagination.CurrentPage)
+	assert.True(t, pagination.HasNext)
+	assert.False(t, pagination.HasPrevious)
 }
 
 func TestSearchResult(t *testing.T) {

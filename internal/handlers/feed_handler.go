@@ -65,10 +65,7 @@ func (h *FeedHandler) getHomeData(page int, typeFilter string) (map[string]any, 
 
 	pagination := models.NewPagination(page, len(posts), postsPerPage)
 
-	start := (page - 1) * postsPerPage
-	if start > len(posts) {
-		start = len(posts)
-	}
+	start := (pagination.CurrentPage - 1) * postsPerPage
 	end := start + postsPerPage
 	if end > len(posts) {
 		end = len(posts)

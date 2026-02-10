@@ -102,5 +102,5 @@
     </noscript>
 </div>
 {{ end }} {{ define "comments-css" }}
-<link rel="stylesheet" href="/static/css/comments.css?v=1.0.0" />
+{{ if .config.Comments.Enabled }}<link rel="stylesheet" href="/static/css/comments.css?v=1.0.0" />{{ end }}
 {{ end }}

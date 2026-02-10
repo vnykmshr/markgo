@@ -215,67 +215,6 @@ func TestParseLogLevel(t *testing.T) {
 	}
 }
 
-func TestLoggingServiceWithContext(t *testing.T) {
-	cfg := config.LoggingConfig{
-		Level:   "info",
-		Format:  "text",
-		Output:  "stdout",
-		MaxSize: 100,
-	}
-
-	service, err := NewLoggingService(&cfg)
-	require.NoError(t, err)
-
-	// Test context logging
-	contextLogger := service.WithContext("service", "test", "version", "1.0")
-	assert.NotNil(t, contextLogger)
-
-	// The context logger should be different from the base logger
-	assert.NotEqual(t, service.GetLogger(), contextLogger)
-}
-
-func TestLoggingServiceMethods(t *testing.T) {
-	// Capture output for testing
-	var buf bytes.Buffer
-
-	// Create service with text format for easier testing
-	cfg := config.LoggingConfig{
-		Level:   "debug",
-		Format:  "text",
-		Output:  "stdout",
-		MaxSize: 100,
-	}
-
-	// Create custom handler that writes to our buffer
-	handler := slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug})
-	logger := slog.New(handler)
-
-	service := &LoggingService{
-		logger: logger,
-		config: cfg,
-	}
-
-	// Test all logging methods
-	service.Debug("debug message", "key", "debug_value")
-	service.Info("info message", "key", "info_value")
-	service.Warn("warn message", "key", "warn_value")
-	service.Error("error message", "key", "error_value")
-
-	output := buf.String()
-
-	// Verify all messages appear
-	assert.Contains(t, output, "debug message")
-	assert.Contains(t, output, "info message")
-	assert.Contains(t, output, "warn message")
-	assert.Contains(t, output, "error message")
-
-	// Verify context values
-	assert.Contains(t, output, "debug_value")
-	assert.Contains(t, output, "info_value")
-	assert.Contains(t, output, "warn_value")
-	assert.Contains(t, output, "error_value")
-}
-
 func TestLoggingConfigValidation(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -356,22 +295,6 @@ func TestLoggingConfigValidation(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestLoggingServiceClose(t *testing.T) {
-	cfg := config.LoggingConfig{
-		Level:   "info",
-		Format:  "json",
-		Output:  "stdout",
-		MaxSize: 100,
-	}
-
-	service, err := NewLoggingService(&cfg)
-	require.NoError(t, err)
-
-	// Test close doesn't error
-	err = service.Close()
-	assert.NoError(t, err)
 }
 
 func TestLoggingServiceFormats(t *testing.T) {

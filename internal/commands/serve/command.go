@@ -50,6 +50,7 @@ func Run(args []string) {
 
 	var logger *slog.Logger
 	var server *http.Server
+	var templateService *services.TemplateService
 
 	// Cleanup function for graceful shutdown
 	cleanup := func() {
@@ -96,7 +97,8 @@ func Run(args []string) {
 	slog.SetDefault(logger)
 
 	// Initialize services and configure router
-	router, err := setupServer(cfg, logger)
+	var router *gin.Engine
+	router, templateService, err = setupServer(cfg, logger)
 	if err != nil {
 		apperrors.HandleCLIError(
 			apperrors.NewCLIError("server setup", "Failed to set up server", err, 1),
@@ -146,14 +148,15 @@ func Run(args []string) {
 		)
 	}
 
+	templateService.Shutdown()
 	logger.Info("Server exited gracefully")
 }
 
-func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, error) {
+func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, *services.TemplateService, error) {
 	// Initialize services
 	articleService, err := services.NewArticleService(cfg.ArticlesPath, logger)
 	if err != nil {
-		return nil, fmt.Errorf("article service: %w", err)
+		return nil, nil, fmt.Errorf("article service: %w", err)
 	}
 
 	emailService := services.NewEmailService(&cfg.Email, logger)
@@ -186,11 +189,11 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, error) {
 	// Initialize template service
 	templateService, err := services.NewTemplateService(cfg.TemplatesPath, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("template service: %w", err)
+		return nil, nil, fmt.Errorf("template service: %w", err)
 	}
 
 	if err := setupTemplates(router, templateService); err != nil {
-		return nil, fmt.Errorf("template setup: %w", err)
+		return nil, nil, fmt.Errorf("template setup: %w", err)
 	}
 
 	// Log rate limiting configuration
@@ -240,7 +243,7 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, error) {
 	})
 
 	setupRoutes(router, h, cfg, logger)
-	return router, nil
+	return router, templateService, nil
 }
 
 func configureGinMode(cfg *config.Config, logger *slog.Logger) {

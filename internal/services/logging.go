@@ -1,14 +1,12 @@
 package services
 
 import (
-	"context"
 	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 
 	"gopkg.in/natefinch/lumberjack.v2"
 
@@ -33,10 +31,7 @@ const (
 
 // LoggingService provides enhanced logging functionality with rotation and formatting
 type LoggingService struct {
-	logger     *slog.Logger
-	config     config.LoggingConfig
-	baseAttrs  []slog.Attr
-	serviceCtx context.Context
+	logger *slog.Logger
 }
 
 // NewLoggingService creates a new logging service with the given configuration
@@ -66,10 +61,7 @@ func NewLoggingService(cfg *config.LoggingConfig) (*LoggingService, error) {
 	}
 
 	return &LoggingService{
-		logger:     logger.With(baseArgs...),
-		config:     *cfg,
-		baseAttrs:  baseAttrs,
-		serviceCtx: context.Background(),
+		logger: logger.With(baseArgs...),
 	}, nil
 }
 
@@ -157,205 +149,6 @@ func getLogWriter(cfg *config.LoggingConfig) (io.Writer, error) {
 	default:
 		return nil, apperrors.NewConfigError("output", cfg.Output, "Invalid log output", apperrors.ErrConfigValidation)
 	}
-}
-
-// WithContext creates a logger with additional context fields
-func (ls *LoggingService) WithContext(keyvals ...interface{}) *slog.Logger {
-	return ls.logger.With(keyvals...)
-}
-
-// WithRequestContext creates a logger with request-specific context
-func (ls *LoggingService) WithRequestContext(_ context.Context, entry *LogEntry) *slog.Logger {
-	args := make([]interface{}, 0, 16)
-
-	if entry.RequestID != "" {
-		args = append(args, "request_id", entry.RequestID)
-	}
-	if entry.UserID != "" {
-		args = append(args, "user_id", entry.UserID)
-	}
-	if entry.IP != "" {
-		args = append(args, "ip", entry.IP)
-	}
-	if entry.Path != "" {
-		args = append(args, "path", entry.Path)
-	}
-	if entry.Method != "" {
-		args = append(args, "method", entry.Method)
-	}
-	if entry.Component != "" {
-		args = append(args, "component", entry.Component)
-	}
-	if entry.Action != "" {
-		args = append(args, "action", entry.Action)
-	}
-
-	return ls.logger.With(args...)
-}
-
-// WithComponent creates a logger with component-specific context
-func (ls *LoggingService) WithComponent(component string) *slog.Logger {
-	return ls.logger.With("component", component)
-}
-
-// Debug logs a debug message
-func (ls *LoggingService) Debug(msg string, keyvals ...interface{}) {
-	ls.logger.Debug(msg, keyvals...)
-}
-
-// Info logs an info message
-func (ls *LoggingService) Info(msg string, keyvals ...interface{}) {
-	ls.logger.Info(msg, keyvals...)
-}
-
-// Warn logs a warning message
-func (ls *LoggingService) Warn(msg string, keyvals ...interface{}) {
-	ls.logger.Warn(msg, keyvals...)
-}
-
-// Error logs an error message
-func (ls *LoggingService) Error(msg string, keyvals ...interface{}) {
-	ls.logger.Error(msg, keyvals...)
-}
-
-// LogPerformance logs performance metrics with structured data
-func (ls *LoggingService) LogPerformance(perfLog PerformanceLog) {
-	ls.logger.Info("Performance metrics",
-		slog.String("operation", perfLog.Operation),
-		slog.Duration("duration", perfLog.Duration),
-		slog.Int64("memory_before_mb", perfLog.MemoryBefore/(1024*1024)),
-		slog.Int64("memory_after_mb", perfLog.MemoryAfter/(1024*1024)),
-		slog.Int64("memory_delta_mb", (perfLog.MemoryAfter-perfLog.MemoryBefore)/(1024*1024)),
-		slog.Int("goroutines", perfLog.Goroutines),
-		slog.Uint64("allocations", perfLog.Allocations),
-		slog.String("category", "performance"),
-	)
-}
-
-// LogSecurity logs security-related events with structured data
-func (ls *LoggingService) LogSecurity(secLog *SecurityLog) {
-	level := slog.LevelWarn
-	switch secLog.Severity {
-	case "critical":
-		level = slog.LevelError
-	case "high":
-		level = slog.LevelError
-	case "medium":
-		level = slog.LevelWarn
-	case "low":
-		level = slog.LevelInfo
-	}
-
-	ls.logger.Log(context.Background(), level, "Security event",
-		slog.String("event", secLog.Event),
-		slog.String("severity", secLog.Severity),
-		slog.String("ip", secLog.IP),
-		slog.String("user_agent", secLog.UserAgent),
-		slog.String("path", secLog.Path),
-		slog.String("description", secLog.Description),
-		slog.String("category", "security"),
-	)
-}
-
-// LogHTTPRequest logs HTTP request details with structured data
-func (ls *LoggingService) LogHTTPRequest(ctx context.Context, entry *LogEntry) {
-	attrs := []slog.Attr{
-		slog.String("method", entry.Method),
-		slog.String("path", entry.Path),
-		slog.Int("status_code", entry.StatusCode),
-		slog.Duration("duration", entry.Duration),
-		slog.String("ip", entry.IP),
-		slog.String("user_agent", entry.UserAgent),
-		slog.String("category", "http"),
-	}
-
-	if entry.RequestID != "" {
-		attrs = append(attrs, slog.String("request_id", entry.RequestID))
-	}
-
-	level := slog.LevelInfo
-	if entry.StatusCode >= 400 {
-		level = slog.LevelWarn
-	}
-	if entry.StatusCode >= 500 {
-		level = slog.LevelError
-	}
-
-	ls.logger.LogAttrs(ctx, level, "HTTP request", attrs...)
-}
-
-// LogError logs errors with enhanced context and stack traces
-func (ls *LoggingService) LogError(ctx context.Context, err error, msg string, keyvals ...interface{}) {
-	attrs := []slog.Attr{
-		slog.String("error", err.Error()),
-		slog.String("category", "error"),
-	}
-
-	// Add stack trace in debug mode
-	if ls.config.Level == LogLevelDebug {
-		_, file, line, ok := runtime.Caller(1)
-		if ok {
-			attrs = append(attrs,
-				slog.String("caller_file", file),
-				slog.Int("caller_line", line),
-			)
-		}
-	}
-
-	// Convert keyvals to attributes
-	for i := 0; i < len(keyvals); i += 2 {
-		if i+1 < len(keyvals) {
-			if key, ok := keyvals[i].(string); ok {
-				attrs = append(attrs, slog.Any(key, keyvals[i+1]))
-			}
-		}
-	}
-
-	ls.logger.LogAttrs(ctx, slog.LevelError, msg, attrs...)
-}
-
-// LogSlowOperation logs operations that exceed expected duration
-func (ls *LoggingService) LogSlowOperation(
-	ctx context.Context,
-	operation string,
-	duration, threshold time.Duration,
-	keyvals ...interface{},
-) {
-	if duration > threshold {
-		attrs := []slog.Attr{
-			slog.String("operation", operation),
-			slog.Duration("duration", duration),
-			slog.Duration("threshold", threshold),
-			slog.Duration("exceeded_by", duration-threshold),
-			slog.String("category", "performance"),
-		}
-
-		// Add additional context
-		for i := 0; i < len(keyvals); i += 2 {
-			if i+1 < len(keyvals) {
-				if key, ok := keyvals[i].(string); ok {
-					attrs = append(attrs, slog.Any(key, keyvals[i+1]))
-				}
-			}
-		}
-
-		ls.logger.LogAttrs(ctx, slog.LevelWarn, "Slow operation detected", attrs...)
-	}
-}
-
-// GetMemoryStats returns current memory statistics for logging
-func (ls *LoggingService) GetMemoryStats() (alloc, sys int64, mallocs uint64) {
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	// #nosec G115 -- Memory stats are system values, conversion is safe within practical limits
-	return int64(m.Alloc), int64(m.Sys), m.Mallocs
-}
-
-// Close closes any resources used by the logging service
-func (ls *LoggingService) Close() error {
-	// If using file output with lumberjack, we might want to close it
-	// For now, we don't need explicit cleanup
-	return nil
 }
 
 // getHostname returns the system hostname, fallback to 'unknown'

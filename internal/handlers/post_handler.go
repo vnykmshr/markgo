@@ -109,29 +109,15 @@ func (h *PostHandler) getArticlesPage(page int) (map[string]any, error) {
 		postsPerPage = 10
 	}
 
-	totalPages := (len(published) + postsPerPage - 1) / postsPerPage
-	if page > totalPages && totalPages > 0 {
-		page = totalPages
-	}
+	pagination := models.NewPagination(page, len(published), postsPerPage)
 
-	start := (page - 1) * postsPerPage
+	start := (pagination.CurrentPage - 1) * postsPerPage
 	end := start + postsPerPage
 	if end > len(published) {
 		end = len(published)
 	}
 
 	articles := published[start:end]
-
-	pagination := models.Pagination{
-		CurrentPage:  page,
-		TotalPages:   totalPages,
-		TotalItems:   len(published),
-		ItemsPerPage: postsPerPage,
-		HasPrevious:  page > 1,
-		HasNext:      page < totalPages,
-		PreviousPage: page - 1,
-		NextPage:     page + 1,
-	}
 
 	data := h.buildBaseTemplateData("Articles - " + h.config.Blog.Title)
 	data["description"] = "Articles from " + h.config.Blog.Title

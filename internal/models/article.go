@@ -211,6 +211,9 @@ func NewPagination(currentPage, totalItems, itemsPerPage int) *Pagination {
 		totalPages = 1
 	}
 
+	currentPage = max(currentPage, 1)
+	currentPage = min(currentPage, totalPages)
+
 	hasPrevious := currentPage > 1
 	hasNext := currentPage < totalPages
 
