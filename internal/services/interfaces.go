@@ -156,6 +156,13 @@ type LoggingServiceInterface interface {
 	Close() error
 }
 
+// FeedServiceInterface defines the interface for feed generation
+type FeedServiceInterface interface {
+	GenerateRSS() (string, error)
+	GenerateJSONFeed() (string, error)
+	GenerateSitemap() (string, error)
+}
+
 // SEOServiceInterface defines the interface for SEO utilities (stateless)
 type SEOServiceInterface interface {
 	// Sitemap generation (on-demand, no caching)

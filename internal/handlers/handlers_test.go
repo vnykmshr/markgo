@@ -154,6 +154,12 @@ func createTestConfig() *config.Config {
 	}
 }
 
+type MockFeedService struct{}
+
+func (m *MockFeedService) GenerateRSS() (string, error)      { return "", nil }
+func (m *MockFeedService) GenerateJSONFeed() (string, error) { return "", nil }
+func (m *MockFeedService) GenerateSitemap() (string, error)  { return "", nil }
+
 func createTestAPIHandler(emailService *MockEmailService) *APIHandler {
 	cfg := createTestConfig()
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
@@ -163,7 +169,7 @@ func createTestAPIHandler(emailService *MockEmailService) *APIHandler {
 	}
 
 	base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
-	return NewAPIHandler(base, &MockArticleService{}, emailService, time.Now())
+	return NewAPIHandler(base, &MockArticleService{}, emailService, &MockFeedService{}, time.Now())
 }
 
 // TestContact tests the contact form handler

@@ -20,6 +20,7 @@ import (
 	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/handlers"
 	"github.com/vnykmshr/markgo/internal/services"
+	"github.com/vnykmshr/markgo/internal/services/feed"
 )
 
 // StaticExportService provides static site export functionality.
@@ -204,6 +205,7 @@ func (s *StaticExportService) generatePages(_ context.Context) error {
 	// Initialize handlers with no cache for export
 	h := handlers.New(&handlers.Config{
 		ArticleService:  s.articleService,
+		FeedService:     feed.NewService(s.articleService, s.appConfig),
 		TemplateService: s.templateService,
 		Config:          s.appConfig,
 		Logger:          s.logger,
@@ -375,6 +377,7 @@ func (s *StaticExportService) generateFeeds(_ context.Context) error {
 
 	h := handlers.New(&handlers.Config{
 		ArticleService:  s.articleService,
+		FeedService:     feed.NewService(s.articleService, s.appConfig),
 		TemplateService: s.templateService,
 		Config:          s.appConfig,
 		Logger:          s.logger,

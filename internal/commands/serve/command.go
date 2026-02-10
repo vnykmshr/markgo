@@ -22,6 +22,7 @@ import (
 	"github.com/vnykmshr/markgo/internal/middleware"
 	"github.com/vnykmshr/markgo/internal/services"
 	"github.com/vnykmshr/markgo/internal/services/compose"
+	"github.com/vnykmshr/markgo/internal/services/feed"
 	"github.com/vnykmshr/markgo/internal/services/seo"
 )
 
@@ -218,10 +219,14 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, error) {
 		logger.Info("Development logging enhancements enabled")
 	}
 
+	// Initialize feed service
+	feedService := feed.NewService(articleService, cfg)
+
 	// Initialize handlers
 	h := handlers.New(&handlers.Config{
 		ArticleService:  articleService,
 		EmailService:    emailService,
+		FeedService:     feedService,
 		TemplateService: templateService,
 		SEOService:      seoService,
 		ComposeService:  composeService,
