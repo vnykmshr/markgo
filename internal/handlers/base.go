@@ -118,7 +118,7 @@ func (h *BaseHandler) handleError(c *gin.Context, err error, defaultMsg string) 
 	var message string
 
 	switch {
-	case err != nil && err.Error() == "article not found":
+	case apperrors.IsArticleNotFound(err) || apperrors.IsNotFound(err):
 		httpStatus = http.StatusNotFound
 		message = "Resource not found"
 	case apperrors.IsValidationError(err):

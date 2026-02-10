@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/models"
 	"github.com/vnykmshr/markgo/internal/services"
 )
@@ -79,7 +80,7 @@ func (h *ArticleHandler) Articles(c *gin.Context) {
 func (h *ArticleHandler) Article(c *gin.Context) {
 	slug := c.Param("slug")
 	if slug == "" {
-		h.handleError(c, fmt.Errorf("slug is required"), "Invalid article slug")
+		h.handleError(c, apperrors.NewValidationError("slug", "", "slug is required", nil), "Invalid article slug")
 		return
 	}
 
@@ -97,7 +98,7 @@ func (h *ArticleHandler) Article(c *gin.Context) {
 func (h *ArticleHandler) ArticlesByTag(c *gin.Context) {
 	tag := c.Param("tag")
 	if tag == "" {
-		h.handleError(c, fmt.Errorf("tag is required"), "Invalid tag")
+		h.handleError(c, apperrors.NewValidationError("tag", "", "tag is required", nil), "Invalid tag")
 		return
 	}
 
@@ -123,7 +124,7 @@ func (h *ArticleHandler) ArticlesByTag(c *gin.Context) {
 func (h *ArticleHandler) ArticlesByCategory(c *gin.Context) {
 	category := c.Param("category")
 	if category == "" {
-		h.handleError(c, fmt.Errorf("category is required"), "Invalid category")
+		h.handleError(c, apperrors.NewValidationError("category", "", "category is required", nil), "Invalid category")
 		return
 	}
 
@@ -237,7 +238,7 @@ func (h *ArticleHandler) getArticleDataUncached(slug string) (map[string]any, er
 	}
 
 	if article.Draft {
-		return nil, fmt.Errorf("article not found: %s", slug)
+		return nil, apperrors.ErrArticleNotFound
 	}
 
 	// Get recent articles for sidebar
