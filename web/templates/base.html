@@ -150,13 +150,9 @@
     <!-- Canonical URL -->
     <link rel="canonical" href="{{ .config.BaseURL }}{{ if .article }}/articles/{{ .article.Slug }}{{ end }}">
 
-    <!-- Preconnect to external resources -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
     <!-- Stylesheets -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <link rel="stylesheet" href="/static/css/github-dark.min.css">
     <link rel="stylesheet" href="/static/css/main.css">
     {{ if .config.Blog.Style }}<link rel="stylesheet" href="/static/css/themes/{{ .config.Blog.Style }}.css">{{ end }}
 
@@ -302,7 +298,7 @@
     </footer>
 
     <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="/static/js/highlight.min.js"></script>
     <script src="/static/js/main.js"></script>
 
     <!-- Template-specific JavaScript -->
