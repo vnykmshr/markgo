@@ -119,6 +119,11 @@
     background-color: var(--color-primary-dark);
 }
 
+.contact-submit:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
 .contact-submit:disabled {
     opacity: 0.6;
     cursor: not-allowed;

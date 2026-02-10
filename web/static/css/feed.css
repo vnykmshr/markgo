@@ -83,37 +83,6 @@
     margin: 0;
 }
 
-/* Pagination */
-.feed-pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: var(--spacing-4);
-    padding: var(--spacing-6) 0;
-    max-width: 42rem;
-    margin: 0 auto;
-}
-
-.feed-pagination-link {
-    color: var(--color-primary);
-    text-decoration: none;
-    font-weight: 500;
-    padding: var(--spacing-2) var(--spacing-4);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    transition: background-color var(--transition-fast);
-}
-
-.feed-pagination-link:hover {
-    background-color: var(--color-bg-tertiary);
-    text-decoration: none;
-}
-
-.feed-pagination-info {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-muted);
-}
-
 /* ==========================================================================
    Responsive
    ========================================================================== */

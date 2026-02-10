@@ -747,51 +747,9 @@ html {
     color: var(--color-text-primary);
 }
 
-.section-title {
-    font-size: var(--font-size-3xl);
-    font-weight: 700;
-    margin-bottom: var(--spacing-8);
-    text-align: center;
-}
-
-.section-header {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-4);
-    text-align: center;
-    margin-bottom: var(--spacing-8);
-}
-
-.section-link {
-    color: var(--color-primary);
-    font-weight: 500;
-    font-size: var(--font-size-sm);
-}
-
-.articles-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--spacing-8);
-}
-
 /* ==========================================================================
-   Article Cards
+   Card Styles (used by admin templates)
    ========================================================================== */
-
-.article-card {
-    background-color: var(--color-bg-primary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-xl);
-    padding: var(--spacing-6);
-    transition: all var(--transition-base);
-    height: fit-content;
-}
-
-.article-card:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-2px);
-    border-color: var(--color-primary);
-}
 
 .card-title {
     font-size: var(--font-size-xl);
@@ -808,45 +766,8 @@ html {
     color: var(--color-primary);
 }
 
-.card-description {
-    font-size: var(--font-size-base);
-    color: var(--color-text-primary);
-    margin-bottom: var(--spacing-3);
-    font-weight: 500;
-}
-
-.card-excerpt {
-    color: var(--color-text-muted);
-    line-height: 1.6;
-    margin-bottom: var(--spacing-4);
-}
-
-.card-meta {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-4);
-    font-size: var(--font-size-sm);
-    color: var(--color-text-muted);
-    margin-bottom: var(--spacing-4);
-    flex-wrap: wrap;
-}
-
-.card-date,
-.card-reading-time,
-.card-word-count {
-    display: flex;
-    align-items: center;
-}
-
-.card-tags,
-.card-categories {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-2);
-}
-
 /* ==========================================================================
-   Tags & Categories
+   Tags & Categories (used by admin/preview templates)
    ========================================================================== */
 
 .tag,
@@ -869,41 +790,6 @@ html {
     color: var(--color-text-inverse);
     text-decoration: none;
     transform: translateY(-1px);
-}
-
-.tags-section {
-    padding: var(--spacing-12) 0;
-    background-color: var(--color-bg-secondary);
-}
-
-.tags-cloud {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-3);
-    justify-content: center;
-    margin-bottom: var(--spacing-8);
-}
-
-.tag-cloud-item {
-    padding: var(--spacing-2) var(--spacing-4);
-    background-color: var(--color-bg-primary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    color: var(--color-text-primary);
-    font-weight: 500;
-    text-decoration: none;
-    transition: all var(--transition-fast);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-2);
-}
-
-.tag-cloud-item:hover {
-    background-color: var(--color-primary);
-    color: var(--color-text-inverse);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-    text-decoration: none;
 }
 
 .tag-count {
@@ -1075,16 +961,6 @@ html {
         margin-bottom: var(--spacing-8);
     }
 
-    .section-header {
-        flex-direction: row;
-        justify-content: space-between;
-        text-align: left;
-    }
-
-    .articles-grid {
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    }
-
 }
 
 /* ==========================================================================
@@ -1210,11 +1086,5 @@ html {
     a {
         color: inherit;
         text-decoration: underline;
-    }
-
-    .article-card {
-        break-inside: avoid;
-        border: 1px solid #ccc;
-        margin-bottom: 1rem;
     }
 }
