@@ -336,18 +336,18 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, cfg *config.Config, log
 		debugGroup.GET("/config", h.Admin.Debug)
 		debugGroup.GET("/requests", h.Admin.Debug)
 
-		// Go pprof profiling endpoints
+		// Go pprof profiling endpoints — registered directly via stdlib
 		pprofGroup := debugGroup.Group("/pprof")
-		pprofGroup.GET("/", h.Admin.ProfileIndex)
-		pprofGroup.GET("/cmdline", gin.WrapH(http.HandlerFunc(pprof.Cmdline)))
-		pprofGroup.GET("/profile", h.Admin.ProfileProfile)
-		pprofGroup.GET("/symbol", gin.WrapH(http.HandlerFunc(pprof.Symbol)))
-		pprofGroup.GET("/trace", h.Admin.ProfileTrace)
-		pprofGroup.GET("/heap", h.Admin.ProfileHeap)
-		pprofGroup.GET("/goroutine", h.Admin.ProfileGoroutine)
-		pprofGroup.GET("/allocs", h.Admin.ProfileAllocs)
-		pprofGroup.GET("/block", h.Admin.ProfileBlock)
-		pprofGroup.GET("/mutex", h.Admin.ProfileMutex)
+		pprofGroup.GET("/", gin.WrapF(pprof.Index))
+		pprofGroup.GET("/cmdline", gin.WrapF(pprof.Cmdline))
+		pprofGroup.GET("/profile", gin.WrapF(pprof.Profile))
+		pprofGroup.GET("/symbol", gin.WrapF(pprof.Symbol))
+		pprofGroup.GET("/trace", gin.WrapF(pprof.Trace))
+		pprofGroup.GET("/heap", gin.WrapH(pprof.Handler("heap")))
+		pprofGroup.GET("/goroutine", gin.WrapH(pprof.Handler("goroutine")))
+		pprofGroup.GET("/allocs", gin.WrapH(pprof.Handler("allocs")))
+		pprofGroup.GET("/block", gin.WrapH(pprof.Handler("block")))
+		pprofGroup.GET("/mutex", gin.WrapH(pprof.Handler("mutex")))
 	}
 
 	// 404 handler

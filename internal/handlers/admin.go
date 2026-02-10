@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"net/http/pprof"
 	"runtime"
 	"time"
 
@@ -272,86 +271,6 @@ func (h *AdminHandler) ReloadArticles(c *gin.Context) {
 		"message":   "Articles reloaded successfully",
 		"timestamp": time.Now().Unix(),
 	})
-}
-
-// ProfileIndex handles pprof profile index (development only)
-func (h *AdminHandler) ProfileIndex(c *gin.Context) {
-	if !h.requireDevelopmentEnv(c) {
-		return
-	}
-	pprof.Index(c.Writer, c.Request)
-}
-
-// ProfileCmdline handles the pprof cmdline endpoint.
-func (h *AdminHandler) ProfileCmdline(c *gin.Context) {
-	if !h.requireDevelopmentEnv(c) {
-		return
-	}
-	pprof.Cmdline(c.Writer, c.Request)
-}
-
-// ProfileProfile handles the pprof profile endpoint.
-func (h *AdminHandler) ProfileProfile(c *gin.Context) {
-	if !h.requireDevelopmentEnv(c) {
-		return
-	}
-	pprof.Profile(c.Writer, c.Request)
-}
-
-// ProfileSymbol handles the pprof symbol endpoint.
-func (h *AdminHandler) ProfileSymbol(c *gin.Context) {
-	if !h.requireDevelopmentEnv(c) {
-		return
-	}
-	pprof.Symbol(c.Writer, c.Request)
-}
-
-// ProfileTrace handles the pprof trace endpoint.
-func (h *AdminHandler) ProfileTrace(c *gin.Context) {
-	if !h.requireDevelopmentEnv(c) {
-		return
-	}
-	pprof.Trace(c.Writer, c.Request)
-}
-
-// ProfileHeap handles the pprof heap endpoint.
-func (h *AdminHandler) ProfileHeap(c *gin.Context) {
-	if !h.requireDevelopmentEnv(c) {
-		return
-	}
-	pprof.Handler("heap").ServeHTTP(c.Writer, c.Request)
-}
-
-// ProfileGoroutine handles the pprof goroutine endpoint.
-func (h *AdminHandler) ProfileGoroutine(c *gin.Context) {
-	if !h.requireDevelopmentEnv(c) {
-		return
-	}
-	pprof.Handler("goroutine").ServeHTTP(c.Writer, c.Request)
-}
-
-// ProfileBlock handles the pprof block endpoint.
-func (h *AdminHandler) ProfileBlock(c *gin.Context) {
-	if !h.requireDevelopmentEnv(c) {
-		return
-	}
-	pprof.Handler("block").ServeHTTP(c.Writer, c.Request)
-}
-
-// ProfileMutex handles the pprof mutex endpoint.
-func (h *AdminHandler) ProfileMutex(c *gin.Context) {
-	if !h.requireDevelopmentEnv(c) {
-		return
-	}
-	pprof.Handler("mutex").ServeHTTP(c.Writer, c.Request)
-}
-
-// ProfileAllocs handles the pprof allocs endpoint.
-func (h *AdminHandler) ProfileAllocs(c *gin.Context) {
-	if !h.requireDevelopmentEnv(c) {
-		return
-	}
-	pprof.Handler("allocs").ServeHTTP(c.Writer, c.Request)
 }
 
 // Uncached data generation methods
