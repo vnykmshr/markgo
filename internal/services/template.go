@@ -9,6 +9,7 @@ import (
 	"html"
 	"html/template"
 	"io"
+	"log/slog"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -45,13 +46,13 @@ func init() {
 
 	cache, err := obcache.New(tzCacheConfig)
 	if err != nil {
-		// Fallback to basic config if creation fails
+		slog.Warn("Timezone cache init failed, trying fallback", "error", err)
 		basicConfig := obcache.NewDefaultConfig()
 		basicConfig.DefaultTTL = 0
-		if fallbackCache, err := obcache.New(basicConfig); err == nil {
+		if fallbackCache, fbErr := obcache.New(basicConfig); fbErr == nil {
 			timeZoneCache = fallbackCache
 		} else {
-			// Failed to create cache, timeZoneCache remains nil
+			slog.Error("Timezone cache fallback also failed, timezone formatting will be slow", "error", fbErr)
 			timeZoneCache = nil
 		}
 		return
@@ -91,15 +92,14 @@ func NewTemplateService(templatesPath string, cfg *config.Config) (*TemplateServ
 
 	obcacheInstance, err := obcache.New(cacheConfig)
 	if err != nil {
+		slog.Warn("Template cache init failed, rendering will be slower", "error", err)
 		cancel()
-		// Continue without cache if it fails
 	}
 
 	// Initialize goflow scheduler for template maintenance
 	goflowScheduler := scheduler.New()
 	if err := goflowScheduler.Start(); err != nil {
-		// Log warning but continue - scheduler is optional
-		_ = err // Explicitly ignore error for linting
+		slog.Warn("Template scheduler failed to start, cache cleanup won't run", "error", err)
 	}
 
 	service := &TemplateService{
@@ -193,8 +193,7 @@ func (t *TemplateService) Reload(templatesPath string) error {
 	// Clear cache before reloading
 	if t.obcache != nil {
 		if err := t.obcache.Clear(); err != nil {
-			// Log warning but continue - cache clear is optional
-			_ = err // Explicitly ignore error for linting
+			slog.Warn("Failed to clear template cache during reload", "error", err)
 		}
 	}
 	return t.loadTemplates(templatesPath)
@@ -246,8 +245,7 @@ func (t *TemplateService) setupTemplateMaintenance() {
 
 	// Schedule cleanup using proper cron format (6 fields: second, minute, hour, day, month, weekday)
 	if err := t.scheduler.ScheduleCron("template-cache-cleanup", "0 0 * * * *", cleanupTask); err != nil {
-		// Log warning but continue without scheduled cleanup
-		_ = err // Explicitly ignore error for linting
+		slog.Warn("Failed to schedule template cache cleanup", "error", err)
 	}
 }
 
@@ -306,8 +304,7 @@ func (t *TemplateService) Shutdown() {
 
 	if t.obcache != nil {
 		if err := t.obcache.Close(); err != nil {
-			// Log warning but continue - close error is not critical
-			_ = err // Explicitly ignore error for linting
+			slog.Warn("Failed to close template cache during shutdown", "error", err)
 		}
 	}
 }
@@ -390,7 +387,17 @@ var templateFuncs = template.FuncMap{
 	"lt": func(a, b int) bool {
 		return a < b
 	},
-	"eq": reflect.DeepEqual,
+	"eq": func(args ...any) bool {
+		if len(args) < 2 {
+			return false
+		}
+		for _, arg := range args[1:] {
+			if reflect.DeepEqual(args[0], arg) {
+				return true
+			}
+		}
+		return false
+	},
 	"len": func(items any) int {
 		v := reflect.ValueOf(items)
 		switch v.Kind() {
@@ -447,8 +454,7 @@ var templateFuncs = template.FuncMap{
 
 		// Store timezone location in cache with no expiration
 		if err := timeZoneCache.Set(zone, loc, 0); err != nil {
-			// Log warning but continue - cache set is optional
-			_ = err // Explicitly ignore error for linting
+			slog.Debug("Failed to cache timezone location", "zone", zone, "error", err)
 		}
 		return date.In(loc).Format(format)
 	},
@@ -718,9 +724,10 @@ var templateFuncs = template.FuncMap{
 			return urlStr
 		}
 		host := u.Hostname()
-		// Strip www. prefix
-		host = strings.TrimPrefix(host, "www.")
-		return host
+		if host == "" {
+			return urlStr
+		}
+		return strings.TrimPrefix(host, "www.")
 	},
 	"displayTitle": func(a *models.Article) string {
 		return a.DisplayTitle()

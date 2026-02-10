@@ -350,11 +350,14 @@ func TestTemplateFunctions_ComparisonOperations(t *testing.T) {
 	assert.True(t, ltFunc(3, 5))
 	assert.False(t, ltFunc(5, 3))
 
-	// Test eq function
-	eqFunc := funcMap["eq"].(func(any, any) bool)
+	// Test eq function (variadic — matches first arg against any remaining)
+	eqFunc := funcMap["eq"].(func(...any) bool)
 	assert.True(t, eqFunc(5, 5))
 	assert.False(t, eqFunc(5, 3))
 	assert.True(t, eqFunc("hello", "hello"))
+	assert.True(t, eqFunc("a", "b", "a"))  // multi-arg: "a" matches third
+	assert.False(t, eqFunc("a", "b", "c")) // multi-arg: no match
+	assert.False(t, eqFunc(42))            // single arg: insufficient
 
 	// Test ne function
 	neFunc := funcMap["ne"].(func(any, any) bool)
