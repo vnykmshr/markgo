@@ -1,7 +1,57 @@
 /* ==========================================================================
-   Articles Page Styles
-   Page header + stream layout. Cards from cards.css, pagination from main.css.
+   Articles (Writing) Page — Clean scannable list
+   Mobile-first: base targets 320px+, enhanced at 481px+
    ========================================================================== */
+
+/* Article List */
+.article-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.article-list-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+    padding: var(--spacing-3) 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.article-list-item:first-child {
+    border-top: 1px solid var(--color-border);
+}
+
+.article-list-link {
+    font-size: var(--text-base);
+    font-weight: 500;
+    color: var(--color-text);
+    text-decoration: none;
+    line-height: 1.4;
+}
+
+.article-list-link:hover {
+    color: var(--color-primary);
+}
+
+.article-list-date {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+}
+
+@media (min-width: 481px) {
+    .article-list-item {
+        flex-direction: row;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--spacing-4);
+    }
+
+    .article-list-date {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+}
 
 /* Empty State */
 .articles-empty {

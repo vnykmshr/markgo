@@ -84,7 +84,7 @@ func TestGenerateRSS(t *testing.T) {
 	assert.Contains(t, rss, "<title>Hello World</title>")
 	assert.Contains(t, rss, "<title>Second Post</title>")
 	assert.NotContains(t, rss, "Draft")
-	assert.Contains(t, rss, "http://localhost:3000/articles/hello-world")
+	assert.Contains(t, rss, "http://localhost:3000/writing/hello-world")
 
 	// Verify valid XML
 	var doc rssDoc
@@ -141,8 +141,8 @@ func TestGenerateSitemap(t *testing.T) {
 
 	assert.True(t, strings.HasPrefix(sitemap, `<?xml version="1.0" encoding="UTF-8"?>`))
 	assert.Contains(t, sitemap, "http://localhost:3000")
-	assert.Contains(t, sitemap, "http://localhost:3000/articles/hello-world")
-	assert.Contains(t, sitemap, "http://localhost:3000/articles/second-post")
+	assert.Contains(t, sitemap, "http://localhost:3000/writing/hello-world")
+	assert.Contains(t, sitemap, "http://localhost:3000/writing/second-post")
 	assert.NotContains(t, sitemap, "draft")
 
 	// Verify valid XML

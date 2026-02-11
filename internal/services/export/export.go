@@ -235,7 +235,7 @@ type Page struct {
 func (s *StaticExportService) getPagesToGenerate() []Page {
 	pages := []Page{
 		{Path: "/", FilePath: "index.html"},
-		{Path: "/articles", FilePath: "articles/index.html"},
+		{Path: "/writing", FilePath: "writing/index.html"},
 		{Path: "/tags", FilePath: "tags/index.html"},
 		{Path: "/categories", FilePath: "categories/index.html"},
 		{Path: "/about", FilePath: "about/index.html"},
@@ -252,8 +252,8 @@ func (s *StaticExportService) getPagesToGenerate() []Page {
 			continue
 		}
 		pages = append(pages, Page{
-			Path:     fmt.Sprintf("/articles/%s", article.Slug),
-			FilePath: fmt.Sprintf("articles/%s/index.html", article.Slug),
+			Path:     fmt.Sprintf("/writing/%s", article.Slug),
+			FilePath: fmt.Sprintf("writing/%s/index.html", article.Slug),
 		})
 	}
 
@@ -349,8 +349,8 @@ func (s *StaticExportService) getHostFromBaseURL() string {
 func (s *StaticExportService) setupRoutes(router *gin.Engine, h *handlers.Router) {
 	// Main routes
 	router.GET("/", h.Feed.Home)
-	router.GET("/articles", h.Post.Articles)
-	router.GET("/articles/:slug", h.Post.Article)
+	router.GET("/writing", h.Post.Articles)
+	router.GET("/writing/:slug", h.Post.Article)
 	router.GET("/tags", h.Taxonomy.Tags)
 	router.GET("/tags/:tag", h.Taxonomy.ArticlesByTag)
 	router.GET("/categories", h.Taxonomy.Categories)

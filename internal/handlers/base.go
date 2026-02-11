@@ -117,6 +117,9 @@ func (h *BaseHandler) injectAuthState(c *gin.Context, data map[string]any) {
 		if h.config.Admin.Username != "" && h.config.Admin.Password != "" {
 			secureCookie := h.config.Environment != "development"
 			middleware.GenerateCSRFToken(c, secureCookie)
+			if c.IsAborted() {
+				return
+			}
 		}
 	}
 	if csrfToken, exists := c.Get("csrf_token"); exists {

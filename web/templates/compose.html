@@ -1,9 +1,4 @@
 {{ define "compose-content" }}
-{{ if .auth_required }}
-<div class="auth-required">
-    <p>Sign in to continue.</p>
-</div>
-{{ else }}
 <div class="compose-page">
     <div class="container">
         <header class="compose-header">
@@ -117,7 +112,7 @@
             <div class="compose-actions">
                 {{ if .editing }}
                 <button type="submit" class="compose-submit">Update</button>
-                <a href="/articles/{{ .slug }}" class="compose-cancel">Cancel</a>
+                <a href="/writing/{{ .slug }}" class="compose-cancel">Cancel</a>
                 {{ else }}
                 <button type="submit" class="compose-submit">Publish</button>
                 <a href="/" class="compose-cancel">Cancel</a>
@@ -136,7 +131,6 @@
     })();
 </script>
 {{ end }}{{ end }}
-{{ end }}
 {{ end }}
 
 {{ define "compose-head" }}

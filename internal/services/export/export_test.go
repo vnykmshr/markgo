@@ -84,8 +84,8 @@ func TestProcessHTML(t *testing.T) {
 		{
 			name:    "rewrites href",
 			baseURL: "https://example.com",
-			input:   `<a href="/articles/hello">link</a>`,
-			want:    `<a href="https://example.com/articles/hello">link</a>`,
+			input:   `<a href="/writing/hello">link</a>`,
+			want:    `<a href="https://example.com/writing/hello">link</a>`,
 		},
 		{
 			name:    "rewrites src",

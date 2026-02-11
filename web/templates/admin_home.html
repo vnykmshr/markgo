@@ -1,9 +1,4 @@
 {{ define "admin_home-content" }}
-{{ if .auth_required }}
-<div class="auth-required">
-    <p>Sign in to continue.</p>
-</div>
-{{ else }}
 <div class="admin-dashboard">
     <div class="container">
         <!-- Dashboard Header -->
@@ -108,9 +103,9 @@
                     <span class="link-icon">🏠</span>
                     <span class="link-text">View Site</span>
                 </a>
-                <a href="/articles" class="quick-link" target="_blank">
+                <a href="/writing" class="quick-link" target="_blank">
                     <span class="link-icon">📖</span>
-                    <span class="link-text">All Articles</span>
+                    <span class="link-text">Writing</span>
                 </a>
                 <a href="/search" class="quick-link" target="_blank">
                     <span class="link-icon">🔍</span>
@@ -150,7 +145,6 @@
     </div>
 </div>
 
-{{ end }}
 {{ end }}
 
 {{ define "admin_home-head" }}

@@ -1,9 +1,4 @@
 {{ define "drafts-content" }}
-{{ if .auth_required }}
-<div class="auth-required">
-    <p>Sign in to continue.</p>
-</div>
-{{ else }}
 <div class="drafts-page">
     <div class="container">
         <header class="drafts-header">
@@ -36,7 +31,6 @@
         </div>
     </div>
 </div>
-{{ end }}
 {{ end }}
 
 {{ define "drafts-head" }}

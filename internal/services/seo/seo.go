@@ -695,7 +695,7 @@ func (h *Helper) buildArticleURL(slug string) (string, error) {
 		return "", fmt.Errorf("invalid base URL: %w", err)
 	}
 
-	articleURL, err := baseURL.Parse("/articles/" + slug)
+	articleURL, err := baseURL.Parse("/writing/" + slug)
 	if err != nil {
 		return "", fmt.Errorf("failed to build article URL: %w", err)
 	}

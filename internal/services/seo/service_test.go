@@ -117,7 +117,7 @@ func TestSitemapGeneration(t *testing.T) {
 	}
 
 	// Check published article is included
-	if !strings.Contains(sitemapStr, "/articles/test-article") {
+	if !strings.Contains(sitemapStr, "/writing/test-article") {
 		t.Error("Sitemap missing published article")
 	}
 

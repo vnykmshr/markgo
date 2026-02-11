@@ -280,7 +280,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 	// Static files
 	router.Static("/static", cfg.StaticPath)
 	router.StaticFile("/favicon.ico", cfg.StaticPath+"/img/favicon.ico")
-	router.StaticFile("/robots.txt", cfg.StaticPath+"/robots.txt")
+	router.GET("/robots.txt", h.Syndication.RobotsTxt)
 
 	// Health check and metrics
 	router.GET("/health", h.Health.Health)
@@ -288,8 +288,8 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 
 	// Public routes
 	router.GET("/", h.Feed.Home)
-	router.GET("/articles", h.Post.Articles)
-	router.GET("/articles/:slug", h.Post.Article)
+	router.GET("/writing", h.Post.Articles)
+	router.GET("/writing/:slug", h.Post.Article)
 	router.GET("/tags", h.Taxonomy.Tags)
 	router.GET("/tags/:tag", h.Taxonomy.ArticlesByTag)
 	router.GET("/categories", h.Taxonomy.Categories)

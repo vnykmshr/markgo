@@ -97,8 +97,7 @@ func TestSessionAuth_NoSession_GET(t *testing.T) {
 	handler(c)
 
 	assert.True(t, c.IsAborted())
-	assert.Equal(t, http.StatusFound, w.Code)
-	assert.Contains(t, w.Header().Get("Location"), "/login?next=")
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
 func TestSessionAuth_NoSession_POST(t *testing.T) {
@@ -129,7 +128,7 @@ func TestSessionAuth_InvalidToken(t *testing.T) {
 	handler(c)
 
 	assert.True(t, c.IsAborted())
-	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
 // --- SoftSessionAuth tests ---

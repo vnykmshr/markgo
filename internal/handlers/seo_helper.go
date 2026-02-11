@@ -81,8 +81,8 @@ func (h *SEODataHelper) GenerateArticleSEOData(article *models.Article) map[stri
 	// Generate Breadcrumb Schema for article
 	breadcrumbs := []services.Breadcrumb{
 		{Name: "Home", URL: baseURL},
-		{Name: "Articles", URL: baseURL + "/articles"},
-		{Name: article.Title, URL: baseURL + "/articles/" + article.Slug},
+		{Name: "Writing", URL: baseURL + "/writing"},
+		{Name: article.Title, URL: baseURL + "/writing/" + article.Slug},
 	}
 	if breadcrumbSchema, err := h.seoService.GenerateBreadcrumbSchema(breadcrumbs); err == nil {
 		seoData["breadcrumbSchema"] = breadcrumbSchema

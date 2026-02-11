@@ -87,7 +87,7 @@
             <footer class="article-footer">
                 <div class="content-separator"></div>
                 <div class="article-footer-content">
-                    <a href="/articles" class="page-back-link">← Writing</a>
+                    <a href="/writing" class="page-back-link">← Writing</a>
                     {{ if .article.LastModified }}
                     <p class="article-last-modified">
                         Updated <time datetime="{{ .article.LastModified.Format "2006-01-02T15:04:05Z07:00" }}">
@@ -112,7 +112,7 @@
     "headline": "{{ displayTitle .article }}",
     "description": "{{ if .article.Description }}{{ .article.Description }}{{ else }}{{ .article.Excerpt }}{{ end }}",
     "image": "{{ .config.BaseURL }}/static/images/default-article.jpg",
-    "url": "{{ .config.BaseURL }}/articles/{{ .article.Slug }}",
+    "url": "{{ .config.BaseURL }}/writing/{{ .article.Slug }}",
     "datePublished": "{{ .article.Date.Format "2006-01-02T15:04:05Z07:00" }}",
     {{ if .article.LastModified }}
     "dateModified": "{{ .article.LastModified.Format "2006-01-02T15:04:05Z07:00" }}",
@@ -130,7 +130,7 @@
     },
     "mainEntityOfPage": {
         "@type": "WebPage",
-        "@id": "{{ .config.BaseURL }}/articles/{{ .article.Slug }}"
+        "@id": "{{ .config.BaseURL }}/writing/{{ .article.Slug }}"
     },
     "keywords": "{{ join ", " .article.Tags }}",
     "articleSection": "{{ if .article.Categories }}{{ index .article.Categories 0 }}{{ else }}Technology{{ end }}",
@@ -149,7 +149,7 @@
 <meta property="og:type" content="article">
 <meta property="og:title" content="{{ displayTitle .article }}">
 <meta property="og:description" content="{{ if .article.Description }}{{ .article.Description }}{{ else }}{{ .article.Excerpt }}{{ end }}">
-<meta property="og:url" content="{{ .config.BaseURL }}/articles/{{ .article.Slug }}">
+<meta property="og:url" content="{{ .config.BaseURL }}/writing/{{ .article.Slug }}">
 <meta property="article:published_time" content="{{ .article.Date.Format "2006-01-02T15:04:05Z07:00" }}">
 {{ if .article.LastModified }}
 <meta property="article:modified_time" content="{{ .article.LastModified.Format "2006-01-02T15:04:05Z07:00" }}">

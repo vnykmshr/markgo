@@ -99,7 +99,7 @@ func (h *PostHandler) getArticlesPage(page int) (map[string]any, error) {
 
 	var published []*models.Article
 	for _, article := range allArticles {
-		if !article.Draft {
+		if !article.Draft && article.Type == "article" {
 			published = append(published, article)
 		}
 	}
@@ -119,8 +119,8 @@ func (h *PostHandler) getArticlesPage(page int) (map[string]any, error) {
 
 	articles := published[start:end]
 
-	data := h.buildBaseTemplateData("Articles - " + h.config.Blog.Title)
-	data["description"] = "Articles from " + h.config.Blog.Title
+	data := h.buildBaseTemplateData("Writing - " + h.config.Blog.Title)
+	data["description"] = "Writing from " + h.config.Blog.Title
 	data["articles"] = articles
 	data["pagination"] = pagination
 	data["template"] = "articles"

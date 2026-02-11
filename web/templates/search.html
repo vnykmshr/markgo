@@ -52,7 +52,7 @@
             {{ else }}
             <div class="search-empty">
                 <p>No results for "{{ .query }}"</p>
-                <a href="/articles" class="page-back-link">Browse writing →</a>
+                <a href="/writing" class="page-back-link">Browse writing →</a>
             </div>
             {{ end }}
         {{ end }}
@@ -78,7 +78,7 @@
                 "position": {{ add $index 1 }},
                 "headline": "{{ displayTitle $result.Article }}",
                 "description": "{{ $result.Article.Excerpt }}",
-                "url": "{{ $.config.BaseURL }}/articles/{{ $result.Article.Slug }}",
+                "url": "{{ $.config.BaseURL }}/writing/{{ $result.Article.Slug }}",
                 "datePublished": "{{ $result.Article.Date.Format "2006-01-02T15:04:05Z07:00" }}",
                 "author": {
                     "@type": "Person",

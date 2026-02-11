@@ -56,10 +56,10 @@ func (s *Service) GenerateRSS() (string, error) {
 	for _, a := range published {
 		items = append(items, rssItem{
 			Title:       a.DisplayTitle(),
-			Link:        s.config.BaseURL + "/articles/" + a.Slug,
+			Link:        s.config.BaseURL + "/writing/" + a.Slug,
 			Description: a.Description,
 			PubDate:     a.Date.Format(time.RFC1123Z),
-			GUID:        s.config.BaseURL + "/articles/" + a.Slug,
+			GUID:        s.config.BaseURL + "/writing/" + a.Slug,
 		})
 	}
 
@@ -88,8 +88,8 @@ func (s *Service) GenerateJSONFeed() (string, error) {
 	items := make([]map[string]any, 0, len(published))
 	for _, a := range published {
 		item := map[string]any{
-			"id":             s.config.BaseURL + "/articles/" + a.Slug,
-			"url":            s.config.BaseURL + "/articles/" + a.Slug,
+			"id":             s.config.BaseURL + "/writing/" + a.Slug,
+			"url":            s.config.BaseURL + "/writing/" + a.Slug,
 			"title":          a.DisplayTitle(),
 			"summary":        a.Description,
 			"date_published": a.Date.Format(time.RFC3339),
@@ -127,7 +127,7 @@ func (s *Service) GenerateSitemap() (string, error) {
 
 	urls := []models.SitemapURL{
 		{Loc: s.config.BaseURL, LastMod: time.Now(), ChangeFreq: "weekly", Priority: 1.0},
-		{Loc: s.config.BaseURL + "/articles", LastMod: time.Now(), ChangeFreq: "daily", Priority: 0.8},
+		{Loc: s.config.BaseURL + "/writing", LastMod: time.Now(), ChangeFreq: "daily", Priority: 0.8},
 		{Loc: s.config.BaseURL + "/tags", LastMod: time.Now(), ChangeFreq: "weekly", Priority: 0.6},
 		{Loc: s.config.BaseURL + "/categories", LastMod: time.Now(), ChangeFreq: "weekly", Priority: 0.6},
 	}
@@ -135,7 +135,7 @@ func (s *Service) GenerateSitemap() (string, error) {
 	for _, a := range allArticles {
 		if !a.Draft {
 			urls = append(urls, models.SitemapURL{
-				Loc:        s.config.BaseURL + "/articles/" + a.Slug,
+				Loc:        s.config.BaseURL + "/writing/" + a.Slug,
 				LastMod:    a.Date,
 				ChangeFreq: "monthly",
 				Priority:   0.7,

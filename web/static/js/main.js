@@ -70,7 +70,7 @@
       const linkPath = new URL(link.href).pathname;
       if (
         linkPath === currentPath ||
-        (currentPath.startsWith("/articles/") && linkPath === "/articles") ||
+        (currentPath.startsWith("/writing/") && linkPath === "/writing") ||
         (currentPath.startsWith("/tags/") && linkPath === "/tags") ||
         (currentPath.startsWith("/categories/") && linkPath === "/categories")
       ) {
@@ -79,20 +79,22 @@
     });
 
     // Simple navbar scroll behavior - just add shadow
-    const handleNavbarScroll = throttle(function () {
-      const currentScrollY = window.scrollY;
-
-      if (navbar) {
-        // Add shadow when scrolled
-        if (currentScrollY > 50) {
-          navbar.classList.add("scrolled");
-        } else {
-          navbar.classList.remove("scrolled");
-        }
+    var scrollTicking = false;
+    window.addEventListener("scroll", function () {
+      if (!scrollTicking) {
+        requestAnimationFrame(function () {
+          if (navbar) {
+            if (window.scrollY > 50) {
+              navbar.classList.add("scrolled");
+            } else {
+              navbar.classList.remove("scrolled");
+            }
+          }
+          scrollTicking = false;
+        });
+        scrollTicking = true;
       }
-    }, 16);
-
-    window.addEventListener("scroll", handleNavbarScroll, { passive: true });
+    }, { passive: true });
   }
 
   /**
@@ -322,108 +324,112 @@
   }
 
   /**
-   * Login popover — triggered by nav button or auto-opened on protected pages
+   * Login — handles both the nav popover (public pages) and inline auth gate (protected pages).
+   * Both forms share the .login-form class and POST to /login via fetch.
    */
   function initLoginPopover() {
+    // Attach fetch-based submit to all login forms (popover + auth gate)
+    var forms = document.querySelectorAll(".login-form");
+    forms.forEach(function (form) {
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var errorEl = form.querySelector(".login-error");
+        if (errorEl) {
+          errorEl.hidden = true;
+          errorEl.textContent = "";
+        }
+
+        var submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
+        fetch("/login", {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          body: new FormData(form),
+          credentials: "same-origin",
+        })
+          .then(function (res) {
+            if (res.status === 403) {
+              throw new Error("Session expired. Please refresh the page and try again.");
+            }
+            if (res.status === 429) {
+              throw new Error("Too many attempts. Please wait and try again.");
+            }
+            return res.json().then(
+              function (data) { return { ok: res.ok, data: data }; },
+              function () { throw new Error("Server error. Please refresh the page."); }
+            );
+          })
+          .then(function (result) {
+            if (result.data.success) {
+              window.location.href = result.data.redirect || window.location.pathname;
+            } else {
+              if (errorEl) {
+                errorEl.textContent = result.data.error || "Login failed.";
+                errorEl.hidden = false;
+              }
+              if (submitBtn) submitBtn.disabled = false;
+            }
+          })
+          .catch(function (err) {
+            if (errorEl) {
+              errorEl.textContent = err.message || "Network error. Please try again.";
+              errorEl.hidden = false;
+            }
+            if (submitBtn) submitBtn.disabled = false;
+          });
+      });
+    });
+
+    // Auto-focus the inline auth gate form (protected pages)
+    var authGateInput = document.querySelector(".auth-gate-form input[name='username']");
+    if (authGateInput) {
+      authGateInput.focus();
+    }
+
+    // Nav popover toggle (public pages only)
     var popover = document.getElementById("login-popover");
     var trigger = document.querySelector(".login-trigger");
-    var form = document.getElementById("login-form");
-    var errorEl = document.getElementById("login-error");
-
-    if (!popover || !form) return;
+    if (!popover || !trigger) return;
 
     function openPopover() {
       popover.hidden = false;
-      var firstInput = form.querySelector('input[name="username"]');
+      var firstInput = popover.querySelector('input[name="username"]');
       if (firstInput) firstInput.focus();
     }
 
     function closePopover() {
       popover.hidden = true;
+      var errorEl = popover.querySelector(".login-error");
       if (errorEl) {
         errorEl.hidden = true;
         errorEl.textContent = "";
       }
     }
 
-    // Toggle on trigger click
-    if (trigger) {
-      trigger.addEventListener("click", function (e) {
-        e.stopPropagation();
-        if (popover.hidden) {
-          openPopover();
-        } else {
-          closePopover();
-        }
-      });
-    }
+    trigger.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (popover.hidden) {
+        openPopover();
+      } else {
+        closePopover();
+      }
+    });
 
-    // Auto-open on protected pages
-    if (document.body.dataset.authRequired === "true") {
-      openPopover();
-    }
-
-    // Close on Escape
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && !popover.hidden) {
         closePopover();
       }
     });
 
-    // Close on click outside
     document.addEventListener("click", function (e) {
       if (!popover.hidden && !popover.contains(e.target) && e.target !== trigger) {
         closePopover();
       }
     });
 
-    // Prevent clicks inside popover from closing it
     popover.addEventListener("click", function (e) {
       e.stopPropagation();
-    });
-
-    // Handle form submit via fetch
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
-      if (errorEl) {
-        errorEl.hidden = true;
-        errorEl.textContent = "";
-      }
-
-      var submitBtn = form.querySelector('button[type="submit"]');
-      if (submitBtn) submitBtn.disabled = true;
-
-      var formData = new FormData(form);
-
-      fetch("/login", {
-        method: "POST",
-        headers: { Accept: "application/json" },
-        body: formData,
-        credentials: "same-origin",
-      })
-        .then(function (res) {
-          return res.json().then(function (data) {
-            return { ok: res.ok, data: data };
-          });
-        })
-        .then(function (result) {
-          if (result.data.success) {
-            window.location.href = result.data.redirect || "/admin";
-          } else {
-            if (errorEl) {
-              errorEl.textContent = result.data.error || "Login failed.";
-              errorEl.hidden = false;
-            }
-            if (submitBtn) submitBtn.disabled = false;
-          }
-        })
-        .catch(function () {
-          if (errorEl) {
-            errorEl.textContent = "Network error. Please try again.";
-            errorEl.hidden = false;
-          }
-          if (submitBtn) submitBtn.disabled = false;
-        });
     });
   }
 
@@ -580,80 +586,4 @@
     }
   }
 
-  /**
-   * Show message to user
-   */
-  function showMessage(text, type = "info") {
-    const message = document.createElement("div");
-    message.className = `message message-${type}`;
-    message.textContent = text;
-
-    // Style the message
-    Object.assign(message.style, {
-      position: "fixed",
-      top: "20px",
-      right: "20px",
-      padding: "12px 20px",
-      borderRadius: "8px",
-      color: "white",
-      fontWeight: "500",
-      zIndex: "9999",
-      maxWidth: "400px",
-      opacity: "0",
-      transform: "translateX(100%)",
-      transition: "all 0.3s ease",
-    });
-
-    // Set background color from design tokens with hardcoded fallbacks
-    const style = getComputedStyle(document.documentElement);
-    const colors = {
-      success: ['--color-success', '#10b981'],
-      error:   ['--color-error',   '#ef4444'],
-      warning: ['--color-warning', '#f59e0b'],
-    };
-    const [cssVar, fallback] = colors[type] || ['--color-primary', '#2563eb'];
-    message.style.backgroundColor = style.getPropertyValue(cssVar).trim() || fallback;
-
-    document.body.appendChild(message);
-
-    // Animate in
-    setTimeout(() => {
-      message.style.opacity = "1";
-      message.style.transform = "translateX(0)";
-    }, 100);
-
-    // Remove after 5 seconds
-    setTimeout(() => {
-      message.style.opacity = "0";
-      message.style.transform = "translateX(100%)";
-      setTimeout(() => {
-        if (message.parentElement) {
-          message.parentElement.removeChild(message);
-        }
-      }, 300);
-    }, 5000);
-  }
-
-  /**
-   * Throttle function
-   */
-  function throttle(func, limit) {
-    let inThrottle;
-    return function () {
-      const args = arguments;
-      const context = this;
-      if (!inThrottle) {
-        func.apply(context, args);
-        inThrottle = true;
-        setTimeout(() => (inThrottle = false), limit);
-      }
-    };
-  }
-
-  // Make utility functions globally available
-  window.markgo = {
-    copyToClipboard,
-    showMessage,
-    throttle,
-  };
 })();

@@ -90,10 +90,10 @@ func TestArticleBySlug(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			base, svc := createTestBase()
 			router := gin.New()
-			router.GET("/articles/:slug", NewPostHandler(base, svc).Article)
+			router.GET("/writing/:slug", NewPostHandler(base, svc).Article)
 
 			w := httptest.NewRecorder()
-			router.ServeHTTP(w, httptest.NewRequest("GET", "/articles/"+tt.slug, http.NoBody))
+			router.ServeHTTP(w, httptest.NewRequest("GET", "/writing/"+tt.slug, http.NoBody))
 
 			if tt.slug == "" {
 				assert.True(t, w.Code == http.StatusBadRequest || w.Code == http.StatusNotFound)
@@ -120,10 +120,10 @@ func TestArticlesListing(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			base, svc := createTestBase()
 			router := gin.New()
-			router.GET("/articles", NewPostHandler(base, svc).Articles)
+			router.GET("/writing", NewPostHandler(base, svc).Articles)
 
 			w := httptest.NewRecorder()
-			router.ServeHTTP(w, httptest.NewRequest("GET", "/articles"+tt.query, http.NoBody))
+			router.ServeHTTP(w, httptest.NewRequest("GET", "/writing"+tt.query, http.NoBody))
 			assert.Equal(t, http.StatusOK, w.Code)
 		})
 	}

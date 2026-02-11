@@ -16,7 +16,7 @@ Disallow: /*?*
 Disallow: /search?
 
 # Allow important pages
-Allow: /articles/
+Allow: /writing/
 Allow: /tags/
 Allow: /categories/
 Allow: /feed.xml

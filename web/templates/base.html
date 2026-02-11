@@ -18,7 +18,7 @@
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="{{ if .article }}article{{ else }}website{{ end }}">
-    <meta property="og:url" content="{{ .config.BaseURL }}{{ if .article }}/articles/{{ .article.Slug }}{{ end }}">
+    <meta property="og:url" content="{{ .config.BaseURL }}{{ if .article }}/writing/{{ .article.Slug }}{{ end }}">
     <meta property="og:title" content="{{ if .title }}{{ .title }}{{ else }}{{ .config.Blog.Title }}{{ end }}">
     <meta property="og:description" content="{{ if .description }}{{ .description }}{{ else if .article }}{{ .article.Excerpt }}{{ else }}{{ .config.Blog.Description }}{{ end }}">
     <meta property="og:site_name" content="{{ .config.Blog.Title }}">
@@ -36,7 +36,7 @@
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="{{ .config.BaseURL }}{{ if .article }}/articles/{{ .article.Slug }}{{ end }}">
+    <meta name="twitter:url" content="{{ .config.BaseURL }}{{ if .article }}/writing/{{ .article.Slug }}{{ end }}">
     <meta name="twitter:title" content="{{ if .title }}{{ .title }}{{ else }}{{ .config.Blog.Title }}{{ end }}">
     <meta name="twitter:description" content="{{ if .description }}{{ .description }}{{ else if .article }}{{ .article.Excerpt }}{{ else }}{{ .config.Blog.Description }}{{ end }}">
     {{ if .article }}
@@ -148,7 +148,7 @@
     <link rel="alternate" type="application/feed+json" title="{{ .config.Blog.Title }} - JSON Feed" href="/feed.json">
 
     <!-- Canonical URL -->
-    <link rel="canonical" href="{{ .config.BaseURL }}{{ if .article }}/articles/{{ .article.Slug }}{{ end }}">
+    <link rel="canonical" href="{{ .config.BaseURL }}{{ if .article }}/writing/{{ .article.Slug }}{{ end }}">
 
     <!-- Stylesheets -->
     <link rel="stylesheet" href="/static/css/fonts.css">
@@ -157,7 +157,7 @@
     {{ if .config.Blog.Style }}<link rel="stylesheet" href="/static/css/themes/{{ .config.Blog.Style }}.css">{{ end }}
 
     {{ $tpl := .template }}
-    {{ if eq $tpl "feed" "articles" "search" "tag" "category" "admin_home" "drafts" }}<link rel="stylesheet" href="/static/css/cards.css">{{ end }}
+    {{ if eq $tpl "feed" "search" "tag" "category" "admin_home" "drafts" }}<link rel="stylesheet" href="/static/css/cards.css">{{ end }}
 
     <!-- Template-specific CSS -->
     {{ if eq $tpl "404" }}<link rel="stylesheet" href="/static/css/404.css">{{ end }}
@@ -206,7 +206,7 @@
     {{- else if eq $tpl "admin_home" -}}admin-dashboard-page
     {{- else if eq $tpl "drafts" -}}drafts-page
     {{- else if eq $tpl "404" -}}error-page
-    {{- end -}}"{{ if .auth_required }} data-auth-required="true"{{ end }}>
+    {{- end -}}">
     <!-- Header -->
     <header class="site-header">
         <nav class="navbar">
@@ -221,7 +221,7 @@
                 <div class="navbar-menu" id="navbar-menu">
                     <ul class="navbar-nav">
                         <li class="nav-item">
-                            <a href="/articles" class="nav-link">Writing</a>
+                            <a href="/writing" class="nav-link">Writing</a>
                         </li>
                         <li class="nav-item">
                             <a href="/about" class="nav-link">About</a>
@@ -256,13 +256,13 @@
                             <path d="M11 1a2 2 0 0 0-2 2v4a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h8zm-3 9a1 1 0 1 0-2 0v3h2v-3z"/>
                         </svg>
                     </a>
-                    {{ else }}
+                    {{ else }}{{ if .auth_required }}{{ else }}
                     <button class="nav-action-btn login-trigger" aria-label="Sign in" title="Sign in">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
                         </svg>
                     </button>
-                    {{ end }}
+                    {{ end }}{{ end }}
                     {{ end }}
                     <button class="theme-toggle" aria-label="Switch to dark mode" title="Toggle theme">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -276,18 +276,18 @@
                     </button>
                 </div>
                 {{ if and (ne .config.Admin.Username "") (ne .config.Admin.Password "") }}
-                {{ if .authenticated }}{{ else }}
+                {{ if .authenticated }}{{ else }}{{ if .auth_required }}{{ else }}
                 <div class="login-popover" id="login-popover" hidden>
-                    <form class="login-popover-form" id="login-form">
+                    <form class="login-popover-form login-form">
                         <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
                         <input type="hidden" name="next" value="{{ .login_next }}">
                         <input type="text" name="username" class="login-popover-input" placeholder="Username" autocomplete="username" required>
                         <input type="password" name="password" class="login-popover-input" placeholder="Password" autocomplete="current-password" required>
                         <button type="submit" class="login-popover-submit">Sign in</button>
-                        <div class="login-popover-error" id="login-error" hidden></div>
+                        <div class="login-error" hidden></div>
                     </form>
                 </div>
-                {{ end }}
+                {{ end }}{{ end }}
                 {{ end }}
             </div>
         </nav>
@@ -296,6 +296,26 @@
     <!-- Main Content -->
     <main class="main-content">
         {{ $tpl := .template | default "feed" }}
+        {{ if .auth_required }}
+        <div class="auth-gate">
+            <div class="auth-gate-card">
+                <div class="auth-gate-lock">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                    </svg>
+                </div>
+                <h2 class="auth-gate-title" id="auth-gate-title">Sign in to continue</h2>
+                <form class="auth-gate-form login-form" id="auth-gate-form" aria-labelledby="auth-gate-title">
+                    <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
+                    <input type="hidden" name="next" value="{{ .login_next }}">
+                    <input type="text" name="username" class="auth-gate-input" placeholder="Username" autocomplete="username" required>
+                    <input type="password" name="password" class="auth-gate-input" placeholder="Password" autocomplete="current-password" required>
+                    <button type="submit" class="auth-gate-submit">Sign in</button>
+                    <div class="login-error" hidden></div>
+                </form>
+            </div>
+        </div>
+        {{ else }}
         {{ if eq $tpl "feed" }}{{ template "feed-content" . }}{{ end }}
         {{ if eq $tpl "compose" }}{{ template "compose-content" . }}{{ end }}
         {{ if eq $tpl "articles" }}{{ template "articles-content" . }}{{ end }}
@@ -311,6 +331,7 @@
         {{ if eq $tpl "admin_home" }}{{ template "admin_home-content" . }}{{ end }}
         {{ if eq $tpl "drafts" }}{{ template "drafts-content" . }}{{ end }}
         {{ if eq $tpl "404" }}{{ template "404-content" . }}{{ end }}
+        {{ end }}
     </main>
 
     <!-- Footer -->
@@ -321,7 +342,7 @@
                 <a href="/tags" class="footer-link">Tags</a>
                 <a href="/categories" class="footer-link">Categories</a>
                 <a href="/contact" class="footer-link">Contact</a>
-                <a href="/articles" class="footer-link">Writing</a>
+                <a href="/writing" class="footer-link">Writing</a>
             </nav>
             <p class="footer-colophon">
                 &copy; {{ now.Year }} {{ .config.Blog.Author }} · Written in Markdown, published with <a href="https://github.com/vnykmshr/markgo" target="_blank" rel="noopener">MarkGo</a> · <span class="footer-version">{{ .app_version }}</span>

@@ -57,3 +57,21 @@ func (h *SyndicationHandler) Sitemap(c *gin.Context) {
 	c.Header("Content-Type", "application/xml; charset=utf-8")
 	c.String(http.StatusOK, data)
 }
+
+// RobotsTxt serves a dynamically generated robots.txt using the configured BASE_URL.
+func (h *SyndicationHandler) RobotsTxt(c *gin.Context) {
+	if h.seoService == nil || !h.seoService.IsEnabled() {
+		c.String(http.StatusOK, "User-agent: *\nAllow: /\n")
+		return
+	}
+
+	data, err := h.seoService.GenerateRobotsTxt()
+	if err != nil {
+		h.logger.Error("Failed to generate robots.txt, serving permissive fallback", "error", err)
+		c.String(http.StatusOK, "User-agent: *\nAllow: /\n")
+		return
+	}
+
+	c.Header("Content-Type", "text/plain; charset=utf-8")
+	c.String(http.StatusOK, string(data))
+}

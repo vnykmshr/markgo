@@ -4,53 +4,51 @@
         <!-- Page Header -->
         <header class="page-header">
             <h1 class="page-title">Writing</h1>
-            <p class="page-subtitle">{{ .pagination.TotalItems }} posts</p>
+            <p class="page-subtitle">{{ .pagination.TotalItems }} articles</p>
         </header>
 
-        <!-- Articles Stream -->
+        <!-- Article List -->
         {{ if .articles }}
-        <div class="card-stream">
+        <ul class="article-list">
             {{ range .articles }}
-                {{ if eq .Type "thought" }}
-                    {{ template "card-thought" . }}
-                {{ else if eq .Type "link" }}
-                    {{ template "card-link" . }}
-                {{ else }}
-                    {{ template "card-article" . }}
-                {{ end }}
+            <li class="article-list-item">
+                <a href="/writing/{{ .Slug }}" class="article-list-link">{{ .Title }}</a>
+                <time class="article-list-date" datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">{{ .Date.Format "Jan 2, 2006" }}</time>
+            </li>
             {{ end }}
-        </div>
+        </ul>
 
         <!-- Pagination -->
         {{ if or .pagination.HasPrevious .pagination.HasNext }}
         <nav class="simple-pagination" aria-label="Articles pagination">
             {{ if .pagination.HasPrevious }}
-            <a href="/articles?page={{ .pagination.PreviousPage }}" class="simple-pagination-link">← Newer</a>
+            <a href="/writing?page={{ .pagination.PreviousPage }}" class="simple-pagination-link">← Newer</a>
             {{ end }}
             <span class="pagination-info">Page {{ .pagination.CurrentPage }} of {{ .pagination.TotalPages }}</span>
             {{ if .pagination.HasNext }}
-            <a href="/articles?page={{ .pagination.NextPage }}" class="simple-pagination-link">Older →</a>
+            <a href="/writing?page={{ .pagination.NextPage }}" class="simple-pagination-link">Older →</a>
             {{ end }}
         </nav>
         {{ end }}
 
         {{ else }}
         <div class="articles-empty">
-            <h3>No posts yet</h3>
+            <h3>No articles yet</h3>
             <p>Nothing here yet.</p>
         </div>
         {{ end }}
     </div>
 </div>
 
+{{ if .articles }}
 <!-- Structured Data -->
 <script type="application/ld+json">
 {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     "name": "Writing",
-    "description": "All posts on {{ .config.Blog.Title }}",
-    "url": "{{ .config.BaseURL }}/articles",
+    "description": "Articles from {{ .config.Blog.Title }}",
+    "url": "{{ .config.BaseURL }}/writing",
     "mainEntity": {
         "@type": "ItemList",
         "numberOfItems": {{ .pagination.TotalItems }},
@@ -62,7 +60,7 @@
                 "position": {{ add $index 1 }},
                 "headline": "{{ displayTitle $article }}",
                 "description": "{{ $article.Excerpt }}",
-                "url": "{{ $.config.BaseURL }}/articles/{{ $article.Slug }}",
+                "url": "{{ $.config.BaseURL }}/writing/{{ $article.Slug }}",
                 "datePublished": "{{ $article.Date.Format "2006-01-02T15:04:05Z07:00" }}",
                 "author": {
                     "@type": "Person",
@@ -76,17 +74,18 @@
 }
 </script>
 {{ end }}
+{{ end }}
 
 {{ define "articles-head" }}
-<meta name="description" content="All posts on {{ .config.Blog.Title }}.">
-<meta name="keywords" content="blog, posts, technology, programming, {{ .config.Blog.Author }}">
+<meta name="description" content="Articles from {{ .config.Blog.Title }}.">
+<meta name="keywords" content="blog, articles, writing, {{ .config.Blog.Author }}">
 
 <!-- Pagination meta tags -->
 {{ if .pagination.HasPrevious }}
-<link rel="prev" href="{{ .config.BaseURL }}/articles?page={{ .pagination.PreviousPage }}">
+<link rel="prev" href="{{ .config.BaseURL }}/writing?page={{ .pagination.PreviousPage }}">
 {{ end }}
 {{ if .pagination.HasNext }}
-<link rel="next" href="{{ .config.BaseURL }}/articles?page={{ .pagination.NextPage }}">
+<link rel="next" href="{{ .config.BaseURL }}/writing?page={{ .pagination.NextPage }}">
 {{ end }}
 
 {{ end }}

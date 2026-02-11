@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"log/slog"
 	"net/http"
-	"net/url"
 	"sync"
 	"time"
 
@@ -91,8 +90,7 @@ func (s *SessionStore) Delete(token string) {
 }
 
 // SessionAuth provides session-based authentication middleware.
-// Redirects unauthenticated GET requests to /login with a ?next= parameter.
-// Returns 401 for unauthenticated non-GET requests.
+// Returns 401 for all unauthenticated requests.
 func SessionAuth(store *SessionStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := c.Cookie(sessionCookieName)
@@ -107,15 +105,9 @@ func SessionAuth(store *SessionStore) gin.HandlerFunc {
 			c.SetCookie(sessionCookieName, "", -1, "/", "", false, true)
 		}
 
-		// Not authenticated
-		if c.Request.Method == http.MethodGet {
-			next := c.Request.URL.RequestURI()
-			c.Redirect(http.StatusFound, "/login?next="+url.QueryEscape(next))
-			c.Abort()
-			return
-		}
-
-		slog.Warn("Unauthenticated non-GET request", "method", c.Request.Method, "path", c.Request.URL.Path)
+		// Not authenticated — return 401 for all methods.
+		// Debug/API routes use this middleware; there is no dedicated login page to redirect to.
+		slog.Warn("Unauthenticated request", "method", c.Request.Method, "path", c.Request.URL.Path)
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
 }
@@ -144,6 +136,9 @@ func SoftSessionAuth(store *SessionStore, secureCookie bool) gin.HandlerFunc {
 			c.Set("auth_required", true)
 			// Generate CSRF token for the login popover form
 			GenerateCSRFToken(c, secureCookie)
+			if c.IsAborted() {
+				return
+			}
 			c.Next()
 			return
 		}
@@ -154,9 +149,12 @@ func SoftSessionAuth(store *SessionStore, secureCookie bool) gin.HandlerFunc {
 }
 
 // GenerateCSRFToken creates a CSRF token, sets it as a cookie, and stores it in gin context.
+// Aborts with 500 if token generation fails (crypto/rand failure is a system emergency).
 func GenerateCSRFToken(c *gin.Context, secureCookie bool) {
 	token := generateCSRFToken()
 	if token == "" {
+		slog.Error("CSRF token generation failed — aborting request")
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	c.SetSameSite(http.SameSiteStrictMode)

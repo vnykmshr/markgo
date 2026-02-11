@@ -170,7 +170,7 @@ func (h *ComposeHandler) HandleEdit(c *gin.Context) {
 
 	// Redirect to the edited article, or feed if reload failed (stale cache would show old version)
 	if reloadOK {
-		c.Redirect(http.StatusSeeOther, "/articles/"+slug)
+		c.Redirect(http.StatusSeeOther, "/writing/"+slug)
 	} else {
 		c.Redirect(http.StatusSeeOther, "/")
 	}
@@ -227,7 +227,7 @@ func (h *ComposeHandler) HandleSubmit(c *gin.Context) {
 	if !reloadOK || input.Title == "" {
 		c.Redirect(http.StatusSeeOther, "/")
 	} else {
-		c.Redirect(http.StatusSeeOther, "/articles/"+slug)
+		c.Redirect(http.StatusSeeOther, "/writing/"+slug)
 	}
 }
 

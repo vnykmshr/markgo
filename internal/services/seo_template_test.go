@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	testArticleURL = "https://example.com/articles/test"
+	testArticleURL = "https://example.com/writing/test"
 )
 
 func TestGenerateJsonLD(t *testing.T) {
@@ -179,7 +179,7 @@ func TestBuildURL(t *testing.T) {
 	fn := buildURL.(func(string, string) string)
 
 	// Test relative path
-	result := fn("https://example.com", "/articles/test")
+	result := fn("https://example.com", "/writing/test")
 	expected := testArticleURL
 	if result != expected {
 		t.Errorf("Expected %s, got %s", expected, result)
@@ -193,14 +193,14 @@ func TestBuildURL(t *testing.T) {
 	}
 
 	// Test path without leading slash
-	result = fn("https://example.com", "articles/test")
+	result = fn("https://example.com", "writing/test")
 	expected = testArticleURL
 	if result != expected {
 		t.Errorf("Expected %s, got %s", expected, result)
 	}
 
 	// Test base URL with trailing slash
-	result = fn("https://example.com/", "/articles/test")
+	result = fn("https://example.com/", "/writing/test")
 	expected = testArticleURL
 	if result != expected {
 		t.Errorf("Expected %s, got %s", expected, result)
