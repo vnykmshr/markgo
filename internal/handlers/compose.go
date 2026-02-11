@@ -244,6 +244,14 @@ func (h *ComposeHandler) Preview(c *gin.Context) {
 		return
 	}
 
+	// Explicit length check catches oversized content that MaxBytesReader truncated
+	// (Gin silently returns empty PostForm on MaxBytesReader overflow, but if any
+	// content came through, check it hasn't been silently truncated)
+	if len(content) > maxPreviewBodySize {
+		c.String(http.StatusRequestEntityTooLarge, "Content too large for preview")
+		return
+	}
+
 	html, err := h.markdownRenderer.ProcessMarkdown(content)
 	if err != nil {
 		h.logger.Error("Preview render failed", "error", err)

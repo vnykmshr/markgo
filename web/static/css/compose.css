@@ -261,16 +261,14 @@
     .compose-cancel {
         text-align: left;
     }
-}
 
-/* On small screens (default mobile-first), toggle between textarea and preview.
-   On larger screens, both textarea and preview coexist. */
-.preview-visible .compose-textarea {
-    display: none;
-}
-
-@media (min-width: 481px) {
+    /* On larger screens, both textarea and preview coexist */
     .preview-visible .compose-textarea {
         display: block;
     }
+}
+
+/* On small screens (default mobile-first), toggle between textarea and preview */
+.preview-visible .compose-textarea {
+    display: none;
 }

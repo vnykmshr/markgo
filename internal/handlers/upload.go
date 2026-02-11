@@ -77,6 +77,11 @@ func (h *ComposeHandler) Upload(c *gin.Context) {
 	detectedType := http.DetectContentType(buf[:n])
 	ext, ok := allowedImageTypes[detectedType]
 	if !ok {
+		h.logger.Warn("Upload rejected: disallowed content type",
+			"detected_type", detectedType,
+			"filename", header.Filename,
+			"size", header.Size,
+		)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "File type not allowed. Supported: JPEG, PNG, GIF, WebP"})
 		return
 	}
@@ -135,7 +140,10 @@ func (h *ComposeHandler) Upload(c *gin.Context) {
 
 	// Make uploaded file world-readable (os.CreateTemp defaults to 0600)
 	if chmodErr := os.Chmod(destPath, 0o644); chmodErr != nil { //nolint:gosec // uploaded images must be readable by web server
-		h.logger.Error("Failed to chmod uploaded file", "error", chmodErr)
+		h.logger.Error("Failed to chmod uploaded file", "path", destPath, "error", chmodErr)
+		h.cleanupTempFile(destPath)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Upload failed"})
+		return
 	}
 
 	url := "/static/images/uploads/" + filename

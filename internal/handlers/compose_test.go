@@ -209,9 +209,10 @@ func TestPreview(t *testing.T) {
 
 		router.ServeHTTP(w, req)
 
-		// MaxBytesReader truncates the body; PostForm returns empty → 200 with empty body
-		// (Gin silently drops form fields when body is over limit)
-		assert.True(t, w.Code >= 200)
+		// MaxBytesReader truncates the body; Gin's PostForm returns empty string
+		// because form parsing fails on the truncated body → handler sees empty content → 200
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Empty(t, w.Body.String())
 	})
 
 	t.Run("renderer error returns 500", func(t *testing.T) {
