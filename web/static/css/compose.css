@@ -203,6 +203,43 @@
     color: var(--color-error-text);
 }
 
+/* Upload Controls */
+.compose-upload-btn {
+    padding: var(--spacing-1) var(--spacing-3);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.compose-upload-btn:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.upload-status {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    align-self: center;
+}
+
+.upload-status.upload-error {
+    color: var(--color-error-text);
+}
+
+.upload-status.upload-success {
+    color: var(--color-success, var(--color-primary));
+}
+
+/* Drag-over highlight on textarea */
+.compose-textarea-dragover {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
 /* ==========================================================================
    Responsive
    ========================================================================== */

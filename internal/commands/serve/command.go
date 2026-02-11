@@ -317,6 +317,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, cfg *config.Config, log
 			composeGroup.GET("/edit/:slug", h.Compose.ShowEdit)
 			composeGroup.POST("/edit/:slug", h.Compose.HandleEdit)
 			composeGroup.POST("/preview", h.Compose.Preview)
+			composeGroup.POST("/upload", h.Compose.Upload)
 		}
 	}
 

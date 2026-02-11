@@ -31,6 +31,9 @@
                 >{{ if .input }}{{ .input.Content }}{{ end }}</textarea>
                 <div class="compose-preview-controls">
                     <button type="button" class="compose-preview-btn" aria-pressed="false">Preview</button>
+                    <button type="button" class="compose-upload-btn">Upload Image</button>
+                    <input type="file" class="compose-file-input" accept="image/jpeg,image/png,image/gif,image/webp" hidden>
+                    <span class="upload-status"></span>
                 </div>
                 <div class="compose-preview-panel" aria-live="polite">
                     <div class="compose-preview-content article-content">
