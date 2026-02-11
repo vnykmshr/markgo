@@ -157,7 +157,7 @@
     {{ if .config.Blog.Style }}<link rel="stylesheet" href="/static/css/themes/{{ .config.Blog.Style }}.css">{{ end }}
 
     {{ $tpl := .template }}
-    {{ if eq $tpl "feed" "articles" "search" "tag" "category" "admin_home" }}<link rel="stylesheet" href="/static/css/cards.css">{{ end }}
+    {{ if eq $tpl "feed" "articles" "search" "tag" "category" "admin_home" "drafts" }}<link rel="stylesheet" href="/static/css/cards.css">{{ end }}
 
     <!-- Template-specific CSS -->
     {{ if eq $tpl "404" }}<link rel="stylesheet" href="/static/css/404.css">{{ end }}
@@ -186,6 +186,7 @@
     {{ if eq $tpl "tag" }}{{ template "tag-head" . }}{{ end }}
     {{ if eq $tpl "category" }}{{ template "category-head" . }}{{ end }}
     {{ if eq $tpl "admin_home" }}{{ template "admin_home-head" . }}{{ end }}
+    {{ if eq $tpl "drafts" }}{{ template "drafts-head" . }}{{ end }}
     {{ if eq $tpl "404" }}{{ template "404-head" . }}{{ end }}
 </head>
 <body class="{{- $tpl := .template | default "feed" -}}
@@ -202,6 +203,7 @@
     {{- else if eq $tpl "feed" -}}feed-page
     {{- else if eq $tpl "compose" -}}compose-page
     {{- else if eq $tpl "admin_home" -}}admin-dashboard-page
+    {{- else if eq $tpl "drafts" -}}drafts-page
     {{- else if eq $tpl "404" -}}error-page
     {{- end -}}">
     <!-- Header -->
@@ -277,6 +279,7 @@
         {{ if eq $tpl "categories" }}{{ template "categories-content" . }}{{ end }}
         {{ if eq $tpl "category" }}{{ template "category-content" . }}{{ end }}
         {{ if eq $tpl "admin_home" }}{{ template "admin_home-content" . }}{{ end }}
+        {{ if eq $tpl "drafts" }}{{ template "drafts-content" . }}{{ end }}
         {{ if eq $tpl "404" }}{{ template "404-content" . }}{{ end }}
     </main>
 

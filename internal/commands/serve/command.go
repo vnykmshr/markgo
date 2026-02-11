@@ -309,8 +309,8 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, cfg *config.Config, log
 		if h.Compose != nil {
 			composeGroup.GET("", h.Compose.ShowCompose)
 			composeGroup.POST("", h.Compose.HandleSubmit)
-			composeGroup.GET("/:slug", h.Compose.ShowEdit)
-			composeGroup.POST("/:slug", h.Compose.HandleEdit)
+			composeGroup.GET("/edit/:slug", h.Compose.ShowEdit)
+			composeGroup.POST("/edit/:slug", h.Compose.HandleEdit)
 		}
 	}
 
@@ -323,6 +323,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, cfg *config.Config, log
 			middleware.NoCache(),
 		)
 		adminGroup.GET("", h.Admin.AdminHome)
+		adminGroup.GET("/drafts", h.Admin.Drafts)
 		adminGroup.POST("/cache/clear", h.ClearCache)
 		adminGroup.GET("/stats", h.Admin.Stats)
 		adminGroup.POST("/articles/reload", h.Admin.ReloadArticles)
@@ -390,6 +391,7 @@ func setupTemplates(router *gin.Engine, templateService *services.TemplateServic
 	requiredTemplates := []string{
 		"base.html", "feed.html", "compose.html", "article.html", "articles.html",
 		"404.html", "contact.html", "search.html", "tags.html", "categories.html",
+		"drafts.html",
 	}
 
 	for _, tmplName := range requiredTemplates {

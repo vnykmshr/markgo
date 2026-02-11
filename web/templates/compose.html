@@ -17,7 +17,7 @@
         </div>
         {{ end }}
 
-        <form class="compose-form" method="POST" action="{{ if .editing }}/compose/{{ .slug }}{{ else }}/compose{{ end }}">
+        <form class="compose-form" method="POST" action="{{ if .editing }}/compose/edit/{{ .slug }}{{ else }}/compose{{ end }}">
             <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
             <div class="compose-field">
                 <label for="content" class="compose-label">Content <span class="compose-required">*</span></label>

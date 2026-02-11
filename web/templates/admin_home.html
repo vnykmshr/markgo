@@ -26,13 +26,13 @@
                     </div>
                 </div>
 
-                <div class="overview-card drafts-card">
+                <a href="/admin/drafts" class="overview-card drafts-card" style="text-decoration:none;color:inherit">
                     <div class="card-icon">📝</div>
                     <div class="card-content">
                         <h3>{{ .system_info.articles_drafts }}</h3>
                         <p>Drafts</p>
                     </div>
-                </div>
+                </a>
 
                 <div class="overview-card">
                     <div class="card-icon">⚡</div>
@@ -114,6 +114,10 @@
                 <a href="/admin/stats" class="quick-link">
                     <span class="link-icon">📊</span>
                     <span class="link-text">Statistics</span>
+                </a>
+                <a href="/admin/drafts" class="quick-link">
+                    <span class="link-icon">📝</span>
+                    <span class="link-text">Manage Drafts</span>
                 </a>
             </div>
         </div>

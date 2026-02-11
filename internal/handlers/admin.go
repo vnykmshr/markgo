@@ -263,6 +263,28 @@ func (h *AdminHandler) ReloadArticles(c *gin.Context) {
 	})
 }
 
+// Drafts handles the draft management page
+func (h *AdminHandler) Drafts(c *gin.Context) {
+	drafts := h.articleService.GetDraftArticles()
+
+	if h.shouldReturnJSON(c) {
+		c.JSON(http.StatusOK, gin.H{
+			"drafts":      drafts,
+			"draft_count": len(drafts),
+			"timestamp":   time.Now().Unix(),
+		})
+		return
+	}
+
+	data := h.buildBaseTemplateData("Drafts - " + h.config.Blog.Title)
+	data["description"] = "Manage draft articles"
+	data["template"] = "drafts"
+	data["drafts"] = drafts
+	data["draft_count"] = len(drafts)
+
+	h.renderHTML(c, http.StatusOK, "base.html", data)
+}
+
 // Uncached data generation methods
 
 func (h *AdminHandler) getStatsDataUncached() (map[string]any, error) {
