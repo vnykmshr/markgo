@@ -138,26 +138,6 @@ func (c *ServiceContainer) GetService() Service {
 	return c.compositeService
 }
 
-// GetRepository provides access to the repository layer
-func (c *ServiceContainer) GetRepository() Repository {
-	return c.repository
-}
-
-// GetContentProcessor provides access to content processing
-func (c *ServiceContainer) GetContentProcessor() ContentProcessor {
-	return c.contentProcessor
-}
-
-// GetSearchService provides access to search functionality
-func (c *ServiceContainer) GetSearchService() SearchService {
-	return c.searchService
-}
-
-// GetCacheCoordinator provides access to caching functionality
-func (c *ServiceContainer) GetCacheCoordinator() *CacheCoordinator {
-	return c.cacheCoordinator
-}
-
 // Health check methods
 
 // IsHealthy checks if all services are functioning properly

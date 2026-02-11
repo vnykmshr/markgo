@@ -370,10 +370,6 @@ ADMIN_PASSWORD=
 COMMENTS_ENABLED=false
 COMMENTS_PROVIDER=giscus
 
-# Analytics (Optional)
-ANALYTICS_ENABLED=false
-ANALYTICS_PROVIDER=
-
 # Development Settings
 TEMPLATE_HOT_RELOAD=%s
 DEBUG=%s
@@ -488,7 +484,7 @@ func createSampleArticles(dir string, config *BlogConfig) error {
 		"- Blog information (title, description, author)\n" +
 		"- Server settings (port, timeouts)\n" +
 		"- Email configuration for contact forms\n" +
-		"- Analytics and comments integration\n\n" +
+		"- Comments integration\n\n" +
 		"## Development Workflow\n\n" +
 		"1. Start the server: `markgo`\n" +
 		"2. Create content: `markgo new-article`\n" +
@@ -534,7 +530,7 @@ func createBasicTemplates(dir string, config *BlogConfig) error {
         <h1><a href="/">` + config.Title + `</a></h1>
         <nav>
             <a href="/">Home</a>
-            <a href="/articles">Articles</a>
+            <a href="/writing">Writing</a>
             <a href="/tags">Tags</a>
             <a href="/contact">Contact</a>
         </nav>

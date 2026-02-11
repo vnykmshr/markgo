@@ -81,14 +81,6 @@ type SearchResult struct {
 	MatchedFields []string `json:"matched_fields"`
 }
 
-// SearchResultPage represents a paginated search result
-type SearchResultPage struct {
-	Results    []*SearchResult `json:"results"`
-	Pagination *Pagination     `json:"pagination"`
-	Query      string          `json:"query"`
-	TotalTime  int64           `json:"total_time_ms"`
-}
-
 // ArticleList represents a simplified article for listing pages
 type ArticleList struct {
 	Slug        string    `json:"slug"`

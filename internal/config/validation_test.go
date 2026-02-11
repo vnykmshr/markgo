@@ -66,9 +66,6 @@ func TestConfigValidationTableDriven(t *testing.T) {
 				AllowedOrigins: []string{"http://localhost:3000"},
 				AllowedMethods: []string{"GET", "POST"},
 			},
-			Analytics: AnalyticsConfig{
-				Enabled: false,
-			},
 		}
 	}
 

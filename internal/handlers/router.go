@@ -87,11 +87,6 @@ func New(cfg *Config) *Router {
 	}
 }
 
-// Logger returns the logger instance (used by middleware).
-func (r *Router) Logger() *slog.Logger {
-	return r.logger
-}
-
 // AboutArticle handles the about page route by injecting the "about" slug.
 func (r *Router) AboutArticle(c *gin.Context) {
 	c.Params = append(c.Params, gin.Param{Key: "slug", Value: "about"})

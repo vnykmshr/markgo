@@ -146,11 +146,6 @@ func (a *ServiceAdapter) Shutdown() error {
 	return nil
 }
 
-// GetContainer provides access to the underlying container for advanced use cases
-func (a *ServiceAdapter) GetContainer() *ServiceContainer {
-	return a.container
-}
-
 // IsHealthy returns the health status of the service adapter
 func (a *ServiceAdapter) IsHealthy() bool {
 	return a.container.IsHealthy()
@@ -164,14 +159,4 @@ func (a *ServiceAdapter) GetHealthStatus() map[string]interface{} {
 // SearchArticles performs article search using the underlying service
 func (a *ServiceAdapter) SearchArticles(query string, limit int) []*models.SearchResult {
 	return a.service.SearchArticles(query, limit)
-}
-
-// SearchInTitle searches articles by title.
-func (a *ServiceAdapter) SearchInTitle(query string, limit int) []*models.SearchResult {
-	return a.service.SearchInTitle(query, limit)
-}
-
-// GetSearchSuggestions returns search suggestions.
-func (a *ServiceAdapter) GetSearchSuggestions(query string, limit int) []string {
-	return a.service.GetSearchSuggestions(query, limit)
 }
