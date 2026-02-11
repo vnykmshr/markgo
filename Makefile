@@ -25,7 +25,7 @@ LDFLAGS=-ldflags "-s -w \
 	-X 'github.com/vnykmshr/markgo/internal/constants.BuildTime=$(BUILD_TIME)'"
 BUILD_FLAGS=-trimpath
 
-.PHONY: help build build-all build-release clean test test-race coverage lint fmt run dev docker install tidy
+.PHONY: help build build-release clean test test-race coverage lint fmt run dev docker install tidy
 
 # Default target
 help: ## Show this help message
@@ -38,8 +38,6 @@ build: ## Build unified CLI binary (includes all commands)
 	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=0 $(GOBUILD) $(BUILD_FLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PATH)
 	@echo "✓ Build complete: $(BUILD_DIR)/$(BINARY_NAME)"
-
-build-all: build ## Alias for build (single unified binary)
 
 build-release: ## Build for all platforms (Linux, macOS, Windows)
 	@echo "Building release binaries..."
@@ -59,10 +57,9 @@ run: ## Run the server
 	@echo "Running $(BINARY_NAME)..."
 	$(GOCMD) run $(MAIN_PATH)
 
-dev: ## Run in development mode (restart manually for changes)
-	@echo "Starting development server..."
-	@echo "Note: Restart server manually to reload templates/config"
-	ENVIRONMENT=development $(GOCMD) run $(MAIN_PATH)
+dev: ## Run in development mode with live reload (requires: go install github.com/air-verse/air@latest)
+	@echo "Starting development server with live reload..."
+	ENVIRONMENT=development air -c .air.toml
 
 install: ## Install server binary to GOPATH/bin
 	@echo "Installing $(BINARY_NAME)..."

@@ -5,7 +5,7 @@ FROM golang:1.25.4-alpine AS development
 RUN apk add --no-cache ca-certificates git tzdata make
 
 # Install Air for hot reload
-RUN go install github.com/cosmtrek/air@latest
+RUN go install github.com/air-verse/air@latest
 
 # Install Delve for debugging (optional)
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
