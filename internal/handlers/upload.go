@@ -58,6 +58,7 @@ func (h *ComposeHandler) Upload(c *gin.Context) {
 
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
+		h.logger.Error("Upload FormFile error", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No file provided or file too large"})
 		return
 	}
@@ -67,6 +68,7 @@ func (h *ComposeHandler) Upload(c *gin.Context) {
 	buf := make([]byte, 512)
 	n, readErr := file.Read(buf)
 	if readErr != nil && readErr != io.EOF {
+		h.logger.Error("Upload file read error", "error", readErr)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read file"})
 		return
 	}
@@ -80,6 +82,7 @@ func (h *ComposeHandler) Upload(c *gin.Context) {
 
 	// Seek back to start after content detection
 	if _, seekErr := file.Seek(0, io.SeekStart); seekErr != nil {
+		h.logger.Error("Upload file seek error", "error", seekErr)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process file"})
 		return
 	}
@@ -127,6 +130,11 @@ func (h *ComposeHandler) Upload(c *gin.Context) {
 		h.logger.Error("Failed to rename uploaded file", "error", renameErr)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Upload failed"})
 		return
+	}
+
+	// Make uploaded file world-readable (os.CreateTemp defaults to 0600)
+	if chmodErr := os.Chmod(destPath, 0o644); chmodErr != nil { //nolint:gosec // uploaded images must be readable by web server
+		h.logger.Error("Failed to chmod uploaded file", "error", chmodErr)
 	}
 
 	url := "/static/images/uploads/" + filename

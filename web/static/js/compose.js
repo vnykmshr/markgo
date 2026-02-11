@@ -50,8 +50,8 @@
                 });
             }
         })
-        .catch(function () {
-            setPreviewHTML('<p class="preview-error">Preview unavailable</p>');
+        .catch(function (err) {
+            setPreviewHTML('<p class="preview-error">Preview unavailable' + (err.message ? ': ' + err.message : '') + '</p>');
         });
     }
 
@@ -127,7 +127,11 @@
             credentials: 'same-origin'
         })
         .then(function (res) {
-            if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || 'Upload failed'); });
+            if (!res.ok) {
+                return res.json()
+                    .catch(function () { throw new Error('Upload failed (server error)'); })
+                    .then(function (data) { throw new Error(data.error || 'Upload failed'); });
+            }
             return res.json();
         })
         .then(function (data) {

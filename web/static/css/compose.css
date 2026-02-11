@@ -263,9 +263,14 @@
     }
 }
 
-/* On small screens, toggle between textarea and preview (not split) */
-@media (max-width: 480px) {
+/* On small screens (default mobile-first), toggle between textarea and preview.
+   On larger screens, both textarea and preview coexist. */
+.preview-visible .compose-textarea {
+    display: none;
+}
+
+@media (min-width: 481px) {
     .preview-visible .compose-textarea {
-        display: none;
+        display: block;
     }
 }
