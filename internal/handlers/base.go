@@ -11,6 +11,7 @@ import (
 
 	"github.com/vnykmshr/markgo/internal/config"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
+	"github.com/vnykmshr/markgo/internal/middleware"
 	"github.com/vnykmshr/markgo/internal/models"
 	"github.com/vnykmshr/markgo/internal/services"
 )
@@ -100,11 +101,46 @@ func (h *BaseHandler) enhanceTemplateDataWithSEO(data map[string]any, path strin
 	h.enhanceWithSEO(data, seoType)
 }
 
+// injectAuthState copies authentication context values from gin context into template data.
+// Called from renderHTML so the nav login popover and auth gates render correctly on every page.
+func (h *BaseHandler) injectAuthState(c *gin.Context, data map[string]any) {
+	if authenticated, exists := c.Get("authenticated"); exists {
+		data["authenticated"] = authenticated
+	}
+	if authRequired, exists := c.Get("auth_required"); exists {
+		data["auth_required"] = authRequired
+	}
+
+	// Ensure a CSRF token exists for the login popover on every page where admin is configured.
+	// Protected pages get one from SoftSessionAuth/CSRF middleware, but public pages need one too.
+	if _, exists := c.Get("csrf_token"); !exists {
+		if h.config.Admin.Username != "" && h.config.Admin.Password != "" {
+			secureCookie := h.config.Environment != "development"
+			middleware.GenerateCSRFToken(c, secureCookie)
+		}
+	}
+	if csrfToken, exists := c.Get("csrf_token"); exists {
+		data["csrf_token"] = csrfToken
+	}
+
+	// On protected pages, redirect back after login. On public pages, go to /admin.
+	if _, isProtected := c.Get("auth_required"); isProtected {
+		data["login_next"] = c.Request.URL.RequestURI()
+	} else {
+		data["login_next"] = defaultRedirect
+	}
+}
+
 // renderHTML renders HTML template with common error handling
 func (h *BaseHandler) renderHTML(c *gin.Context, status int, template string, data any) {
 	if h.shouldReturnJSON(c) {
 		c.JSON(status, data)
 		return
+	}
+
+	// Inject auth state into template data for nav popover rendering
+	if mapData, ok := data.(map[string]any); ok {
+		h.injectAuthState(c, mapData)
 	}
 
 	c.Status(status)

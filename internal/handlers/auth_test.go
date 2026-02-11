@@ -1,0 +1,153 @@
+package handlers
+
+import (
+	"encoding/json"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/middleware"
+)
+
+func TestSanitizeNext(t *testing.T) {
+	tests := []struct {
+		name string
+		next string
+		want string
+	}{
+		{"valid relative path", "/compose", "/compose"},
+		{"valid admin path", "/admin", "/admin"},
+		{"valid path with query", "/admin?tab=stats", "/admin?tab=stats"},
+		{"empty string", "", "/admin"},
+		{"absolute URL", "https://evil.com", "/admin"},
+		{"protocol-relative", "//evil.com", "/admin"},
+		{"no leading slash", "evil.com", "/admin"},
+		{"scheme in path", "/foo://bar", "/admin"},
+		{"javascript scheme", "javascript:alert(1)", "/admin"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := sanitizeNext(tt.next)
+			if got != tt.want {
+				t.Errorf("sanitizeNext(%q) = %q, want %q", tt.next, got, tt.want)
+			}
+		})
+	}
+}
+
+func newTestAuthHandler() *AuthHandler {
+	cfg := &config.Config{}
+	logger := slog.Default()
+	base := &BaseHandler{config: cfg, logger: logger}
+	store := middleware.NewSessionStore()
+	return NewAuthHandler(base, "admin", "secret", store, false)
+}
+
+func TestHandleLogin_JSON_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := newTestAuthHandler()
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	form := url.Values{
+		"username": {"admin"},
+		"password": {"secret"},
+		"next":     {"/compose"},
+		"_csrf":    {"token"},
+	}
+	c.Request = httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(form.Encode()))
+	c.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	c.Request.Header.Set("Accept", "application/json")
+
+	h.HandleLogin(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp map[string]any
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	assert.Equal(t, true, resp["success"])
+	assert.Equal(t, "/compose", resp["redirect"])
+}
+
+func TestHandleLogin_JSON_InvalidCreds(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := newTestAuthHandler()
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	form := url.Values{
+		"username": {"admin"},
+		"password": {"wrong"},
+	}
+	c.Request = httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(form.Encode()))
+	c.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	c.Request.Header.Set("Accept", "application/json")
+
+	h.HandleLogin(c)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+
+	var resp map[string]any
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	assert.Equal(t, false, resp["success"])
+	assert.Contains(t, resp["error"], "Invalid")
+}
+
+func TestHandleLogin_HTML_Redirect(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := newTestAuthHandler()
+
+	router := gin.New()
+	router.POST("/login", h.HandleLogin)
+
+	form := url.Values{
+		"username": {"admin"},
+		"password": {"secret"},
+		"next":     {"/admin"},
+	}
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	// No Accept: application/json — should redirect
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/admin", w.Header().Get("Location"))
+}
+
+func TestHandleLogout(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := newTestAuthHandler()
+
+	// Create a session first
+	token, err := h.sessionStore.Create("admin")
+	require.NoError(t, err)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/logout", http.NoBody)
+	c.Request.AddCookie(&http.Cookie{Name: "_session", Value: token})
+
+	h.HandleLogout(c)
+
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/", w.Header().Get("Location"))
+
+	// Session should be deleted
+	_, valid := h.sessionStore.Validate(token)
+	assert.False(t, valid)
+}

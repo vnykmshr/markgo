@@ -14,7 +14,7 @@
     var debounceTimer = null;
 
     // NOTE: innerHTML is used intentionally here to render server-rendered HTML
-    // from our markdown renderer. This is behind BasicAuth (admin-only), so
+    // from our markdown renderer. This is behind session auth (admin-only), so
     // self-XSS is an accepted known limitation — same as the article page.
     function setPreviewHTML(html) {
         previewContent.innerHTML = html; // nosemgrep: javascript.browser.security.innerHTML

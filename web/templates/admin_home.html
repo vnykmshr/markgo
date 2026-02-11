@@ -1,4 +1,9 @@
 {{ define "admin_home-content" }}
+{{ if .auth_required }}
+<div class="auth-required">
+    <p>Sign in to continue.</p>
+</div>
+{{ else }}
 <div class="admin-dashboard">
     <div class="container">
         <!-- Dashboard Header -->
@@ -145,6 +150,7 @@
     </div>
 </div>
 
+{{ end }}
 {{ end }}
 
 {{ define "admin_home-head" }}

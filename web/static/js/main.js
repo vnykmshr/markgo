@@ -19,6 +19,7 @@
     initSyntaxHighlighting();
     initSearchFunctionality();
     initThemeToggle();
+    initLoginPopover();
     initScrollBehavior();
     initLazyLoading();
   }
@@ -318,6 +319,112 @@
       icon.innerHTML = moonPath;
       themeToggle.setAttribute("aria-label", "Switch to dark mode");
     }
+  }
+
+  /**
+   * Login popover — triggered by nav button or auto-opened on protected pages
+   */
+  function initLoginPopover() {
+    var popover = document.getElementById("login-popover");
+    var trigger = document.querySelector(".login-trigger");
+    var form = document.getElementById("login-form");
+    var errorEl = document.getElementById("login-error");
+
+    if (!popover || !form) return;
+
+    function openPopover() {
+      popover.hidden = false;
+      var firstInput = form.querySelector('input[name="username"]');
+      if (firstInput) firstInput.focus();
+    }
+
+    function closePopover() {
+      popover.hidden = true;
+      if (errorEl) {
+        errorEl.hidden = true;
+        errorEl.textContent = "";
+      }
+    }
+
+    // Toggle on trigger click
+    if (trigger) {
+      trigger.addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (popover.hidden) {
+          openPopover();
+        } else {
+          closePopover();
+        }
+      });
+    }
+
+    // Auto-open on protected pages
+    if (document.body.dataset.authRequired === "true") {
+      openPopover();
+    }
+
+    // Close on Escape
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !popover.hidden) {
+        closePopover();
+      }
+    });
+
+    // Close on click outside
+    document.addEventListener("click", function (e) {
+      if (!popover.hidden && !popover.contains(e.target) && e.target !== trigger) {
+        closePopover();
+      }
+    });
+
+    // Prevent clicks inside popover from closing it
+    popover.addEventListener("click", function (e) {
+      e.stopPropagation();
+    });
+
+    // Handle form submit via fetch
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (errorEl) {
+        errorEl.hidden = true;
+        errorEl.textContent = "";
+      }
+
+      var submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+
+      var formData = new FormData(form);
+
+      fetch("/login", {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: formData,
+        credentials: "same-origin",
+      })
+        .then(function (res) {
+          return res.json().then(function (data) {
+            return { ok: res.ok, data: data };
+          });
+        })
+        .then(function (result) {
+          if (result.data.success) {
+            window.location.href = result.data.redirect || "/admin";
+          } else {
+            if (errorEl) {
+              errorEl.textContent = result.data.error || "Login failed.";
+              errorEl.hidden = false;
+            }
+            if (submitBtn) submitBtn.disabled = false;
+          }
+        })
+        .catch(function () {
+          if (errorEl) {
+            errorEl.textContent = "Network error. Please try again.";
+            errorEl.hidden = false;
+          }
+          if (submitBtn) submitBtn.disabled = false;
+        });
+    });
   }
 
   /**

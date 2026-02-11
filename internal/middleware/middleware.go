@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -188,9 +189,19 @@ func generateRequestID() string {
 	return base64.URLEncoding.EncodeToString(bytes)
 }
 
-// Logger provides basic request logging
+// Logger provides basic request logging.
+// Static asset requests are demoted to debug level to reduce log noise.
 func Logger(logger *slog.Logger) gin.HandlerFunc {
 	return gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+		if strings.HasPrefix(param.Path, "/static/") || param.Path == "/favicon.ico" {
+			logger.Debug("Request",
+				"method", param.Method,
+				"path", param.Path,
+				"status", param.StatusCode,
+				"duration", param.Latency,
+			)
+			return ""
+		}
 		logger.Info("Request",
 			"method", param.Method,
 			"path", param.Path,
@@ -219,13 +230,6 @@ func RequestTracker() gin.HandlerFunc {
 	}
 }
 
-// BasicAuth provides basic HTTP authentication
-func BasicAuth(username, password string) gin.HandlerFunc {
-	return gin.BasicAuth(gin.Accounts{
-		username: password,
-	})
-}
-
 // NoCache adds no-cache headers
 func NoCache() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -238,7 +242,7 @@ func NoCache() gin.HandlerFunc {
 
 // RecoveryWithErrorHandler provides recovery with error handling for all panic types
 func RecoveryWithErrorHandler(logger *slog.Logger) gin.HandlerFunc {
-	return gin.RecoveryWithWriter(gin.DefaultWriter, func(c *gin.Context, recovered interface{}) {
+	return gin.RecoveryWithWriter(gin.DefaultWriter, func(c *gin.Context, recovered any) {
 		switch v := recovered.(type) {
 		case string:
 			logger.Error("Panic recovered", "error", v)

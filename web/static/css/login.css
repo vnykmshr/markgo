@@ -1,0 +1,95 @@
+/* Login Popover — compact dropdown from nav bar */
+
+.login-popover {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 1000;
+    width: 280px;
+    margin-top: var(--spacing-2);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    padding: var(--spacing-4);
+}
+
+.login-popover-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+}
+
+.login-popover-input {
+    width: 100%;
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--text-sm);
+    font-family: inherit;
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: border-color 0.15s ease;
+    box-sizing: border-box;
+}
+
+.login-popover-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-alpha, rgba(59, 130, 246, 0.15));
+}
+
+.login-popover-submit {
+    width: 100%;
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--color-bg);
+    background: var(--color-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.login-popover-submit:hover {
+    opacity: 0.9;
+}
+
+.login-popover-submit:active {
+    opacity: 0.8;
+}
+
+.login-popover-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.login-popover-error {
+    font-size: var(--text-xs);
+    color: var(--color-error, #dc2626);
+    background: var(--color-error-bg, rgba(220, 38, 38, 0.08));
+    border: 1px solid var(--color-error, #dc2626);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-2) var(--spacing-3);
+    margin: 0;
+}
+
+/* Auth Required — centered message for gated content */
+
+.auth-required {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40vh;
+    padding: var(--spacing-6) var(--spacing-4);
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-size: var(--text-lg);
+}
+
+/* Ensure popover container is positioned */
+.navbar .container {
+    position: relative;
+}

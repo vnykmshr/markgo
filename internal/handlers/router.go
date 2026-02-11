@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/middleware"
 	"github.com/vnykmshr/markgo/internal/services"
 	"github.com/vnykmshr/markgo/internal/services/compose"
 )
@@ -28,6 +29,8 @@ type Config struct {
 	SEOService       services.SEOServiceInterface
 	ComposeService   *compose.Service
 	MarkdownRenderer MarkdownRenderer
+	SessionStore     *middleware.SessionStore
+	SecureCookie     bool
 	Config           *config.Config
 	Logger           *slog.Logger
 	BuildInfo        *BuildInfo
@@ -44,6 +47,7 @@ type Router struct {
 	Contact     *ContactHandler
 	Syndication *SyndicationHandler
 	Admin       *AdminHandler
+	Auth        *AuthHandler    // nil when admin credentials not configured
 	Compose     *ComposeHandler // nil when compose not configured
 
 	base           *BaseHandler
@@ -60,6 +64,11 @@ func New(cfg *Config) *Router {
 		composeHandler = NewComposeHandler(base, cfg.ComposeService, cfg.ArticleService, cfg.MarkdownRenderer)
 	}
 
+	var authHandler *AuthHandler
+	if cfg.SessionStore != nil && cfg.Config.Admin.Username != "" && cfg.Config.Admin.Password != "" {
+		authHandler = NewAuthHandler(base, cfg.Config.Admin.Username, cfg.Config.Admin.Password, cfg.SessionStore, cfg.SecureCookie)
+	}
+
 	return &Router{
 		Feed:        NewFeedHandler(base, cfg.ArticleService),
 		Post:        NewPostHandler(base, cfg.ArticleService),
@@ -69,6 +78,7 @@ func New(cfg *Config) *Router {
 		Contact:     NewContactHandler(base, cfg.EmailService),
 		Syndication: NewSyndicationHandler(base, cfg.FeedService),
 		Admin:       NewAdminHandler(base, cfg.ArticleService, time.Now()),
+		Auth:        authHandler,
 		Compose:     composeHandler,
 
 		base:           base,

@@ -231,6 +231,10 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, *service
 	// Initialize markdown renderer for compose preview
 	markdownRenderer := article.NewMarkdownContentProcessor(logger)
 
+	// Initialize session store for admin authentication
+	sessionStore := middleware.NewSessionStore()
+	secureCookie := cfg.Environment != envDevelopment
+
 	// Initialize handlers
 	h := handlers.New(&handlers.Config{
 		ArticleService:   articleService,
@@ -240,6 +244,8 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, *service
 		SEOService:       seoService,
 		ComposeService:   composeService,
 		MarkdownRenderer: markdownRenderer,
+		SessionStore:     sessionStore,
+		SecureCookie:     secureCookie,
 		Config:           cfg,
 		Logger:           logger,
 		BuildInfo: &handlers.BuildInfo{
@@ -249,7 +255,7 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, *service
 		},
 	})
 
-	setupRoutes(router, h, cfg, logger)
+	setupRoutes(router, h, sessionStore, secureCookie, cfg, logger)
 	return router, templateService, nil
 }
 
@@ -270,7 +276,7 @@ func configureGinMode(cfg *config.Config, logger *slog.Logger) {
 	}
 }
 
-func setupRoutes(router *gin.Engine, h *handlers.Router, cfg *config.Config, logger *slog.Logger) {
+func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middleware.SessionStore, secureCookie bool, cfg *config.Config, logger *slog.Logger) { //nolint:funlen // route wiring is inherently long
 	// Static files
 	router.Static("/static", cfg.StaticPath)
 	router.StaticFile("/favicon.ico", cfg.StaticPath+"/img/favicon.ico")
@@ -302,14 +308,22 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, cfg *config.Config, log
 	router.GET("/feed.json", h.Syndication.JSONFeed)
 	router.GET("/sitemap.xml", h.Syndication.Sitemap)
 
-	// Compose routes (authenticated)
+	// Login/logout routes (public, CSRF on login POST)
+	if h.Auth != nil {
+		loginGroup := router.Group("/login")
+		loginGroup.Use(middleware.CSRF(secureCookie))
+		loginGroup.POST("", h.Auth.HandleLogin)
+		router.GET("/logout", h.Auth.HandleLogout)
+	}
+
+	// Compose routes (soft auth — renders login popover when unauthenticated)
 	if cfg.Admin.Username != "" && cfg.Admin.Password != "" {
 		composeGroup := router.Group("/compose")
 		composeGroup.Use(
 			middleware.RecoveryWithErrorHandler(logger),
-			middleware.BasicAuth(cfg.Admin.Username, cfg.Admin.Password),
+			middleware.SoftSessionAuth(sessionStore, secureCookie),
 			middleware.NoCache(),
-			middleware.CSRF(cfg.Environment != envDevelopment),
+			middleware.CSRF(secureCookie),
 		)
 		if h.Compose != nil {
 			composeGroup.GET("", h.Compose.ShowCompose)
@@ -321,12 +335,12 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, cfg *config.Config, log
 		}
 	}
 
-	// Admin routes (optional)
+	// Admin routes (soft auth — renders login popover when unauthenticated)
 	if cfg.Admin.Username != "" && cfg.Admin.Password != "" {
 		adminGroup := router.Group("/admin")
 		adminGroup.Use(
 			middleware.RecoveryWithErrorHandler(logger),
-			middleware.BasicAuth(cfg.Admin.Username, cfg.Admin.Password),
+			middleware.SoftSessionAuth(sessionStore, secureCookie),
 			middleware.NoCache(),
 		)
 		adminGroup.GET("", h.Admin.AdminHome)
@@ -341,7 +355,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, cfg *config.Config, log
 		debugGroup := router.Group("/debug")
 
 		if cfg.Admin.Username != "" && cfg.Admin.Password != "" {
-			debugGroup.Use(middleware.BasicAuth(cfg.Admin.Username, cfg.Admin.Password))
+			debugGroup.Use(middleware.SessionAuth(sessionStore))
 			logger.Info("Debug endpoints enabled with authentication", "environment", cfg.Environment)
 		} else {
 			logger.Warn("Debug endpoints enabled WITHOUT authentication - configure ADMIN_USERNAME/PASSWORD for security")

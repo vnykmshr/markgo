@@ -1,0 +1,165 @@
+package middleware
+
+import (
+	"crypto/rand"
+	"encoding/hex"
+	"log/slog"
+	"net/http"
+	"net/url"
+	"sync"
+	"time"
+
+	"github.com/gin-gonic/gin"
+)
+
+const (
+	sessionCookieName = "_session"
+	sessionTokenBytes = 32
+	sessionMaxAge     = 7 * 24 * time.Hour // 7 days
+)
+
+type session struct {
+	username  string
+	expiresAt time.Time
+}
+
+// SessionStore manages in-memory sessions for admin authentication.
+type SessionStore struct {
+	sessions sync.Map
+}
+
+// NewSessionStore creates a new session store and starts background cleanup.
+func NewSessionStore() *SessionStore {
+	s := &SessionStore{}
+
+	// Background cleanup of expired sessions (prevents unbounded memory growth)
+	go func() {
+		ticker := time.NewTicker(10 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			s.sessions.Range(func(key, value any) bool {
+				if sess, ok := value.(*session); ok {
+					if time.Now().After(sess.expiresAt) {
+						s.sessions.Delete(key)
+					}
+				}
+				return true
+			})
+		}
+	}()
+
+	return s
+}
+
+// Create generates a new session token and stores it.
+func (s *SessionStore) Create(username string) (string, error) {
+	b := make([]byte, sessionTokenBytes)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	token := hex.EncodeToString(b)
+	s.sessions.Store(token, &session{
+		username:  username,
+		expiresAt: time.Now().Add(sessionMaxAge),
+	})
+	return token, nil
+}
+
+// Validate checks if a token is valid and not expired.
+func (s *SessionStore) Validate(token string) (string, bool) {
+	if token == "" {
+		return "", false
+	}
+	val, ok := s.sessions.Load(token)
+	if !ok {
+		return "", false
+	}
+	sess, ok := val.(*session)
+	if !ok {
+		return "", false
+	}
+	if time.Now().After(sess.expiresAt) {
+		s.sessions.Delete(token)
+		return "", false
+	}
+	return sess.username, true
+}
+
+// Delete removes a session.
+func (s *SessionStore) Delete(token string) {
+	s.sessions.Delete(token)
+}
+
+// SessionAuth provides session-based authentication middleware.
+// Redirects unauthenticated GET requests to /login with a ?next= parameter.
+// Returns 401 for unauthenticated non-GET requests.
+func SessionAuth(store *SessionStore) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token, err := c.Cookie(sessionCookieName)
+		if err == nil {
+			if username, valid := store.Validate(token); valid {
+				c.Set("admin_user", username)
+				c.Next()
+				return
+			}
+			// Stale/invalid cookie — clear it to prevent repeated failed lookups
+			c.SetSameSite(http.SameSiteStrictMode)
+			c.SetCookie(sessionCookieName, "", -1, "/", "", false, true)
+		}
+
+		// Not authenticated
+		if c.Request.Method == http.MethodGet {
+			next := c.Request.URL.RequestURI()
+			c.Redirect(http.StatusFound, "/login?next="+url.QueryEscape(next))
+			c.Abort()
+			return
+		}
+
+		slog.Warn("Unauthenticated non-GET request", "method", c.Request.Method, "path", c.Request.URL.Path)
+		c.AbortWithStatus(http.StatusUnauthorized)
+	}
+}
+
+// SoftSessionAuth provides session-based authentication that allows handlers to run
+// even when not authenticated. On valid session: sets admin_user + authenticated=true.
+// On invalid GET: sets auth_required=true and generates a CSRF token so the login
+// popover can render. On invalid POST: returns 401 JSON.
+func SoftSessionAuth(store *SessionStore, secureCookie bool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token, err := c.Cookie(sessionCookieName)
+		if err == nil {
+			if username, valid := store.Validate(token); valid {
+				c.Set("admin_user", username)
+				c.Set("authenticated", true)
+				c.Next()
+				return
+			}
+			// Stale/invalid cookie — clear it
+			c.SetSameSite(http.SameSiteStrictMode)
+			c.SetCookie(sessionCookieName, "", -1, "/", "", secureCookie, true)
+		}
+
+		// Not authenticated
+		if c.Request.Method == http.MethodGet || c.Request.Method == http.MethodHead {
+			c.Set("auth_required", true)
+			// Generate CSRF token for the login popover form
+			GenerateCSRFToken(c, secureCookie)
+			c.Next()
+			return
+		}
+
+		slog.Warn("Unauthenticated non-GET request", "method", c.Request.Method, "path", c.Request.URL.Path)
+		c.AbortWithStatus(http.StatusUnauthorized)
+	}
+}
+
+// GenerateCSRFToken creates a CSRF token, sets it as a cookie, and stores it in gin context.
+func GenerateCSRFToken(c *gin.Context, secureCookie bool) {
+	token := generateCSRFToken()
+	if token == "" {
+		return
+	}
+	c.SetSameSite(http.SameSiteStrictMode)
+	c.SetCookie(csrfCookieName, token, 3600, "", "", secureCookie, true)
+	c.Set("csrf_token", token)
+}

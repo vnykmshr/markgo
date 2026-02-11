@@ -1,4 +1,9 @@
 {{ define "compose-content" }}
+{{ if .auth_required }}
+<div class="auth-required">
+    <p>Sign in to continue.</p>
+</div>
+{{ else }}
 <div class="compose-page">
     <div class="container">
         <header class="compose-header">
@@ -131,6 +136,7 @@
     })();
 </script>
 {{ end }}{{ end }}
+{{ end }}
 {{ end }}
 
 {{ define "compose-head" }}

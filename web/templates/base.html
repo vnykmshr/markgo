@@ -171,6 +171,7 @@
     {{ if eq $tpl "feed" }}<link rel="stylesheet" href="/static/css/feed.css">{{ end }}
     {{ if eq $tpl "compose" }}<link rel="stylesheet" href="/static/css/compose.css">{{ end }}
     {{ if eq $tpl "admin_home" }}<link rel="stylesheet" href="/static/css/admin.css">{{ end }}
+    <link rel="stylesheet" href="/static/css/login.css">
 
     <!-- Additional head content -->
     {{ if eq $tpl "feed" }}{{ template "feed-head" . }}{{ end }}
@@ -205,7 +206,7 @@
     {{- else if eq $tpl "admin_home" -}}admin-dashboard-page
     {{- else if eq $tpl "drafts" -}}drafts-page
     {{- else if eq $tpl "404" -}}error-page
-    {{- end -}}">
+    {{- end -}}"{{ if .auth_required }} data-auth-required="true"{{ end }}>
     <!-- Header -->
     <header class="site-header">
         <nav class="navbar">
@@ -248,6 +249,21 @@
                         </svg>
                         <span class="sr-only">RSS Feed</span>
                     </a>
+                    {{ if and (ne .config.Admin.Username "") (ne .config.Admin.Password "") }}
+                    {{ if .authenticated }}
+                    <a href="/logout" class="nav-action-btn" aria-label="Sign out" title="Sign out">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M11 1a2 2 0 0 0-2 2v4a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h8zm-3 9a1 1 0 1 0-2 0v3h2v-3z"/>
+                        </svg>
+                    </a>
+                    {{ else }}
+                    <button class="nav-action-btn login-trigger" aria-label="Sign in" title="Sign in">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                        </svg>
+                    </button>
+                    {{ end }}
+                    {{ end }}
                     <button class="theme-toggle" aria-label="Switch to dark mode" title="Toggle theme">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
@@ -259,6 +275,20 @@
                         <span class="toggle-line"></span>
                     </button>
                 </div>
+                {{ if and (ne .config.Admin.Username "") (ne .config.Admin.Password "") }}
+                {{ if .authenticated }}{{ else }}
+                <div class="login-popover" id="login-popover" hidden>
+                    <form class="login-popover-form" id="login-form">
+                        <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
+                        <input type="hidden" name="next" value="{{ .login_next }}">
+                        <input type="text" name="username" class="login-popover-input" placeholder="Username" autocomplete="username" required>
+                        <input type="password" name="password" class="login-popover-input" placeholder="Password" autocomplete="current-password" required>
+                        <button type="submit" class="login-popover-submit">Sign in</button>
+                        <div class="login-popover-error" id="login-error" hidden></div>
+                    </form>
+                </div>
+                {{ end }}
+                {{ end }}
             </div>
         </nav>
     </header>
