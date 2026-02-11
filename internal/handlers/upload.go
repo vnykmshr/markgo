@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -67,7 +68,7 @@ func (h *ComposeHandler) Upload(c *gin.Context) {
 	// Read first 512 bytes for content type detection
 	buf := make([]byte, 512)
 	n, readErr := file.Read(buf)
-	if readErr != nil && readErr != io.EOF {
+	if readErr != nil && !errors.Is(readErr, io.EOF) {
 		h.logger.Error("Upload file read error", "error", readErr)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read file"})
 		return
