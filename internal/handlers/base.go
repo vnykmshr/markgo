@@ -123,12 +123,8 @@ func (h *BaseHandler) injectAuthState(c *gin.Context, data map[string]any) {
 		data["csrf_token"] = csrfToken
 	}
 
-	// On protected pages, redirect back after login. On public pages, go to /admin.
-	if _, isProtected := c.Get("auth_required"); isProtected {
-		data["login_next"] = c.Request.URL.RequestURI()
-	} else {
-		data["login_next"] = defaultRedirect
-	}
+	// Always return to the current page after login.
+	data["login_next"] = c.Request.URL.RequestURI()
 }
 
 // renderHTML renders HTML template with common error handling
