@@ -273,13 +273,19 @@ func (s *Service) UpdateArticle(slug string, input *Input) error {
 	return nil
 }
 
-// findFileBySlug scans the articles directory for a file with matching slug in frontmatter.
+// findFileBySlug scans the articles directory for a file with matching slug.
+// First checks the frontmatter `slug:` field (compose-created articles), then falls back
+// to matching the filename-derived slug (pre-existing articles without explicit slug field).
 // Returns the file path and raw content to avoid a redundant re-read by callers.
 func (s *Service) findFileBySlug(slug string) (string, []byte, error) {
 	entries, err := os.ReadDir(s.articlesPath)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to read articles directory: %w", err)
 	}
+
+	// Track filename-derived match as fallback
+	var fallbackPath string
+	var fallbackContent []byte
 
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
@@ -298,6 +304,13 @@ func (s *Service) findFileBySlug(slug string) (string, []byte, error) {
 			continue
 		}
 
+		// Check filename-derived slug as fallback (before yaml parse, so
+		// files with corrupted frontmatter can still match by filename)
+		if fallbackPath == "" && slugFromFilename(entry.Name()) == slug {
+			fallbackPath = filePath
+			fallbackContent = content
+		}
+
 		var fm struct {
 			Slug string `yaml:"slug"`
 		}
@@ -305,12 +318,42 @@ func (s *Service) findFileBySlug(slug string) (string, []byte, error) {
 			continue
 		}
 
+		// Prefer explicit frontmatter slug (exact match)
 		if fm.Slug == slug {
 			return filePath, content, nil
 		}
 	}
 
+	if fallbackPath != "" {
+		return fallbackPath, fallbackContent, nil
+	}
+
 	return "", nil, fmt.Errorf("article not found: %s: %w", slug, apperrors.ErrArticleNotFound)
+}
+
+// slugFromFilename derives a slug from an article filename.
+// "2024-01-15-welcome-to-markgo.md" → "welcome-to-markgo"
+// "about.md" → "about"
+func slugFromFilename(filename string) string {
+	name := strings.TrimSuffix(filename, ".md")
+	// Strip YYYY-MM-DD- date prefix if present (validate digits, not just hyphens)
+	if len(name) > 11 && name[4] == '-' && name[7] == '-' && name[10] == '-' && isDatePrefix(name[:10]) {
+		name = name[11:]
+	}
+	return name
+}
+
+// isDatePrefix checks if a 10-char string looks like YYYY-MM-DD (all digits except positions 4,7).
+func isDatePrefix(s string) bool {
+	for i, c := range s {
+		if i == 4 || i == 7 {
+			continue // already verified as '-'
+		}
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // generateSlug creates a URL-friendly slug from a title.

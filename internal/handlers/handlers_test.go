@@ -123,6 +123,16 @@ func (m *MockSEOService) AnalyzeContent(content string) (*services.SEOAnalysis, 
 }
 func (m *MockSEOService) IsEnabled() bool { return true }
 
+// MockSEOServiceWithRobots extends MockSEOService with configurable robots.txt output.
+type MockSEOServiceWithRobots struct {
+	MockSEOService
+	robotsTxt []byte
+}
+
+func (m *MockSEOServiceWithRobots) GenerateRobotsTxt() ([]byte, error) {
+	return m.robotsTxt, nil
+}
+
 func createTestConfig() *config.Config {
 	return &config.Config{
 		Environment: "test",
@@ -153,6 +163,57 @@ func createTestHealthHandler() *HealthHandler {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 	base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
 	return NewHealthHandler(base, time.Now())
+}
+
+// MockFeedService is a minimal feed service for syndication handler tests.
+type MockFeedService struct{}
+
+func (m *MockFeedService) GenerateRSS() (string, error)      { return "<rss/>", nil }
+func (m *MockFeedService) GenerateJSONFeed() (string, error) { return "{}", nil }
+func (m *MockFeedService) GenerateSitemap() (string, error)  { return "<sitemap/>", nil }
+
+// TestRobotsTxt tests the robots.txt handler with different SEO service states.
+func TestRobotsTxt(t *testing.T) {
+	t.Run("returns dynamic robots.txt when SEO enabled", func(t *testing.T) {
+		seoMock := &MockSEOServiceWithRobots{
+			robotsTxt: []byte("User-agent: *\nDisallow: /admin/\nSitemap: http://localhost:3000/sitemap.xml\n"),
+		}
+		cfg := createTestConfig()
+		logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+		base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, seoMock)
+		handler := NewSyndicationHandler(base, &MockFeedService{})
+
+		router := gin.New()
+		router.GET("/robots.txt", handler.RobotsTxt)
+
+		req := httptest.NewRequest("GET", "/robots.txt", http.NoBody)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Header().Get("Content-Type"), "text/plain")
+		assert.Contains(t, w.Body.String(), "Disallow: /admin/")
+		assert.Contains(t, w.Body.String(), "Sitemap:")
+	})
+
+	t.Run("returns fallback when SEO disabled", func(t *testing.T) {
+		cfg := createTestConfig()
+		logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+		// nil seoService — simulates SEO not configured
+		base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, nil)
+		handler := NewSyndicationHandler(base, &MockFeedService{})
+
+		router := gin.New()
+		router.GET("/robots.txt", handler.RobotsTxt)
+
+		req := httptest.NewRequest("GET", "/robots.txt", http.NoBody)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "User-agent: *")
+		assert.Contains(t, w.Body.String(), "Allow: /")
+	})
 }
 
 // TestContact tests the contact form handler

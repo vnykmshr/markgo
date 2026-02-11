@@ -281,6 +281,13 @@ func CSRF(secureCookie bool) gin.HandlerFunc {
 		c.Set("csrf_secure", secureCookie)
 
 		if c.Request.Method == http.MethodGet || c.Request.Method == http.MethodHead {
+			// Skip if SoftSessionAuth already set a valid CSRF token
+			if token, exists := c.Get("csrf_token"); exists {
+				if s, ok := token.(string); ok && s != "" {
+					c.Next()
+					return
+				}
+			}
 			token := generateCSRFToken()
 			if token == "" {
 				c.AbortWithStatus(http.StatusInternalServerError)

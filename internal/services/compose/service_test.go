@@ -220,6 +220,43 @@ func TestUpdateArticle_PreservesMetadata(t *testing.T) {
 	assert.Contains(t, s, "New content.")
 }
 
+func TestLoadArticle_FilenameFallback(t *testing.T) {
+	dir := t.TempDir()
+	svc := NewService(dir, "")
+
+	// Write a pre-existing article without slug: in frontmatter (like articles created before compose)
+	content := "---\ntitle: \"Welcome to MarkGo\"\ndate: 2024-01-15T10:00:00Z\ndraft: false\n---\n\nWelcome content here.\n"
+	err := os.WriteFile(filepath.Join(dir, "2024-01-15-welcome-to-markgo.md"), []byte(content), 0o644)
+	require.NoError(t, err)
+
+	// Load by filename-derived slug (no frontmatter slug: field)
+	input, err := svc.LoadArticle("welcome-to-markgo")
+	require.NoError(t, err)
+	assert.Equal(t, "Welcome to MarkGo", input.Title)
+	assert.Equal(t, "Welcome content here.", input.Content)
+}
+
+func TestSlugFromFilename(t *testing.T) {
+	tests := []struct {
+		filename string
+		expected string
+	}{
+		{"2024-01-15-welcome-to-markgo.md", "welcome-to-markgo"},
+		{"2026-02-09-thought-1770657441.md", "thought-1770657441"},
+		{"about.md", "about"},
+		{"short.md", "short"},
+		{"not-a-date-prefix-slug.md", "not-a-date-prefix-slug"}, // non-date hyphens at positions 4,7,10
+		{"abcd-ef-gh-my-post.md", "abcd-ef-gh-my-post"},         // letters, not digits
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.filename, func(t *testing.T) {
+			got := slugFromFilename(tt.filename)
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}
+
 func TestGenerateSlug(t *testing.T) {
 	tests := []struct {
 		input    string
