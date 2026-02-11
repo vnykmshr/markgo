@@ -29,6 +29,14 @@
                     required
                     autofocus
                 >{{ if .input }}{{ .input.Content }}{{ end }}</textarea>
+                <div class="compose-preview-controls">
+                    <button type="button" class="compose-preview-btn" aria-pressed="false">Preview</button>
+                </div>
+                <div class="compose-preview-panel" aria-live="polite">
+                    <div class="compose-preview-content article-content">
+                        <p class="preview-placeholder">Click Preview to render your markdown.</p>
+                    </div>
+                </div>
             </div>
 
             <div class="compose-field">

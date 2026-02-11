@@ -17,13 +17,23 @@ import (
 // validSlug matches URL-safe slugs: lowercase alphanumeric with hyphens, no leading/trailing hyphens, max 200 chars.
 var validSlug = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,198}[a-z0-9])?$`)
 
-const templateCompose = "compose"
+const (
+	templateCompose    = "compose"
+	maxPreviewBodySize = 1 << 20 // 1MB
+)
+
+// MarkdownRenderer renders markdown to HTML.
+// Narrow interface — only the method needed for preview.
+type MarkdownRenderer interface {
+	ProcessMarkdown(content string) (string, error)
+}
 
 // ComposeHandler handles the compose page for creating new posts.
 type ComposeHandler struct {
 	*BaseHandler
-	composeService *compose.Service
-	articleService services.ArticleServiceInterface
+	composeService   *compose.Service
+	articleService   services.ArticleServiceInterface
+	markdownRenderer MarkdownRenderer
 }
 
 // NewComposeHandler creates a new compose handler.
@@ -31,11 +41,13 @@ func NewComposeHandler(
 	base *BaseHandler,
 	composeService *compose.Service,
 	articleService services.ArticleServiceInterface,
+	markdownRenderer MarkdownRenderer,
 ) *ComposeHandler {
 	return &ComposeHandler{
-		BaseHandler:    base,
-		composeService: composeService,
-		articleService: articleService,
+		BaseHandler:      base,
+		composeService:   composeService,
+		articleService:   articleService,
+		markdownRenderer: markdownRenderer,
 	}
 }
 
@@ -217,4 +229,29 @@ func (h *ComposeHandler) HandleSubmit(c *gin.Context) {
 	} else {
 		c.Redirect(http.StatusSeeOther, "/articles/"+slug)
 	}
+}
+
+// Preview renders markdown content as HTML for the compose preview panel.
+// Returns an HTML fragment (not a full page). Self-XSS via html.WithUnsafe()
+// is acceptable — compose is behind BasicAuth (admin-only).
+func (h *ComposeHandler) Preview(c *gin.Context) {
+	content := c.PostForm("content")
+	if content == "" {
+		c.Data(http.StatusOK, "text/html; charset=utf-8", nil)
+		return
+	}
+
+	if len(content) > maxPreviewBodySize {
+		c.String(http.StatusRequestEntityTooLarge, "Content too large for preview")
+		return
+	}
+
+	html, err := h.markdownRenderer.ProcessMarkdown(content)
+	if err != nil {
+		h.logger.Error("Preview render failed", "error", err)
+		c.String(http.StatusInternalServerError, "Preview unavailable")
+		return
+	}
+
+	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
 }

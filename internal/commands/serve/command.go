@@ -21,6 +21,7 @@ import (
 	"github.com/vnykmshr/markgo/internal/handlers"
 	"github.com/vnykmshr/markgo/internal/middleware"
 	"github.com/vnykmshr/markgo/internal/services"
+	"github.com/vnykmshr/markgo/internal/services/article"
 	"github.com/vnykmshr/markgo/internal/services/compose"
 	"github.com/vnykmshr/markgo/internal/services/feed"
 	"github.com/vnykmshr/markgo/internal/services/seo"
@@ -227,16 +228,20 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, *service
 	// Initialize feed service
 	feedService := feed.NewService(articleService, cfg)
 
+	// Initialize markdown renderer for compose preview
+	markdownRenderer := article.NewMarkdownContentProcessor(logger)
+
 	// Initialize handlers
 	h := handlers.New(&handlers.Config{
-		ArticleService:  articleService,
-		EmailService:    emailService,
-		FeedService:     feedService,
-		TemplateService: templateService,
-		SEOService:      seoService,
-		ComposeService:  composeService,
-		Config:          cfg,
-		Logger:          logger,
+		ArticleService:   articleService,
+		EmailService:     emailService,
+		FeedService:      feedService,
+		TemplateService:  templateService,
+		SEOService:       seoService,
+		ComposeService:   composeService,
+		MarkdownRenderer: markdownRenderer,
+		Config:           cfg,
+		Logger:           logger,
 		BuildInfo: &handlers.BuildInfo{
 			Version:   Version,
 			GitCommit: constants.GitCommit,
@@ -311,6 +316,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, cfg *config.Config, log
 			composeGroup.POST("", h.Compose.HandleSubmit)
 			composeGroup.GET("/edit/:slug", h.Compose.ShowEdit)
 			composeGroup.POST("/edit/:slug", h.Compose.HandleEdit)
+			composeGroup.POST("/preview", h.Compose.Preview)
 		}
 	}
 

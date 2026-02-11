@@ -21,15 +21,16 @@ type BuildInfo struct {
 
 // Config for handler initialization
 type Config struct {
-	ArticleService  services.ArticleServiceInterface
-	EmailService    services.EmailServiceInterface
-	FeedService     services.FeedServiceInterface
-	TemplateService services.TemplateServiceInterface
-	SEOService      services.SEOServiceInterface
-	ComposeService  *compose.Service
-	Config          *config.Config
-	Logger          *slog.Logger
-	BuildInfo       *BuildInfo
+	ArticleService   services.ArticleServiceInterface
+	EmailService     services.EmailServiceInterface
+	FeedService      services.FeedServiceInterface
+	TemplateService  services.TemplateServiceInterface
+	SEOService       services.SEOServiceInterface
+	ComposeService   *compose.Service
+	MarkdownRenderer MarkdownRenderer
+	Config           *config.Config
+	Logger           *slog.Logger
+	BuildInfo        *BuildInfo
 }
 
 // Router holds all handler types for direct route registration.
@@ -56,7 +57,7 @@ func New(cfg *Config) *Router {
 
 	var composeHandler *ComposeHandler
 	if cfg.ComposeService != nil {
-		composeHandler = NewComposeHandler(base, cfg.ComposeService, cfg.ArticleService)
+		composeHandler = NewComposeHandler(base, cfg.ComposeService, cfg.ArticleService, cfg.MarkdownRenderer)
 	}
 
 	return &Router{
