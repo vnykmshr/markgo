@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/models"
 )
 
@@ -36,7 +37,7 @@ func (m *mockRepository) GetBySlug(slug string) (*models.Article, error) {
 			return a, nil
 		}
 	}
-	return nil, fmt.Errorf("article not found: %s", slug)
+	return nil, fmt.Errorf("article not found: %s: %w", slug, apperrors.ErrArticleNotFound)
 }
 
 func (m *mockRepository) GetByTag(tag string) []*models.Article {

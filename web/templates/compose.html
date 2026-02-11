@@ -121,7 +121,7 @@
         </form>
     </div>
 </div>
-{{ if and .editing .input }}
+{{ if .editing }}{{ if .input }}
 <script>
     (function() {
         var isDraft = {{ .input.Draft }};
@@ -130,7 +130,7 @@
         }
     })();
 </script>
-{{ end }}
+{{ end }}{{ end }}
 {{ end }}
 
 {{ define "compose-head" }}

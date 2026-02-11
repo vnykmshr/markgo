@@ -107,10 +107,16 @@ func (h *BaseHandler) renderHTML(c *gin.Context, status int, template string, da
 		return
 	}
 
+	c.Status(status)
 	if err := h.templateService.Render(c.Writer, template, data); err != nil {
 		h.logger.Error("Template rendering failed", "template", template, "error", err)
-		h.handleError(c, err, "Template rendering failed")
-		return
+		// Don't call handleError here — it would call renderHTML again, creating
+		// an infinite loop. Render a minimal fallback if headers haven't been flushed.
+		if !c.Writer.Written() {
+			c.Data(http.StatusInternalServerError, "text/html; charset=utf-8",
+				[]byte("<h1>500 Internal Server Error</h1>"))
+		}
+		c.Abort()
 	}
 }
 
@@ -136,6 +142,13 @@ func (h *BaseHandler) handleError(c *gin.Context, err error, defaultMsg string) 
 
 	h.logger.Error("Handler error", "error", err, "status", httpStatus)
 
+	// If the response is already committed (headers flushed), we can't change
+	// the status code or render a new page. Just log and abort.
+	if c.Writer.Written() {
+		c.Abort()
+		return
+	}
+
 	if h.shouldReturnJSON(c) {
 		c.JSON(httpStatus, gin.H{
 			"error":   message,
@@ -145,10 +158,11 @@ func (h *BaseHandler) handleError(c *gin.Context, err error, defaultMsg string) 
 		return
 	}
 
-	// For HTML responses, use the error handler middleware
-	//nolint:errcheck // Ignore error: adding to gin context errors is non-critical
-	_ = c.Error(apperrors.NewHTTPError(httpStatus, message, err))
-	c.Abort()
+	// Render error page
+	data := h.buildBaseTemplateData(message)
+	data["template"] = "404"
+	data["description"] = message
+	h.renderHTML(c, httpStatus, "base.html", data)
 }
 
 // shouldReturnJSON determines if response should be JSON based on request.

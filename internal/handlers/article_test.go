@@ -82,7 +82,7 @@ func TestArticleBySlug(t *testing.T) {
 		want int
 	}{
 		{"valid slug", "golang-tutorial", http.StatusOK},
-		{"not found", "nonexistent", http.StatusOK}, // handler renders error page with 200
+		{"not found", "nonexistent", http.StatusNotFound},
 		{"empty slug", "", http.StatusBadRequest},
 	}
 

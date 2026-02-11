@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v3"
+
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
 )
 
 // Service handles creating new posts from compose form input.
@@ -308,7 +310,7 @@ func (s *Service) findFileBySlug(slug string) (string, []byte, error) {
 		}
 	}
 
-	return "", nil, fmt.Errorf("article not found: %s", slug)
+	return "", nil, fmt.Errorf("article not found: %s: %w", slug, apperrors.ErrArticleNotFound)
 }
 
 // generateSlug creates a URL-friendly slug from a title.

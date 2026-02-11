@@ -14,6 +14,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
+
 	"github.com/vnykmshr/markgo/internal/constants"
 	"github.com/vnykmshr/markgo/internal/models"
 )
@@ -135,7 +137,7 @@ func (r *FileSystemRepository) GetBySlug(slug string) (*models.Article, error) {
 
 	article, exists := r.cache[slug]
 	if !exists {
-		return nil, fmt.Errorf("article not found: %s", slug)
+		return nil, fmt.Errorf("article not found: %s: %w", slug, apperrors.ErrArticleNotFound)
 	}
 
 	return article, nil
@@ -477,7 +479,7 @@ func (r *FileSystemRepository) findArticleFile(slug string) (*models.Article, st
 		}
 	}
 
-	return nil, "", fmt.Errorf("article not found in memory: %s", slug)
+	return nil, "", fmt.Errorf("article not found in memory: %s: %w", slug, apperrors.ErrArticleNotFound)
 }
 
 // resolveArticleFilePath finds the actual file path for an article with the given slug

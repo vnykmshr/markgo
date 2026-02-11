@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/models"
 )
 
@@ -152,7 +153,7 @@ func (s *CompositeService) GetArticleBySlug(slug string) (*models.Article, error
 
 	// Skip draft articles for public access
 	if article.Draft {
-		return nil, fmt.Errorf("article not found: %s", slug)
+		return nil, fmt.Errorf("article not found: %s: %w", slug, apperrors.ErrArticleNotFound)
 	}
 
 	return article, nil
