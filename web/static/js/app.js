@@ -36,9 +36,13 @@ async function loadPageModule(template) {
 
     const loader = PAGE_MODULES[template];
     if (loader) {
-        const mod = await loader();
-        mod.init();
-        currentPageModule = mod;
+        try {
+            const mod = await loader();
+            mod.init();
+            currentPageModule = mod;
+        } catch (err) {
+            console.error(`Failed to load page module for "${template}":`, err);
+        }
     }
 }
 
@@ -55,7 +59,9 @@ function reinitPage(template) {
 // ── Service Worker registration ──────────────────────────────────────────────
 
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js');
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+        console.error('Service worker registration failed:', err);
+    });
 }
 
 // ── Install prompt ───────────────────────────────────────────────────────────

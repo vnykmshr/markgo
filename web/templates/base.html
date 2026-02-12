@@ -148,8 +148,8 @@
     <link rel="alternate" type="application/rss+xml" title="{{ .config.Blog.Title }} - RSS Feed" href="/feed.xml">
     <link rel="alternate" type="application/feed+json" title="{{ .config.Blog.Title }} - JSON Feed" href="/feed.json">
 
-    <!-- Canonical URL -->
-    <link rel="canonical" href="{{ .config.BaseURL }}{{ .canonicalPath }}">
+    <!-- Canonical URL (only when handler provides a path — omit for 404/admin/compose) -->
+    {{ if .canonicalPath }}<link rel="canonical" href="{{ .config.BaseURL }}{{ .canonicalPath }}">{{ end }}
 
     <!-- Stylesheets — all loaded upfront for SPA content swaps -->
     <link rel="stylesheet" href="/static/css/fonts.css">
@@ -230,6 +230,11 @@
                         <li class="nav-item">
                             <a href="/about" class="nav-link">About</a>
                         </li>
+                        {{ if and (ne .config.Admin.Username "") (ne .config.Admin.Password "") }}
+                        <li class="nav-item">
+                            <a href="/compose" class="nav-link">Compose</a>
+                        </li>
+                        {{ end }}
                     </ul>
                 </div>
 
@@ -279,7 +284,6 @@
                 <div class="admin-popover" id="admin-popover" hidden>
                     <nav class="admin-popover-nav" aria-label="Admin">
                         <a href="/admin" class="admin-popover-link">Dashboard</a>
-                        <a href="/compose" class="admin-popover-link">Compose</a>
                         <a href="/admin/drafts" class="admin-popover-link">Drafts</a>
                     </nav>
                     <div class="admin-popover-divider"></div>

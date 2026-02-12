@@ -87,6 +87,7 @@ function extractPage(doc) {
         template: doc.body.dataset.template || 'feed',
         bodyClass: doc.body.className,
         meta: extractMeta(doc),
+        csrfToken: doc.querySelector('meta[name="csrf-token"]')?.content || '',
     };
 }
 
@@ -109,6 +110,23 @@ function extractMeta(doc) {
     const canonical = doc.querySelector('link[rel="canonical"]');
     if (canonical) meta['link[rel="canonical"]'] = canonical.getAttribute('href');
     return meta;
+}
+
+function syncCSRFToken(token) {
+    if (!token) return;
+    let meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta) {
+        meta.setAttribute('content', token);
+    } else {
+        meta = document.createElement('meta');
+        meta.name = 'csrf-token';
+        meta.content = token;
+        document.head.appendChild(meta);
+    }
+    // Sync hidden inputs in login popover (outside <main>, not swapped by router)
+    document.querySelectorAll('input[name="_csrf"]').forEach((input) => {
+        input.value = token;
+    });
 }
 
 function updateMeta(meta) {
@@ -198,6 +216,7 @@ async function navigate(url, { push = true } = {}) {
         document.body.dataset.template = page.template;
         document.body.className = page.bodyClass;
         updateMeta(page.meta);
+        syncCSRFToken(page.csrfToken);
 
         // Restore the swapping class removal (body class was just replaced)
         // main-content class is on the element, not body — we need to fade in

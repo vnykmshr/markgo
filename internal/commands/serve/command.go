@@ -259,7 +259,7 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, *service
 
 	// Session awareness on all routes (sets authenticated=true when valid session exists)
 	// Must come after session store init, before route setup
-	router.Use(middleware.SessionAware(sessionStore))
+	router.Use(middleware.SessionAware(sessionStore, secureCookie))
 
 	setupRoutes(router, h, sessionStore, secureCookie, cfg, logger)
 	return router, templateService, nil
@@ -345,8 +345,12 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 		router.GET("/logout", h.Auth.HandleLogout)
 	}
 
-	// Compose routes (soft auth — renders login popover when unauthenticated)
-	if cfg.Admin.Username != "" && cfg.Admin.Password != "" {
+	// Compose routes — public GET (anyone can draft), protected POST (auth required to publish)
+	if cfg.Admin.Username != "" && cfg.Admin.Password != "" && h.Compose != nil {
+		// Public compose page (CSRF for form token, no auth required)
+		router.GET("/compose", middleware.NoCache(), middleware.CSRF(secureCookie), h.Compose.ShowCompose)
+
+		// Protected compose actions (auth required)
 		composeGroup := router.Group("/compose")
 		composeGroup.Use(
 			middleware.RecoveryWithErrorHandler(logger),
@@ -354,15 +358,12 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 			middleware.NoCache(),
 			middleware.CSRF(secureCookie),
 		)
-		if h.Compose != nil {
-			composeGroup.GET("", h.Compose.ShowCompose)
-			composeGroup.POST("", h.Compose.HandleSubmit)
-			composeGroup.GET("/edit/:slug", h.Compose.ShowEdit)
-			composeGroup.POST("/edit/:slug", h.Compose.HandleEdit)
-			composeGroup.POST("/preview", h.Compose.Preview)
-			composeGroup.POST("/upload", h.Compose.Upload)
-			composeGroup.POST("/quick", h.Compose.HandleQuickPublish)
-		}
+		composeGroup.POST("", h.Compose.HandleSubmit)
+		composeGroup.GET("/edit/:slug", h.Compose.ShowEdit)
+		composeGroup.POST("/edit/:slug", h.Compose.HandleEdit)
+		composeGroup.POST("/preview", h.Compose.Preview)
+		composeGroup.POST("/upload", h.Compose.Upload)
+		composeGroup.POST("/quick", h.Compose.HandleQuickPublish)
 	}
 
 	// Admin routes (soft auth — renders login popover when unauthenticated)

@@ -3,7 +3,7 @@
    Calm acknowledgment. Search box and two links.
    ========================================================================== */
 
-.error-page {
+.error-content {
     max-width: 42rem;
     margin: 0 auto;
     padding: var(--spacing-6) var(--spacing-4);
@@ -79,7 +79,7 @@
    ========================================================================== */
 
 @media (min-width: 481px) {
-    .error-page {
+    .error-content {
         padding: var(--spacing-8) var(--spacing-4);
     }
 }

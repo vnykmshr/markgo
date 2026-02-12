@@ -90,15 +90,31 @@ func (s *SessionStore) Delete(token string) {
 }
 
 // SessionAware checks for a valid session cookie and sets authenticated=true
-// in the gin context if found. Never blocks — passes through regardless.
-// Use on public routes so templates can show auth-aware UI (admin popover, etc.).
-func SessionAware(store *SessionStore) gin.HandlerFunc {
+// in the gin context if found. For unauthenticated GET/HEAD requests, generates
+// a CSRF token so the login popover can render on public pages.
+// Never blocks — passes through regardless.
+func SessionAware(store *SessionStore, secureCookie bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := c.Cookie(sessionCookieName)
 		if err == nil {
 			if username, valid := store.Validate(token); valid {
 				c.Set("admin_user", username)
 				c.Set("authenticated", true)
+				c.Next()
+				return
+			}
+		}
+		// Not authenticated — ensure CSRF token exists for login popover.
+		// Reuse existing cookie to avoid SPA desync (fetch responses overwrite
+		// the cookie, but the login popover hidden input keeps the old value).
+		if c.Request.Method == http.MethodGet || c.Request.Method == http.MethodHead {
+			if existing, cookieErr := c.Cookie(csrfCookieName); cookieErr == nil && isValidCSRFToken(existing) {
+				c.Set("csrf_token", existing)
+				// Refresh cookie max-age so it doesn't silently expire while user is browsing
+				c.SetSameSite(http.SameSiteStrictMode)
+				c.SetCookie(csrfCookieName, existing, 3600, "", "", secureCookie, true)
+			} else {
+				GenerateCSRFToken(c, secureCookie)
 			}
 		}
 		c.Next()
@@ -176,4 +192,14 @@ func GenerateCSRFToken(c *gin.Context, secureCookie bool) {
 	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie(csrfCookieName, token, 3600, "", "", secureCookie, true)
 	c.Set("csrf_token", token)
+}
+
+// isValidCSRFToken checks that a CSRF token has the expected format (64 hex chars = 32 bytes).
+// Rejects corrupted, truncated, or injected cookie values.
+func isValidCSRFToken(token string) bool {
+	if len(token) != csrfTokenBytes*2 {
+		return false
+	}
+	_, err := hex.DecodeString(token)
+	return err == nil
 }

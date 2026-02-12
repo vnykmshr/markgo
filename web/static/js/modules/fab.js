@@ -1,15 +1,16 @@
 /**
- * Floating Action Button — auth-gated compose trigger.
+ * Floating Action Button — compose trigger.
  *
  * Shell module: runs once, persists across SPA navigations.
- * Shows a "+" button in the bottom-right for authenticated users.
+ * Shows a "+" button in the bottom-right when admin is configured.
  * Dispatches "fab:compose" custom event on click for the compose sheet.
  */
 
 let fabEl = null;
 
-function isAuthenticated() {
-    return document.querySelector('a[href="/logout"]') !== null;
+function isAdminConfigured() {
+    // Admin nav items are only rendered when admin credentials are configured
+    return document.querySelector('a[href="/compose"]') !== null;
 }
 
 function createFAB() {
@@ -53,7 +54,7 @@ function createFAB() {
 }
 
 export function init() {
-    if (!isAuthenticated()) return;
+    if (!isAdminConfigured()) return;
     if (fabEl) return; // already initialized
 
     fabEl = createFAB();
