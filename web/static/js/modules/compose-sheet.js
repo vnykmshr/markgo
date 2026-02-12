@@ -21,9 +21,15 @@ let draftNotice = null;
 let isOpen = false;
 let isSubmitting = false;
 let saveTimer = null;
+let viewportHandler = null;
 
 function getCSRFToken() {
     return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
+function autoGrow(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 300) + 'px';
 }
 
 function saveDraft() {
@@ -181,6 +187,7 @@ function buildOverlay() {
         } else {
             wordCount.textContent = 'article';
         }
+        autoGrow(textarea);
         scheduleSave();
     });
 
@@ -239,13 +246,27 @@ function open() {
         draftNotice.hidden = true;
     }
 
-    // Focus textarea after animation
+    // Focus textarea after animation, reset auto-grow
     requestAnimationFrame(() => {
+        autoGrow(textarea);
         textarea.focus();
     });
 
     // Escape key
     document.addEventListener('keydown', handleKeydown);
+
+    // Visual viewport handling — reposition above virtual keyboard on iOS
+    if (window.visualViewport) {
+        viewportHandler = () => {
+            if (!overlay || !overlay.isConnected) return;
+            const vv = window.visualViewport;
+            overlay.style.height = vv.height + 'px';
+            overlay.style.top = vv.offsetTop + 'px';
+        };
+        viewportHandler();
+        window.visualViewport.addEventListener('resize', viewportHandler);
+        window.visualViewport.addEventListener('scroll', viewportHandler);
+    }
 }
 
 function close() {
@@ -257,8 +278,17 @@ function close() {
     const draftTitle = titleInput.value;
 
     overlay.hidden = true;
+    overlay.style.height = '';
+    overlay.style.top = '';
     document.body.style.overflow = '';
     document.removeEventListener('keydown', handleKeydown);
+
+    // Remove visual viewport handler
+    if (viewportHandler && window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', viewportHandler);
+        window.visualViewport.removeEventListener('scroll', viewportHandler);
+        viewportHandler = null;
+    }
 
     // Reset form
     draftNotice.hidden = true;

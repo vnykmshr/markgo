@@ -52,6 +52,15 @@ function applyTheme(mode) {
     } else {
         document.documentElement.removeAttribute('data-theme');
     }
+    updateThemeColor();
+}
+
+function updateThemeColor() {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) return;
+    // Read computed background from body — respects light/dark/system preference
+    const bg = getComputedStyle(document.body).backgroundColor;
+    if (bg) meta.content = bg;
 }
 
 function getCurrentMode() {
@@ -83,6 +92,8 @@ export function init() {
 
         applyTheme(savedMode);
         updateToggleIcon(themeToggle, resolveMode(savedMode));
+        // Defer theme-color update to ensure computed styles are available
+        requestAnimationFrame(updateThemeColor);
 
         themeToggle.addEventListener('click', () => {
             try {
@@ -107,6 +118,7 @@ export function init() {
                 } catch (e) {
                     // ignore
                 }
+                requestAnimationFrame(updateThemeColor);
             });
         }
     } catch (error) {
