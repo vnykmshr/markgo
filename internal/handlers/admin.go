@@ -84,12 +84,6 @@ func (h *AdminHandler) AdminHome(c *gin.Context) {
 
 	publishedCount := len(publishedArticles)
 	draftCount := len(draftArticles)
-	totalArticles := publishedCount + draftCount
-
-	h.logger.Debug("Article counts",
-		"published", publishedCount,
-		"drafts", draftCount,
-		"total", totalArticles)
 
 	// Get tag and category counts
 	tagCounts := h.articleService.GetTagCounts()
@@ -116,6 +110,7 @@ func (h *AdminHandler) AdminHome(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"stats":     stats,
 			"system":    system,
+			"is_dev":    isDev,
 			"timestamp": time.Now().Unix(),
 		})
 		return

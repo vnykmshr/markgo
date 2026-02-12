@@ -175,25 +175,6 @@
     border-color: var(--color-primary);
 }
 
-/* Drafts Page Header */
-.drafts-header {
-    text-align: center;
-    padding: var(--spacing-8) 0 var(--spacing-4);
-}
-
-.drafts-title {
-    font-size: var(--font-size-3xl);
-    font-weight: 700;
-    margin: 0 0 var(--spacing-2);
-    color: var(--color-text-primary);
-}
-
-.drafts-subtitle {
-    font-size: var(--font-size-base);
-    color: var(--color-text-muted);
-    margin: 0;
-}
-
 /* ==========================================================================
    Responsive
    ========================================================================== */

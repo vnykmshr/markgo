@@ -15,32 +15,44 @@ export function init() {
     });
 }
 
-function executeAction(button) {
+async function executeAction(button) {
+    if (button.disabled) return;
+
     const url = button.dataset.url;
     const label = button.dataset.label || button.textContent;
+
+    if (!confirm(`Are you sure you want to ${label.toLowerCase()}?`)) return;
+
     const originalText = button.textContent;
-
-    button.textContent = 'Working...';
     button.disabled = true;
+    button.textContent = 'Working...';
 
-    fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    })
-        .then((response) => {
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return response.json();
-        })
-        .then((data) => {
-            showToast(data.message || `${label} completed`, 'success');
-        })
-        .catch((error) => {
-            showToast(error.message || `${label} failed`, 'error');
-        })
-        .finally(() => {
-            button.textContent = originalText;
-            button.disabled = false;
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         });
+
+        if (!response.ok) {
+            let msg = `${label} failed (HTTP ${response.status})`;
+            try {
+                const body = await response.json();
+                if (body.error) msg = body.error;
+            } catch { /* response not JSON, use default */ }
+            throw new Error(msg);
+        }
+
+        const data = await response.json().catch(() => ({}));
+        showToast(data.message || `${label} completed`, 'success');
+    } catch (error) {
+        const msg = error instanceof TypeError
+            ? `${label} failed — check your network connection`
+            : error.message || `${label} failed`;
+        showToast(msg, 'error');
+    } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+    }
 }
 
 export function destroy() {
