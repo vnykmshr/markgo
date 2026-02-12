@@ -20,6 +20,7 @@ export function init() {
     if (!contactForm) return;
 
     let captchaAnswer = 0;
+    let isSubmitting = false;
 
     function generateCaptcha() {
         const num1 = Math.floor(Math.random() * 10) + 1;
@@ -68,6 +69,7 @@ export function init() {
 
     function handleSubmit(e) {
         e.preventDefault();
+        if (isSubmitting) return;
         clearErrors();
 
         const submitBtn = contactForm.querySelector('.contact-submit');
@@ -101,6 +103,7 @@ export function init() {
             return;
         }
 
+        isSubmitting = true;
         submitBtn.disabled = true;
         const spinner = document.createElement('span');
         spinner.className = 'spinner';
@@ -128,6 +131,7 @@ export function init() {
                 generateCaptcha();
             })
             .finally(() => {
+                isSubmitting = false;
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Send';
             });

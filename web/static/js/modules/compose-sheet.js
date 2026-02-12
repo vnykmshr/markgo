@@ -325,7 +325,9 @@ function close() {
     if (draftContent || draftTitle) {
         try {
             localStorage.setItem(DRAFT_KEY, JSON.stringify({ content: draftContent, title: draftTitle, ts: Date.now() }));
-        } catch { /* quota exceeded — ignore */ }
+        } catch {
+            console.warn('Draft save on close failed — content may be lost');
+        }
     } else {
         clearDraft();
     }

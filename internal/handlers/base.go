@@ -18,6 +18,10 @@ import (
 
 const templateArticle = "article"
 
+// fallbackErrorHTML is a self-contained styled error page used when template rendering fails.
+// Matches the recovery middleware's inline HTML so all error paths look consistent.
+const fallbackErrorHTML = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Something went wrong</title><style>body{font-family:system-ui,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#fafafa;color:#333}@media(prefers-color-scheme:dark){body{background:#1a1a1a;color:#e0e0e0}}.e{text-align:center;padding:2rem}.e h1{font-size:1.5rem;margin:0 0 .5rem}.e p{color:#666;margin:0 0 1.5rem}@media(prefers-color-scheme:dark){.e p{color:#999}}.e a{color:#4a90d9;text-decoration:none;margin:0 .75rem}@media(prefers-color-scheme:dark){.e a{color:#6db3f2}}.e a:hover{text-decoration:underline}</style></head><body><div class="e"><h1>Something went wrong</h1><p>We hit an unexpected error. Please try again in a moment.</p><a href="/">Back to feed</a><a href="/writing">Browse writing</a></div></body></html>`
+
 // BaseHandler provides common functionality for all handlers
 type BaseHandler struct {
 	config          *config.Config
@@ -146,10 +150,10 @@ func (h *BaseHandler) renderHTML(c *gin.Context, status int, template string, da
 	if err := h.templateService.Render(c.Writer, template, data); err != nil {
 		h.logger.Error("Template rendering failed", "template", template, "error", err)
 		// Don't call handleError here — it would call renderHTML again, creating
-		// an infinite loop. Render a minimal fallback if headers haven't been flushed.
+		// an infinite loop. Render a styled fallback if headers haven't been flushed.
 		if !c.Writer.Written() {
 			c.Data(http.StatusInternalServerError, "text/html; charset=utf-8",
-				[]byte("<h1>500 Internal Server Error</h1>"))
+				[]byte(fallbackErrorHTML))
 		}
 		c.Abort()
 	}
