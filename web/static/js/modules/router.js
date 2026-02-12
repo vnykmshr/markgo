@@ -7,10 +7,12 @@
  *
  * Features:
  * - Progress bar during fetch (thin, top-fixed, primary-colored)
- * - Content fade transition (150ms, respects prefers-reduced-motion)
+ * - Content fade transition (120ms, respects prefers-reduced-motion)
  * - Prefetch on hover/touchstart for near-instant navigations
  * - AbortController cancels in-flight requests on rapid navigation
  * - Scroll position saved/restored per history entry
+ * - Meta tag updates (description, OG) for share-while-browsing
+ * - Focus management after swap for accessibility
  * - Custom events for extensibility (router:navigate-start, router:navigate-end)
  */
 
@@ -68,6 +70,9 @@ function shouldIntercept(link, event) {
     // Hash-only on same page
     if (url.pathname === location.pathname && url.hash) return false;
 
+    // Same URL — no navigation needed
+    if (link.href === location.href) return false;
+
     return true;
 }
 
@@ -81,7 +86,41 @@ function extractPage(doc) {
         title: doc.querySelector('title')?.textContent || '',
         template: doc.body.dataset.template || 'feed',
         bodyClass: doc.body.className,
+        meta: extractMeta(doc),
     };
+}
+
+function extractMeta(doc) {
+    const meta = {};
+    const selectors = [
+        'meta[name="description"]',
+        'meta[property="og:title"]',
+        'meta[property="og:description"]',
+        'meta[property="og:url"]',
+        'meta[property="og:type"]',
+        'meta[name="twitter:title"]',
+        'meta[name="twitter:description"]',
+    ];
+    for (const sel of selectors) {
+        const el = doc.querySelector(sel);
+        if (el) meta[sel] = el.getAttribute('content');
+    }
+    // Canonical link
+    const canonical = doc.querySelector('link[rel="canonical"]');
+    if (canonical) meta['link[rel="canonical"]'] = canonical.getAttribute('href');
+    return meta;
+}
+
+function updateMeta(meta) {
+    for (const [sel, content] of Object.entries(meta)) {
+        if (sel.startsWith('link[')) {
+            const el = document.querySelector(sel);
+            if (el) el.setAttribute('href', content);
+        } else {
+            const el = document.querySelector(sel);
+            if (el) el.setAttribute('content', content);
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -120,11 +159,16 @@ async function navigate(url, { push = true } = {}) {
     try {
         // Check prefetch cache first
         let html = prefetchCache.get(url);
+        let finalUrl = url;
         if (!html) {
             const response = await fetch(url, { signal: controller.signal });
             if (!response.ok) {
                 window.location.href = url;
                 return;
+            }
+            // Detect server-side redirects (fetch follows them transparently)
+            if (response.redirected) {
+                finalUrl = response.url;
             }
             html = await response.text();
         }
@@ -153,6 +197,7 @@ async function navigate(url, { push = true } = {}) {
         document.title = page.title;
         document.body.dataset.template = page.template;
         document.body.className = page.bodyClass;
+        updateMeta(page.meta);
 
         // Restore the swapping class removal (body class was just replaced)
         // main-content class is on the element, not body — we need to fade in
@@ -161,13 +206,13 @@ async function navigate(url, { push = true } = {}) {
         void main.offsetHeight;
         main.classList.remove('swapping');
 
-        // History
+        // History — use finalUrl if server redirected
         if (push) {
-            history.pushState({ url, scrollY: 0 }, '', url);
+            history.pushState({ url: finalUrl, scrollY: 0 }, '', finalUrl);
         }
 
         // Scroll
-        const hash = new URL(url, location.origin).hash;
+        const hash = new URL(finalUrl, location.origin).hash;
         if (hash) {
             const target = document.querySelector(hash);
             if (target) target.scrollIntoView({ behavior: 'smooth' });
@@ -175,14 +220,18 @@ async function navigate(url, { push = true } = {}) {
             window.scrollTo(0, 0);
         }
 
+        // Accessibility: move focus to main content
+        main.setAttribute('tabindex', '-1');
+        main.focus({ preventScroll: true });
+
         // Re-initialize page modules
         if (onNavigate) onNavigate(page.template);
 
         // Update nav
-        updateActiveLinks(new URL(url, location.origin).pathname);
+        updateActiveLinks(new URL(finalUrl, location.origin).pathname);
 
         completeProgress();
-        document.dispatchEvent(new CustomEvent('router:navigate-end', { detail: { url, template: page.template } }));
+        document.dispatchEvent(new CustomEvent('router:navigate-end', { detail: { url: finalUrl, template: page.template } }));
 
     } catch (err) {
         if (err.name === 'AbortError') return;
