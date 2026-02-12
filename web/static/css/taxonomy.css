@@ -1,68 +1,121 @@
 /* ==========================================================================
-   Taxonomy Pages — Tags Index + Categories Index
-   Merged from tags.css + categories.css
+   Taxonomy Pages — Tags Cloud + Categories Cards
    Mobile-first: base targets 320px+, enhanced at 481px+
    ========================================================================== */
 
-/* Shared page container */
-.tags-index-page,
-.categories-index-page {
-    max-width: 42rem;
-    margin: 0 auto;
-    padding: var(--spacing-6) var(--spacing-4);
-}
+/* No outer max-width — each section constrains itself
+   so .page-header aligns with other pages inside .container (1200px) */
 
-/* --------------------------------------------------------------------------
-   Tags — pill-based flow layout. Tag pills use .feed-tag from cards.css.
-   -------------------------------------------------------------------------- */
+/* ==========================================================================
+   Tag Cloud — organic flowing layout with subtle pill treatment
+   ========================================================================== */
 
-.tags-flow {
+.tag-cloud {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--spacing-3);
+    gap: var(--spacing-2);
+    max-width: 42rem;
+    margin: 0 auto;
 }
 
-.tags-empty {
-    padding: var(--spacing-8) 0;
-    color: var(--color-text-muted);
+.tag-cloud-item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--spacing-2);
+    padding: var(--spacing-2) var(--spacing-4);
+    background: var(--color-bg-secondary);
+    border: 1px solid transparent;
+    border-radius: var(--radius-full);
+    color: var(--color-text-primary);
+    text-decoration: none;
     font-size: var(--font-size-sm);
+    font-weight: 500;
+    line-height: 1;
+    transition: border-color var(--transition-fast),
+                background-color var(--transition-fast),
+                box-shadow var(--transition-fast),
+                transform var(--transition-fast);
 }
 
-/* --------------------------------------------------------------------------
-   Categories — link list with counts
-   -------------------------------------------------------------------------- */
+.tag-cloud-item:hover {
+    border-color: var(--color-primary);
+    background: var(--color-bg-primary);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+}
 
-.categories-list {
+.tag-cloud-label {
+    /* inherits */
+}
+
+.tag-cloud-count {
+    font-size: var(--font-size-xs);
+    font-weight: 400;
+    color: var(--color-text-muted);
+    min-width: 1.25em;
+    text-align: center;
+}
+
+/* ==========================================================================
+   Category Cards — left accent border, hover slide
+   ========================================================================== */
+
+.category-grid {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-1);
+    gap: var(--spacing-2);
+    max-width: 42rem;
+    margin: 0 auto;
 }
 
-.categories-link {
+.category-card {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-3) var(--spacing-2);
+    padding: var(--spacing-4) var(--spacing-5);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    border-left: 3px solid var(--color-border);
     text-decoration: none;
+    transition: border-color var(--transition-fast),
+                background-color var(--transition-fast),
+                box-shadow var(--transition-fast),
+                transform var(--transition-fast);
+}
+
+.category-card:hover {
+    border-left-color: var(--color-primary);
+    background: var(--color-bg-primary);
+    box-shadow: var(--shadow-sm);
+    transform: translateX(4px);
+}
+
+.category-card-name {
+    font-weight: 600;
+    font-size: var(--font-size-base);
     color: var(--color-text-primary);
-    border-radius: var(--radius-base);
-    transition: background-color var(--transition-fast);
 }
 
-.categories-link:hover {
-    background-color: var(--color-bg-secondary);
-}
-
-.categories-link-name {
-    font-weight: 500;
-}
-
-.categories-link-count {
+.category-card-count {
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);
+    font-weight: 500;
+    background: var(--color-bg-tertiary);
+    padding: var(--spacing-1) var(--spacing-3);
+    border-radius: var(--radius-full);
+    min-width: 2em;
+    text-align: center;
+    line-height: 1;
 }
 
+/* ==========================================================================
+   Empty States
+   ========================================================================== */
+
+.tags-empty,
 .categories-empty {
+    max-width: 42rem;
+    margin: 0 auto;
     padding: var(--spacing-8) 0;
     color: var(--color-text-muted);
     font-size: var(--font-size-sm);
@@ -73,8 +126,28 @@
    ========================================================================== */
 
 @media (min-width: 481px) {
-    .tags-index-page,
-    .categories-index-page {
-        padding: var(--spacing-8) var(--spacing-4);
+    .tag-cloud {
+        gap: var(--spacing-3);
+    }
+
+    .tag-cloud-item {
+        padding: var(--spacing-2) var(--spacing-5);
+        font-size: var(--font-size-base);
+    }
+
+    .category-grid {
+        gap: var(--spacing-3);
+    }
+}
+
+/* ==========================================================================
+   Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .tag-cloud-item,
+    .category-card {
+        transition: none;
+        transform: none !important;
     }
 }

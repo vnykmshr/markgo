@@ -3,12 +3,16 @@
     <div class="container">
         <header class="page-header">
             <h1 class="page-title">Tags</h1>
+            <p class="page-subtitle">{{ .count }} tags</p>
         </header>
 
         {{ if .tags }}
-        <div class="tags-flow">
+        <div class="tag-cloud">
             {{ range .tags }}
-            <a href="/tags/{{ .Tag | urlquery }}" class="feed-tag">{{ .Tag }} ({{ .Count }})</a>
+            <a href="/tags/{{ .Tag | urlquery }}" class="tag-cloud-item">
+                <span class="tag-cloud-label">{{ .Tag }}</span>
+                <span class="tag-cloud-count">{{ .Count }}</span>
+            </a>
             {{ end }}
         </div>
         {{ else }}

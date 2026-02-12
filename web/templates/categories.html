@@ -3,14 +3,15 @@
     <div class="container">
         <header class="page-header">
             <h1 class="page-title">Categories</h1>
+            <p class="page-subtitle">{{ .count }} categories</p>
         </header>
 
         {{ if .categories }}
-        <div class="categories-list">
+        <div class="category-grid">
             {{ range .categories }}
-            <a href="/categories/{{ .Category | urlquery }}" class="categories-link">
-                <span class="categories-link-name">{{ .Category }}</span>
-                <span class="categories-link-count">{{ .Count }}</span>
+            <a href="/categories/{{ .Category | urlquery }}" class="category-card">
+                <span class="category-card-name">{{ .Category }}</span>
+                <span class="category-card-count">{{ .Count }}</span>
             </a>
             {{ end }}
         </div>

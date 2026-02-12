@@ -268,18 +268,11 @@
                     </button>
                     {{ end }}{{ end }}
                     {{ end }}
-                    <button class="theme-toggle" aria-label="Switch to dark mode" title="Toggle theme">
+                    <button class="theme-btn nav-action-btn" aria-label="Appearance" aria-expanded="false" aria-haspopup="true" title="Appearance">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
+                            <path d="M12.433 10.07C14.133 10.585 16 11.15 16 8a8 8 0 1 0-8 8c.834 0 1.543-.09 2.12-.244-.296-.378-.484-.846-.484-1.356 0-1.205.978-2.183 2.183-2.183.356 0 .693.086.998.244zM5 6.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm1-3a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0zm5.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
                         </svg>
                     </button>
-                    <div class="color-picker" role="radiogroup" aria-label="Color theme">
-                        <button class="color-swatch" role="radio" aria-checked="false" data-color="default" aria-label="Default blue" title="Default"></button>
-                        <button class="color-swatch" role="radio" aria-checked="false" data-color="ocean" aria-label="Ocean teal" title="Ocean"></button>
-                        <button class="color-swatch" role="radio" aria-checked="false" data-color="forest" aria-label="Forest green" title="Forest"></button>
-                        <button class="color-swatch" role="radio" aria-checked="false" data-color="sunset" aria-label="Sunset orange" title="Sunset"></button>
-                        <button class="color-swatch" role="radio" aria-checked="false" data-color="berry" aria-label="Berry purple" title="Berry"></button>
-                    </div>
                     <button class="navbar-toggle" id="navbar-toggle" aria-label="Toggle navigation" aria-expanded="false">
                         <span class="toggle-line"></span>
                         <span class="toggle-line"></span>
@@ -289,7 +282,7 @@
                 {{ if and (ne .config.Admin.Username "") (ne .config.Admin.Password "") }}
                 {{ if .authenticated }}{{ else }}{{ if .auth_required }}{{ else }}
                 <div class="login-popover" id="login-popover" hidden>
-                    <form class="login-popover-form login-form">
+                    <form class="login-popover-form login-form" method="POST" action="/login">
                         <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
                         <input type="hidden" name="next" value="{{ .login_next }}">
                         <label for="popover-username" class="sr-only">Username</label>
@@ -302,6 +295,26 @@
                 </div>
                 {{ end }}{{ end }}
                 {{ end }}
+                <div class="theme-popover" id="theme-popover" hidden>
+                    <div class="theme-section">
+                        <div class="theme-section-label">Mode</div>
+                        <div class="theme-mode-group" role="radiogroup" aria-label="Color mode">
+                            <button class="theme-mode-btn" role="radio" aria-checked="false" data-mode="light">Light</button>
+                            <button class="theme-mode-btn" role="radio" aria-checked="false" data-mode="dark">Dark</button>
+                            <button class="theme-mode-btn" role="radio" aria-checked="true" data-mode="auto">Auto</button>
+                        </div>
+                    </div>
+                    <div class="theme-section">
+                        <div class="theme-section-label">Color</div>
+                        <div class="theme-color-group" role="radiogroup" aria-label="Color theme">
+                            <button class="color-swatch" role="radio" aria-checked="false" data-color="default" aria-label="Default blue" title="Default"></button>
+                            <button class="color-swatch" role="radio" aria-checked="false" data-color="ocean" aria-label="Ocean teal" title="Ocean"></button>
+                            <button class="color-swatch" role="radio" aria-checked="false" data-color="forest" aria-label="Forest green" title="Forest"></button>
+                            <button class="color-swatch" role="radio" aria-checked="false" data-color="sunset" aria-label="Sunset orange" title="Sunset"></button>
+                            <button class="color-swatch" role="radio" aria-checked="false" data-color="berry" aria-label="Berry purple" title="Berry"></button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </nav>
     </header>
@@ -318,7 +331,7 @@
                     </svg>
                 </div>
                 <h2 class="auth-gate-title" id="auth-gate-title">Sign in to continue</h2>
-                <form class="auth-gate-form login-form" id="auth-gate-form" aria-labelledby="auth-gate-title">
+                <form class="auth-gate-form login-form" id="auth-gate-form" method="POST" action="/login" aria-labelledby="auth-gate-title">
                     <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
                     <input type="hidden" name="next" value="{{ .login_next }}">
                     <label for="auth-gate-username" class="sr-only">Username</label>

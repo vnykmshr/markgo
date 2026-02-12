@@ -1,30 +1,32 @@
 /* ==========================================================================
    About Page Styles
    Config-driven profile page: identity, social, bio, contact.
+   Uses shared .page-header for consistency with other pages.
    ========================================================================== */
 
-/* Page Container */
-.about-page {
-    max-width: 42rem;
-    margin: 0 auto;
-    padding: var(--spacing-6) var(--spacing-4);
-}
+/* Page Container — no max-width here; each section constrains itself
+   so .page-header aligns with other pages inside .container (1200px) */
 
 /* ==========================================================================
-   Identity Section
+   Profile Section — avatar left, info right
    ========================================================================== */
 
-.about-identity {
-    text-align: center;
+.about-profile {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-5);
+    max-width: 42rem;
+    margin: 0 auto var(--spacing-5);
     padding-bottom: var(--spacing-6);
+    border-bottom: 1px solid var(--color-border);
 }
 
-/* Avatar — image or initials circle */
+/* Avatar — smaller for inline profile layout */
 .about-avatar {
-    width: 120px;
-    height: 120px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
-    margin: 0 auto var(--spacing-5);
+    flex-shrink: 0;
     display: block;
     object-fit: cover;
 }
@@ -35,35 +37,38 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.5rem;
+    font-size: 1.5rem;
     font-weight: 600;
     letter-spacing: 0.02em;
     user-select: none;
 }
 
+.about-profile-info {
+    min-width: 0;
+}
+
 .about-name {
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-xl);
     font-weight: 700;
     line-height: 1.3;
-    margin: 0 0 var(--spacing-2);
+    margin: 0 0 var(--spacing-1);
     color: var(--color-text-primary);
 }
 
 .about-tagline {
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
     color: var(--color-text-secondary);
     margin: 0 0 var(--spacing-2);
     line-height: 1.5;
 }
 
 .about-location {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: var(--spacing-1);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     color: var(--color-text-muted);
-    margin: 0;
+    margin: 0 0 var(--spacing-3);
 }
 
 .about-location svg {
@@ -71,22 +76,20 @@
 }
 
 /* ==========================================================================
-   Social Links
+   Social Links — inline row under profile info
    ========================================================================== */
 
 .about-social {
     display: flex;
-    justify-content: center;
-    gap: var(--spacing-4);
-    padding: var(--spacing-4) 0 var(--spacing-6);
+    gap: var(--spacing-2);
 }
 
 .about-social-link {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     border-radius: var(--radius-md);
     color: var(--color-text-muted);
     transition: color var(--transition-fast), background-color var(--transition-fast);
@@ -94,16 +97,20 @@
 
 .about-social-link:hover {
     color: var(--color-primary);
-    background-color: var(--color-bg-secondary);
+    background-color: var(--color-bg-tertiary);
 }
 
 /* ==========================================================================
-   Bio Section
+   Bio Section — card container for markdown content
    ========================================================================== */
 
 .about-bio {
     line-height: 1.8;
-    padding-bottom: var(--spacing-6);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-5);
+    max-width: 42rem;
+    margin: 0 auto var(--spacing-4);
 }
 
 .about-bio h1,
@@ -112,16 +119,28 @@
 .about-bio h4,
 .about-bio h5,
 .about-bio h6 {
-    margin-top: var(--spacing-8);
-    margin-bottom: var(--spacing-4);
+    margin-top: var(--spacing-6);
+    margin-bottom: var(--spacing-3);
     font-weight: 600;
 }
 
-.about-bio h2 { font-size: var(--font-size-2xl); }
-.about-bio h3 { font-size: var(--font-size-xl); }
+.about-bio > :first-child,
+.about-bio > p:first-child,
+.about-bio > h1:first-child,
+.about-bio > h2:first-child,
+.about-bio > h3:first-child {
+    margin-top: 0;
+}
+
+.about-bio > :last-child {
+    margin-bottom: 0;
+}
+
+.about-bio h2 { font-size: var(--font-size-xl); }
+.about-bio h3 { font-size: var(--font-size-lg); }
 
 .about-bio p {
-    margin-bottom: var(--spacing-6);
+    margin-bottom: var(--spacing-4);
     color: var(--color-text-secondary);
 }
 
@@ -145,12 +164,15 @@
 }
 
 /* ==========================================================================
-   Contact Section
+   Contact Section — card container
    ========================================================================== */
 
 .about-contact {
-    border-top: 1px solid var(--color-border-light);
-    padding-top: var(--spacing-6);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-5);
+    max-width: 42rem;
+    margin: 0 auto;
 }
 
 .about-contact-heading {
@@ -160,7 +182,7 @@
     color: var(--color-text-primary);
 }
 
-/* Contact form reuses styles from contact.css via shared classes */
+/* Contact form reuses styles from components.css via shared classes */
 .about-contact .contact-form {
     display: flex;
     flex-direction: column;
@@ -169,7 +191,7 @@
 /* Email link (when SMTP not configured) */
 .about-email {
     text-align: center;
-    padding: var(--spacing-4) 0;
+    padding: var(--spacing-2) 0;
 }
 
 .about-email-link {
@@ -264,22 +286,32 @@
    ========================================================================== */
 
 @media (min-width: 481px) {
-    .about-page {
-        padding: var(--spacing-8) var(--spacing-4);
+    .about-avatar {
+        width: 88px;
+        height: 88px;
+    }
+
+    .about-avatar-initials {
+        font-size: 1.75rem;
     }
 
     .about-name {
-        font-size: var(--font-size-3xl);
+        font-size: var(--font-size-2xl);
+    }
+
+    .about-bio,
+    .about-contact {
+        padding: var(--spacing-6);
     }
 }
 
 @media (min-width: 769px) {
     .about-avatar {
-        width: 160px;
-        height: 160px;
+        width: 96px;
+        height: 96px;
     }
 
     .about-avatar-initials {
-        font-size: 3.5rem;
+        font-size: 2rem;
     }
 }

@@ -113,8 +113,12 @@
         display: none !important;
     }
 
-    .footer-nav {
+    .footer-colophon {
         display: none;
+    }
+
+    .site-footer {
+        padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px) + var(--spacing-4));
     }
 }
 

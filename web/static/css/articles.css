@@ -6,8 +6,9 @@
 /* Article List */
 .article-list {
     list-style: none;
-    margin: 0;
+    margin: 0 auto;
     padding: 0;
+    max-width: 42rem;
 }
 
 .article-list-item {
@@ -58,6 +59,8 @@
     text-align: center;
     padding: var(--spacing-16) 0;
     color: var(--color-text-muted);
+    max-width: 42rem;
+    margin: 0 auto;
 }
 
 .articles-empty h3 {
