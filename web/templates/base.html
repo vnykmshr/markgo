@@ -163,8 +163,7 @@
     {{ if eq $tpl "404" }}<link rel="stylesheet" href="/static/css/404.css">{{ end }}
     {{ if eq $tpl "article" "compose" }}<link rel="stylesheet" href="/static/css/article.css">{{ end }}
     {{ if eq $tpl "articles" }}<link rel="stylesheet" href="/static/css/articles.css">{{ end }}
-    {{ if eq $tpl "about-article" }}<link rel="stylesheet" href="/static/css/about-article.css">{{ end }}
-    {{ if eq $tpl "contact" }}<link rel="stylesheet" href="/static/css/contact.css">{{ end }}
+    {{ if eq $tpl "about" }}<link rel="stylesheet" href="/static/css/about.css">{{ end }}
     {{ if eq $tpl "search" }}<link rel="stylesheet" href="/static/css/search.css">{{ end }}
     {{ if eq $tpl "tags" }}<link rel="stylesheet" href="/static/css/tags.css">{{ end }}
     {{ if eq $tpl "categories" }}<link rel="stylesheet" href="/static/css/categories.css">{{ end }}
@@ -179,9 +178,7 @@
     {{ if eq $tpl "articles" }}{{ template "articles-head" . }}{{ end }}
     {{ if eq $tpl "article" }}{{ template "article-head" . }}{{ end }}
     {{ if eq $tpl "search" }}{{ template "search-head" . }}{{ end }}
-    {{ if eq $tpl "contact" }}{{ template "contact-head" . }}{{ end }}
-
-    {{ if eq $tpl "about-article" }}{{ template "about-article-head" . }}{{ end }}
+    {{ if eq $tpl "about" }}{{ template "about-head" . }}{{ end }}
     {{ if eq $tpl "tags" }}{{ template "tags-head" . }}{{ end }}
     {{ if eq $tpl "categories" }}{{ template "categories-head" . }}{{ end }}
     {{ if eq $tpl "tag" }}{{ template "tag-head" . }}{{ end }}
@@ -194,9 +191,7 @@
     {{- if eq $tpl "articles" -}}articles-page
     {{- else if eq $tpl "article" -}}article-page-body
     {{- else if eq $tpl "search" -}}search-page
-    {{- else if eq $tpl "contact" -}}contact-page
-
-    {{- else if eq $tpl "about-article" -}}about-article-page
+    {{- else if eq $tpl "about" -}}about-page
     {{- else if eq $tpl "tags" -}}tags-page
     {{- else if eq $tpl "categories" -}}categories-page
     {{- else if eq $tpl "tag" -}}tag-page
@@ -321,9 +316,7 @@
         {{ if eq $tpl "articles" }}{{ template "articles-content" . }}{{ end }}
         {{ if eq $tpl "article" }}{{ template "article-content" . }}{{ end }}
         {{ if eq $tpl "search" }}{{ template "search-content" . }}{{ end }}
-        {{ if eq $tpl "contact" }}{{ template "contact-content" . }}{{ end }}
-
-        {{ if eq $tpl "about-article" }}{{ template "about-article-content" . }}{{ end }}
+        {{ if eq $tpl "about" }}{{ template "about-content" . }}{{ end }}
         {{ if eq $tpl "tags" }}{{ template "tags-content" . }}{{ end }}
         {{ if eq $tpl "tag" }}{{ template "tag-content" . }}{{ end }}
         {{ if eq $tpl "categories" }}{{ template "categories-content" . }}{{ end }}
@@ -341,7 +334,7 @@
                 <a href="/feed.xml" class="footer-link footer-subscribe">Subscribe</a>
                 <a href="/tags" class="footer-link">Tags</a>
                 <a href="/categories" class="footer-link">Categories</a>
-                <a href="/contact" class="footer-link">Contact</a>
+                <a href="/about" class="footer-link">About</a>
                 <a href="/writing" class="footer-link">Writing</a>
             </nav>
             <p class="footer-colophon">
@@ -356,7 +349,7 @@
 
     <!-- Template-specific JavaScript -->
     {{ $tpl := .template | default "feed" }}
-    {{ if eq $tpl "contact" }}<script src="/static/js/contact.js"></script>{{ end }}
+    {{ if eq $tpl "about" }}<script src="/static/js/contact.js"></script>{{ end }}
     {{ if eq $tpl "search" }}<script src="/static/js/search.js"></script>{{ end }}
     {{ if eq $tpl "compose" }}<script src="/static/js/compose.js"></script>{{ end }}
 

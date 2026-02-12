@@ -80,16 +80,10 @@ func (h *PostHandler) getArticleData(slug string) (map[string]any, error) {
 		}
 	}
 
-	// Use special template for about page
-	templateName := templateArticle
-	if slug == "about" {
-		templateName = "about-article"
-	}
-
 	data := h.buildArticlePageData(article.Title+" - "+h.config.Blog.Title, recent)
 	data["article"] = article
 	data["description"] = article.Description
-	data["template"] = templateName
+	data["template"] = templateArticle
 
 	return data, nil
 }

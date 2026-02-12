@@ -356,8 +356,7 @@ func (s *StaticExportService) setupRoutes(router *gin.Engine, h *handlers.Router
 	router.GET("/categories", h.Taxonomy.Categories)
 	router.GET("/categories/:category", h.Taxonomy.ArticlesByCategory)
 	router.GET("/search", h.Search.Search)
-	router.GET("/about", h.AboutArticle)
-	router.GET("/contact", h.Contact.ShowForm)
+	router.GET("/about", h.About.ShowAbout)
 
 	// 404 page for static export
 	router.NoRoute(h.NotFound)

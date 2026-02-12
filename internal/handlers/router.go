@@ -47,6 +47,7 @@ type Router struct {
 	Contact     *ContactHandler
 	Syndication *SyndicationHandler
 	Admin       *AdminHandler
+	About       *AboutHandler
 	Auth        *AuthHandler    // nil when admin credentials not configured
 	Compose     *ComposeHandler // nil when compose not configured
 
@@ -69,6 +70,8 @@ func New(cfg *Config) *Router {
 		authHandler = NewAuthHandler(base, cfg.Config.Admin.Username, cfg.Config.Admin.Password, cfg.SessionStore, cfg.SecureCookie)
 	}
 
+	aboutHandler := NewAboutHandler(base, cfg.ArticleService, cfg.MarkdownRenderer)
+
 	return &Router{
 		Feed:        NewFeedHandler(base, cfg.ArticleService),
 		Post:        NewPostHandler(base, cfg.ArticleService),
@@ -78,6 +81,7 @@ func New(cfg *Config) *Router {
 		Contact:     NewContactHandler(base, cfg.EmailService),
 		Syndication: NewSyndicationHandler(base, cfg.FeedService),
 		Admin:       NewAdminHandler(base, cfg.ArticleService, time.Now()),
+		About:       aboutHandler,
 		Auth:        authHandler,
 		Compose:     composeHandler,
 
@@ -85,12 +89,6 @@ func New(cfg *Config) *Router {
 		articleService: cfg.ArticleService,
 		logger:         cfg.Logger,
 	}
-}
-
-// AboutArticle handles the about page route by injecting the "about" slug.
-func (r *Router) AboutArticle(c *gin.Context) {
-	c.Params = append(c.Params, gin.Param{Key: "slug", Value: "about"})
-	r.Post.Article(c)
 }
 
 // ClearCache triggers a full article reload from disk.

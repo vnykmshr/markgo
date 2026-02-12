@@ -295,12 +295,14 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 	router.GET("/categories", h.Taxonomy.Categories)
 	router.GET("/categories/:category", h.Taxonomy.ArticlesByCategory)
 	router.GET("/search", h.Search.Search)
-	router.GET("/about", h.AboutArticle)
+	router.GET("/about", h.About.ShowAbout)
 
-	// Contact form with rate limiting
+	// /contact redirects to about page; POST stays for form submission
+	router.GET("/contact", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/about#contact")
+	})
 	contactGroup := router.Group("/contact")
 	contactGroup.Use(middleware.RateLimit(cfg.RateLimit.Contact.Requests, cfg.RateLimit.Contact.Window))
-	contactGroup.GET("", h.Contact.ShowForm)
 	contactGroup.POST("", h.Contact.Submit)
 
 	// Feeds and SEO
@@ -411,7 +413,7 @@ func setupTemplates(router *gin.Engine, templateService *services.TemplateServic
 	// Validate that required templates exist
 	requiredTemplates := []string{
 		"base.html", "feed.html", "compose.html", "article.html", "articles.html",
-		"404.html", "contact.html", "search.html", "tags.html", "categories.html",
+		"404.html", "about.html", "search.html", "tags.html", "categories.html",
 		"drafts.html",
 	}
 

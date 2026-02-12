@@ -25,13 +25,6 @@ func NewContactHandler(base *BaseHandler, emailService services.EmailServiceInte
 	}
 }
 
-// ShowForm handles the GET /contact route.
-func (h *ContactHandler) ShowForm(c *gin.Context) {
-	data := h.buildBaseTemplateData("Contact - " + h.config.Blog.Title)
-	data["template"] = "contact"
-	h.renderHTML(c, http.StatusOK, "base.html", data)
-}
-
 // Submit handles contact form submissions.
 func (h *ContactHandler) Submit(c *gin.Context) {
 	var form struct {
