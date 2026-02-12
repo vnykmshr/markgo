@@ -503,6 +503,7 @@ html {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: relative;
 }
 
 .navbar-brand {
@@ -585,8 +586,7 @@ html {
     gap: var(--spacing-2);
 }
 
-.nav-action-btn,
-.theme-toggle {
+.nav-action-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -601,16 +601,14 @@ html {
     text-decoration: none;
 }
 
-.nav-action-btn:hover,
-.theme-toggle:hover {
+.nav-action-btn:hover {
     background-color: var(--color-bg-secondary);
     color: var(--color-primary);
     border-color: var(--color-border-dark);
     text-decoration: none;
 }
 
-.nav-action-btn:focus,
-.theme-toggle:focus {
+.nav-action-btn:focus {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
 }
@@ -1098,18 +1096,90 @@ html {
 }
 
 /* ==========================================================================
-   Color Picker
+   Theme Popover
    ========================================================================== */
 
-.color-picker {
+.theme-popover {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: var(--spacing-2);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-popover);
+    padding: var(--spacing-4);
+    width: calc(100vw - 2 * var(--container-padding));
+    max-width: 240px;
+}
+
+.theme-popover[hidden] {
     display: none;
+}
+
+.theme-section + .theme-section {
+    margin-top: var(--spacing-3);
+    padding-top: var(--spacing-3);
+    border-top: 1px solid var(--color-border-light);
+}
+
+.theme-section-label {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--spacing-2);
+}
+
+/* Segmented control for Light / Dark / Auto */
+.theme-mode-group {
+    display: flex;
+    gap: 0;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+    padding: 2px;
+}
+
+.theme-mode-btn {
+    flex: 1;
+    padding: var(--spacing-1) var(--spacing-2);
+    border: none;
+    background: none;
+    border-radius: var(--radius-base);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.theme-mode-btn:hover {
+    color: var(--color-text-primary);
+}
+
+.theme-mode-btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+}
+
+.theme-mode-btn.active {
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Color swatches */
+.theme-color-group {
+    display: flex;
     align-items: center;
-    gap: var(--spacing-1);
+    gap: var(--spacing-3);
 }
 
 .color-swatch {
-    width: 16px;
-    height: 16px;
+    width: 24px;
+    height: 24px;
     border-radius: var(--radius-full);
     border: 2px solid var(--color-border);
     cursor: pointer;
@@ -1118,7 +1188,7 @@ html {
 }
 
 .color-swatch:hover {
-    transform: scale(1.2);
+    transform: scale(1.15);
 }
 
 .color-swatch:focus-visible {
@@ -1128,7 +1198,7 @@ html {
 
 .color-swatch.active {
     border-color: var(--color-text-primary);
-    box-shadow: 0 0 0 1px var(--color-bg-primary);
+    box-shadow: 0 0 0 2px var(--color-bg-primary), 0 0 0 3px var(--color-text-primary);
 }
 
 .color-swatch[data-color="default"] { background: #2563eb; }
@@ -1136,12 +1206,6 @@ html {
 .color-swatch[data-color="forest"]  { background: #059669; }
 .color-swatch[data-color="sunset"]  { background: #ea580c; }
 .color-swatch[data-color="berry"]   { background: #9333ea; }
-
-@media (min-width: 769px) {
-    .color-picker {
-        display: flex;
-    }
-}
 
 /* ==========================================================================
    Reduced Motion
