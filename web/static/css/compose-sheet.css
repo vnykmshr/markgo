@@ -1,0 +1,252 @@
+/* ==========================================================================
+   Compose Sheet
+   Quick-capture overlay — bottom sheet (mobile), centered modal (desktop).
+   Uses design tokens from main.css. Shell-level — persists across SPA swaps.
+   ========================================================================== */
+
+/* Overlay — covers entire viewport */
+.compose-sheet-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.compose-sheet-overlay[hidden] {
+    display: none;
+}
+
+/* Backdrop */
+.compose-sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    animation: sheetFadeIn var(--transition-base) ease-out;
+}
+
+/* Sheet — mobile-first bottom sheet */
+.compose-sheet {
+    position: relative;
+    width: 100%;
+    max-height: 85vh;
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    flex-direction: column;
+    animation: sheetSlideUp var(--transition-base) ease-out;
+}
+
+/* --------------------------------------------------------------------------
+   Header
+   -------------------------------------------------------------------------- */
+
+.compose-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-4) var(--spacing-4) var(--spacing-2);
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.compose-sheet-heading {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.compose-sheet-close {
+    background: none;
+    border: none;
+    font-size: var(--font-size-xl);
+    line-height: 1;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: var(--spacing-1);
+    border-radius: var(--radius-base);
+}
+
+.compose-sheet-close:hover {
+    color: var(--color-text-primary);
+    background: var(--color-bg-tertiary);
+}
+
+/* --------------------------------------------------------------------------
+   Title toggle + input
+   -------------------------------------------------------------------------- */
+
+.compose-sheet-title-group {
+    padding: var(--spacing-2) var(--spacing-4) 0;
+}
+
+.compose-sheet-title-toggle {
+    background: none;
+    border: none;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: var(--spacing-1) 0;
+}
+
+.compose-sheet-title-toggle:hover {
+    color: var(--color-primary);
+}
+
+.compose-sheet-title-input {
+    display: none;
+    width: 100%;
+    margin-top: var(--spacing-2);
+    padding: var(--spacing-2) var(--spacing-3);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-base);
+    color: var(--color-text-primary);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    outline: none;
+}
+
+.compose-sheet-title-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
+}
+
+.compose-sheet-title-group.expanded .compose-sheet-title-input {
+    display: block;
+}
+
+/* --------------------------------------------------------------------------
+   Textarea
+   -------------------------------------------------------------------------- */
+
+.compose-sheet-textarea {
+    flex: 1;
+    min-height: 120px;
+    margin: var(--spacing-3) var(--spacing-4);
+    padding: var(--spacing-3);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+    color: var(--color-text-primary);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    resize: vertical;
+    outline: none;
+}
+
+.compose-sheet-textarea:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
+}
+
+.compose-sheet-textarea::placeholder {
+    color: var(--color-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+
+.compose-sheet-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-2) var(--spacing-4) var(--spacing-4);
+    border-top: 1px solid var(--color-border-light);
+}
+
+.compose-sheet-wordcount {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    text-transform: capitalize;
+}
+
+.compose-sheet-publish {
+    padding: var(--spacing-2) var(--spacing-5);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-inverse);
+    background-color: var(--color-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.compose-sheet-publish:hover {
+    background-color: var(--color-primary-dark);
+}
+
+.compose-sheet-publish:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   Desktop — centered modal
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 481px) {
+    .compose-sheet-overlay {
+        align-items: center;
+    }
+
+    .compose-sheet {
+        max-width: 480px;
+        border-radius: var(--radius-xl);
+        animation-name: sheetFadeScale;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Animations
+   -------------------------------------------------------------------------- */
+
+@keyframes sheetFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes sheetSlideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes sheetFadeScale {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .compose-sheet-backdrop {
+        animation-duration: 0.01ms !important;
+    }
+
+    .compose-sheet {
+        animation-duration: 0.01ms !important;
+    }
+
+    .compose-sheet-publish {
+        transition: none;
+    }
+}

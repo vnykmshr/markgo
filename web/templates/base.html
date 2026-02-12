@@ -168,7 +168,10 @@
     <link rel="stylesheet" href="/static/css/404.css">
     <link rel="stylesheet" href="/static/css/toast.css">
     <link rel="stylesheet" href="/static/css/fab.css">
+    <link rel="stylesheet" href="/static/css/compose-sheet.css">
     <link rel="stylesheet" href="/static/css/login.css">
+
+    {{ if .csrf_token }}<meta name="csrf-token" content="{{ .csrf_token }}">{{ end }}
 
     <!-- Additional head content -->
     {{ $tpl := .template | default "feed" }}
