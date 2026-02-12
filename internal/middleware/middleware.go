@@ -127,6 +127,14 @@ func RateLimit(requests int, window time.Duration) gin.HandlerFunc {
 	}()
 
 	return func(c *gin.Context) {
+		// Skip rate limiting for static assets — a single page load
+		// requests 20+ static files; counting them exhausts the budget.
+		path := c.Request.URL.Path
+		if strings.HasPrefix(path, "/static/") || path == "/favicon.ico" || path == "/sw.js" {
+			c.Next()
+			return
+		}
+
 		// Use RemoteAddr for security (ClientIP can be spoofed via X-Forwarded-For)
 		ip := c.Request.RemoteAddr
 		// Strip port from RemoteAddr (format is "IP:port")
