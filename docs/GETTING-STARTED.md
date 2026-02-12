@@ -178,7 +178,6 @@ See [deployment.md](deployment.md) for reverse proxy setup, systemd, and product
 - **Feeds** — RSS (`/feed.xml`), JSON Feed (`/feed.json`), sitemap (`/sitemap.xml`)
 - **SEO** — Open Graph, Twitter Cards, Schema.org, canonical URLs
 - **Themes** — Light/Dark/Auto mode, 5 color presets, 3 style themes
-- **Comments** — Optional Giscus integration
 - **Contact form** — SMTP email delivery with rate limiting
 - **Admin panel** — Stats, draft management, cache controls
 

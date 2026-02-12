@@ -50,7 +50,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tech icons**: Individual brand colors standardized to `var(--color-primary-dark)`
 - **Tag cloud**: Filled blue pills changed to outlined style matching article card tags
 - **JS showMessage**: Hardcoded hex colors replaced with CSS custom property reads (with fallback values)
-- **comments.css**: Aligned to project design token system
 - **golangci-lint v1 to v2 migration**: Config schema updated to v2 format, action upgraded to v7 with golangci-lint v2.8.0
 - **quic-go updated** to v0.57.0 (resolves CVE)
 - **GitHub Actions pinned**: `softprops/action-gh-release` pinned to SHA

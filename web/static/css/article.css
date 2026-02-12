@@ -181,6 +181,21 @@
     margin: 0;
 }
 
+.article-reply {
+    margin: var(--spacing-4) 0 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.article-reply a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+}
+
+.article-reply a:hover {
+    color: var(--color-accent);
+}
+
 /* ==========================================================================
    Responsive
    ========================================================================== */

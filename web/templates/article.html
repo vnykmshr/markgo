@@ -96,12 +96,14 @@
                     </p>
                     {{ end }}
                 </div>
+                {{ if .config.Blog.AuthorEmail }}
+                <p class="article-reply">
+                    Have thoughts? <a href="mailto:{{ .config.Blog.AuthorEmail }}?subject=Re: {{ displayTitle .article }}">Reply by email</a>
+                </p>
+                {{ end }}
             </footer>
         </div>
     </article>
-
-    <!-- Comments Section -->
-    {{ template "comments" . }}
 </div>
 
 <!-- Structured Data -->
@@ -163,8 +165,5 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ displayTitle .article }}">
 <meta name="twitter:description" content="{{ if .article.Description }}{{ .article.Description }}{{ else }}{{ .article.Excerpt }}{{ end }}">
-
-<!-- Comments CSS -->
-{{ template "comments-css" }}
 
 {{ end }}

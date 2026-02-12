@@ -164,22 +164,6 @@ Sliding window per IP. Static assets are excluded from rate limiting.
 | `SEO_GOOGLE_SITE_VERIFY` | *(empty)* | Google Search Console verification. |
 | `SEO_BING_SITE_VERIFY` | *(empty)* | Bing Webmaster verification. |
 
-## Comments
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `COMMENTS_ENABLED` | `false` | Enable Giscus comments on articles. |
-| `COMMENTS_PROVIDER` | `giscus` | Only `giscus` is supported. |
-| `GISCUS_REPO` | *(empty)* | GitHub repo in `owner/repo` format. |
-| `GISCUS_REPO_ID` | *(empty)* | Repository ID from giscus.app. |
-| `GISCUS_CATEGORY` | `General` | Discussion category name. |
-| `GISCUS_CATEGORY_ID` | *(empty)* | Category ID from giscus.app. |
-| `GISCUS_THEME` | `preferred_color_scheme` | Giscus theme. |
-| `GISCUS_LANGUAGE` | `en` | Giscus language code. |
-| `GISCUS_REACTIONS_ENABLED` | `true` | Enable emoji reactions. |
-
----
-
 ## Production Checklist
 
 ```bash

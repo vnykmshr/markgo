@@ -59,9 +59,6 @@ func TestConfigValidationTableDriven(t *testing.T) {
 				MaxBackups: 3,
 				MaxAge:     28,
 			},
-			Comments: CommentsConfig{
-				Enabled: false,
-			},
 			CORS: CORSConfig{
 				AllowedOrigins: []string{"http://localhost:3000"},
 				AllowedMethods: []string{"GET", "POST"},
@@ -185,45 +182,6 @@ func TestEmailConfigValidationTableDriven(t *testing.T) {
 		{"empty to", EmailConfig{Host: "smtp.example.com", Port: 587, Username: "user", Password: "pass", From: "from@example.com", To: ""}, "to"},
 		{"invalid from email", EmailConfig{Host: "smtp.example.com", Port: 587, Username: "user", Password: "pass", From: "not-an-email", To: "to@example.com"}, "from"},
 		{"invalid to email", EmailConfig{Host: "smtp.example.com", Port: 587, Username: "user", Password: "pass", From: "from@example.com", To: "not-an-email"}, "to"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.config.Validate()
-			if tt.wantErr == "" {
-				assert.NoError(t, err)
-			} else {
-				assert.Error(t, err)
-				if err != nil {
-					assert.Contains(t, err.Error(), tt.wantErr)
-				}
-			}
-		})
-	}
-}
-
-// TestCommentsConfigValidationTableDriven tests comments configuration
-func TestCommentsConfigValidationTableDriven(t *testing.T) {
-	tests := []struct {
-		name    string
-		config  CommentsConfig
-		wantErr string
-	}{
-		{"disabled comments", CommentsConfig{Enabled: false}, ""},
-		{
-			name: "valid giscus",
-			config: CommentsConfig{
-				Enabled:        true,
-				Provider:       "giscus",
-				GiscusRepo:     "user/repo",
-				GiscusCategory: "General",
-			},
-			wantErr: "",
-		},
-		{"invalid provider", CommentsConfig{Enabled: true, Provider: "disqus"}, "giscus"},
-		{"giscus without repo", CommentsConfig{Enabled: true, Provider: "giscus", GiscusRepo: "", GiscusCategory: "General"}, "giscus_repo"},
-		{"giscus invalid repo format", CommentsConfig{Enabled: true, Provider: "giscus", GiscusRepo: "invalid", GiscusCategory: "General"}, "owner/repo"},
-		{"giscus without category", CommentsConfig{Enabled: true, Provider: "giscus", GiscusRepo: "user/repo", GiscusCategory: ""}, "giscus_category"},
 	}
 
 	for _, tt := range tests {

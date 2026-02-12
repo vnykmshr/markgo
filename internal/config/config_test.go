@@ -73,16 +73,6 @@ func TestLoad(t *testing.T) {
 	assert.Equal(t, "default", cfg.Blog.Theme)
 	assert.Equal(t, 10, cfg.Blog.PostsPerPage)
 
-	// Test comments config defaults
-	assert.False(t, cfg.Comments.Enabled)
-	assert.Equal(t, "giscus", cfg.Comments.Provider)
-	assert.Equal(t, "", cfg.Comments.GiscusRepo)
-	assert.Equal(t, "", cfg.Comments.GiscusRepoID)
-	assert.Equal(t, "General", cfg.Comments.GiscusCategory)
-	assert.Equal(t, "", cfg.Comments.GiscusCategoryID)
-	assert.Equal(t, "preferred_color_scheme", cfg.Comments.Theme)
-	assert.Equal(t, "en", cfg.Comments.Language)
-	assert.True(t, cfg.Comments.ReactionsEnabled)
 }
 
 func TestLoadWithEnvironmentVariables(t *testing.T) {
@@ -321,7 +311,6 @@ func clearEnvVars() {
 		"CORS_ALLOWED_ORIGINS", "CORS_ALLOWED_METHODS", "CORS_ALLOWED_HEADERS",
 		"ADMIN_USERNAME", "ADMIN_PASSWORD",
 		"BLOG_TITLE", "BLOG_DESCRIPTION", "BLOG_AUTHOR", "BLOG_AUTHOR_EMAIL", "BLOG_LANGUAGE", "BLOG_THEME", "BLOG_POSTS_PER_PAGE",
-		"COMMENTS_ENABLED", "COMMENTS_PROVIDER", "GISCUS_REPO", "GISCUS_REPO_ID", "GISCUS_CATEGORY", "GISCUS_CATEGORY_ID", "GISCUS_THEME", "GISCUS_LANGUAGE", "GISCUS_REACTIONS_ENABLED",
 	}
 
 	for _, env := range vars {

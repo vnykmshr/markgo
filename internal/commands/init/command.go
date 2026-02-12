@@ -342,9 +342,6 @@ EMAIL_USE_SSL=true
 ADMIN_USERNAME=
 ADMIN_PASSWORD=
 
-# Comments System (Optional)
-COMMENTS_ENABLED=false
-COMMENTS_PROVIDER=giscus
 `,
 		time.Now().Format("2006-01-02 15:04:05"),
 		config.Environment,

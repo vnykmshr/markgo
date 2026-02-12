@@ -42,7 +42,6 @@ type Config struct {
 	Admin         AdminConfig     `json:"admin"`
 	Blog          BlogConfig      `json:"blog"`
 	About         AboutConfig     `json:"about"`
-	Comments      CommentsConfig  `json:"comments"`
 	Logging       LoggingConfig   `json:"logging"`
 	SEO           SEOConfig       `json:"seo"`
 }
@@ -108,19 +107,6 @@ type BlogConfig struct {
 	Theme        string `json:"theme"`
 	Style        string `json:"style"`
 	PostsPerPage int    `json:"posts_per_page"`
-}
-
-// CommentsConfig holds comment system configuration options.
-type CommentsConfig struct {
-	Enabled          bool   `json:"enabled"`
-	Provider         string `json:"provider"`
-	GiscusRepo       string `json:"giscus_repo"`
-	GiscusRepoID     string `json:"giscus_repo_id"`
-	GiscusCategory   string `json:"giscus_category"`
-	GiscusCategoryID string `json:"giscus_category_id"`
-	Theme            string `json:"theme"`
-	Language         string `json:"language"`
-	ReactionsEnabled bool   `json:"reactions_enabled"`
 }
 
 // LoggingConfig holds logging-related configuration options.
@@ -275,18 +261,6 @@ func Load() (*Config, error) {
 			Website:  getEnv("ABOUT_WEBSITE", ""),
 		},
 
-		Comments: CommentsConfig{
-			Enabled:          getEnvBool("COMMENTS_ENABLED", false),
-			Provider:         getEnv("COMMENTS_PROVIDER", "giscus"),
-			GiscusRepo:       getEnv("GISCUS_REPO", ""),
-			GiscusRepoID:     getEnv("GISCUS_REPO_ID", ""),
-			GiscusCategory:   getEnv("GISCUS_CATEGORY", "General"),
-			GiscusCategoryID: getEnv("GISCUS_CATEGORY_ID", ""),
-			Theme:            getEnv("GISCUS_THEME", "preferred_color_scheme"),
-			Language:         getEnv("GISCUS_LANGUAGE", "en"),
-			ReactionsEnabled: getEnvBool("GISCUS_REACTIONS_ENABLED", true),
-		},
-
 		Logging: LoggingConfig{
 			Level:      getEnv("LOG_LEVEL", "info"),
 			Format:     getEnv("LOG_FORMAT", "json"),
@@ -425,11 +399,6 @@ func (c *Config) Validate() error {
 	// Validate logging configuration
 	if err := c.Logging.Validate(); err != nil {
 		return apperrors.NewConfigError("logging", c.Logging, "Invalid logging configuration", err)
-	}
-
-	// Validate comments configuration
-	if err := c.Comments.Validate(); err != nil {
-		return apperrors.NewConfigError("comments", c.Comments, "Invalid comments configuration", err)
 	}
 
 	// Validate CORS configuration
@@ -671,44 +640,6 @@ func (l *LoggingConfig) Validate() error {
 	}
 	if l.MaxAge < 0 {
 		return apperrors.NewConfigError("max_age", l.MaxAge, "Log max age cannot be negative", apperrors.ErrConfigValidation)
-	}
-
-	return nil
-}
-
-// Validate comments configuration
-func (c *CommentsConfig) Validate() error {
-	if !c.Enabled {
-		return nil // Comments are disabled, skip validation
-	}
-
-	// Validate provider (only Giscus supported)
-	if c.Provider != "giscus" {
-		return apperrors.NewConfigError("provider", c.Provider,
-			"Comments provider must be 'giscus' (Disqus and Utterances removed for simplification)",
-			apperrors.ErrConfigValidation)
-	}
-
-	// Validate giscus configuration
-	{
-		if c.GiscusRepo == "" {
-			return apperrors.NewConfigError("giscus_repo", c.GiscusRepo,
-				"Giscus repository is required when using giscus provider",
-				apperrors.ErrMissingConfig)
-		}
-
-		// Validate repository format (owner/repo)
-		repoRegex := regexp.MustCompile(`^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$`)
-		if !repoRegex.MatchString(c.GiscusRepo) {
-			return apperrors.NewConfigError("giscus_repo", c.GiscusRepo,
-				"Giscus repository must be in format 'owner/repo'",
-				apperrors.ErrConfigValidation)
-		}
-
-		if c.GiscusCategory == "" {
-			return apperrors.NewConfigError("giscus_category", c.GiscusCategory,
-				"Giscus category is required when using giscus provider", apperrors.ErrMissingConfig)
-		}
 	}
 
 	return nil
