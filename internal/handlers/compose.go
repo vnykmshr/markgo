@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -260,4 +261,52 @@ func (h *ComposeHandler) Preview(c *gin.Context) {
 	}
 
 	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
+}
+
+// HandleQuickPublish creates a post from a JSON request body.
+// Used by the SPA compose sheet for fast content capture.
+func (h *ComposeHandler) HandleQuickPublish(c *gin.Context) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(maxPreviewBodySize))
+
+	var input compose.Input
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	if input.Content == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Content is required"})
+		return
+	}
+
+	slug, err := h.composeService.CreatePost(&input)
+	if err != nil {
+		h.logger.Error("Quick publish failed", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create post"})
+		return
+	}
+
+	if err := h.articleService.ReloadArticles(); err != nil {
+		h.logger.Error("Failed to reload articles after quick publish", "error", err)
+	}
+
+	// Infer type for the response (mirrors inferPostType in article service)
+	postType := "article"
+	if input.LinkURL != "" {
+		postType = "link"
+	} else if input.Title == "" && wordCount(input.Content) < 100 {
+		postType = "thought"
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"slug":    slug,
+		"url":     "/writing/" + slug,
+		"type":    postType,
+		"message": "Published",
+	})
+}
+
+// wordCount returns an approximate word count by splitting on whitespace.
+func wordCount(s string) int {
+	return len(strings.Fields(s))
 }

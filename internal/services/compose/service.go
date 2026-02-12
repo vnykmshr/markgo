@@ -27,15 +27,15 @@ func NewService(articlesPath, defaultAuthor string) *Service {
 	}
 }
 
-// Input represents the compose form submission.
+// Input represents the compose form or API submission.
 type Input struct {
-	Content     string
-	Title       string
-	Description string
-	LinkURL     string
-	Tags        string
-	Categories  string
-	Draft       bool
+	Content     string `json:"content"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	LinkURL     string `json:"link_url"`
+	Tags        string `json:"tags"`
+	Categories  string `json:"categories"`
+	Draft       bool   `json:"draft"`
 }
 
 // CreatePost creates a new markdown post file from compose input.

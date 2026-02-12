@@ -22,6 +22,7 @@ import (
 
 	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/models"
+	"github.com/vnykmshr/markgo/internal/services/compose"
 )
 
 // ---------------------------------------------------------------------------
@@ -356,6 +357,149 @@ func TestUpload(t *testing.T) {
 		var resp map[string]string
 		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 		assert.Contains(t, resp["markdown"], "![image]")
+	})
+}
+
+// ---------------------------------------------------------------------------
+// Quick publish handler tests
+// ---------------------------------------------------------------------------
+
+func createQuickPublishHandler(t *testing.T) *ComposeHandler {
+	t.Helper()
+	tmpDir := t.TempDir()
+
+	cfg := &config.Config{
+		Environment:  "test",
+		BaseURL:      "http://localhost:3000",
+		ArticlesPath: tmpDir,
+		Blog:         config.BlogConfig{Title: "Test Blog", Author: "Test Author"},
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
+
+	composeSvc := compose.NewService(tmpDir, cfg.Blog.Author)
+	return NewComposeHandler(base, composeSvc, &MockArticleService{}, &MockMarkdownRenderer{})
+}
+
+func TestQuickPublish(t *testing.T) {
+	t.Run("thought — content only, no title", func(t *testing.T) {
+		handler := createQuickPublishHandler(t)
+
+		body := `{"content":"Just a quick thought about Go templates."}`
+		req := httptest.NewRequest("POST", "/compose/quick", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/compose/quick", handler.HandleQuickPublish)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+
+		var resp map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.NotEmpty(t, resp["slug"])
+		assert.Contains(t, resp["url"], "/writing/")
+		assert.Equal(t, "thought", resp["type"])
+		assert.Equal(t, "Published", resp["message"])
+	})
+
+	t.Run("article — has title", func(t *testing.T) {
+		handler := createQuickPublishHandler(t)
+
+		body := `{"content":"Full article content here.","title":"My Article"}`
+		req := httptest.NewRequest("POST", "/compose/quick", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/compose/quick", handler.HandleQuickPublish)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+
+		var resp map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Equal(t, "my-article", resp["slug"])
+		assert.Equal(t, "/writing/my-article", resp["url"])
+		assert.Equal(t, "article", resp["type"])
+	})
+
+	t.Run("link — has link_url", func(t *testing.T) {
+		handler := createQuickPublishHandler(t)
+
+		body := `{"content":"Check this out","link_url":"https://example.com"}`
+		req := httptest.NewRequest("POST", "/compose/quick", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/compose/quick", handler.HandleQuickPublish)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+
+		var resp map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Equal(t, "link", resp["type"])
+	})
+
+	t.Run("long content without title is article not thought", func(t *testing.T) {
+		handler := createQuickPublishHandler(t)
+
+		// 150 words without a title — should be "article", not "thought"
+		words := strings.Repeat("word ", 150)
+		body := fmt.Sprintf(`{"content":%q}`, words)
+		req := httptest.NewRequest("POST", "/compose/quick", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/compose/quick", handler.HandleQuickPublish)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+
+		var resp map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Equal(t, "article", resp["type"])
+	})
+
+	t.Run("empty content returns 400", func(t *testing.T) {
+		handler := createQuickPublishHandler(t)
+
+		body := `{"content":""}`
+		req := httptest.NewRequest("POST", "/compose/quick", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/compose/quick", handler.HandleQuickPublish)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+
+		var resp map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Contains(t, resp["error"], "Content is required")
+	})
+
+	t.Run("invalid JSON returns 400", func(t *testing.T) {
+		handler := createQuickPublishHandler(t)
+
+		req := httptest.NewRequest("POST", "/compose/quick", strings.NewReader("not json"))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/compose/quick", handler.HandleQuickPublish)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+
+		var resp map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Contains(t, resp["error"], "Invalid request body")
 	})
 }
 

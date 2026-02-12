@@ -398,6 +398,39 @@ func TestCSRF(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, postW.Code)
 	})
+
+	t.Run("POST with valid X-CSRF-Token header succeeds", func(t *testing.T) {
+		router := setupTestRouter()
+		router.Use(CSRF(true))
+		var token string
+		router.GET("/api", func(c *gin.Context) {
+			if v, exists := c.Get("csrf_token"); exists {
+				token, _ = v.(string)
+			}
+			c.String(200, "ok")
+		})
+		router.POST("/api", func(c *gin.Context) {
+			c.String(200, "posted")
+		})
+
+		// GET to get the token
+		getReq := httptest.NewRequest("GET", "/api", http.NoBody)
+		getW := httptest.NewRecorder()
+		router.ServeHTTP(getW, getReq)
+		require.Equal(t, 200, getW.Code)
+		require.NotEmpty(t, token)
+
+		// POST with token in header (JSON API pattern)
+		postReq := httptest.NewRequest("POST", "/api", strings.NewReader(`{"content":"hello"}`))
+		postReq.Header.Set("Content-Type", "application/json")
+		postReq.Header.Set("X-CSRF-Token", token)
+		postReq.AddCookie(&http.Cookie{Name: "_csrf", Value: token})
+		postW := httptest.NewRecorder()
+		router.ServeHTTP(postW, postReq)
+
+		assert.Equal(t, 200, postW.Code)
+		assert.Equal(t, "posted", postW.Body.String())
+	})
 }
 
 // TestSmartCacheHeaders tests the smart cache headers middleware

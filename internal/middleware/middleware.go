@@ -269,12 +269,13 @@ func ErrorHandler(logger *slog.Logger) gin.HandlerFunc {
 const (
 	csrfCookieName = "_csrf"
 	csrfFormField  = "_csrf"
+	csrfHeaderName = "X-CSRF-Token"
 	csrfTokenBytes = 32
 )
 
 // CSRF implements double-submit cookie CSRF protection.
 // On GET/HEAD: generates a token, sets it as an HttpOnly cookie, and stores it in gin context as "csrf_token".
-// On other methods (POST, PUT, DELETE): verifies the form field matches the cookie value.
+// On other methods (POST, PUT, DELETE): verifies the form field or X-CSRF-Token header matches the cookie value.
 // secureCookie controls the Secure flag — set false for localhost/HTTP development.
 func CSRF(secureCookie bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -306,8 +307,12 @@ func CSRF(secureCookie bool) gin.HandlerFunc {
 			return
 		}
 
-		formToken := c.PostForm(csrfFormField)
-		if formToken == "" || subtle.ConstantTimeCompare([]byte(formToken), []byte(cookieToken)) != 1 {
+		// Check form field first (HTML forms), then header (JSON API requests)
+		submittedToken := c.PostForm(csrfFormField)
+		if submittedToken == "" {
+			submittedToken = c.GetHeader(csrfHeaderName)
+		}
+		if submittedToken == "" || subtle.ConstantTimeCompare([]byte(submittedToken), []byte(cookieToken)) != 1 {
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}

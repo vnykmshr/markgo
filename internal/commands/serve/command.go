@@ -335,6 +335,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 			composeGroup.POST("/edit/:slug", h.Compose.HandleEdit)
 			composeGroup.POST("/preview", h.Compose.Preview)
 			composeGroup.POST("/upload", h.Compose.Upload)
+			composeGroup.POST("/quick", h.Compose.HandleQuickPublish)
 		}
 	}
 
