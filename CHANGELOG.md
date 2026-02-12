@@ -14,8 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **78 golangci-lint issues resolved**: httpNoBody (25), importShadow (14), hugeParam (8), paramTypeCombine (3), unnecessaryBlock (3), errcheck (3), gosec G602 (1), gocyclo (1), emptyStringTest (1), misspell (1), revive naming (1), sprintfQuotedString nolint (3)
-- **Static export 404 page**: Export now generates `404.html` for GitHub Pages custom error handling
-- **Static export BuildInfo**: Footer shows actual version instead of "unknown" in exported sites
 - **Contact page title**: Now includes blog title suffix consistent with all other pages
 - **Page header layout inconsistency**: Standardized all pages to full-width hero pattern (categories, tags, contact, about)
 - **Page header spacing**: Added breathing space between hero sections and body content across all breakpoints
@@ -61,7 +59,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **YAML injection in article creation**: `SanitizeForYAML()` escapes backslashes and newlines
-- **Destructive static export**: Replaced `os.RemoveAll` with safe directory swap pattern
 - **Cache race condition**: Counter increments now use `atomic.AddInt64` instead of mutating under `RLock`
 - **Cache goroutine leak**: Cleanup goroutine stops cleanly via `stopCh` channel
 - **Navbar horizontal overflow**: Prevented on mobile viewports
@@ -179,8 +176,7 @@ and bloat while maintaining full production features.
   - `markgo serve` - Start the server (default command)
   - `markgo init` - Initialize new blog
   - `markgo new` - Create new article
-  - `markgo export` - Export to static site
-  - Aliases: `server`, `start` → `serve`; `new-article` → `new`; `build` → `export`
+  - Aliases: `server`, `start` → `serve`; `new-article` → `new`
 
 - **SEO Service Simplification**: Converted stateful service to stateless utility (~19% reduction)
   - Removed lifecycle management (Start/Stop methods)
@@ -264,7 +260,6 @@ and bloat while maintaining full production features.
 - SEO automation (sitemaps, Schema.org, Open Graph)
 - Full-text search and RSS/JSON feeds
 - Docker deployment support
-- Static site export for GitHub Pages, Netlify, Vercel
 - Admin interface with metrics
 - Rate limiting and security middleware
 
