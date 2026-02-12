@@ -9,6 +9,121 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.1.0] - 2026-02-12
+
+MarkGo reimagined as a blogging companion app. SPA navigation, installable PWA, mobile-native UX, quick capture, offline compose. Single binary with embedded web assets — no filesystem setup required.
+
+### Added
+
+**SPA & Navigation**
+- App shell router with instant content swaps (Turbo Drive pattern — fetch HTML, DOMParser, swap `<main>`)
+- Prefetch on hover (65ms delay, 5-entry cache, 30s TTL)
+- CSS-only progress bar with prefers-reduced-motion support
+- History management with redirect detection and same-page guard
+
+**PWA & Offline**
+- Service Worker with 3-tier caching: precache (offline.html), stale-while-revalidate (static), network-first (HTML)
+- Installable PWA with dynamic web manifest generated from config
+- Offline compose queue via IndexedDB with auto-sync on reconnect
+- Install prompt with visit count threshold and 30-day dismiss
+
+**Mobile-Native UX**
+- Bottom navigation (5-item tab bar, hidden on desktop)
+- Full-screen search overlay (mobile) / centered modal (desktop, Cmd/Ctrl+K)
+- Visual viewport handling for iOS keyboards
+- Dynamic theme-color meta tag from computed background
+
+**Quick Capture**
+- Floating action button (FAB) with compose sheet overlay
+- Quick publish API (POST /compose/quick → JSON response)
+- Auto-save drafts to localStorage with 2s debounce and recovery
+- Optimistic feed update (prepend card on publish)
+- Keyboard shortcut: Cmd/Ctrl+N
+
+**Compose & Editing**
+- Article editing with CSRF protection and atomic file writes (temp+rename)
+- Server-side markdown preview with live toggle
+- Image upload with drag-and-drop and content type detection
+- Draft management page with edit links
+- Description and categories in compose form
+
+**Accessibility**
+- Skip-to-content link
+- SPA route announcer (`aria-live="polite"`)
+- Screen reader labels on all form inputs
+- Color theme picker with `role="radiogroup"` semantics
+- Focus management after content swaps
+
+**Frontend Architecture**
+- ES modules: app.js entry + 9 shell modules + 4 page modules (replaces 590-line IIFE)
+- Self-hosted fonts and highlight.js (zero CDN dependencies)
+- Design token system in CSS custom properties (all colors, spacing, typography)
+- Theme popover: Light/Dark/Auto mode + 5 color presets
+- Toast notification system
+
+**About Page**
+- Config-driven unified about page (avatar, tagline, bio, location, 5 social platforms)
+- Bio from `articles/about.md` or `ABOUT_BIO` config
+- Contact: mailto link (email only) or SMTP form
+- `/contact` → 301 redirect to `/about#contact`
+
+**Backend**
+- Go embed: templates and static assets compiled into binary
+- Filesystem-first fallback: override embedded assets with `STATIC_PATH`/`TEMPLATES_PATH`
+- Session-based authentication replacing BasicAuth
+- Typed error system replacing string comparison
+- Feed service extracted from handlers
+- 11 focused handler types (from 2 monolithic handlers)
+
+**CLI**
+- `markgo new --type thought` and `markgo new --type link` quick-post commands
+
+### Changed
+
+- `/articles` renamed to `/writing` throughout
+- Content types (article/thought/link) inferred automatically from frontmatter
+- Feed page replaces homepage with type-specific card templates
+- All CSS converted to mobile-first (320px base → 481px → 769px → 1025px)
+- Admin CSS converted from max-width to min-width breakpoints
+- All `innerHTML` replaced with DOM API (DOMParser, createElementNS)
+- Pagination centralized with page clamping
+- SEO URLs: `/article/` → `/articles/` in sitemap and schema
+
+### Removed
+
+- **Export command** — `markgo export` and static site generation removed (MarkGo requires a backend)
+- **Deploy workflow** — `.github/workflows/deploy.yml` deleted
+- **Giscus comments** — Third-party comment system removed; replaced with "Reply by email" link
+- **Handler-level cache** — obcache removed from handlers (article service cache remains)
+- **CDN dependencies** — All fonts and highlight.js self-hosted
+- **Analytics config** — Dead `ANALYTICS_*` fields removed
+- **Composed facade** — Replaced with direct handler routing
+- **~4,000 lines of legacy CSS** — Rebuilt on design tokens
+- **~1,000 lines of test bloat** — Mocks now return canned data
+
+### Fixed
+
+- Content negotiation: `Accept: */*` correctly returns HTML
+- CSRF token generation failure aborts 500 (prevents empty-token bypass)
+- Slug validation with length limits on URL params
+- Template parse errors include actual Go error detail
+- `NewPagination` guards against division by zero
+- Silent error swallowing replaced with structured logging
+- Race condition in cache counter increments (atomic ops)
+- Cache goroutine leak (cleanup via `stopCh` channel)
+
+### Security
+
+- CSRF double-submit cookie on all compose routes (SameSite=Strict, constant-time compare)
+- Slug regex prevents CRLF injection in redirects
+- Image upload validates content type via `http.DetectContentType`
+- Atomic file writes prevent partial content on disk
+- Rate limiting excludes static assets (prevents false positives)
+
+**98 commits since v2.3.1**
+
+---
+
 ## [2.3.1] - 2026-02-04
 
 ### Fixed

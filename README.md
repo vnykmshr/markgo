@@ -33,7 +33,7 @@ Or download a release from [GitHub Releases](https://github.com/vnykmshr/markgo/
 
 **Your files, your control** — Articles are markdown files with YAML frontmatter. Edit in vim, version with git, back up however you like. The compose form writes files to disk — it's a convenience layer, not a lock-in.
 
-**Zero dependencies** — Single Go binary with embedded web assets. No Node.js, no PHP, no database. `markgo init` creates only your content directory and config. Starts in under a second, runs on 30MB of RAM.
+**Zero dependencies** — Single Go binary with embedded web assets. No Node.js, no PHP, no database. `markgo init` creates only your content directory and config.
 
 ## Usage
 
