@@ -92,6 +92,7 @@ export function init() {
 
         // Popover toggle
         function openPopover() {
+            document.dispatchEvent(new CustomEvent('popover:exclusive', { detail: 'theme-popover' }));
             popover.hidden = false;
             trigger.setAttribute('aria-expanded', 'true');
             const firstBtn = popover.querySelector('.theme-mode-btn');
@@ -125,6 +126,11 @@ export function init() {
                 closePopover();
                 trigger.focus();
             }
+        });
+
+        // Mutual exclusion — close when another popover opens
+        document.addEventListener('popover:exclusive', (e) => {
+            if (e.detail !== 'theme-popover' && !popover.hidden) closePopover();
         });
 
         // Mode selection

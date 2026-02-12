@@ -28,15 +28,15 @@
    -------------------------------------------------------------------------- */
 
 .breadcrumb {
-    padding: var(--spacing-3) 0;
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);
 }
 
 .breadcrumb-list {
     list-style: none;
-    margin: 0;
-    padding: 0 var(--spacing-4);
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: var(--spacing-3) var(--spacing-4);
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacing-1);

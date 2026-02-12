@@ -257,6 +257,10 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, *service
 		},
 	})
 
+	// Session awareness on all routes (sets authenticated=true when valid session exists)
+	// Must come after session store init, before route setup
+	router.Use(middleware.SessionAware(sessionStore))
+
 	setupRoutes(router, h, sessionStore, secureCookie, cfg, logger)
 	return router, templateService, nil
 }

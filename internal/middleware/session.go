@@ -89,6 +89,22 @@ func (s *SessionStore) Delete(token string) {
 	s.sessions.Delete(token)
 }
 
+// SessionAware checks for a valid session cookie and sets authenticated=true
+// in the gin context if found. Never blocks — passes through regardless.
+// Use on public routes so templates can show auth-aware UI (admin popover, etc.).
+func SessionAware(store *SessionStore) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token, err := c.Cookie(sessionCookieName)
+		if err == nil {
+			if username, valid := store.Validate(token); valid {
+				c.Set("admin_user", username)
+				c.Set("authenticated", true)
+			}
+		}
+		c.Next()
+	}
+}
+
 // SessionAuth provides session-based authentication middleware.
 // Returns 401 for all unauthenticated requests.
 func SessionAuth(store *SessionStore) gin.HandlerFunc {

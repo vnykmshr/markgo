@@ -182,6 +182,42 @@ New themes must only set `--theme-*` variables — never override component sele
 
 ---
 
+## Architecture Decisions
+
+The Interaction Principles describe _what_ the UI does. This section explains _why_ those choices were made instead of the obvious alternatives.
+
+### App Shell: Turbo Drive, Not a Framework
+
+MarkGo uses a Turbo Drive-style SPA router — intercept clicks, fetch full HTML, swap `<main>`, push history. The server still renders complete pages. The client just avoids full reloads.
+
+**Why not React/Vue/Svelte?** MarkGo already has a Go template engine that renders every page. Adding a JS framework would mean rendering content twice: once on the server (for no-JS, SEO, first paint) and once on the client (for SPA transitions). That's two codebases for the same UI. The Turbo Drive pattern gets SPA-feel navigation with zero client-side templating — the server is the single source of truth.
+
+**Why not htmx?** htmx is a dependency. MarkGo's router is 335 lines of vanilla JS with zero dependencies. htmx would also require partial HTML responses — MarkGo serves complete pages, which means every URL works as a direct link, a browser bookmark, and a shared URL without special server handling.
+
+**Trade-off:** No client-side state management. Every "page" is a fresh server render. This is fine for a blog — there's no complex interactive state to manage.
+
+### Mobile: Bottom Nav, Not Hamburger
+
+Mobile navigation uses a 5-item bottom tab bar instead of a hamburger menu.
+
+**Why?** Hamburger menus hide navigation behind a tap — users have to remember what's available. Bottom tabs show everything at a glance, are reachable with one thumb, and match the native app conventions users already know (iOS tab bar, Android bottom nav). Studies consistently show bottom tabs get more engagement than hamburger menus.
+
+**Why 5 items?** Home, Writing, Compose (+), Search, About. This covers the primary user journeys. Apple's HIG recommends 3-5 items. More than 5 becomes cramped on narrow screens.
+
+**Trade-off:** The compose button is always visible even for unauthenticated visitors (though it triggers a login flow). This is intentional — it signals that MarkGo is a tool for writing, not just reading.
+
+### PWA: Offline Reading + Compose Queue
+
+The Service Worker implements 3-tier caching: precache (offline fallback), stale-while-revalidate (static assets), and network-first (HTML pages). Compose submissions queue in IndexedDB when offline and auto-sync on reconnect.
+
+**Why PWA instead of native apps?** MarkGo is a single-developer project. PWA gives install-to-homescreen, offline support, and full-screen mode without maintaining iOS and Android codebases. The trade-off: no push notifications, no background sync on iOS (compose queue only drains when the app is foregrounded).
+
+**Why IndexedDB for compose queue, not localStorage?** localStorage is synchronous, has a 5-10MB limit, and can be cleared by the browser during storage pressure. IndexedDB is async, has larger quotas, and is explicitly designed for structured data persistence. For queued form submissions that the user expects to survive app restarts, IndexedDB is the right tool.
+
+**Network-only routes:** Admin, compose, login, logout, feeds, and API endpoints are never cached. Stale admin data or cached auth state would create confusing bugs.
+
+---
+
 ## Web Standards
 
 Structural HTML and SEO conventions used across all templates.

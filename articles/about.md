@@ -1,34 +1,25 @@
 ---
 slug: about
-title: About This Blog
-description: Learn more about this blog and its author
+title: About
+description: About this blog and its author
 date: 2024-01-01T00:00:00Z
 tags: []
 categories: []
 draft: false
 featured: false
-author: Blog Author
+author: Gopher Mark
 ---
 
-Welcome to this blog! This is a personal space where I share my thoughts, experiences, and insights on various topics that interest me.
+A space for long-form writing, quick thoughts, and interesting links. Built with MarkGo — a blog engine that treats your words as plain files on disk, not rows in a database.
 
 ## What You'll Find Here
 
-This blog covers a range of topics including:
+**Articles** — essays on software, tools, and the craft of building things that work well.
 
-- **Technology & Programming**: Insights into software development, programming languages, and emerging technologies
-- **Personal Experiences**: Lessons learned from various projects and life experiences
-- **Tutorials & Guides**: Step-by-step guides and tutorials on topics I'm passionate about
-- **Industry Insights**: Thoughts on trends and developments in the tech industry
+**Thoughts** — short observations that don't need a title or a thesis. Just a sentence or two worth sharing.
 
-## About the Author
+**Links** — pointers to writing, projects, and ideas from others that shaped my thinking.
 
-I'm a passionate developer and writer who enjoys exploring new technologies and sharing knowledge with the community. When I'm not coding or writing, you can find me reading, learning something new, or working on side projects.
+## The Stack
 
-## About This Website
-
-This blog is built with MarkGo, a fast and lightweight blog engine written in Go. The site focuses on performance, simplicity, and a clean reading experience.
-
----
-
-*Thanks for visiting, and I hope you find the content here helpful and interesting!*
+This site runs on [MarkGo](https://github.com/vnykmshr/markgo), a Go blog engine with SPA navigation, offline reading, and instant capture. No database, no JS build step. Markdown in, blog out.
