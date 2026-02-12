@@ -118,6 +118,40 @@
 }
 
 /* --------------------------------------------------------------------------
+   Draft recovery notice
+   -------------------------------------------------------------------------- */
+
+.compose-sheet-draft-notice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: var(--spacing-2) var(--spacing-4) 0;
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.compose-sheet-draft-notice[hidden] {
+    display: none;
+}
+
+.compose-sheet-draft-discard {
+    background: none;
+    border: none;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+}
+
+.compose-sheet-draft-discard:hover {
+    color: var(--color-error-text);
+}
+
+/* --------------------------------------------------------------------------
    Textarea
    -------------------------------------------------------------------------- */
 

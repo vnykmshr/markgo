@@ -4,19 +4,57 @@
  * Shell module: runs once, persists across SPA navigations.
  * Opens on fab:compose event, closes on backdrop/Escape/navigation.
  * Submits to POST /compose/quick with JSON + X-CSRF-Token header.
+ * Auto-saves drafts to localStorage, recovers on re-open.
  */
 
 import { showToast } from './toast.js';
+
+const DRAFT_KEY = 'markgo:compose-draft';
+const SAVE_DELAY = 2000;
 
 let overlay = null;
 let textarea = null;
 let titleInput = null;
 let publishBtn = null;
+let draftNotice = null;
 let isOpen = false;
 let isSubmitting = false;
+let saveTimer = null;
 
 function getCSRFToken() {
     return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
+function saveDraft() {
+    const content = textarea?.value || '';
+    const title = titleInput?.value || '';
+    if (!content && !title) {
+        clearDraft();
+        return;
+    }
+    try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ content, title, ts: Date.now() }));
+    } catch { /* quota exceeded — ignore */ }
+}
+
+function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveDraft, SAVE_DELAY);
+}
+
+function loadDraft() {
+    try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}
+
+function clearDraft() {
+    clearTimeout(saveTimer);
+    try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
 }
 
 function buildOverlay() {
@@ -86,6 +124,38 @@ function buildOverlay() {
     titleGroup.appendChild(titleToggle);
     titleGroup.appendChild(titleInput);
 
+    // Draft recovery notice
+    draftNotice = document.createElement('div');
+    draftNotice.className = 'compose-sheet-draft-notice';
+    draftNotice.hidden = true;
+
+    const draftText = document.createElement('span');
+    draftText.textContent = 'Draft recovered';
+
+    const draftDiscard = document.createElement('button');
+    draftDiscard.type = 'button';
+    draftDiscard.className = 'compose-sheet-draft-discard';
+    draftDiscard.textContent = 'Discard';
+    draftDiscard.addEventListener('click', () => {
+        clearDraft();
+        textarea.value = '';
+        titleInput.value = '';
+        const tg = overlay.querySelector('.compose-sheet-title-group');
+        if (tg) {
+            tg.classList.remove('expanded');
+            const t = tg.querySelector('.compose-sheet-title-toggle');
+            if (t) {
+                t.textContent = '+ Add title';
+                t.setAttribute('aria-expanded', 'false');
+            }
+        }
+        draftNotice.hidden = true;
+        textarea.focus();
+    });
+
+    draftNotice.appendChild(draftText);
+    draftNotice.appendChild(draftDiscard);
+
     // Textarea
     textarea = document.createElement('textarea');
     textarea.className = 'compose-sheet-textarea';
@@ -110,7 +180,10 @@ function buildOverlay() {
         } else {
             wordCount.textContent = 'article';
         }
+        scheduleSave();
     });
+
+    titleInput.addEventListener('input', scheduleSave);
 
     publishBtn = document.createElement('button');
     publishBtn.className = 'compose-sheet-publish';
@@ -123,6 +196,7 @@ function buildOverlay() {
     // Assemble
     sheet.appendChild(header);
     sheet.appendChild(titleGroup);
+    sheet.appendChild(draftNotice);
     sheet.appendChild(textarea);
     sheet.appendChild(footer);
 
@@ -145,6 +219,25 @@ function open() {
     // Prevent body scroll
     document.body.style.overflow = 'hidden';
 
+    // Recover draft
+    const draft = loadDraft();
+    if (draft && (draft.content || draft.title)) {
+        textarea.value = draft.content || '';
+        if (draft.title) {
+            titleInput.value = draft.title;
+            const tg = overlay.querySelector('.compose-sheet-title-group');
+            const toggle = tg?.querySelector('.compose-sheet-title-toggle');
+            if (tg && toggle) {
+                tg.classList.add('expanded');
+                toggle.textContent = '\u2212 Remove title';
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+        }
+        draftNotice.hidden = false;
+    } else {
+        draftNotice.hidden = true;
+    }
+
     // Focus textarea after animation
     requestAnimationFrame(() => {
         textarea.focus();
@@ -158,11 +251,15 @@ function close() {
     if (!isOpen) return;
     isOpen = false;
 
+    // Save draft before resetting (preserves content for next open)
+    saveDraft();
+
     overlay.hidden = true;
     document.body.style.overflow = '';
     document.removeEventListener('keydown', handleKeydown);
 
     // Reset form
+    draftNotice.hidden = true;
     textarea.value = '';
     titleInput.value = '';
     const titleGroup = overlay.querySelector('.compose-sheet-title-group');
@@ -228,6 +325,7 @@ async function handlePublish() {
         const data = await response.json();
 
         if (response.ok) {
+            clearDraft();
             close();
             showToast(data.message || 'Published!', 'success');
         } else if (response.status === 401) {
