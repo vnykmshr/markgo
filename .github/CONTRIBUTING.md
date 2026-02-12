@@ -114,7 +114,7 @@ We welcome feature suggestions! Please:
 
 **Testing Requirements**:
 - Add unit tests for new functionality
-- Maintain or improve code coverage (current baseline: ~46%)
+- Maintain or improve code coverage (current baseline: ~52%)
 - Use table-driven tests for multiple scenarios
 - Mock external dependencies appropriately
 
@@ -179,11 +179,12 @@ markgo/
 ├── cmd/                # Application entry points
 ├── internal/           # Private packages
 │   ├── config/        # Configuration
-│   ├── handlers/      # HTTP handlers
+│   ├── handlers/      # 11 handler types
 │   ├── middleware/    # HTTP middleware
 │   ├── models/        # Data structures
 │   ├── services/      # Business logic
-│   └── utils/         # Utilities
+│   ├── constants/     # Build-time metadata
+│   └── errors/        # Typed error system
 ├── web/               # Frontend assets
 ├── docs/              # Documentation
 └── deployments/       # Deployment configs
@@ -194,7 +195,7 @@ markgo/
 ```bash
 make dev      # Start development server with hot reload
 make test     # Run all tests
-make check    # Run all quality checks (fmt, vet, lint, tests)
+make lint     # Run golangci-lint
 ```
 
 See [README.md](README.md#development) for complete build and test commands.

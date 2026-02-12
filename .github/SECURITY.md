@@ -49,18 +49,12 @@ ADMIN_PASSWORD="secure-password" # Use strong password (16+ chars, mixed case, n
 
 ## 🔐 Authentication & Authorization
 
-###  Basic Authentication for Admin/Debug Endpoints
+### Session-Based Authentication
 
-MarkGo uses **HTTP Basic Authentication** for admin and debug endpoints. This provides minimal security suitable for:
-- Internal-only deployments
-- Development/staging environments
-- Low-risk scenarios
-
-**Limitations of Basic Auth**:
-- Credentials transmitted with every request (even over HTTPS, base64-encoded)
-- No session management or token expiration
-- No account lockout after failed attempts
-- No multi-factor authentication (MFA)
+MarkGo uses **session-based authentication** for admin, compose, and draft endpoints:
+- Login form at `/login` with session cookie
+- `HttpOnly`, `SameSite=Strict` cookie attributes
+- Sessions expire after inactivity
 
 **Recommendations**:
 
@@ -103,10 +97,11 @@ MarkGo uses **HTTP Basic Authentication** for admin and debug endpoints. This pr
 
 | Endpoint Pattern | Auth Required | Environment | Purpose |
 |-----------------|---------------|-------------|---------|
-| `/admin/*` | ✅ Basic Auth | All | Admin dashboard and management |
-| `/debug/*` | ✅ Basic Auth | Development only | Runtime profiling and debugging |
+| `/admin/*` | ✅ Session | All | Admin dashboard and management |
+| `/compose/*` | ✅ Session + CSRF | All | Content creation and editing |
+| `/debug/*` | ✅ Session | Development only | Runtime profiling and debugging |
 | `/api/*` | ❌ None | All | Public API endpoints |
-| `/articles/*` | ❌ None | All | Public content |
+| `/writing/*` | ❌ None | All | Public content |
 
 ---
 
@@ -181,43 +176,49 @@ Referrer-Policy: strict-origin-when-cross-origin
 
 ---
 
-## 🚨 Known Limitations
+## Security Features (v3.1+)
 
-### 1. No CSRF Protection on Contact Form
+### CSRF Protection
 
-**Risk Level**: Medium
+Double-submit cookie pattern on all compose routes:
+- `SameSite=Strict`, `HttpOnly` cookie + hidden form field
+- Constant-time comparison prevents timing attacks
+- Token generation failure aborts with 500 (prevents empty-token bypass)
+- `Secure` flag conditional on environment (HTTPS in production, HTTP in development)
 
-**Why**: User explicitly declined CSRF implementation in favor of simplicity. Math CAPTCHA provides basic protection.
+### Session-Based Authentication
 
-**Mitigation**:
-- Math-based CAPTCHA reduces automated attacks
-- Rate limiting prevents spam/abuse
-- Contact form is the only write endpoint
+Cookie-based sessions replaced Basic Auth for admin, compose, and draft routes:
+- Login form at `/login` with POST action
+- Session cookie with `HttpOnly`, `SameSite=Strict`
+- Middleware-enforced on all authenticated routes
 
-**Future consideration**: Implement CSRF tokens if spam becomes an issue.
+### Slug Validation
 
-### 2. Basic Auth for Admin Access
+Regex `^[a-z0-9]([a-z0-9-]*[a-z0-9])?$` with length limits:
+- Prevents CRLF injection in redirects
+- Prevents filesystem traversal via URL params
 
-**Risk Level**: Medium (if not behind reverse proxy)
+### Image Upload Validation
 
-**Why**: Simple authentication sufficient for target audience (tech-savvy developers managing personal blogs).
+- Content type detection via `http.DetectContentType` (not file extension)
+- Atomic file writes (temp + rename) prevent partial content on disk
 
-**Mitigation**:
-- Use strong passwords (16+ characters)
-- Deploy behind reverse proxy with IP whitelisting
-- Always use HTTPS in production
-- Consider oauth2-proxy for enhanced security if needed
+## Known Limitations
 
-### 3. No Session Management
+### 1. No Account Lockout
 
 **Risk Level**: Low
 
-**Why**: Stateless architecture for simplicity. Basic Auth credentials sent with each request.
+**Mitigation**: Rate limiting on login endpoint prevents brute force. Deploy behind reverse proxy with IP whitelisting for additional protection.
 
-**Mitigation**:
-- HTTPS encrypts credentials in transit
-- Short-lived connections minimize exposure
-- No session cookies to steal/hijack
+### 2. Single Admin Account
+
+**Risk Level**: Low
+
+**Why**: Target audience is single-author blogs. Credentials in `.env`.
+
+**Mitigation**: Use strong passwords. Consider oauth2-proxy for multi-user setups.
 
 ---
 
@@ -320,5 +321,5 @@ We take security seriously and will respond to legitimate reports promptly.
 
 ---
 
-**Last Updated**: 2025-10-22
-**Version**: 1.6.0
+**Last Updated**: 2026-02-12
+**Version**: 3.1.0

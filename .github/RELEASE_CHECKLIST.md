@@ -99,12 +99,8 @@ This checklist ensures all critical validations are performed before creating a 
 
 ### 6. Documentation Accuracy 📚
 
-- [ ] **README.md metrics are current:**
+- [ ] **README.md is current:**
   ```bash
-  # Check binary size
-  ls -lh build/markgo-linux-amd64
-  # Compare with README.md (~27MB)
-
   # Check version references
   grep -E "v[0-9]+\.[0-9]+\.[0-9]+" README.md
   ```
@@ -180,7 +176,7 @@ This checklist ensures all critical validations are performed before creating a 
 
 - [ ] **Create annotated tag:**
   ```bash
-  git tag -a v2.X.Y -m "Release vX.Y.Z - Brief description
+  git tag -a vX.Y.Z -m "Release vX.Y.Z - Brief description
 
   Major changes:
   - Feature 1
@@ -191,7 +187,7 @@ This checklist ensures all critical validations are performed before creating a 
 
 - [ ] **Push tag:**
   ```bash
-  git push origin v2.X.Y
+  git push origin vX.Y.Z
   ```
 
 - [ ] **Monitor CI pipeline:**
@@ -209,7 +205,7 @@ This checklist ensures all critical validations are performed before creating a 
 
 - [ ] **GitHub release created automatically:**
   ```bash
-  gh release view v2.X.Y
+  gh release view vX.Y.Z
   ```
 
 - [ ] **All platform binaries attached:**
@@ -219,7 +215,7 @@ This checklist ensures all critical validations are performed before creating a 
 
 - [ ] **Release notes are complete:**
   ```bash
-  gh release view v2.X.Y --web
+  gh release view vX.Y.Z --web
   # Verify notes include:
   # - Summary of changes
   # - Installation instructions
@@ -229,7 +225,7 @@ This checklist ensures all critical validations are performed before creating a 
 
 - [ ] **Test downloading release binary:**
   ```bash
-  wget https://github.com/vnykmshr/markgo/releases/download/v2.X.Y/markgo-linux-amd64
+  wget https://github.com/vnykmshr/markgo/releases/download/vX.Y.Z/markgo-linux-amd64
   chmod +x markgo-linux-amd64
   ./markgo-linux-amd64 --version
   ```
@@ -237,8 +233,8 @@ This checklist ensures all critical validations are performed before creating a 
 - [ ] **Docker image tagged (if applicable):**
   ```bash
   # If publishing to registry
-  docker tag markgo:latest markgo:v2.X.Y
-  docker push markgo:v2.X.Y
+  docker tag markgo:latest markgo:vX.Y.Z
+  docker push markgo:vX.Y.Z
   ```
 
 ### 12. Communication 📢
@@ -265,9 +261,9 @@ If critical issues are discovered post-release:
 
 1. **Delete the faulty release:**
    ```bash
-   gh release delete v2.X.Y
-   git push origin :refs/tags/v2.X.Y
-   git tag -d v2.X.Y
+   gh release delete vX.Y.Z
+   git push origin :refs/tags/vX.Y.Z
+   git tag -d vX.Y.Z
    ```
 
 2. **Fix the issue**
