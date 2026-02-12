@@ -282,8 +282,9 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 	router.StaticFile("/favicon.ico", cfg.StaticPath+"/img/favicon.ico")
 	router.GET("/robots.txt", h.Syndication.RobotsTxt)
 
-	// Health check and metrics
+	// Health check, metrics, manifest
 	router.GET("/health", h.Health.Health)
+	router.GET("/manifest.json", h.Health.Manifest)
 	router.GET("/metrics", h.Admin.Metrics)
 
 	// Public routes
