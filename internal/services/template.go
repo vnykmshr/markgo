@@ -131,7 +131,7 @@ func (t *TemplateService) loadTemplates(templatesPath string) error {
 	pattern := filepath.Join(templatesPath, "*.html")
 	tmpl, err := template.New("").Funcs(funcMap).ParseGlob(pattern)
 	if err != nil {
-		return apperrors.NewHTTPError(500, "Failed to parse HTML templates", apperrors.ErrTemplateParseError)
+		return apperrors.NewHTTPError(500, fmt.Sprintf("Failed to parse HTML templates: %v", err), apperrors.ErrTemplateParseError)
 	}
 
 	t.templates = tmpl

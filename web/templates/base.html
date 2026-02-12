@@ -169,6 +169,7 @@
     <link rel="stylesheet" href="/static/css/login.css">
 
     <!-- Additional head content -->
+    {{ $tpl := .template | default "feed" }}
     {{ if eq $tpl "feed" }}{{ template "feed-head" . }}{{ end }}
     {{ if eq $tpl "compose" }}{{ template "compose-head" . }}{{ end }}
     {{ if eq $tpl "articles" }}{{ template "articles-head" . }}{{ end }}
@@ -346,9 +347,5 @@
     <!-- Additional scripts -->
     {{ block "scripts" . }}{{ end }}
 
-    <!-- Analytics (if needed) -->
-    {{ if .config.Analytics }}
-    <!-- Add your analytics code here -->
-    {{ end }}
 </body>
 </html>
