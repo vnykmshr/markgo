@@ -84,6 +84,12 @@ func (h *PostHandler) getArticleData(slug string) (map[string]any, error) {
 	data["article"] = article
 	data["description"] = article.Description
 	data["template"] = templateArticle
+	data["canonicalPath"] = "/writing/" + article.Slug
+	data["breadcrumbs"] = []services.Breadcrumb{
+		{Name: "Home", URL: "/"},
+		{Name: "Writing", URL: "/writing"},
+		{Name: article.Title},
+	}
 
 	return data, nil
 }
@@ -118,6 +124,11 @@ func (h *PostHandler) getArticlesPage(page int) (map[string]any, error) {
 	data["articles"] = articles
 	data["pagination"] = pagination
 	data["template"] = "articles"
+	data["canonicalPath"] = "/writing"
+	data["breadcrumbs"] = []services.Breadcrumb{
+		{Name: "Home", URL: "/"},
+		{Name: "Writing"},
+	}
 
 	return data, nil
 }

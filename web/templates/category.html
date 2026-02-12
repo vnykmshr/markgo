@@ -35,4 +35,5 @@
 
 {{ define "category-head" }}
 <meta name="description" content="Posts in {{ .category }} on {{ .config.Blog.Title }}.">
+{{ if .collectionSchema }}{{ generateJsonLD .collectionSchema }}{{ end }}
 {{ end }}

@@ -78,6 +78,7 @@ func (h *FeedHandler) getHomeData(page int, typeFilter string) (map[string]any, 
 	data["pagination"] = pagination
 	data["activeFilter"] = typeFilter
 	data["template"] = "feed"
+	data["canonicalPath"] = "/"
 
 	return data, nil
 }

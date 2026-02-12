@@ -116,6 +116,34 @@ func (h *TaxonomyHandler) getTagArticles(tag string) (map[string]any, error) {
 	data["tag"] = tag
 	data["totalCount"] = len(published)
 	data["template"] = "tag"
+	data["canonicalPath"] = "/tags/" + url.PathEscape(tag)
+	data["breadcrumbs"] = []services.Breadcrumb{
+		{Name: "Home", URL: "/"},
+		{Name: "Tags", URL: "/tags"},
+		{Name: tag},
+	}
+
+	if baseURL := h.config.BaseURL; baseURL != "" {
+		items := make([]map[string]any, len(published))
+		for i, a := range published {
+			items[i] = map[string]any{
+				"@type":    "ListItem",
+				"position": i + 1,
+				"url":      baseURL + "/writing/" + a.Slug,
+			}
+		}
+		data["collectionSchema"] = map[string]any{
+			"@context": "https://schema.org",
+			"@type":    "CollectionPage",
+			"name":     "Articles tagged with " + tag,
+			"url":      baseURL + "/tags/" + url.PathEscape(tag),
+			"mainEntity": map[string]any{
+				"@type":           "ItemList",
+				"numberOfItems":   len(published),
+				"itemListElement": items,
+			},
+		}
+	}
 
 	return data, nil
 }
@@ -136,6 +164,34 @@ func (h *TaxonomyHandler) getCategoryArticles(category string) (map[string]any, 
 	data["category"] = category
 	data["totalCount"] = len(published)
 	data["template"] = "category"
+	data["canonicalPath"] = "/categories/" + url.PathEscape(category)
+	data["breadcrumbs"] = []services.Breadcrumb{
+		{Name: "Home", URL: "/"},
+		{Name: "Categories", URL: "/categories"},
+		{Name: category},
+	}
+
+	if baseURL := h.config.BaseURL; baseURL != "" {
+		items := make([]map[string]any, len(published))
+		for i, a := range published {
+			items[i] = map[string]any{
+				"@type":    "ListItem",
+				"position": i + 1,
+				"url":      baseURL + "/writing/" + a.Slug,
+			}
+		}
+		data["collectionSchema"] = map[string]any{
+			"@context": "https://schema.org",
+			"@type":    "CollectionPage",
+			"name":     "Articles in " + category,
+			"url":      baseURL + "/categories/" + url.PathEscape(category),
+			"mainEntity": map[string]any{
+				"@type":           "ItemList",
+				"numberOfItems":   len(published),
+				"itemListElement": items,
+			},
+		}
+	}
 
 	return data, nil
 }
@@ -148,6 +204,11 @@ func (h *TaxonomyHandler) getTagsPage() (map[string]any, error) {
 	data["tags"] = tagCounts
 	data["count"] = len(tagCounts)
 	data["template"] = "tags"
+	data["canonicalPath"] = "/tags"
+	data["breadcrumbs"] = []services.Breadcrumb{
+		{Name: "Home", URL: "/"},
+		{Name: "Tags"},
+	}
 
 	return data, nil
 }
@@ -160,6 +221,11 @@ func (h *TaxonomyHandler) getCategoriesPage() (map[string]any, error) {
 	data["categories"] = categoryCounts
 	data["count"] = len(categoryCounts)
 	data["template"] = "categories"
+	data["canonicalPath"] = "/categories"
+	data["breadcrumbs"] = []services.Breadcrumb{
+		{Name: "Home", URL: "/"},
+		{Name: "Categories"},
+	}
 
 	return data, nil
 }

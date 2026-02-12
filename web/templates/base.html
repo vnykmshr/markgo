@@ -149,7 +149,7 @@
     <link rel="alternate" type="application/feed+json" title="{{ .config.Blog.Title }} - JSON Feed" href="/feed.json">
 
     <!-- Canonical URL -->
-    <link rel="canonical" href="{{ .config.BaseURL }}{{ if .article }}/writing/{{ .article.Slug }}{{ end }}">
+    <link rel="canonical" href="{{ .config.BaseURL }}{{ .canonicalPath }}">
 
     <!-- Stylesheets — all loaded upfront for SPA content swaps -->
     <link rel="stylesheet" href="/static/css/fonts.css">
@@ -321,6 +321,17 @@
 
     <!-- Main Content -->
     <main id="main-content" class="main-content">
+        {{ if .breadcrumbs }}
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+            <ol class="breadcrumb-list container">
+                {{ range .breadcrumbs }}
+                {{ if .URL }}<li class="breadcrumb-item"><a href="{{ .URL }}">{{ .Name }}</a></li>
+                {{ else }}<li class="breadcrumb-item breadcrumb-current" aria-current="page">{{ .Name }}</li>
+                {{ end }}
+                {{ end }}
+            </ol>
+        </nav>
+        {{ end }}
         {{ $tpl := .template | default "feed" }}
         {{ if .auth_required }}
         <div class="auth-gate">

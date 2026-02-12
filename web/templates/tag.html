@@ -35,4 +35,5 @@
 
 {{ define "tag-head" }}
 <meta name="description" content="Posts tagged with {{ .tag }} on {{ .config.Blog.Title }}.">
+{{ if .collectionSchema }}{{ generateJsonLD .collectionSchema }}{{ end }}
 {{ end }}

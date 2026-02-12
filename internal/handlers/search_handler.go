@@ -66,6 +66,11 @@ func (h *SearchHandler) getSearchResults(query string) (map[string]any, error) {
 	data["count"] = len(results)
 	data["totalCount"] = totalCount
 	data["template"] = "search"
+	data["canonicalPath"] = "/search"
+	data["breadcrumbs"] = []services.Breadcrumb{
+		{Name: "Home", URL: "/"},
+		{Name: "Search"},
+	}
 
 	return data, nil
 }

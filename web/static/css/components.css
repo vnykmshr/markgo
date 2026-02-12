@@ -23,6 +23,47 @@
 }
 
 /* --------------------------------------------------------------------------
+   Breadcrumb — semantic navigation trail
+   Used by: articles, article, tags, tag, categories, category, search, about
+   -------------------------------------------------------------------------- */
+
+.breadcrumb {
+    padding: var(--spacing-3) 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.breadcrumb-list {
+    list-style: none;
+    margin: 0;
+    padding: 0 var(--spacing-4);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-1);
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: "/";
+    margin-right: var(--spacing-1);
+    color: var(--color-text-muted);
+    opacity: 0.5;
+}
+
+.breadcrumb-item a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+.breadcrumb-current {
+    color: var(--color-text-primary);
+}
+
+/* --------------------------------------------------------------------------
    Form Controls — labels, inputs, textareas, validation
    -------------------------------------------------------------------------- */
 
