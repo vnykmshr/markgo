@@ -60,6 +60,16 @@ func (h *HealthHandler) Manifest(c *gin.Context) {
 			{"name": "Search", "url": "/search", "description": "Search posts"},
 			{"name": "Feed", "url": "/", "description": "Latest posts"},
 		},
+		"share_target": gin.H{
+			"action":  "/compose",
+			"method":  "GET",
+			"enctype": "application/x-www-form-urlencoded",
+			"params": gin.H{
+				"title": "title",
+				"text":  "text",
+				"url":   "url",
+			},
+		},
 		"lang": blog.Language,
 	}
 

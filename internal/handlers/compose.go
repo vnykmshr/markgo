@@ -53,10 +53,25 @@ func NewComposeHandler(
 }
 
 // ShowCompose renders the compose form.
+// Reads optional query params (title, text, url) to support PWA share_target.
 func (h *ComposeHandler) ShowCompose(c *gin.Context) {
 	data := h.buildBaseTemplateData("Compose - " + h.config.Blog.Title)
 	data["template"] = templateCompose
 	data["csrf_token"] = csrfToken(c)
+
+	// Pre-fill from share_target query params (or any deep link)
+	title := c.Query("title")
+	text := c.Query("text")
+	sharedURL := c.Query("url")
+	if title != "" || text != "" || sharedURL != "" {
+		input := compose.Input{
+			Title:   title,
+			Content: text,
+			LinkURL: sharedURL,
+		}
+		data["input"] = input
+	}
+
 	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
