@@ -1,394 +1,272 @@
-// Admin Dashboard JavaScript
+/**
+ * Admin Dashboard — notifications, modals, GET/POST action execution.
+ */
 
-// Notification system
-function showNotification(title, message, type = 'success') {
+export function init() {
     const container = document.getElementById('notification-container');
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    
-    // Create close button
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'notification-close';
-    closeBtn.textContent = '×';
-    notification.appendChild(closeBtn);
-    
-    // Create title element
-    const titleElement = document.createElement('div');
-    titleElement.className = 'notification-title';
-    titleElement.textContent = title;
-    notification.appendChild(titleElement);
-    
-    // Create message element
-    const messageElement = document.createElement('div');
-    messageElement.className = 'notification-message';
-    messageElement.textContent = message;
-    notification.appendChild(messageElement);
-    
-    container.appendChild(notification);
-    
-    // Add event listener to the close button
-    closeBtn.addEventListener('click', function() {
-        removeNotification(this);
-    });
-    
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        if (notification.parentNode) {
-            removeNotification(notification.querySelector('.notification-close'));
-        }
-    }, 5000);
-}
 
-function removeNotification(button) {
-    const notification = button.parentNode;
-    notification.className += ' notification-slide-out';
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-        }
-    }, 300);
-}
+    // =========================================================================
+    // Notifications
+    // =========================================================================
 
-// Modal functions  
-function showModal(title, message, data = null, isSuccess = true) {
-    document.getElementById('modal-title').textContent = title;
-    
-    // Use innerHTML carefully - ensure no script content
-    const messageElement = document.getElementById('modal-message');
-    messageElement.innerHTML = message;
-    
-    showModalCommon(data, isSuccess);
-}
+    function showNotification(title, message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
 
-function showModalWithElement(title, messageElement, data = null, isSuccess = true) {
-    document.getElementById('modal-title').textContent = title;
-    
-    // Clear and append DOM element safely
-    const messageContainer = document.getElementById('modal-message');
-    messageContainer.innerHTML = ''; // Clear existing content
-    messageContainer.appendChild(messageElement);
-    
-    showModalCommon(data, isSuccess);
-}
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'notification-close';
+        closeBtn.textContent = '\u00d7';
+        notification.appendChild(closeBtn);
 
-function showModalCommon(data = null, isSuccess = true) {
-    const dataElement = document.getElementById('modal-data');
-    if (data && typeof data === 'object') {
-        dataElement.textContent = JSON.stringify(data, null, 2);
-        dataElement.className = 'modal-data-visible';
-    } else if (data && typeof data === 'string') {
-        dataElement.textContent = data;
-        dataElement.className = 'modal-data-visible';
-    } else {
-        dataElement.className = 'modal-data-hidden';
+        const titleEl = document.createElement('div');
+        titleEl.className = 'notification-title';
+        titleEl.textContent = title;
+        notification.appendChild(titleEl);
+
+        const messageEl = document.createElement('div');
+        messageEl.className = 'notification-message';
+        messageEl.textContent = message;
+        notification.appendChild(messageEl);
+
+        container.appendChild(notification);
+
+        closeBtn.addEventListener('click', () => removeNotification(notification));
+        setTimeout(() => {
+            if (notification.parentNode) removeNotification(notification);
+        }, 5000);
     }
-    
-    // Change header color based on success/error
-    const header = document.querySelector('.modal-header');
-    // Remove existing color classes
-    header.classList.remove('modal-header-success', 'modal-header-error', 'modal-header-default');
-    if (isSuccess) {
-        header.classList.add('modal-header-success');
-    } else {
-        header.classList.add('modal-header-error');
+
+    function removeNotification(notification) {
+        notification.classList.add('notification-slide-out');
+        setTimeout(() => {
+            if (notification.parentNode) notification.parentNode.removeChild(notification);
+        }, 300);
     }
-    
-    const modal = document.getElementById('result-modal');
-    modal.className = 'modal modal-visible';
-    document.body.classList.add('body-modal-open');
-    document.body.classList.remove('body-modal-closed');
-}
 
-function closeModal() {
-    const modal = document.getElementById('result-modal');
-    modal.className = 'modal modal-hidden';
-    document.body.classList.add('body-modal-closed');
-    document.body.classList.remove('body-modal-open');
-}
+    // =========================================================================
+    // Modal
+    // =========================================================================
 
-// GET action execution (for viewing data)
-function executeGetAction(url, actionName) {
-    // Find the button that was clicked
-    const button = document.querySelector(`.admin-get-btn[data-url="${url}"][data-name="${actionName}"]`);
-    if (!button) return;
-    
-    const originalText = button.textContent;
-    button.textContent = 'Loading...';
-    button.disabled = true;
-    
-    fetch(url, {
-        method: 'GET',
-        headers: {
-            'Accept': 'application/json'
-        }
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
+    const modal = document.getElementById('result-modal');
+
+    function showModalWithElement(title, messageElement, data = null, isSuccess = true) {
+        document.getElementById('modal-title').textContent = title;
+
+        const messageContainer = document.getElementById('modal-message');
+        messageContainer.textContent = '';
+        messageContainer.appendChild(messageElement);
+
+        const dataElement = document.getElementById('modal-data');
+        if (data && typeof data === 'object') {
+            dataElement.textContent = JSON.stringify(data, null, 2);
+            dataElement.className = 'modal-data-visible';
+        } else if (data && typeof data === 'string') {
+            dataElement.textContent = data;
+            dataElement.className = 'modal-data-visible';
         } else {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-    })
-    .then(data => {
-        // Create a more user-friendly message using DOM methods instead of template literals
-        const messageContainer = document.createElement('div');
-        
-        // Add success message
-        const successMsg = document.createElement('p');
-        const strong = document.createElement('strong');
-        strong.textContent = 'Data retrieved successfully';
-        successMsg.appendChild(strong);
-        messageContainer.appendChild(successMsg);
-        
-        // Add summary information if available
-        if (data.articles) {
-            const total = data.articles.total || 0;
-            const published = data.articles.published || 0;
-            const drafts = data.articles.drafts || 0;
-            const statsMsg = document.createElement('p');
-            statsMsg.textContent = `Total: ${total} articles (${published} published, ${drafts} drafts)`;
-            messageContainer.appendChild(statsMsg);
-        } else if (data.status === 'healthy') {
-            const statusMsg = document.createElement('p');
-            statusMsg.textContent = 'System Status: ';
-            const healthySpan = document.createElement('span');
-            healthySpan.className = 'status-healthy';
-            healthySpan.textContent = 'Healthy ✅';
-            statusMsg.appendChild(healthySpan);
-            messageContainer.appendChild(statusMsg);
-            
-            if (data.uptime) {
-                const uptimeMsg = document.createElement('p');
-                uptimeMsg.textContent = `Uptime: ${data.uptime}`;
-                messageContainer.appendChild(uptimeMsg);
-            }
-        } else if (data.memory) {
-            const memMsg = document.createElement('p');
-            memMsg.textContent = `Memory Allocated: ${data.memory.alloc || 'N/A'}`;
-            messageContainer.appendChild(memMsg);
-
-            if (data.uptime) {
-                const uptimeMsg = document.createElement('p');
-                uptimeMsg.textContent = `Uptime: ${data.uptime}`;
-                messageContainer.appendChild(uptimeMsg);
-            }
+            dataElement.className = 'modal-data-hidden';
         }
 
-        // Add timestamp
-        const timestampMsg = document.createElement('p');
+        const header = document.querySelector('.modal-header');
+        header.classList.remove('modal-header-success', 'modal-header-error', 'modal-header-default');
+        header.classList.add(isSuccess ? 'modal-header-success' : 'modal-header-error');
+
+        modal.className = 'modal modal-visible';
+        document.body.classList.add('body-modal-open');
+        document.body.classList.remove('body-modal-closed');
+    }
+
+    function closeModal() {
+        modal.className = 'modal modal-hidden';
+        document.body.classList.add('body-modal-closed');
+        document.body.classList.remove('body-modal-open');
+    }
+
+    // =========================================================================
+    // Result message builders
+    // =========================================================================
+
+    function buildTimestamp() {
+        const p = document.createElement('p');
         const small = document.createElement('small');
         small.textContent = `Timestamp: ${new Date().toLocaleString()}`;
-        timestampMsg.appendChild(small);
-        messageContainer.appendChild(timestampMsg);
-        
-        // Show data in modal
-        showModalWithElement(
-            `📊 ${actionName}`,
-            messageContainer,
-            data,
-            true
-        );
-        
-        // Show notification for quick feedback
-        showNotification(
-            'Data Loaded',
-            `${actionName} data loaded successfully`,
-            'success'
-        );
-    })
-    .catch(error => {
-        console.error('Get action failed:', error);
-        
-        // Show error modal using DOM method
-        const errorContainer = document.createElement('div');
-        
-        const errorTitle = document.createElement('p');
-        const strongError = document.createElement('strong');
-        strongError.textContent = 'Failed to load data:';
-        errorTitle.appendChild(strongError);
-        errorContainer.appendChild(errorTitle);
-        
-        const errorMsg = document.createElement('p');
-        errorMsg.textContent = error.message || `Failed to load ${actionName}`;
-        errorContainer.appendChild(errorMsg);
-        
-        const errorTimestamp = document.createElement('p');
-        const smallError = document.createElement('small');
-        smallError.textContent = `Timestamp: ${new Date().toLocaleString()}`;
-        errorTimestamp.appendChild(smallError);
-        errorContainer.appendChild(errorTimestamp);
-        
-        showModalWithElement(
-            `❌ ${actionName} - Failed`,
-            errorContainer,
-            error.stack || error.toString(),
-            false
-        );
-        
-        // Also show notification
-        showNotification(
-            'Load Failed',
-            error.message || `Failed to load ${actionName}`,
-            'error'
-        );
-    })
-    .finally(() => {
-        button.textContent = originalText;
-        button.disabled = false;
-    });
-}
-
-// Admin action execution (for POST actions)
-function executeAdminAction(url, actionName) {
-    if (!confirm(`Are you sure you want to execute "${actionName}"?`)) {
-        return;
+        p.appendChild(small);
+        return p;
     }
-    
-    // Find the button that was clicked
-    const button = document.querySelector(`.admin-action-btn[data-url="${url}"][data-name="${actionName}"]`);
-    if (!button) return;
-    
-    const originalText = button.textContent;
-    button.textContent = 'Executing...';
-    button.disabled = true;
-    
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        }
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
-        } else {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-    })
-    .then(data => {
-        // Show success modal with detailed results using DOM method
-        const successContainer = document.createElement('div');
-        
-        const successMsg = document.createElement('p');
-        const strongSuccess = document.createElement('strong');
-        strongSuccess.textContent = data.message || `${actionName} completed successfully`;
-        successMsg.appendChild(strongSuccess);
-        successContainer.appendChild(successMsg);
-        
-        const successTimestamp = document.createElement('p');
-        const smallSuccess = document.createElement('small');
-        smallSuccess.textContent = `Timestamp: ${new Date().toLocaleString()}`;
-        successTimestamp.appendChild(smallSuccess);
-        successContainer.appendChild(successTimestamp);
-        
-        showModalWithElement(
-            `✅ ${actionName} - Success`,
-            successContainer,
-            data,
-            true
-        );
-        
-        // Show notification for quick feedback
-        showNotification(
-            'Action Completed',
-            data.message || `${actionName} completed successfully`,
-            'success'
-        );
-        
-        // If it's a reload or cache clear action, offer to refresh the page
-        if (url.includes('reload') || url.includes('cache/clear')) {
-            setTimeout(() => {
-                if (confirm('Action completed successfully. Refresh the page to see updated data?')) {
-                    window.location.reload();
-                }
-            }, 2000);
-        }
-    })
-    .catch(error => {
-        console.error('Admin action failed:', error);
-        
-        // Show error modal using DOM method
-        const errorContainer = document.createElement('div');
-        
-        const errorTitle = document.createElement('p');
-        const strongError = document.createElement('strong');
-        strongError.textContent = 'Action failed:';
-        errorTitle.appendChild(strongError);
-        errorContainer.appendChild(errorTitle);
-        
-        const errorMsg = document.createElement('p');
-        errorMsg.textContent = error.message || `Failed to execute ${actionName}`;
-        errorContainer.appendChild(errorMsg);
-        
-        const errorTimestamp = document.createElement('p');
-        const smallError = document.createElement('small');
-        smallError.textContent = `Timestamp: ${new Date().toLocaleString()}`;
-        errorTimestamp.appendChild(smallError);
-        errorContainer.appendChild(errorTimestamp);
-        
-        showModalWithElement(
-            `❌ ${actionName} - Failed`,
-            errorContainer,
-            error.stack || error.toString(),
-            false
-        );
-        
-        // Also show notification
-        showNotification(
-            'Action Failed',
-            error.message || `Failed to execute ${actionName}`,
-            'error'
-        );
-    })
-    .finally(() => {
-        button.textContent = originalText;
-        button.disabled = false;
-    });
-}
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // Add event listeners for admin action buttons (POST)
-    const adminButtons = document.querySelectorAll('.admin-action-btn');
-    adminButtons.forEach(button => {
-        button.addEventListener('click', function(event) {
-            const url = this.dataset.url;
-            const actionName = this.dataset.name;
-            executeAdminAction(url, actionName);
-        });
+    function buildSuccessMessage(data, actionName) {
+        const el = document.createElement('div');
+
+        const msg = document.createElement('p');
+        const strong = document.createElement('strong');
+        strong.textContent = 'Data retrieved successfully';
+        msg.appendChild(strong);
+        el.appendChild(msg);
+
+        if (data.articles) {
+            const stats = document.createElement('p');
+            stats.textContent = `Total: ${data.articles.total || 0} articles (${data.articles.published || 0} published, ${data.articles.drafts || 0} drafts)`;
+            el.appendChild(stats);
+        } else if (data.status === 'healthy') {
+            const status = document.createElement('p');
+            status.textContent = 'System Status: ';
+            const span = document.createElement('span');
+            span.className = 'status-healthy';
+            span.textContent = 'Healthy';
+            status.appendChild(span);
+            el.appendChild(status);
+            if (data.uptime) {
+                const up = document.createElement('p');
+                up.textContent = `Uptime: ${data.uptime}`;
+                el.appendChild(up);
+            }
+        } else if (data.memory) {
+            const mem = document.createElement('p');
+            mem.textContent = `Memory Allocated: ${data.memory.alloc || 'N/A'}`;
+            el.appendChild(mem);
+            if (data.uptime) {
+                const up = document.createElement('p');
+                up.textContent = `Uptime: ${data.uptime}`;
+                el.appendChild(up);
+            }
+        }
+
+        el.appendChild(buildTimestamp());
+        return el;
+    }
+
+    function buildErrorMessage(error) {
+        const el = document.createElement('div');
+
+        const title = document.createElement('p');
+        const strong = document.createElement('strong');
+        strong.textContent = 'Failed to load data:';
+        title.appendChild(strong);
+        el.appendChild(title);
+
+        const msg = document.createElement('p');
+        msg.textContent = error.message || 'Unknown error';
+        el.appendChild(msg);
+
+        el.appendChild(buildTimestamp());
+        return el;
+    }
+
+    // =========================================================================
+    // GET action execution
+    // =========================================================================
+
+    function executeGetAction(url, actionName) {
+        const button = document.querySelector(`.admin-get-btn[data-url="${url}"][data-name="${actionName}"]`);
+        if (!button) return;
+
+        const originalText = button.textContent;
+        button.textContent = 'Loading...';
+        button.disabled = true;
+
+        fetch(url, { method: 'GET', headers: { Accept: 'application/json' } })
+            .then((response) => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                return response.json();
+            })
+            .then((data) => {
+                showModalWithElement(`${actionName}`, buildSuccessMessage(data, actionName), data, true);
+                showNotification('Data Loaded', `${actionName} data loaded successfully`, 'success');
+            })
+            .catch((error) => {
+                console.error('Get action failed:', error);
+                showModalWithElement(`${actionName} - Failed`, buildErrorMessage(error), error.stack || error.toString(), false);
+                showNotification('Load Failed', error.message || `Failed to load ${actionName}`, 'error');
+            })
+            .finally(() => {
+                button.textContent = originalText;
+                button.disabled = false;
+            });
+    }
+
+    // =========================================================================
+    // POST action execution
+    // =========================================================================
+
+    function executeAdminAction(url, actionName) {
+        if (!confirm(`Are you sure you want to execute "${actionName}"?`)) return;
+
+        const button = document.querySelector(`.admin-action-btn[data-url="${url}"][data-name="${actionName}"]`);
+        if (!button) return;
+
+        const originalText = button.textContent;
+        button.textContent = 'Executing...';
+        button.disabled = true;
+
+        fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' } })
+            .then((response) => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                return response.json();
+            })
+            .then((data) => {
+                const el = document.createElement('div');
+                const msg = document.createElement('p');
+                const strong = document.createElement('strong');
+                strong.textContent = data.message || `${actionName} completed successfully`;
+                msg.appendChild(strong);
+                el.appendChild(msg);
+                el.appendChild(buildTimestamp());
+
+                showModalWithElement(`${actionName} - Success`, el, data, true);
+                showNotification('Action Completed', data.message || `${actionName} completed successfully`, 'success');
+
+                if (url.includes('reload') || url.includes('cache/clear')) {
+                    setTimeout(() => {
+                        if (confirm('Action completed successfully. Refresh the page to see updated data?')) {
+                            window.location.reload();
+                        }
+                    }, 2000);
+                }
+            })
+            .catch((error) => {
+                console.error('Admin action failed:', error);
+
+                const el = document.createElement('div');
+                const title = document.createElement('p');
+                const strong = document.createElement('strong');
+                strong.textContent = 'Action failed:';
+                title.appendChild(strong);
+                el.appendChild(title);
+                const msg = document.createElement('p');
+                msg.textContent = error.message || `Failed to execute ${actionName}`;
+                el.appendChild(msg);
+                el.appendChild(buildTimestamp());
+
+                showModalWithElement(`${actionName} - Failed`, el, error.stack || error.toString(), false);
+                showNotification('Action Failed', error.message || `Failed to execute ${actionName}`, 'error');
+            })
+            .finally(() => {
+                button.textContent = originalText;
+                button.disabled = false;
+            });
+    }
+
+    // =========================================================================
+    // Event binding
+    // =========================================================================
+
+    document.querySelectorAll('.admin-action-btn').forEach((button) => {
+        button.addEventListener('click', () => executeAdminAction(button.dataset.url, button.dataset.name));
     });
-    
-    // Add event listeners for admin GET buttons 
-    const getButtons = document.querySelectorAll('.admin-get-btn');
-    getButtons.forEach(button => {
-        button.addEventListener('click', function(event) {
-            const url = this.dataset.url;
-            const actionName = this.dataset.name;
-            executeGetAction(url, actionName);
-        });
+
+    document.querySelectorAll('.admin-get-btn').forEach((button) => {
+        button.addEventListener('click', () => executeGetAction(button.dataset.url, button.dataset.name));
     });
-    
-    // Add event listeners for modal close buttons
-    const modalCloseBtns = document.querySelectorAll('#modal-close-btn, #modal-close-footer');
-    modalCloseBtns.forEach(btn => {
+
+    document.querySelectorAll('#modal-close-btn, #modal-close-footer').forEach((btn) => {
         btn.addEventListener('click', closeModal);
     });
-    
-    // Close modal when clicking outside of it
-    window.onclick = function(event) {
-        const modal = document.getElementById('result-modal');
-        if (event.target === modal) {
-            closeModal();
-        }
-    }
-    
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            closeModal();
-        }
+
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
     });
 
-});
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+    });
+}

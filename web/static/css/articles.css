@@ -23,9 +23,9 @@
 }
 
 .article-list-link {
-    font-size: var(--text-base);
+    font-size: var(--font-size-base);
     font-weight: 500;
-    color: var(--color-text);
+    color: var(--color-text-primary);
     text-decoration: none;
     line-height: 1.4;
 }
@@ -35,7 +35,7 @@
 }
 
 .article-list-date {
-    font-size: var(--text-sm);
+    font-size: var(--font-size-sm);
     color: var(--color-text-secondary);
 }
 

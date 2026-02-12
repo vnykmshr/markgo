@@ -1,15 +1,37 @@
 /* ==========================================================================
-   Categories Index Page
-   Simple link list with counts.
+   Taxonomy Pages — Tags Index + Categories Index
+   Merged from tags.css + categories.css
+   Mobile-first: base targets 320px+, enhanced at 481px+
    ========================================================================== */
 
+/* Shared page container */
+.tags-index-page,
 .categories-index-page {
     max-width: 42rem;
     margin: 0 auto;
     padding: var(--spacing-6) var(--spacing-4);
 }
 
-/* Category Links */
+/* --------------------------------------------------------------------------
+   Tags — pill-based flow layout. Tag pills use .feed-tag from cards.css.
+   -------------------------------------------------------------------------- */
+
+.tags-flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-3);
+}
+
+.tags-empty {
+    padding: var(--spacing-8) 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+/* --------------------------------------------------------------------------
+   Categories — link list with counts
+   -------------------------------------------------------------------------- */
+
 .categories-list {
     display: flex;
     flex-direction: column;
@@ -40,7 +62,6 @@
     color: var(--color-text-muted);
 }
 
-/* Empty State */
 .categories-empty {
     padding: var(--spacing-8) 0;
     color: var(--color-text-muted);
@@ -52,6 +73,7 @@
    ========================================================================== */
 
 @media (min-width: 481px) {
+    .tags-index-page,
     .categories-index-page {
         padding: var(--spacing-8) var(--spacing-4);
     }

@@ -150,11 +150,6 @@
 {{ define "admin_home-head" }}
 <meta name="description" content="Admin dashboard for {{ .config.Blog.Title }}">
 <meta name="robots" content="noindex, nofollow">
-<script src="/static/js/admin.js" defer></script>
-{{ end }}
-
-{{ define "scripts" }}
-<!-- Admin page: Minimal scripts only to avoid CSP issues -->
 {{ end }}
 
 {{ define "body-class" }}admin-dashboard-page{{ end }}

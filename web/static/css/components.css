@@ -1,0 +1,230 @@
+/* ==========================================================================
+   Shared Components
+   Reusable patterns extracted from page-specific CSS files.
+   Loaded globally in base.html — always available.
+   Mobile-first: base targets 320px+, enhanced at 481px+
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Page Container — centered content column (42rem)
+   Used by: about, error, tags, categories, articles
+   -------------------------------------------------------------------------- */
+
+.page-container {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: var(--spacing-6) var(--spacing-4);
+}
+
+@media (min-width: 481px) {
+    .page-container {
+        padding: var(--spacing-8) var(--spacing-4);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Form Controls — labels, inputs, textareas, validation
+   -------------------------------------------------------------------------- */
+
+.form-group {
+    margin-bottom: var(--spacing-5);
+}
+
+.form-label {
+    display: block;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-2);
+    font-size: var(--font-size-sm);
+}
+
+.required {
+    color: var(--color-error);
+}
+
+.form-input,
+.form-textarea {
+    width: 100%;
+    padding: var(--spacing-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    font-family: inherit;
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    box-sizing: border-box;
+    -webkit-appearance: none;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.form-input.error,
+.form-textarea.error {
+    border-color: var(--color-error);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.field-error {
+    color: var(--color-error);
+    font-size: var(--font-size-xs);
+    margin-top: var(--spacing-1);
+}
+
+.form-note {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin-top: var(--spacing-4);
+}
+
+/* --------------------------------------------------------------------------
+   Empty State — centered muted placeholder
+   Used by: feed, search, articles, tags, categories, tag, category
+   -------------------------------------------------------------------------- */
+
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-16) 0;
+    color: var(--color-text-muted);
+}
+
+.empty-state h3 {
+    font-size: var(--font-size-xl);
+    margin: 0 0 var(--spacing-2);
+}
+
+.empty-state p {
+    margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Input Group — search bar (input + button, shared border)
+   Used by: search page, 404 page
+   -------------------------------------------------------------------------- */
+
+.input-group {
+    display: flex;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    transition: border-color var(--transition-fast);
+}
+
+.input-group:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.input-group-input {
+    flex: 1;
+    padding: var(--spacing-3) var(--spacing-4);
+    border: none;
+    font-size: var(--font-size-base);
+    font-family: inherit;
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+}
+
+.input-group-input:focus {
+    outline: none;
+}
+
+.input-group-btn {
+    padding: var(--spacing-3) var(--spacing-4);
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+    border: none;
+    border-left: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: color var(--transition-fast);
+    display: flex;
+    align-items: center;
+}
+
+.input-group-btn:hover {
+    color: var(--color-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Messages — success/error feedback banners
+   -------------------------------------------------------------------------- */
+
+.message-container {
+    margin: 0 0 var(--spacing-4);
+}
+
+.message {
+    display: flex;
+    align-items: flex-start;
+    padding: var(--spacing-3) var(--spacing-4);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-3);
+    animation: slideDown 0.3s ease-out;
+}
+
+.message-success {
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
+    border: 1px solid var(--color-success-border);
+}
+
+.message-error {
+    background: var(--color-error-bg);
+    color: var(--color-error-text);
+    border: 1px solid var(--color-error-border);
+}
+
+.message-content {
+    flex: 1;
+}
+
+.message-content p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+}
+
+.message-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+    padding: 0;
+    margin-left: var(--spacing-3);
+}
+
+.message-close:hover {
+    opacity: 1;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-8px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* --------------------------------------------------------------------------
+   Spinner — inline loading indicator
+   -------------------------------------------------------------------------- */
+
+.spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

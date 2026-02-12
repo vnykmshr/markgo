@@ -1,12 +1,16 @@
-/* Comments Section Styling */
+/* ==========================================================================
+   Comments Section + Article Navigation
+   Mobile-first: base targets 320px+, enhanced at 769px+
+   ========================================================================== */
+
 .comments-section {
-    margin-top: 3rem;
-    padding-top: 2rem;
+    margin-top: var(--spacing-8);
+    padding-top: var(--spacing-6);
     border-top: 1px solid var(--color-border);
 }
 
 .comments-header {
-    margin-bottom: 2rem;
+    margin-bottom: var(--spacing-6);
     text-align: center;
 }
 
@@ -14,11 +18,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    font-size: 1.25rem;
+    gap: var(--spacing-2);
+    font-size: var(--font-size-xl);
     font-weight: 600;
     color: var(--color-text-primary);
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 var(--spacing-2) 0;
 }
 
 .comments-icon {
@@ -27,14 +31,14 @@
 
 .comments-description {
     color: var(--color-text-secondary);
-    font-size: 0.9rem;
+    font-size: var(--font-size-sm);
     margin: 0;
     margin-left: auto;
     margin-right: auto;
 }
 
 .comments-content {
-    margin-top: 1.5rem;
+    margin-top: var(--spacing-4);
 }
 
 .giscus,
@@ -44,10 +48,10 @@
 }
 
 .comments-noscript {
-    padding: 2rem;
+    padding: var(--spacing-6);
     background-color: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     text-align: center;
     color: var(--color-text-secondary);
 }
@@ -62,11 +66,11 @@
 }
 
 .comments-unavailable {
-    padding: 2rem;
+    padding: var(--spacing-6);
     text-align: center;
     color: var(--color-text-secondary);
     background-color: var(--color-bg-secondary);
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
 }
 
 /* Giscus specific styling */
@@ -76,51 +80,32 @@
     color-scheme: light dark;
 }
 
-/* Responsive (Mobile-first) */
-@media (min-width: 769px) {
-    .comments-section {
-        margin-top: 4rem;
-        padding-top: 3rem;
-    }
-
-    .comments-title {
-        font-size: 1.5rem;
-    }
-}
-
 /* Giscus Widget Styling */
 .giscus {
     background: var(--color-bg-primary);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
-    padding: 0.75rem;
-    margin-top: 0.75rem;
+    padding: var(--spacing-3);
+    margin-top: var(--spacing-3);
 }
 
-/* Target the Giscus iframe directly */
 .giscus iframe {
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     border: none;
     width: 100%;
     background: transparent;
 }
 
-/* Giscus — tablet+ */
-@media (min-width: 769px) {
-    .giscus {
-        padding: 1rem;
-        margin-top: 1rem;
-        border-radius: 8px;
-    }
-}
+/* --------------------------------------------------------------------------
+   Article Navigation — back link + comments anchor
+   -------------------------------------------------------------------------- */
 
-/* Article navigation styling — mobile default */
 .article-navigation {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 1rem;
-    margin-top: 2rem;
+    gap: var(--spacing-4);
+    margin-top: var(--spacing-6);
 }
 
 .nav-back,
@@ -128,14 +113,14 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    padding: 1rem;
+    gap: var(--spacing-2);
+    padding: var(--spacing-3);
     color: var(--color-text-secondary);
     text-decoration: none;
     border: 1px solid var(--color-border);
-    border-radius: 6px;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    transition: color var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
     background-color: var(--color-bg-primary);
 }
 
@@ -152,8 +137,26 @@
     flex-shrink: 0;
 }
 
-/* Article navigation — tablet+ */
+/* ==========================================================================
+   Responsive — tablet+
+   ========================================================================== */
+
 @media (min-width: 769px) {
+    .comments-section {
+        margin-top: var(--spacing-12);
+        padding-top: var(--spacing-8);
+    }
+
+    .comments-title {
+        font-size: var(--font-size-2xl);
+    }
+
+    .giscus {
+        padding: var(--spacing-4);
+        margin-top: var(--spacing-4);
+        border-radius: var(--radius-lg);
+    }
+
     .article-navigation {
         flex-direction: row;
         align-items: center;
@@ -162,6 +165,6 @@
     .nav-back,
     .nav-comments {
         justify-content: flex-start;
-        padding: 0.75rem 1rem;
+        padding: var(--spacing-3) var(--spacing-4);
     }
 }
