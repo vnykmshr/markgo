@@ -1,9 +1,9 @@
 {{ define "drafts-content" }}
 <div class="drafts-page">
     <div class="container">
-        <header class="drafts-header">
-            <h1 class="drafts-title">Drafts</h1>
-            <p class="drafts-subtitle">{{ .draft_count }} draft{{ if ne .draft_count 1 }}s{{ end }}</p>
+        <header class="page-header">
+            <h1 class="page-title">Drafts</h1>
+            <p class="page-subtitle">{{ .draft_count }} draft{{ if ne .draft_count 1 }}s{{ end }}</p>
         </header>
 
         <div class="feed-stream">
@@ -24,7 +24,7 @@
                 {{ end }}
             {{ else }}
             <div class="feed-empty">
-                <h3>No drafts</h3>
+                <h2>No drafts</h2>
                 <p>All caught up. <a href="/compose">Write something new</a>.</p>
             </div>
             {{ end }}

@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/vnykmshr/markgo/internal/config"
 	"github.com/vnykmshr/markgo/internal/services"
 )
 
@@ -90,49 +91,41 @@ func (h *AdminHandler) AdminHome(c *gin.Context) {
 		"drafts", draftCount,
 		"total", totalArticles)
 
-	adminRoutes := []map[string]any{
-		{"name": "Statistics", "url": "/admin/stats", "method": "GET"},
-		{"name": "Clear Cache", "url": "/admin/cache/clear", "method": "POST"},
-		{"name": "Reload Articles", "url": "/admin/articles/reload", "method": "POST"},
-		{"name": "System Metrics", "url": "/metrics", "method": "GET"},
-		{"name": "Health Check", "url": "/health", "method": "GET"},
-	}
-
-	// Get tag and category counts for additional metrics
+	// Get tag and category counts
 	tagCounts := h.articleService.GetTagCounts()
 	categoryCounts := h.articleService.GetCategoryCounts()
 
-	systemInfo := map[string]any{
-		"uptime":             formatDuration(uptime),
-		"uptime_seconds":     int64(uptime.Seconds()),
-		"go_version":         runtime.Version(),
-		"environment":        h.config.Environment,
-		"memory_usage":       formatBytes(m.Alloc),
-		"memory_sys":         formatBytes(m.Sys),
-		"goroutines":         runtime.NumGoroutine(),
-		"articles_total":     totalArticles,
-		"articles_published": publishedCount,
-		"articles_drafts":    draftCount,
-		"tags_total":         len(tagCounts),
-		"categories_total":   len(categoryCounts),
-		"gc_runs":            m.NumGC,
-		"cpu_count":          runtime.NumCPU(),
+	stats := map[string]any{
+		"published":  publishedCount,
+		"drafts":     draftCount,
+		"tags":       len(tagCounts),
+		"categories": len(categoryCounts),
 	}
+
+	system := map[string]any{
+		"environment": h.config.Environment,
+		"uptime":      formatDuration(uptime),
+		"memory":      formatBytes(m.Alloc),
+		"go_version":  runtime.Version(),
+		"goroutines":  runtime.NumGoroutine(),
+	}
+
+	isDev := h.config.Environment == config.DevelopmentEnvironment
 
 	if h.shouldReturnJSON(c) {
 		c.JSON(http.StatusOK, gin.H{
-			"title":       "MarkGo Admin",
-			"system_info": systemInfo,
-			"routes":      adminRoutes,
-			"timestamp":   time.Now().Unix(),
+			"stats":     stats,
+			"system":    system,
+			"timestamp": time.Now().Unix(),
 		})
 		return
 	}
 
-	data := h.buildBaseTemplateData("Admin Dashboard - " + h.config.Blog.Title)
-	data["description"] = "Admin dashboard for " + h.config.Blog.Title
-	data["system_info"] = systemInfo
-	data["admin_routes"] = adminRoutes
+	data := h.buildBaseTemplateData("Dashboard")
+	data["description"] = "Admin dashboard"
+	data["stats"] = stats
+	data["system"] = system
+	data["is_dev"] = isDev
 	data["template"] = "admin_home"
 
 	h.renderHTML(c, http.StatusOK, "base.html", data)

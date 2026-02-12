@@ -1,152 +1,73 @@
 {{ define "admin_home-content" }}
-<div class="admin-dashboard">
+<div class="admin-page">
     <div class="container">
-        <!-- Dashboard Header -->
-        <header class="admin-header">
-            <h1 class="admin-title">Admin Dashboard</h1>
-            <p class="admin-subtitle">Manage your MarkGo blog</p>
+        <header class="page-header">
+            <h1 class="page-title">Dashboard</h1>
         </header>
 
-        <!-- System Overview -->
-        <div class="admin-overview">
-            <div class="overview-cards">
-                <div class="overview-card">
-                    <div class="card-icon">📚</div>
-                    <div class="card-content">
-                        <h3>{{ .system_info.articles_total }}</h3>
-                        <p>Total Articles</p>
-                    </div>
-                </div>
-
-                <div class="overview-card">
-                    <div class="card-icon">✅</div>
-                    <div class="card-content">
-                        <h3>{{ .system_info.articles_published }}</h3>
-                        <p>Published</p>
-                    </div>
-                </div>
-
-                <a href="/admin/drafts" class="overview-card overview-card-link">
-                    <div class="card-icon">📝</div>
-                    <div class="card-content">
-                        <h3>{{ .system_info.articles_drafts }}</h3>
-                        <p>Drafts</p>
-                    </div>
-                </a>
-
-                <div class="overview-card">
-                    <div class="card-icon">⚡</div>
-                    <div class="card-content">
-                        <h3>{{ .system_info.uptime }}</h3>
-                        <p>Uptime</p>
-                    </div>
-                </div>
+        <!-- Stats -->
+        <section class="admin-stats" aria-label="Content statistics">
+            <div class="admin-stat">
+                <span class="admin-stat-value">{{ .stats.published }}</span>
+                <span class="admin-stat-label">Published</span>
             </div>
-        </div>
+            <div class="admin-stat">
+                <span class="admin-stat-value">{{ .stats.drafts }}</span>
+                <span class="admin-stat-label">Drafts</span>
+            </div>
+            <div class="admin-stat">
+                <span class="admin-stat-value">{{ .stats.tags }}</span>
+                <span class="admin-stat-label">Tags</span>
+            </div>
+            <div class="admin-stat">
+                <span class="admin-stat-value">{{ .stats.categories }}</span>
+                <span class="admin-stat-label">Categories</span>
+            </div>
+        </section>
 
-        <!-- Admin Actions -->
-        <div class="admin-actions">
-            <h2>Admin Actions</h2>
-            <div class="actions-grid">
-                {{ range .admin_routes }}
-                <div class="action-card">
-                    <div class="action-header">
-                        <span class="action-icon">{{ .icon }}</span>
-                        <h3 class="action-name">{{ .name }}</h3>
-                        <span class="action-method {{ if eq .method "POST" }}post{{ else }}get{{ end }}">{{ .method }}</span>
-                    </div>
-                    <p class="action-description">{{ .description }}</p>
-                    <div class="action-buttons">
-                        {{ if eq .method "GET" }}
-                        <button type="button" class="btn btn-primary admin-get-btn" data-url="{{ .url }}" data-name="{{ .name }}">
-                            View
-                        </button>
-                        {{ else }}
-                        <button type="button" class="btn btn-secondary admin-action-btn" data-url="{{ .url }}" data-name="{{ .name }}">
-                            Execute
-                        </button>
-                        {{ end }}
-                    </div>
-                </div>
+        <!-- Actions -->
+        <section class="admin-section" aria-label="Actions">
+            <h2 class="admin-section-title">Actions</h2>
+            <div class="admin-actions">
+                <a href="/compose" class="admin-action-link">Compose</a>
+                <a href="/admin/drafts" class="admin-action-link">Manage Drafts</a>
+                {{ if .is_dev }}
+                <button type="button" class="admin-action-btn" data-url="/admin/articles/reload" data-label="Reload Articles">Reload Articles</button>
                 {{ end }}
+                <button type="button" class="admin-action-btn" data-url="/admin/cache/clear" data-label="Clear Cache">Clear Cache</button>
             </div>
-        </div>
+        </section>
 
-        <!-- System Information -->
-        <div class="admin-system-info">
-            <h2>System Information</h2>
-            <div class="system-info-grid">
-                <div class="info-item">
-                    <span class="info-label">Environment:</span>
-                    <span class="info-value env-{{ .system_info.environment }}">{{ .system_info.environment }}</span>
+        <!-- System -->
+        <section class="admin-section" aria-label="System information">
+            <h2 class="admin-section-title">System</h2>
+            <dl class="admin-info">
+                <div class="admin-info-row">
+                    <dt>Environment</dt>
+                    <dd class="env-{{ .system.environment }}">{{ .system.environment }}</dd>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Go Version:</span>
-                    <span class="info-value">{{ .system_info.go_version }}</span>
+                <div class="admin-info-row">
+                    <dt>Uptime</dt>
+                    <dd>{{ .system.uptime }}</dd>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Memory Usage:</span>
-                    <span class="info-value">{{ .system_info.memory_usage }}</span>
+                <div class="admin-info-row">
+                    <dt>Memory</dt>
+                    <dd>{{ .system.memory }}</dd>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Goroutines:</span>
-                    <span class="info-value">{{ .system_info.goroutines }}</span>
+                <div class="admin-info-row">
+                    <dt>Go</dt>
+                    <dd>{{ .system.go_version }}</dd>
                 </div>
-            </div>
-        </div>
-
-        <!-- Quick Links -->
-        <div class="admin-quick-links">
-            <h2>Quick Links</h2>
-            <div class="quick-links-grid">
-                <a href="/" class="quick-link" target="_blank" rel="noopener">
-                    <span class="link-icon">🏠</span>
-                    <span class="link-text">View Site</span>
-                </a>
-                <a href="/writing" class="quick-link" target="_blank" rel="noopener">
-                    <span class="link-icon">📖</span>
-                    <span class="link-text">Writing</span>
-                </a>
-                <a href="/search" class="quick-link" target="_blank" rel="noopener">
-                    <span class="link-icon">🔍</span>
-                    <span class="link-text">Search</span>
-                </a>
-                <a href="/admin/stats" class="quick-link">
-                    <span class="link-icon">📊</span>
-                    <span class="link-text">Statistics</span>
-                </a>
-                <a href="/admin/drafts" class="quick-link">
-                    <span class="link-icon">📝</span>
-                    <span class="link-text">Manage Drafts</span>
-                </a>
-            </div>
-        </div>
-
+                <div class="admin-info-row">
+                    <dt>Goroutines</dt>
+                    <dd>{{ .system.goroutines }}</dd>
+                </div>
+            </dl>
+        </section>
     </div>
 </div>
-
-<!-- Modal for displaying action results -->
-<div id="result-modal" class="modal modal-hidden">
-    <div class="modal-content">
-        <div class="modal-header modal-header-default">
-            <h3 id="modal-title">Action Result</h3>
-            <span class="modal-close" id="modal-close-btn">&times;</span>
-        </div>
-        <div class="modal-body">
-            <div id="modal-message"></div>
-            <pre id="modal-data" class="modal-data-hidden"></pre>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-primary" id="modal-close-footer">Close</button>
-        </div>
-    </div>
-</div>
-
 {{ end }}
 
 {{ define "admin_home-head" }}
-<meta name="description" content="Admin dashboard for {{ .config.Blog.Title }}">
 <meta name="robots" content="noindex, nofollow">
 {{ end }}
-
-{{ define "body-class" }}admin-dashboard-page{{ end }}
