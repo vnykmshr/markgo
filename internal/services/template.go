@@ -9,6 +9,7 @@ import (
 	"html"
 	"html/template"
 	"io"
+	"io/fs"
 	"log/slog"
 	"path/filepath"
 	"reflect"
@@ -31,6 +32,7 @@ import (
 	"github.com/vnykmshr/markgo/internal/config"
 	apperrors "github.com/vnykmshr/markgo/internal/errors"
 	"github.com/vnykmshr/markgo/internal/models"
+	"github.com/vnykmshr/markgo/web"
 )
 
 var (
@@ -124,14 +126,34 @@ func NewTemplateService(templatesPath string, cfg *config.Config) (*TemplateServ
 }
 
 func (t *TemplateService) loadTemplates(templatesPath string) error {
-	// Use the shared template function map
 	funcMap := GetTemplateFuncMap()
-
-	// Load all template files
 	pattern := filepath.Join(templatesPath, "*.html")
-	tmpl, err := template.New("").Funcs(funcMap).ParseGlob(pattern)
+
+	// Check if filesystem templates exist before parsing
+	matches, err := filepath.Glob(pattern)
 	if err != nil {
-		return apperrors.NewHTTPError(500, fmt.Sprintf("Failed to parse HTML templates: %v", err), apperrors.ErrTemplateParseError)
+		return apperrors.NewHTTPError(500, fmt.Sprintf("Invalid template glob pattern: %v", err), apperrors.ErrTemplateParseError)
+	}
+
+	if len(matches) > 0 {
+		// Filesystem templates exist — parse errors are real errors, not fallback triggers
+		tmpl, parseErr := template.New("").Funcs(funcMap).ParseGlob(pattern)
+		if parseErr != nil {
+			return apperrors.NewHTTPError(500, fmt.Sprintf("Failed to parse filesystem templates: %v", parseErr), apperrors.ErrTemplateParseError)
+		}
+		t.templates = tmpl
+		return nil
+	}
+
+	// No filesystem templates — fall back to embedded
+	slog.Info("Filesystem templates not found, using embedded templates", "path", templatesPath)
+	embeddedFS, subErr := fs.Sub(web.Assets, "templates")
+	if subErr != nil {
+		return apperrors.NewHTTPError(500, fmt.Sprintf("Failed to access embedded templates: %v", subErr), apperrors.ErrTemplateParseError)
+	}
+	tmpl, err := template.New("").Funcs(funcMap).ParseFS(embeddedFS, "*.html")
+	if err != nil {
+		return apperrors.NewHTTPError(500, fmt.Sprintf("Failed to parse embedded templates: %v", err), apperrors.ErrTemplateParseError)
 	}
 
 	t.templates = tmpl

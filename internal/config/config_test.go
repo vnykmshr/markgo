@@ -26,8 +26,8 @@ func TestLoad(t *testing.T) {
 	assert.Equal(t, "development", cfg.Environment)
 	assert.Equal(t, 3000, cfg.Port)
 	assert.Equal(t, "./articles", cfg.ArticlesPath)
-	assert.Equal(t, "./web/static", cfg.StaticPath)
-	assert.Equal(t, "./web/templates", cfg.TemplatesPath)
+	assert.Equal(t, "", cfg.StaticPath)
+	assert.Equal(t, "", cfg.TemplatesPath)
 	assert.Equal(t, "http://localhost:3000", cfg.BaseURL)
 
 	// Test server config defaults
@@ -41,7 +41,7 @@ func TestLoad(t *testing.T) {
 	assert.Equal(t, 10*time.Minute, cfg.Cache.CleanupInterval)
 
 	// Test email config defaults
-	assert.Equal(t, "smtp.gmail.com", cfg.Email.Host)
+	assert.Equal(t, "", cfg.Email.Host)
 	assert.Equal(t, 587, cfg.Email.Port)
 	assert.Equal(t, "noreply@yourdomain.com", cfg.Email.From)
 	assert.Equal(t, "your.email@example.com", cfg.Email.To)
@@ -74,9 +74,9 @@ func TestLoad(t *testing.T) {
 	assert.Equal(t, 10, cfg.Blog.PostsPerPage)
 
 	// Test comments config defaults
-	assert.True(t, cfg.Comments.Enabled)
+	assert.False(t, cfg.Comments.Enabled)
 	assert.Equal(t, "giscus", cfg.Comments.Provider)
-	assert.Equal(t, "yourusername/blog-comments", cfg.Comments.GiscusRepo)
+	assert.Equal(t, "", cfg.Comments.GiscusRepo)
 	assert.Equal(t, "", cfg.Comments.GiscusRepoID)
 	assert.Equal(t, "General", cfg.Comments.GiscusCategory)
 	assert.Equal(t, "", cfg.Comments.GiscusCategoryID)

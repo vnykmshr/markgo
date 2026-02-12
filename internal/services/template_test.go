@@ -57,9 +57,10 @@ func TestNewTemplateService(t *testing.T) {
 	assert.NotNil(t, service.templates)
 	assert.Equal(t, cfg, service.config)
 
-	// Test with non-existent directory
-	_, err = NewTemplateService("/nonexistent/path", cfg)
-	assert.Error(t, err)
+	// Test with non-existent directory — falls back to embedded templates
+	embeddedService, err := NewTemplateService("/nonexistent/path", cfg)
+	assert.NoError(t, err)
+	assert.NotNil(t, embeddedService)
 }
 
 func TestTemplateService_Render(t *testing.T) {

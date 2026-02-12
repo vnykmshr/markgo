@@ -17,7 +17,6 @@ import (
 
 const (
 	envDevelopment = "development"
-	boolFalse      = "false"
 )
 
 type BlogConfig struct {
@@ -129,7 +128,7 @@ func validateDirectory(dir string) error {
 }
 
 func isAlreadyInitialized(dir string) bool {
-	markers := []string{".env", "config.yaml", "articles", "web"}
+	markers := []string{".env", "config.yaml", "articles"}
 	for _, marker := range markers {
 		if _, err := os.Stat(filepath.Join(dir, marker)); err == nil {
 			return true
@@ -246,48 +245,23 @@ func getConfirmation(reader *bufio.Reader, prompt string) bool {
 }
 
 func createBlogStructure(dir string, config *BlogConfig) error {
-	// Create directories
-	dirs := []string{
-		"articles",
-		"web/static/css",
-		"web/static/js",
-		"web/static/images",
-		"web/templates",
-		"docs",
+	// Only create articles/ — web assets are embedded in the binary
+	if err := os.MkdirAll(filepath.Join(dir, "articles"), 0o750); err != nil {
+		return fmt.Errorf("failed to create articles directory: %w", err)
 	}
 
-	for _, d := range dirs {
-		if err := os.MkdirAll(filepath.Join(dir, d), 0o750); err != nil {
-			return fmt.Errorf("failed to create directory %s: %w", d, err)
-		}
-	}
-
-	// Create .env file
 	if err := createEnvFile(dir, config); err != nil {
 		return fmt.Errorf("failed to create .env file: %w", err)
 	}
 
-	// Create sample articles
 	if err := createSampleArticles(dir, config); err != nil {
 		return fmt.Errorf("failed to create sample articles: %w", err)
 	}
 
-	// Create basic templates
-	if err := createBasicTemplates(dir, config); err != nil {
-		return fmt.Errorf("failed to create templates: %w", err)
-	}
-
-	// Create basic CSS
-	if err := createBasicCSS(dir); err != nil {
-		return fmt.Errorf("failed to create CSS: %w", err)
-	}
-
-	// Create README
 	if err := createReadme(dir, config); err != nil {
 		return fmt.Errorf("failed to create README: %w", err)
 	}
 
-	// Create .gitignore
 	if err := createGitignore(dir); err != nil {
 		return fmt.Errorf("failed to create .gitignore: %w", err)
 	}
@@ -317,17 +291,20 @@ BLOG_AUTHOR=%s
 BLOG_AUTHOR_EMAIL=%s
 BLOG_LANGUAGE=en
 BLOG_THEME=default
+BLOG_STYLE=minimal
 BLOG_POSTS_PER_PAGE=10
 
-# Paths
+# Paths (optional — binary has embedded web assets)
 ARTICLES_PATH=./articles
-STATIC_PATH=./web/static
-TEMPLATES_PATH=./web/templates
+
+# About Page (optional)
+ABOUT_TAGLINE=
+ABOUT_LOCATION=
 
 # Cache Configuration
-CACHE_TTL=3600
+CACHE_TTL=1h
 CACHE_MAX_SIZE=1000
-CACHE_CLEANUP_INTERVAL=600
+CACHE_CLEANUP_INTERVAL=10m
 
 # Rate Limiting
 RATE_LIMIT_GENERAL_REQUESTS=100
@@ -349,7 +326,6 @@ SERVER_IDLE_TIMEOUT=60s
 LOG_LEVEL=info
 LOG_FORMAT=json
 LOG_OUTPUT=stdout
-LOG_ADD_SOURCE=false
 
 # Email Configuration (Contact Form)
 # Configure these to enable contact form functionality
@@ -362,17 +338,13 @@ EMAIL_TO=%s
 EMAIL_USE_SSL=true
 
 # Admin Interface (Optional)
-# Set credentials to enable admin panel
+# Set credentials to enable compose form and admin panel
 ADMIN_USERNAME=
 ADMIN_PASSWORD=
 
 # Comments System (Optional)
 COMMENTS_ENABLED=false
 COMMENTS_PROVIDER=giscus
-
-# Development Settings
-TEMPLATE_HOT_RELOAD=%s
-DEBUG=%s
 `,
 		time.Now().Format("2006-01-02 15:04:05"),
 		config.Environment,
@@ -385,13 +357,6 @@ DEBUG=%s
 		baseURL,
 		config.Domain,
 		config.Email,
-		func() string {
-			if config.Environment == envDevelopment {
-				return "true"
-			}
-			return boolFalse
-		}(),
-		boolFalse,
 	)
 
 	return os.WriteFile(filepath.Join(dir, ".env"), []byte(content), 0o600)
@@ -400,7 +365,7 @@ DEBUG=%s
 func createSampleArticles(dir string, config *BlogConfig) error {
 	articlesDir := filepath.Join(dir, "articles")
 
-	// Welcome article - use simpler template
+	// Welcome article (type: article — has title, long-form)
 	welcomeContent := "---\n" +
 		"title: \"Welcome to " + config.Title + "\"\n" +
 		"description: \"Getting started with your new MarkGo blog\"\n" +
@@ -411,295 +376,86 @@ func createSampleArticles(dir string, config *BlogConfig) error {
 		"draft: false\n" +
 		"featured: true\n" +
 		"---\n\n" +
-		"# Welcome to Your New MarkGo Blog! 🎉\n\n" +
-		"Congratulations on setting up your new MarkGo blog! You now have a lightning-fast, developer-friendly blogging platform powered by Go.\n\n" +
-		"## What You Get\n\n" +
-		"- **⚡ Blazing Fast Performance**: 4x faster than Ghost with sub-50ms response times\n" +
-		"- **📝 Markdown-First**: Write content in familiar Markdown format\n" +
-		"- **🛠️ Developer-Friendly**: Git-based workflow, hot reload, comprehensive tooling\n" +
-		"- **🚀 Production-Ready**: Built-in caching, rate limiting, metrics, and monitoring\n\n" +
+		"# Welcome to Your New MarkGo Blog!\n\n" +
+		"Congratulations on setting up your new blog! MarkGo is a single-binary blogging companion — SPA navigation, offline support, quick capture from your phone.\n\n" +
+		"## Three Content Types\n\n" +
+		"You never pick a type. Just write, and MarkGo figures it out:\n\n" +
+		"- **Article** — has a title, intended for long-form writing\n" +
+		"- **Thought** — no title, under 100 words, a quick note\n" +
+		"- **Link** — has a `link_url`, sharing something you found\n\n" +
 		"## Quick Start\n\n" +
-		"1. **Edit this article**: Modify `articles/welcome.md` to customize this post\n" +
-		"2. **Create new articles**: Use `markgo new-article` to generate new posts\n" +
-		"3. **Start the server**: Run `markgo` to start your blog\n" +
-		"4. **Visit your blog**: Open http://localhost:" + config.Port + " in your browser\n\n" +
-		"## Writing Articles\n\n" +
-		"Articles are stored in the `articles/` directory as Markdown files with frontmatter:\n\n" +
-		"```markdown\n" +
-		"---\n" +
-		"title: \"Your Article Title\"\n" +
-		"description: \"Article description for SEO\"\n" +
-		"author: \"" + config.Author + "\"\n" +
-		"date: 2024-01-01T00:00:00Z\n" +
-		"tags: [\"tag1\", \"tag2\"]\n" +
-		"category: \"technology\"\n" +
-		"draft: false\n" +
-		"featured: false\n" +
-		"---\n\n" +
-		"# Your Article Content\n\n" +
-		"Write your content here using Markdown syntax...\n" +
+		"1. Edit this article: `articles/welcome.md`\n" +
+		"2. Create new content: `markgo new --title \"Hello\"`\n" +
+		"3. Or use the compose form in your browser\n\n" +
+		"## Writing from the Browser\n\n" +
+		"Set admin credentials in `.env` to enable the compose form:\n\n" +
+		"```bash\n" +
+		"ADMIN_USERNAME=you\n" +
+		"ADMIN_PASSWORD=something-strong\n" +
 		"```\n\n" +
+		"Then restart the server. You'll see a floating action button — tap it, type a thought, hit Publish.\n\n" +
 		"## Next Steps\n\n" +
-		"- Customize your blog settings in `.env`\n" +
-		"- Modify templates in `web/templates/`\n" +
-		"- Add your styles in `web/static/css/`\n" +
-		"- Set up email configuration for contact forms\n" +
-		"- Configure analytics and comments\n\n" +
-		"Happy blogging! 🚀\n\n" +
+		"- Customize settings in `.env`\n" +
+		"- Set up email for the contact form\n" +
+		"- Install as a PWA on your phone\n\n" +
+		"Happy blogging!\n\n" +
 		"---\n\n" +
-		"*This article was generated by `markgo init`. Feel free to edit or delete it.*"
+		"*Generated by `markgo init`. Edit or delete freely.*"
 
 	if err := os.WriteFile(filepath.Join(articlesDir, "welcome.md"), []byte(welcomeContent), 0o600); err != nil {
 		return err
 	}
 
-	// Getting started article - simple version
-	gettingStartedContent := "---\n" +
-		"title: \"Getting Started with MarkGo\"\n" +
-		"description: \"A comprehensive guide to using your new MarkGo blog\"\n" +
+	// Thought (type: thought — no title, short, <100 words, demonstrates auto-inference)
+	thoughtContent := "---\n" +
 		"author: \"" + config.Author + "\"\n" +
-		"date: " + time.Now().Add(-24*time.Hour).Format("2006-01-02T15:04:05Z07:00") + "\n" +
-		"tags: [\"guide\", \"tutorial\", \"markgo\"]\n" +
-		"category: \"documentation\"\n" +
+		"date: " + time.Now().Add(-1*time.Hour).Format("2006-01-02T15:04:05Z07:00") + "\n" +
+		"tags: [\"meta\"]\n" +
 		"draft: false\n" +
-		"featured: false\n" +
 		"---\n\n" +
-		"# Getting Started with MarkGo\n\n" +
-		"This guide will help you get the most out of your new MarkGo blog.\n\n" +
-		"## Directory Structure\n\n" +
-		"- `articles/` - Your blog posts (Markdown files)\n" +
-		"- `web/static/` - CSS, JavaScript, and images\n" +
-		"- `web/templates/` - HTML templates\n" +
-		"- `.env` - Configuration file\n\n" +
-		"## Creating Content\n\n" +
-		"Use the CLI tool for the fastest article creation:\n\n" +
-		"```bash\n" +
-		"# Interactive mode\n" +
-		"markgo new-article\n\n" +
-		"# Quick creation\n" +
-		"markgo new-article --title \"My New Post\" --tags \"tech,go\"\n" +
-		"```\n\n" +
-		"## Configuration\n\n" +
-		"Edit `.env` to customize your blog settings:\n" +
-		"- Blog information (title, description, author)\n" +
-		"- Server settings (port, timeouts)\n" +
-		"- Email configuration for contact forms\n" +
-		"- Comments integration\n\n" +
-		"## Development Workflow\n\n" +
-		"1. Start the server: `markgo`\n" +
-		"2. Create content: `markgo new-article`\n" +
-		"3. Edit files (templates auto-reload in development)\n" +
-		"4. Test performance: `markgo stress-test`\n\n" +
-		"## Performance Features\n\n" +
-		"MarkGo is built for speed:\n" +
-		"- Template caching and compilation\n" +
-		"- Static asset optimization\n" +
-		"- Response compression\n" +
-		"- Built-in rate limiting\n\n" +
-		"## SEO Features\n\n" +
-		"- Automatic sitemaps at `/sitemap.xml`\n" +
-		"- RSS feeds at `/rss` and `/feed.json`\n" +
-		"- Open Graph and Twitter Card meta tags\n" +
-		"- JSON-LD structured data\n\n" +
-		"## Deployment\n\n" +
-		"For production:\n" +
-		"1. Set `ENVIRONMENT=production` in `.env`\n" +
-		"2. Update `BASE_URL` to your domain\n" +
-		"3. Build: `make build`\n" +
-		"4. Deploy the binary with your configuration\n\n" +
-		"Happy blogging! 🎉"
+		"Just set up a new blog with MarkGo. No title on this one — it's a thought. Under 100 words, no title field, and MarkGo infers the type automatically. Nice."
 
-	return os.WriteFile(filepath.Join(articlesDir, "getting-started.md"), []byte(gettingStartedContent), 0o600)
-}
+	if err := os.WriteFile(filepath.Join(articlesDir, "first-thought.md"), []byte(thoughtContent), 0o600); err != nil {
+		return err
+	}
 
-func createBasicTemplates(dir string, config *BlogConfig) error {
-	// This is a basic implementation - in a real scenario, you'd copy from a templates directory
-	// For now, create a simple base template
-	templatesDir := filepath.Join(dir, "web", "templates")
+	// Link post (type: link — has link_url, demonstrates link type)
+	linkContent := "---\n" +
+		"author: \"" + config.Author + "\"\n" +
+		"date: " + time.Now().Add(-2*time.Hour).Format("2006-01-02T15:04:05Z07:00") + "\n" +
+		"link_url: \"https://github.com/vnykmshr/markgo\"\n" +
+		"tags: [\"markgo\", \"open-source\"]\n" +
+		"draft: false\n" +
+		"---\n\n" +
+		"The MarkGo source code. Single Go binary, markdown files, SPA navigation, PWA with offline support. No database, no JS build step."
 
-	baseTemplate := `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.Title}} - ` + config.Title + `</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-</head>
-<body>
-    <header>
-        <h1><a href="/">` + config.Title + `</a></h1>
-        <nav>
-            <a href="/">Home</a>
-            <a href="/writing">Writing</a>
-            <a href="/tags">Tags</a>
-            <a href="/contact">Contact</a>
-        </nav>
-    </header>
-
-    <main>
-        {{template "content" .}}
-    </main>
-
-    <footer>
-        <p>&copy; ` + time.Now().Format("2006") + ` ` + config.Author + `. Powered by <a href="https://github.com/vnykmshr/markgo">MarkGo</a>.</p>
-    </footer>
-</body>
-</html>`
-
-	return os.WriteFile(filepath.Join(templatesDir, "base.html"), []byte(baseTemplate), 0o600)
-}
-
-func createBasicCSS(dir string) error {
-	cssDir := filepath.Join(dir, "web", "static", "css")
-
-	css := `/* MarkGo Default Styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    background: #fff;
-}
-
-header {
-    background: #f8f9fa;
-    padding: 1rem 0;
-    border-bottom: 1px solid #e9ecef;
-}
-
-header h1 {
-    display: inline-block;
-    margin-right: 2rem;
-}
-
-header h1 a {
-    text-decoration: none;
-    color: #007bff;
-}
-
-nav a {
-    margin-right: 1rem;
-    text-decoration: none;
-    color: #6c757d;
-}
-
-nav a:hover {
-    color: #007bff;
-}
-
-main {
-    max-width: 800px;
-    margin: 2rem auto;
-    padding: 0 1rem;
-}
-
-footer {
-    text-align: center;
-    padding: 2rem;
-    margin-top: 4rem;
-    background: #f8f9fa;
-    border-top: 1px solid #e9ecef;
-    color: #6c757d;
-}
-
-footer a {
-    color: #007bff;
-    text-decoration: none;
-}
-
-/* Article styles */
-article {
-    margin-bottom: 3rem;
-}
-
-article h1 {
-    color: #007bff;
-    margin-bottom: 0.5rem;
-}
-
-article h2, article h3 {
-    margin: 1.5rem 0 0.5rem 0;
-}
-
-article p {
-    margin-bottom: 1rem;
-}
-
-article pre {
-    background: #f8f9fa;
-    padding: 1rem;
-    border-radius: 4px;
-    overflow-x: auto;
-    margin: 1rem 0;
-}
-
-article code {
-    background: #f8f9fa;
-    padding: 0.2rem 0.4rem;
-    border-radius: 3px;
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-}
-
-article pre code {
-    background: none;
-    padding: 0;
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-    header h1 {
-        display: block;
-        margin-bottom: 1rem;
-    }
-
-    nav a {
-        display: inline-block;
-        margin-bottom: 0.5rem;
-    }
-}`
-
-	return os.WriteFile(filepath.Join(cssDir, "style.css"), []byte(css), 0o600)
+	return os.WriteFile(filepath.Join(articlesDir, "markgo-source.md"), []byte(linkContent), 0o600)
 }
 
 func createReadme(dir string, config *BlogConfig) error {
 	readme := "# " + config.Title + "\n\n" +
 		config.Description + "\n\n" +
-		"A fast, developer-friendly blog powered by [MarkGo](https://github.com/vnykmshr/markgo).\n\n" +
+		"Powered by [MarkGo](https://github.com/vnykmshr/markgo) — a single-binary blogging companion.\n\n" +
 		"## Quick Start\n\n" +
-		"1. **Start the blog server:** `markgo`\n" +
-		"2. **Visit your blog:** Open http://localhost:" + config.Port + "\n" +
-		"3. **Create new articles:** `markgo new-article`\n\n" +
-		"## Project Structure\n\n" +
-		"- `articles/` - Your blog posts (Markdown files)\n" +
-		"- `web/static/` - CSS, JavaScript, and images\n" +
-		"- `web/templates/` - HTML templates\n" +
-		"- `.env` - Configuration file\n\n" +
-		"## Writing Articles\n\n" +
 		"```bash\n" +
-		"# Interactive mode\n" +
-		"markgo new-article\n\n" +
-		"# Quick creation\n" +
-		"markgo new-article --title \"My Post\" --tags \"tech,tutorial\"\n" +
+		"markgo serve\n" +
+		"# Visit http://localhost:" + config.Port + "\n" +
 		"```\n\n" +
-		"## Performance\n\n" +
-		"- Sub-50ms response times\n" +
-		"- 4x faster than Ghost\n" +
-		"- Built-in caching and optimization\n" +
-		"- Test with: `markgo stress-test --url http://localhost:" + config.Port + "`\n\n" +
+		"## Writing\n\n" +
+		"```bash\n" +
+		"markgo new --title \"My Post\" --tags \"tech,go\"\n" +
+		"markgo new --type thought\n" +
+		"markgo new --type link\n" +
+		"```\n\n" +
+		"Or use the compose form in your browser (set ADMIN_USERNAME/PASSWORD in `.env`).\n\n" +
+		"## Structure\n\n" +
+		"- `articles/` — Your content (markdown with YAML frontmatter)\n" +
+		"- `.env` — Configuration\n\n" +
+		"Web assets (templates, CSS, JS) are embedded in the MarkGo binary.\n" +
+		"To customize, create a `web/` directory — filesystem paths take precedence.\n\n" +
 		"## Features\n\n" +
-		"- ✅ Markdown-based content\n" +
-		"- ✅ Lightning-fast performance\n" +
-		"- ✅ SEO optimization\n" +
-		"- ✅ RSS feeds (XML and JSON)\n" +
-		"- ✅ Contact forms with email\n" +
-		"- ✅ Tag and category organization\n" +
-		"- ✅ Search functionality\n" +
-		"- ✅ Developer-friendly tooling\n\n" +
+		"SPA navigation, PWA with offline support, quick capture, three content types (article/thought/link), " +
+		"RSS and JSON feeds, full-text search, SEO, themes, admin panel.\n\n" +
 		"## Author\n\n" +
 		"**" + config.Author + "**  \n" +
 		"Email: " + config.Email + "\n\n" +
@@ -780,14 +536,12 @@ func showSuccessMessage(dir string, config *BlogConfig) {
 	fmt.Printf("📁 Location: %s\n", dir)
 	fmt.Printf("🌟 Blog: %s\n", config.Title)
 	fmt.Printf("👤 Author: %s\n", config.Author)
-	fmt.Printf("🌐 Environment: %s\n", config.Environment)
 	fmt.Println()
 
 	fmt.Println("📋 What was created:")
 	fmt.Println("   ✅ Configuration file (.env)")
-	fmt.Println("   ✅ Directory structure (articles/, web/, docs/)")
-	fmt.Println("   ✅ Sample articles (welcome.md, getting-started.md)")
-	fmt.Println("   ✅ Basic templates and CSS")
+	fmt.Println("   ✅ Content directory (articles/)")
+	fmt.Println("   ✅ Sample content — article, thought, and link")
 	fmt.Println("   ✅ README.md and .gitignore")
 	fmt.Println()
 
@@ -795,21 +549,15 @@ func showSuccessMessage(dir string, config *BlogConfig) {
 	if dir != "." {
 		fmt.Printf("   1. cd %s\n", dir)
 	}
-	fmt.Println("   2. markgo              # Start your blog server")
+	fmt.Println("   2. markgo serve        # Start your blog server")
 	fmt.Printf("   3. Open http://localhost:%s\n", config.Port)
-	fmt.Println("   4. markgo new-article  # Create your first article")
+	fmt.Println("   4. markgo new          # Create new content")
 	fmt.Println()
 
-	fmt.Println("📖 Learn more:")
-	fmt.Println("   • Read articles/getting-started.md")
-	fmt.Println("   • Edit .env to customize settings")
-	fmt.Println("   • Check out the documentation at docs/")
-	fmt.Println()
-
-	fmt.Println("💡 Pro tips:")
-	fmt.Println("   • Use 'markgo stress-test' to validate performance")
-	fmt.Println("   • Run 'make docs' to generate API documentation")
-	fmt.Println("   • Set up email in .env to enable contact forms")
+	fmt.Println("💡 Tips:")
+	fmt.Println("   • Set ADMIN_USERNAME/PASSWORD in .env to enable the compose form")
+	fmt.Println("   • Templates and CSS are embedded — override with a web/ directory")
+	fmt.Println("   • Install as a PWA from your phone's browser")
 	fmt.Println()
 
 	fmt.Println("Happy blogging! 🎊")
@@ -836,12 +584,12 @@ func showHelp() {
 	fmt.Println()
 	fmt.Println("WHAT IT CREATES:")
 	fmt.Println("  .env                  Configuration file")
-	fmt.Println("  articles/             Directory for blog posts")
-	fmt.Println("  web/static/           Static assets (CSS, JS, images)")
-	fmt.Println("  web/templates/        HTML templates")
+	fmt.Println("  articles/             Content directory with sample posts")
 	fmt.Println("  README.md             Project documentation")
 	fmt.Println("  .gitignore            Git ignore file")
-	fmt.Println("  Sample articles       Welcome post and getting started guide")
 	fmt.Println()
-	fmt.Printf("MarkGo %s - The Developer's Blog Engine\n", constants.AppVersion)
+	fmt.Println("Templates and static assets are embedded in the binary.")
+	fmt.Println("To customize, create web/templates/ and web/static/ directories.")
+	fmt.Println()
+	fmt.Printf("MarkGo %s\n", constants.AppVersion)
 }

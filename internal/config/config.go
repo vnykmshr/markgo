@@ -4,6 +4,7 @@
 package config
 
 import (
+	"log/slog"
 	"net/mail"
 	"net/url"
 	"os"
@@ -202,8 +203,8 @@ func Load() (*Config, error) {
 		Environment:   environment,
 		Port:          getEnvInt("PORT", 3000),
 		ArticlesPath:  getEnv("ARTICLES_PATH", "./articles"),
-		StaticPath:    getEnv("STATIC_PATH", "./web/static"),
-		TemplatesPath: getEnv("TEMPLATES_PATH", "./web/templates"),
+		StaticPath:    getEnv("STATIC_PATH", ""),
+		TemplatesPath: getEnv("TEMPLATES_PATH", ""),
 		BaseURL:       getEnv("BASE_URL", "http://localhost:3000"),
 
 		Server: ServerConfig{
@@ -219,7 +220,7 @@ func Load() (*Config, error) {
 		},
 
 		Email: EmailConfig{
-			Host:     getEnv("EMAIL_HOST", "smtp.gmail.com"),
+			Host:     getEnv("EMAIL_HOST", ""),
 			Port:     getEnvInt("EMAIL_PORT", 587),
 			Username: getEnv("EMAIL_USERNAME", ""),
 			Password: getEnv("EMAIL_PASSWORD", ""),
@@ -275,9 +276,9 @@ func Load() (*Config, error) {
 		},
 
 		Comments: CommentsConfig{
-			Enabled:          getEnvBool("COMMENTS_ENABLED", true),
+			Enabled:          getEnvBool("COMMENTS_ENABLED", false),
 			Provider:         getEnv("COMMENTS_PROVIDER", "giscus"),
-			GiscusRepo:       getEnv("GISCUS_REPO", "yourusername/blog-comments"),
+			GiscusRepo:       getEnv("GISCUS_REPO", ""),
 			GiscusRepoID:     getEnv("GISCUS_REPO_ID", ""),
 			GiscusCategory:   getEnv("GISCUS_CATEGORY", "General"),
 			GiscusCategoryID: getEnv("GISCUS_CATEGORY_ID", ""),
@@ -446,16 +447,17 @@ func (c *Config) validateBasic() error {
 	}
 
 	// Validate paths exist and are accessible
+	// ArticlesPath must exist — it's user content
 	if err := validatePath(c.ArticlesPath, "articles_path"); err != nil {
 		return err
 	}
 
-	if err := validatePath(c.StaticPath, "static_path"); err != nil {
-		return err
+	// StaticPath and TemplatesPath are optional — binary has embedded fallbacks
+	if c.StaticPath != "" {
+		warnMissingPath(c.StaticPath, "static_path")
 	}
-
-	if err := validatePath(c.TemplatesPath, "templates_path"); err != nil {
-		return err
+	if c.TemplatesPath != "" {
+		warnMissingPath(c.TemplatesPath, "templates_path")
 	}
 
 	// Validate base URL
@@ -734,6 +736,23 @@ func (c *CORSConfig) Validate() error {
 	}
 
 	return nil
+}
+
+// warnMissingPath logs a warning if a configured path doesn't exist or isn't a directory
+func warnMissingPath(path, fieldName string) {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		slog.Warn("Invalid path format, will use embedded assets", "field", fieldName, "path", path, "error", err)
+		return
+	}
+	info, err := os.Stat(absPath)
+	if err != nil {
+		slog.Warn("Path not accessible, will use embedded assets", "field", fieldName, "path", path, "error", err)
+		return
+	}
+	if !info.IsDir() {
+		slog.Warn("Path is not a directory, will use embedded assets", "field", fieldName, "path", path)
+	}
 }
 
 // validatePath validates that a path exists and is accessible

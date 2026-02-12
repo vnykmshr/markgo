@@ -83,8 +83,9 @@ func TestConfigValidationTableDriven(t *testing.T) {
 
 		// Path validation (config.go:746-756)
 		{"articles path missing", func(c *Config) { c.ArticlesPath = tmpDir + "/missing" }, "articles_path"},
-		{"static path missing", func(c *Config) { c.StaticPath = tmpDir + "/missing" }, "static_path"},
-		{"templates path missing", func(c *Config) { c.TemplatesPath = tmpDir + "/missing" }, "templates_path"},
+		// StaticPath and TemplatesPath are optional — binary has embedded fallbacks
+		{"static path missing is ok", func(c *Config) { c.StaticPath = tmpDir + "/missing" }, ""},
+		{"templates path missing is ok", func(c *Config) { c.TemplatesPath = tmpDir + "/missing" }, ""},
 
 		// Base URL validation (config.go:759-765)
 		{"base URL empty", func(c *Config) { c.BaseURL = "" }, "base_url"},

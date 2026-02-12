@@ -5,6 +5,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"net/http/pprof"
@@ -25,6 +26,7 @@ import (
 	"github.com/vnykmshr/markgo/internal/services/compose"
 	"github.com/vnykmshr/markgo/internal/services/feed"
 	"github.com/vnykmshr/markgo/internal/services/seo"
+	"github.com/vnykmshr/markgo/web"
 )
 
 const (
@@ -37,12 +39,12 @@ var Version = constants.AppVersion
 // Run starts the MarkGo HTTP server.
 func Run(args []string) {
 	// Parse command-line flags
-	fs := flag.NewFlagSet("serve", flag.ContinueOnError)
-	fs.SetOutput(os.Stdout)
-	port := fs.Int("port", 0, "Override server port (default: from .env or 3000)")
-	fs.Usage = printUsage
+	flagSet := flag.NewFlagSet("serve", flag.ContinueOnError)
+	flagSet.SetOutput(os.Stdout)
+	port := flagSet.Int("port", 0, "Override server port (default: from .env or 3000)")
+	flagSet.Usage = printUsage
 
-	if err := fs.Parse(args[1:]); err != nil {
+	if err := flagSet.Parse(args[1:]); err != nil {
 		if err == flag.ErrHelp {
 			os.Exit(0)
 		}
@@ -277,10 +279,28 @@ func configureGinMode(cfg *config.Config, logger *slog.Logger) {
 }
 
 func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middleware.SessionStore, secureCookie bool, cfg *config.Config, logger *slog.Logger) { //nolint:funlen // route wiring is inherently long
-	// Static files
-	router.Static("/static", cfg.StaticPath)
-	router.StaticFile("/favicon.ico", cfg.StaticPath+"/img/favicon.ico")
-	router.StaticFile("/sw.js", cfg.StaticPath+"/sw.js")
+	// Static files — filesystem first, embedded fallback
+	if dirExists(cfg.StaticPath) {
+		router.Static("/static", cfg.StaticPath)
+		router.StaticFile("/favicon.ico", cfg.StaticPath+"/img/favicon.ico")
+		router.StaticFile("/sw.js", cfg.StaticPath+"/sw.js")
+	} else {
+		staticFS, subErr := fs.Sub(web.Assets, "static")
+		if subErr != nil {
+			logger.Error("Failed to load embedded static assets — cannot start server", "error", subErr)
+			os.Exit(1)
+		}
+		httpFS := http.FS(staticFS)
+		router.StaticFS("/static", httpFS)
+		// Serve favicon and sw.js directly from embedded FS (not redirect — SW scope requires root path)
+		router.GET("/favicon.ico", func(c *gin.Context) {
+			c.FileFromFS("img/favicon.ico", httpFS)
+		})
+		router.GET("/sw.js", func(c *gin.Context) {
+			c.FileFromFS("sw.js", httpFS)
+		})
+		slog.Info("Using embedded static assets", "checked_path", cfg.StaticPath)
+	}
 	router.GET("/robots.txt", h.Syndication.RobotsTxt)
 
 	// Health check, metrics, manifest, offline
@@ -437,4 +457,9 @@ func setupTemplates(router *gin.Engine, templateService *services.TemplateServic
 	router.SetHTMLTemplate(tmpl)
 
 	return nil
+}
+
+func dirExists(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.IsDir()
 }
