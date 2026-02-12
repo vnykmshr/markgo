@@ -13,6 +13,7 @@ import { init as initHighlight } from './modules/highlight.js';
 import { init as initScroll } from './modules/scroll.js';
 import { init as initLazy } from './modules/lazy.js';
 import { init as initLogin } from './modules/login.js';
+import { init as initToast } from './modules/toast.js';
 import { init as initRouter } from './modules/router.js';
 
 // Page-specific module loaders
@@ -54,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initScroll();
     initLogin();
+    initToast();
 
     // Content modules — initial page
     initHighlight();

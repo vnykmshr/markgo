@@ -1,51 +1,15 @@
 /**
- * Admin Dashboard — notifications, modals, GET/POST action execution.
+ * Admin Dashboard — modals, GET/POST action execution.
+ * Notifications use the global toast system.
  */
+
+import { showToast } from './modules/toast.js';
 
 let ac = null;
 
 export function init() {
     ac = new AbortController();
     const { signal } = ac;
-    const container = document.getElementById('notification-container');
-
-    // =========================================================================
-    // Notifications
-    // =========================================================================
-
-    function showNotification(title, message, type = 'success') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'notification-close';
-        closeBtn.textContent = '\u00d7';
-        notification.appendChild(closeBtn);
-
-        const titleEl = document.createElement('div');
-        titleEl.className = 'notification-title';
-        titleEl.textContent = title;
-        notification.appendChild(titleEl);
-
-        const messageEl = document.createElement('div');
-        messageEl.className = 'notification-message';
-        messageEl.textContent = message;
-        notification.appendChild(messageEl);
-
-        container.appendChild(notification);
-
-        closeBtn.addEventListener('click', () => removeNotification(notification));
-        setTimeout(() => {
-            if (notification.parentNode) removeNotification(notification);
-        }, 5000);
-    }
-
-    function removeNotification(notification) {
-        notification.classList.add('notification-slide-out');
-        setTimeout(() => {
-            if (notification.parentNode) notification.parentNode.removeChild(notification);
-        }, 300);
-    }
 
     // =========================================================================
     // Modal
@@ -175,12 +139,12 @@ export function init() {
             })
             .then((data) => {
                 showModalWithElement(`${actionName}`, buildSuccessMessage(data, actionName), data, true);
-                showNotification('Data Loaded', `${actionName} data loaded successfully`, 'success');
+                showToast(`${actionName} data loaded`, 'success');
             })
             .catch((error) => {
                 console.error('Get action failed:', error);
                 showModalWithElement(`${actionName} - Failed`, buildErrorMessage(error), error.stack || error.toString(), false);
-                showNotification('Load Failed', error.message || `Failed to load ${actionName}`, 'error');
+                showToast(error.message || `Failed to load ${actionName}`, 'error');
             })
             .finally(() => {
                 button.textContent = originalText;
@@ -217,7 +181,7 @@ export function init() {
                 el.appendChild(buildTimestamp());
 
                 showModalWithElement(`${actionName} - Success`, el, data, true);
-                showNotification('Action Completed', data.message || `${actionName} completed successfully`, 'success');
+                showToast(data.message || `${actionName} completed`, 'success');
 
                 if (url.includes('reload') || url.includes('cache/clear')) {
                     setTimeout(() => {
@@ -242,7 +206,7 @@ export function init() {
                 el.appendChild(buildTimestamp());
 
                 showModalWithElement(`${actionName} - Failed`, el, error.stack || error.toString(), false);
-                showNotification('Action Failed', error.message || `Failed to execute ${actionName}`, 'error');
+                showToast(error.message || `${actionName} failed`, 'error');
             })
             .finally(() => {
                 button.textContent = originalText;
