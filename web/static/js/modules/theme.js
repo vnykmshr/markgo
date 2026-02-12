@@ -82,6 +82,52 @@ function updateToggleIcon(themeToggle, mode) {
     themeToggle.setAttribute('aria-label', mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
 }
 
+// ---------------------------------------------------------------------------
+// Color theme picker
+// ---------------------------------------------------------------------------
+
+function setColorTheme(preset) {
+    const html = document.documentElement;
+    if (preset && preset !== 'default') {
+        html.setAttribute('data-color-theme', preset);
+    } else {
+        html.removeAttribute('data-color-theme');
+    }
+    try { localStorage.setItem('colorTheme', preset || 'default'); } catch (e) { /* ignore */ }
+    requestAnimationFrame(updateThemeColor);
+}
+
+function updateSwatchActive(container, preset) {
+    container.querySelectorAll('.color-swatch').forEach((btn) => {
+        const isActive = btn.dataset.color === (preset || 'default');
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-checked', isActive);
+    });
+}
+
+function initColorPicker() {
+    const picker = document.querySelector('.color-picker');
+    if (!picker) return;
+
+    // Restore saved color theme (overrides server-rendered value)
+    let saved = 'default';
+    try { saved = localStorage.getItem('colorTheme') || 'default'; } catch (e) { /* ignore */ }
+    setColorTheme(saved);
+    updateSwatchActive(picker, saved);
+
+    picker.addEventListener('click', (e) => {
+        const swatch = e.target.closest('.color-swatch');
+        if (!swatch) return;
+        const preset = swatch.dataset.color;
+        setColorTheme(preset);
+        updateSwatchActive(picker, preset);
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+
 export function init() {
     const themeToggle = document.querySelector('.theme-toggle');
     if (!themeToggle) return;
@@ -121,6 +167,8 @@ export function init() {
                 requestAnimationFrame(updateThemeColor);
             });
         }
+
+        initColorPicker();
     } catch (error) {
         console.error('Theme toggle initialization failed:', error);
     }

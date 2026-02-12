@@ -34,7 +34,10 @@
             {{ else }}
             <div class="feed-empty">
                 <h3>No posts yet</h3>
-                <p>Nothing here yet.</p>
+                <p>This is a fresh start. Write your first thought, share a link, or publish an article.</p>
+                {{ if .authenticated }}
+                <a href="/compose" class="feed-empty-cta">Create your first post</a>
+                {{ end }}
             </div>
             {{ end }}
         </div>

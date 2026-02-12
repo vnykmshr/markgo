@@ -738,6 +738,26 @@ html {
     font-size: var(--font-size-sm);
 }
 
+/* Empty state CTA */
+.feed-empty-cta {
+    display: inline-block;
+    margin-top: var(--spacing-4);
+    padding: var(--spacing-2) var(--spacing-6);
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    border-radius: var(--radius-lg);
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+    text-decoration: none;
+    transition: background-color var(--transition-fast);
+}
+
+.feed-empty-cta:hover {
+    background: var(--color-primary-dark);
+    color: var(--color-text-inverse);
+    text-decoration: none;
+}
+
 /* ==========================================================================
    Shared Layout Components
    ========================================================================== */
@@ -1075,6 +1095,52 @@ html {
     --color-primary-dark: #7e22ce;
     --color-accent: #c084fc;
     --color-success: #10b981;
+}
+
+/* ==========================================================================
+   Color Picker
+   ========================================================================== */
+
+.color-picker {
+    display: none;
+    align-items: center;
+    gap: var(--spacing-1);
+}
+
+.color-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: var(--radius-full);
+    border: 2px solid var(--color-border);
+    cursor: pointer;
+    padding: 0;
+    transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.color-swatch:hover {
+    transform: scale(1.2);
+}
+
+.color-swatch:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.color-swatch.active {
+    border-color: var(--color-text-primary);
+    box-shadow: 0 0 0 1px var(--color-bg-primary);
+}
+
+.color-swatch[data-color="default"] { background: #2563eb; }
+.color-swatch[data-color="ocean"]   { background: #0891b2; }
+.color-swatch[data-color="forest"]  { background: #059669; }
+.color-swatch[data-color="sunset"]  { background: #ea580c; }
+.color-swatch[data-color="berry"]   { background: #9333ea; }
+
+@media (min-width: 769px) {
+    .color-picker {
+        display: flex;
+    }
 }
 
 /* ==========================================================================

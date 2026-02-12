@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <script>try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+    <script>try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t);var c=localStorage.getItem("colorTheme");if(c)document.documentElement.setAttribute("data-color-theme",c)}catch(e){}</script>
 
     <!-- Primary Meta Tags -->
     <title>{{ if .title }}{{ .title }}{{ else }}{{ .config.Blog.Title }}{{ end }}</title>
@@ -273,6 +273,13 @@
                             <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
                         </svg>
                     </button>
+                    <div class="color-picker" role="radiogroup" aria-label="Color theme">
+                        <button class="color-swatch" data-color="default" aria-label="Default blue" title="Default"></button>
+                        <button class="color-swatch" data-color="ocean" aria-label="Ocean teal" title="Ocean"></button>
+                        <button class="color-swatch" data-color="forest" aria-label="Forest green" title="Forest"></button>
+                        <button class="color-swatch" data-color="sunset" aria-label="Sunset orange" title="Sunset"></button>
+                        <button class="color-swatch" data-color="berry" aria-label="Berry purple" title="Berry"></button>
+                    </div>
                     <button class="navbar-toggle" id="navbar-toggle" aria-label="Toggle navigation" aria-expanded="false">
                         <span class="toggle-line"></span>
                         <span class="toggle-line"></span>

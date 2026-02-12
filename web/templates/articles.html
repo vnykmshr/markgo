@@ -34,7 +34,10 @@
         {{ else }}
         <div class="articles-empty">
             <h3>No articles yet</h3>
-            <p>Nothing here yet.</p>
+            <p>Long-form articles will appear here once published.</p>
+            {{ if .authenticated }}
+            <a href="/compose" class="feed-empty-cta">Write your first article</a>
+            {{ end }}
         </div>
         {{ end }}
     </div>
