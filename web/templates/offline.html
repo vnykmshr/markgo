@@ -1,0 +1,21 @@
+{{ define "offline-content" }}
+<div class="error-page">
+    <div class="container">
+        <header class="page-header">
+            <h1 class="page-title">You're offline</h1>
+            <p class="page-subtitle">This page isn't available right now. Check your connection and try again.</p>
+        </header>
+
+        <!-- Navigation to cached pages -->
+        <div class="error-links">
+            <a href="/" class="error-link">Back to feed</a>
+            <a href="/writing" class="error-link">Browse writing</a>
+        </div>
+    </div>
+</div>
+{{ end }}
+
+{{ define "offline-head" }}
+<meta name="description" content="You are currently offline">
+<meta name="robots" content="noindex, nofollow">
+{{ end }}

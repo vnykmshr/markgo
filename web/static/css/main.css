@@ -111,6 +111,7 @@
     --z-fixed: 1030;
     --z-modal: 1040;
     --z-popover: 1050;
+    --z-toast: 1055;
     --z-tooltip: 1060;
 
     /* Container */
@@ -1147,5 +1148,68 @@ html {
 
     .router-progress.hiding {
         transition: opacity 100ms ease;
+    }
+}
+
+/* ==========================================================================
+   Install Banner
+   ========================================================================== */
+
+.install-banner {
+    position: fixed;
+    bottom: var(--spacing-md);
+    left: var(--spacing-md);
+    right: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-toast);
+    animation: installSlideUp 250ms ease;
+}
+
+.install-banner-text {
+    flex: 1;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+}
+
+.install-banner-btn {
+    padding: var(--spacing-xs) var(--spacing-md);
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.install-banner-dismiss {
+    padding: var(--spacing-xs);
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+@keyframes installSlideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@media (min-width: 481px) {
+    .install-banner {
+        left: auto;
+        right: var(--spacing-lg);
+        bottom: var(--spacing-lg);
+        max-width: 360px;
     }
 }

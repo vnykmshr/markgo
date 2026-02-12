@@ -8,6 +8,7 @@
  */
 
 import { showToast } from './toast.js';
+import { queuePost, drainQueue, getQueueCount } from './offline-queue.js';
 
 const DRAFT_KEY = 'markgo:compose-draft';
 const SAVE_DELAY = 2000;
@@ -391,7 +392,15 @@ async function handlePublish() {
             body: JSON.stringify(body),
         });
     } catch {
-        showToast('Network error — try again', 'error');
+        // Network failure — queue for offline sync
+        try {
+            await queuePost(body);
+            clearDraft();
+            close();
+            showToast('Saved offline — will publish when back online', 'info');
+        } catch {
+            showToast('Network error — try again', 'error');
+        }
         resetPublishBtn();
         return;
     }
@@ -425,10 +434,35 @@ function resetPublishBtn() {
     publishBtn.textContent = 'Publish';
 }
 
+async function syncQueue() {
+    const count = await getQueueCount();
+    if (count === 0) return;
+
+    showToast(`Syncing ${count} queued post${count > 1 ? 's' : ''}\u2026`, 'info');
+
+    const result = await drainQueue();
+    if (result.published > 0) {
+        showToast(`Published ${result.published} queued post${result.published > 1 ? 's' : ''}`, 'success');
+    }
+    if (result.failed > 0) {
+        showToast(`${result.failed} post${result.failed > 1 ? 's' : ''} still queued — will retry`, 'warning');
+    }
+}
+
 export function init() {
     // Listen for FAB trigger
     document.addEventListener('fab:compose', open);
 
     // Close on SPA navigation
     document.addEventListener('router:navigate-start', close);
+
+    // Drain offline queue when connectivity returns
+    window.addEventListener('online', () => {
+        syncQueue().catch((err) => console.error('Queue sync failed:', err));
+    });
+
+    // Try to drain on init (may have queued items from previous session)
+    if (navigator.onLine) {
+        syncQueue().catch((err) => console.error('Queue sync failed:', err));
+    }
 }

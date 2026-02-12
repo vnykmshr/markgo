@@ -46,18 +46,31 @@ func (h *HealthHandler) Manifest(c *gin.Context) {
 		"short_name":       blog.Title,
 		"description":      blog.Description,
 		"start_url":        "/",
+		"scope":            "/",
 		"display":          "standalone",
 		"background_color": "#ffffff",
 		"theme_color":      themeColor,
 		"orientation":      "portrait",
 		"icons": []gin.H{
-			{"src": "/static/img/favicon-196x196.png", "sizes": "196x196", "type": "image/png"},
-			{"src": "/static/img/mstile-310x310.png", "sizes": "310x310", "type": "image/png"},
+			{"src": "/static/img/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+			{"src": "/static/img/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+		},
+		"categories": []string{"blog", "news", "writing"},
+		"shortcuts": []gin.H{
+			{"name": "Search", "url": "/search", "description": "Search posts"},
+			{"name": "Feed", "url": "/", "description": "Latest posts"},
 		},
 		"lang": blog.Language,
 	}
 
 	c.JSON(http.StatusOK, manifest)
+}
+
+// Offline renders the offline fallback page (precached by the Service Worker).
+func (h *HealthHandler) Offline(c *gin.Context) {
+	data := h.buildBaseTemplateData("Offline - " + h.config.Blog.Title)
+	data["template"] = "offline"
+	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
 // Health handles health check requests.

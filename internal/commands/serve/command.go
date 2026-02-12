@@ -280,11 +280,13 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 	// Static files
 	router.Static("/static", cfg.StaticPath)
 	router.StaticFile("/favicon.ico", cfg.StaticPath+"/img/favicon.ico")
+	router.StaticFile("/sw.js", cfg.StaticPath+"/sw.js")
 	router.GET("/robots.txt", h.Syndication.RobotsTxt)
 
-	// Health check, metrics, manifest
+	// Health check, metrics, manifest, offline
 	router.GET("/health", h.Health.Health)
 	router.GET("/manifest.json", h.Health.Manifest)
+	router.GET("/offline", h.Health.Offline)
 	router.GET("/metrics", h.Admin.Metrics)
 
 	// Public routes
@@ -415,7 +417,7 @@ func setupTemplates(router *gin.Engine, templateService *services.TemplateServic
 	// Validate that required templates exist
 	requiredTemplates := []string{
 		"base.html", "feed.html", "compose.html", "article.html", "articles.html",
-		"404.html", "about.html", "search.html", "tags.html", "categories.html",
+		"404.html", "offline.html", "about.html", "search.html", "tags.html", "categories.html",
 		"drafts.html",
 	}
 

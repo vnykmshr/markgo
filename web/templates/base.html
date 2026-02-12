@@ -81,6 +81,7 @@
     <meta name="theme-color" content="#1a1a1a">
     <meta name="msapplication-navbutton-color" content="#1a1a1a">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     {{ end }}
 
     <!-- Enhanced SEO Service Integration -->
@@ -188,6 +189,7 @@
     {{ if eq $tpl "admin_home" }}{{ template "admin_home-head" . }}{{ end }}
     {{ if eq $tpl "drafts" }}{{ template "drafts-head" . }}{{ end }}
     {{ if eq $tpl "404" }}{{ template "404-head" . }}{{ end }}
+    {{ if eq $tpl "offline" }}{{ template "offline-head" . }}{{ end }}
 </head>
 <body data-template="{{ .template | default "feed" }}" class="{{- $tpl := .template | default "feed" -}}
     {{- if eq $tpl "articles" -}}articles-page
@@ -203,6 +205,7 @@
     {{- else if eq $tpl "admin_home" -}}admin-dashboard-page
     {{- else if eq $tpl "drafts" -}}drafts-page
     {{- else if eq $tpl "404" -}}error-page
+    {{- else if eq $tpl "offline" -}}error-page
     {{- end -}}">
     <!-- Header -->
     <header class="site-header">
@@ -326,6 +329,7 @@
         {{ if eq $tpl "admin_home" }}{{ template "admin_home-content" . }}{{ end }}
         {{ if eq $tpl "drafts" }}{{ template "drafts-content" . }}{{ end }}
         {{ if eq $tpl "404" }}{{ template "404-content" . }}{{ end }}
+        {{ if eq $tpl "offline" }}{{ template "offline-content" . }}{{ end }}
         {{ end }}
     </main>
 
