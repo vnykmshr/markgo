@@ -37,7 +37,11 @@ function highlightSearchTerms(term) {
     });
 }
 
+let ac = null;
+
 export function init() {
+    ac = new AbortController();
+    const { signal } = ac;
     const searchInput = document.querySelector('.search-input');
     const searchForm = document.querySelector('.search-form');
 
@@ -54,7 +58,7 @@ export function init() {
                 e.preventDefault();
                 searchInput.focus();
             }
-        });
+        }, { signal });
     }
 
     // Highlight search terms in results
@@ -62,4 +66,8 @@ export function init() {
     if (searchTerm) {
         highlightSearchTerms(searchTerm);
     }
+}
+
+export function destroy() {
+    if (ac) { ac.abort(); ac = null; }
 }

@@ -2,7 +2,11 @@
  * Contact Form — captcha generation, validation, and submission.
  */
 
+let ac = null;
+
 export function init() {
+    ac = new AbortController();
+    const { signal } = ac;
     const contactForm = document.getElementById('contactForm');
     const messageContainer = document.getElementById('messageContainer');
     const captchaInput = document.getElementById('captcha');
@@ -124,9 +128,13 @@ export function init() {
             });
     }
 
-    refreshBtn.addEventListener('click', generateCaptcha);
-    contactForm.addEventListener('submit', handleSubmit);
-    contactForm.addEventListener('reset', () => setTimeout(generateCaptcha, 0));
+    refreshBtn.addEventListener('click', generateCaptcha, { signal });
+    contactForm.addEventListener('submit', handleSubmit, { signal });
+    contactForm.addEventListener('reset', () => setTimeout(generateCaptcha, 0), { signal });
 
     generateCaptcha();
+}
+
+export function destroy() {
+    if (ac) { ac.abort(); ac = null; }
 }

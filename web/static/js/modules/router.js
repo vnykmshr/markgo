@@ -220,9 +220,10 @@ async function navigate(url, { push = true } = {}) {
             window.scrollTo(0, 0);
         }
 
-        // Accessibility: move focus to main content
+        // Accessibility: move focus to main content, remove tabindex after blur
         main.setAttribute('tabindex', '-1');
         main.focus({ preventScroll: true });
+        main.addEventListener('blur', () => main.removeAttribute('tabindex'), { once: true });
 
         // Re-initialize page modules
         if (onNavigate) onNavigate(page.template);
@@ -288,8 +289,8 @@ function handlePrefetch(e) {
             .then((html) => {
                 if (html) {
                     prefetchCache.set(link.href, html);
-                    // Expire after 30 seconds
-                    setTimeout(() => prefetchCache.delete(link.href), 30000);
+                    // Expire after 10 seconds
+                    setTimeout(() => prefetchCache.delete(link.href), 10000);
                 }
             })
             .catch(() => {}); // silent — prefetch is best-effort

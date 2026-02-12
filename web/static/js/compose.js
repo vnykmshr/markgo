@@ -2,7 +2,12 @@
  * Compose Page — markdown preview (debounced) and image upload with drag-and-drop.
  */
 
+let ac = null;
+
 export function init() {
+    ac = new AbortController();
+    const { signal } = ac;
+
     const textarea = document.getElementById('content');
     const previewBtn = document.querySelector('.compose-preview-btn');
     const previewPanel = document.querySelector('.compose-preview-panel');
@@ -80,7 +85,7 @@ export function init() {
             textarea.removeEventListener('input', debouncedPreview);
             clearTimeout(debounceTimer);
         }
-    });
+    }, { signal });
 
     // =========================================================================
     // Image Upload
@@ -151,29 +156,33 @@ export function init() {
     }
 
     if (uploadBtn && fileInput) {
-        uploadBtn.addEventListener('click', () => fileInput.click());
+        uploadBtn.addEventListener('click', () => fileInput.click(), { signal });
         fileInput.addEventListener('change', () => {
             if (fileInput.files.length > 0) {
                 uploadFile(fileInput.files[0]);
                 fileInput.value = '';
             }
-        });
+        }, { signal });
     }
 
     // Drag and drop on textarea
     textarea.addEventListener('dragover', (e) => {
         e.preventDefault();
         textarea.classList.add('compose-textarea-dragover');
-    });
+    }, { signal });
 
     textarea.addEventListener('dragleave', () => {
         textarea.classList.remove('compose-textarea-dragover');
-    });
+    }, { signal });
 
     textarea.addEventListener('drop', (e) => {
         e.preventDefault();
         textarea.classList.remove('compose-textarea-dragover');
         const files = e.dataTransfer.files;
         if (files.length > 0) uploadFile(files[0]);
-    });
+    }, { signal });
+}
+
+export function destroy() {
+    if (ac) { ac.abort(); ac = null; }
 }

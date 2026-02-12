@@ -2,7 +2,11 @@
  * Admin Dashboard — notifications, modals, GET/POST action execution.
  */
 
+let ac = null;
+
 export function init() {
+    ac = new AbortController();
+    const { signal } = ac;
     const container = document.getElementById('notification-container');
 
     // =========================================================================
@@ -251,22 +255,26 @@ export function init() {
     // =========================================================================
 
     document.querySelectorAll('.admin-action-btn').forEach((button) => {
-        button.addEventListener('click', () => executeAdminAction(button.dataset.url, button.dataset.name));
+        button.addEventListener('click', () => executeAdminAction(button.dataset.url, button.dataset.name), { signal });
     });
 
     document.querySelectorAll('.admin-get-btn').forEach((button) => {
-        button.addEventListener('click', () => executeGetAction(button.dataset.url, button.dataset.name));
+        button.addEventListener('click', () => executeGetAction(button.dataset.url, button.dataset.name), { signal });
     });
 
     document.querySelectorAll('#modal-close-btn, #modal-close-footer').forEach((btn) => {
-        btn.addEventListener('click', closeModal);
+        btn.addEventListener('click', closeModal, { signal });
     });
 
     window.addEventListener('click', (e) => {
         if (e.target === modal) closeModal();
-    });
+    }, { signal });
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeModal();
-    });
+    }, { signal });
+}
+
+export function destroy() {
+    if (ac) { ac.abort(); ac = null; }
 }
