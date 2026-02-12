@@ -570,10 +570,10 @@ func (b *BlogConfig) Validate() error {
 	}
 
 	// Validate style
-	validStyles := []string{"minimal", "editorial", "bold"}
+	validStyles := []string{"minimal"}
 	if b.Style != "" && !contains(validStyles, b.Style) {
 		return apperrors.NewConfigError("style", b.Style,
-			"Blog style must be one of: minimal, editorial, bold", apperrors.ErrConfigValidation)
+			"Blog style must be: minimal (custom themes go in web/static/css/themes/)", apperrors.ErrConfigValidation)
 	}
 
 	// Validate author email if provided

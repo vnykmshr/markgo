@@ -152,7 +152,7 @@ MarkGo has two customization layers that work independently:
 
 **Color presets** (`data-color-theme`) — Swap the `--color-primary` family. Five ship out of the box: default, ocean, forest, sunset, berry. Defined as `[data-color-theme="..."]` selectors in `main.css`. These are cosmetic — they change accent colors only.
 
-**Style themes** (`Blog.Style`) — Load an additional CSS file from `web/static/css/themes/` that overrides `--theme-*` variables for typography, spacing, and broader visual personality. Currently: minimal, editorial, bold. Style themes are structural — they can change the entire feel of the site.
+**Style themes** (`Blog.Style`) — Load an additional CSS file from `web/static/css/themes/` that overrides `--theme-*` variables for typography, spacing, and broader visual personality. Ships with `minimal`. The system is extensible — add a CSS file to `themes/` and set `BLOG_STYLE` to its name. Style themes are structural — they can change the entire feel of the site.
 
 New themes must only set `--theme-*` variables — never override component selectors directly.
 
