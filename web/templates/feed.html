@@ -3,7 +3,7 @@
     <div class="container">
         <!-- Feed Header -->
         <header class="feed-header">
-            <h1 class="feed-title">{{ .config.Blog.Title }}</h1>
+            <h1 class="sr-only">{{ .config.Blog.Title }} — Feed</h1>
             {{ if .config.Blog.Tagline }}
             <p class="feed-tagline">{{ .config.Blog.Tagline }}</p>
             {{ else if .config.Blog.Description }}
@@ -20,7 +20,7 @@
         </nav>
 
         <!-- Feed Stream -->
-        <div class="feed-stream">
+        <section class="feed-stream" aria-label="Posts">
             {{ if .posts }}
                 {{ range .posts }}
                     {{ if eq .Type "thought" }}
@@ -33,14 +33,14 @@
                 {{ end }}
             {{ else }}
             <div class="feed-empty">
-                <h3>No posts yet</h3>
+                <h2>No posts yet</h2>
                 <p>This is a fresh start. Write your first thought, share a link, or publish an article.</p>
                 {{ if .authenticated }}
                 <a href="/compose" class="feed-empty-cta">Create your first post</a>
                 {{ end }}
             </div>
             {{ end }}
-        </div>
+        </section>
 
         <!-- Pagination -->
         {{ if .pagination }}
@@ -92,9 +92,9 @@
 {{ define "card-link" }}
 <article class="feed-card feed-card-link">
     <div class="feed-card-body">
-        <h3 class="feed-card-title">
+        <h2 class="feed-card-title">
             <a href="/writing/{{ .Slug }}">{{ .Title }}</a>
-        </h3>
+        </h2>
         {{ if .LinkURL }}
         <a href="{{ .LinkURL }}" class="feed-card-link-url" target="_blank" rel="noopener">
             <span class="feed-card-domain">{{ extractDomain .LinkURL }}</span>
@@ -123,9 +123,9 @@
 {{ define "card-article" }}
 <article class="feed-card feed-card-article">
     <div class="feed-card-body">
-        <h3 class="feed-card-title">
+        <h2 class="feed-card-title">
             <a href="/writing/{{ .Slug }}">{{ .Title }}</a>
-        </h3>
+        </h2>
         {{ if .Description }}
         <p class="feed-card-description">{{ .Description }}</p>
         {{ else if .Excerpt }}

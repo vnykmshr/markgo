@@ -128,11 +128,11 @@
                 <p class="form-note">Your information will never be shared.</p>
             </form>
             {{ else }}
-            <div class="about-email">
+            <address class="about-email">
                 <a href="mailto:{{ .config.Blog.AuthorEmail }}" class="about-email-link">
                     Say hello &rarr; {{ .config.Blog.AuthorEmail }}
                 </a>
-            </div>
+            </address>
             {{ end }}
         </section>
         {{ end }}

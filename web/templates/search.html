@@ -38,7 +38,7 @@
         <!-- Search Results -->
         {{ if .query }}
             {{ if .results }}
-            <div class="card-stream">
+            <section class="card-stream" aria-label="Search results">
                 {{ range .results }}
                     {{ if eq .Article.Type "thought" }}
                         {{ template "card-thought" .Article }}
@@ -48,7 +48,7 @@
                         {{ template "card-article" .Article }}
                     {{ end }}
                 {{ end }}
-            </div>
+            </section>
             {{ else }}
             <div class="search-empty">
                 <p>No results for "{{ .query }}"</p>
