@@ -16,6 +16,7 @@ import { init as initLogin } from './modules/login.js';
 import { init as initToast, showToast } from './modules/toast.js';
 import { init as initFab } from './modules/fab.js';
 import { init as initComposeSheet } from './modules/compose-sheet.js';
+import { init as initSearchOverlay } from './modules/search-overlay.js';
 import { init as initRouter } from './modules/router.js';
 
 // Page-specific module loaders
@@ -152,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initToast();
     initFab();
     initComposeSheet();
+    initSearchOverlay();
 
     // Content modules — initial page
     initHighlight();

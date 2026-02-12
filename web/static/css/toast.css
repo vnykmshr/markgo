@@ -139,6 +139,13 @@
     }
 }
 
+/* Clear bottom nav on mobile */
+@media (max-width: 768px) {
+    .toast-container {
+        bottom: calc(56px + var(--spacing-4) + env(safe-area-inset-bottom, 0));
+    }
+}
+
 /* --------------------------------------------------------------------------
    Reduced motion
    -------------------------------------------------------------------------- */

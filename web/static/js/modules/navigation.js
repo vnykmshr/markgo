@@ -1,13 +1,41 @@
 /**
- * Navigation — mobile menu toggle, active link highlighting, scroll shadow.
+ * Navigation — mobile menu toggle, bottom nav, active link highlighting, scroll shadow.
  */
+
+function updateActiveLinks() {
+    const currentPath = window.location.pathname;
+
+    // Top nav active states
+    document.querySelectorAll('.nav-link').forEach((link) => {
+        try {
+            const linkPath = new URL(link.href, location.origin).pathname;
+            link.classList.toggle('active',
+                linkPath === currentPath ||
+                (currentPath.startsWith('/writing/') && linkPath === '/writing') ||
+                (currentPath.startsWith('/tags/') && linkPath === '/tags') ||
+                (currentPath.startsWith('/categories/') && linkPath === '/categories')
+            );
+        } catch { /* invalid href */ }
+    });
+
+    // Bottom nav active states
+    document.querySelectorAll('.bottom-nav-item[data-nav]').forEach((item) => {
+        const nav = item.dataset.nav;
+        let isActive = false;
+        if (nav === 'home') isActive = currentPath === '/';
+        else if (nav === 'writing') isActive = currentPath === '/writing' || currentPath.startsWith('/writing/');
+        else if (nav === 'search') isActive = currentPath === '/search';
+        else if (nav === 'about') isActive = currentPath === '/about';
+        item.classList.toggle('active', isActive);
+    });
+}
 
 export function init() {
     const navbar = document.querySelector('.navbar');
     const navbarToggle = document.getElementById('navbar-toggle');
     const navbarMenu = document.getElementById('navbar-menu');
 
-    // Mobile menu toggle
+    // Mobile menu toggle (still works on tablet if bottom nav not present)
     if (navbarToggle && navbarMenu) {
         navbarToggle.addEventListener('click', () => {
             navbarMenu.classList.toggle('active');
@@ -15,7 +43,6 @@ export function init() {
             navbarToggle.setAttribute('aria-expanded', navbarMenu.classList.contains('active'));
         });
 
-        // Close menu when clicking outside
         document.addEventListener('click', (event) => {
             if (!navbar.contains(event.target)) {
                 navbarMenu.classList.remove('active');
@@ -24,7 +51,6 @@ export function init() {
             }
         });
 
-        // Close menu on Escape
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
                 navbarMenu.classList.remove('active');
@@ -34,19 +60,19 @@ export function init() {
         });
     }
 
-    // Active navigation link highlighting
-    const currentPath = window.location.pathname;
-    document.querySelectorAll('.nav-link').forEach((link) => {
-        const linkPath = new URL(link.href).pathname;
-        if (
-            linkPath === currentPath ||
-            (currentPath.startsWith('/writing/') && linkPath === '/writing') ||
-            (currentPath.startsWith('/tags/') && linkPath === '/tags') ||
-            (currentPath.startsWith('/categories/') && linkPath === '/categories')
-        ) {
-            link.classList.add('active');
-        }
-    });
+    // Bottom nav compose button → dispatch fab:compose
+    const composeBtn = document.querySelector('.bottom-nav-compose');
+    if (composeBtn) {
+        composeBtn.addEventListener('click', () => {
+            document.dispatchEvent(new CustomEvent('fab:compose'));
+        });
+    }
+
+    // Active link highlighting
+    updateActiveLinks();
+
+    // Re-highlight after SPA navigation
+    document.addEventListener('router:navigate-end', updateActiveLinks);
 
     // Navbar scroll shadow
     let scrollTicking = false;

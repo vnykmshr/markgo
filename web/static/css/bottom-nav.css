@@ -1,0 +1,157 @@
+/* ==========================================================================
+   Bottom Navigation — mobile-only tab bar.
+   Replaces hamburger menu on mobile. Hidden on desktop (769px+).
+   ========================================================================== */
+
+.bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--color-bg-primary);
+    border-top: 1px solid var(--color-border);
+    z-index: var(--z-fixed);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.bottom-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: var(--spacing-1) 0;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    border: none;
+    background: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--transition-fast);
+}
+
+.bottom-nav-item svg {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.bottom-nav-item:active {
+    opacity: 0.7;
+}
+
+.bottom-nav-item:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+}
+
+.bottom-nav-item.active {
+    color: var(--color-primary);
+}
+
+/* Compose button — center, slightly raised */
+.bottom-nav-compose {
+    position: relative;
+}
+
+.bottom-nav-compose .bottom-nav-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -12px;
+    box-shadow: var(--shadow-md);
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.bottom-nav-compose .bottom-nav-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.bottom-nav-compose:active .bottom-nav-icon {
+    transform: scale(0.9);
+}
+
+/* --------------------------------------------------------------------------
+   Desktop — hide bottom nav
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 769px) {
+    .bottom-nav {
+        display: none;
+    }
+}
+
+/* Content padding to account for bottom nav — mobile only */
+@media (max-width: 768px) {
+    body {
+        padding-bottom: calc(56px + env(safe-area-inset-bottom, 0));
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Hide hamburger and footer nav on mobile (replaced by bottom nav)
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    .navbar-toggle {
+        display: none !important;
+    }
+
+    .navbar-menu {
+        display: none !important;
+    }
+
+    .footer-nav {
+        display: none;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   FAB: hide on mobile (compose is in bottom nav)
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    .fab {
+        display: none;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Adjust back-to-top and install banner to clear bottom nav on mobile
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    .back-to-top {
+        bottom: calc(56px + var(--spacing-4) + env(safe-area-inset-bottom, 0)) !important;
+    }
+
+    .install-banner {
+        bottom: calc(56px + var(--spacing-4) + env(safe-area-inset-bottom, 0));
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .bottom-nav-item {
+        transition: none;
+    }
+
+    .bottom-nav-compose .bottom-nav-icon {
+        transition: none;
+    }
+}

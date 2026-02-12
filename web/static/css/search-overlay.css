@@ -1,0 +1,135 @@
+/* ==========================================================================
+   Search Overlay — full-screen search on mobile.
+   Opens from bottom nav search tap or Cmd/Ctrl+K shortcut.
+   Hidden on desktop (769px+) — desktop uses the existing search page.
+   ========================================================================== */
+
+.search-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal);
+    display: flex;
+    flex-direction: column;
+}
+
+.search-overlay[hidden] {
+    display: none;
+}
+
+.search-overlay-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.search-overlay-panel {
+    position: relative;
+    margin-top: auto;
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    padding: var(--spacing-4);
+    padding-bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom, 0));
+    box-shadow: var(--shadow-xl);
+    animation: searchSlideUp 200ms ease;
+}
+
+.search-overlay-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+}
+
+.search-overlay-form {
+    flex: 1;
+    display: flex;
+}
+
+.search-overlay-input {
+    flex: 1;
+    padding: var(--spacing-3) var(--spacing-4);
+    font-size: var(--font-size-base);
+    font-family: var(--font-family-sans);
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.search-overlay-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.search-overlay-input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.search-overlay-cancel {
+    padding: var(--spacing-2) var(--spacing-3);
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+@keyframes searchSlideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Desktop — search overlay still works (Cmd+K shortcut), but panels center
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 769px) {
+    .search-overlay {
+        align-items: center;
+        justify-content: flex-start;
+        padding-top: 20vh;
+    }
+
+    .search-overlay-panel {
+        margin-top: 0;
+        border-radius: var(--radius-xl);
+        max-width: 560px;
+        width: 100%;
+        padding-bottom: var(--spacing-4);
+        animation: searchFadeIn 150ms ease;
+    }
+
+    .search-overlay-cancel {
+        display: none;
+    }
+}
+
+@keyframes searchFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .search-overlay-panel {
+        animation: none;
+    }
+}
