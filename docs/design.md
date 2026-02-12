@@ -1,7 +1,7 @@
 # MarkGo Design Language
 
 > A living document. Updated as the product evolves.
-> Last revised: 2026-02-10
+> Last revised: 2026-02-12
 
 ---
 
@@ -61,7 +61,7 @@ The core reading experience must work if every CDN goes down. Fonts degrade to s
 
 **Say no to:** JavaScript-required interactions for core reading, client-side rendering, features that fail silently when a third-party service is unavailable.
 
-**Current tension:** Google Fonts and highlight.js are loaded from external CDNs. These are runtime dependencies that contradict this principle. Self-hosting these assets is a planned improvement.
+All fonts and highlight.js are self-hosted. The binary embeds all web assets — no external CDN dependencies at runtime.
 
 ---
 
@@ -122,7 +122,7 @@ The design tokens live in `web/static/css/main.css`. This section explains _why_
 
 ### Typography
 
-**Inter** — A geometric sans-serif that's neutral enough to disappear behind content. It doesn't impose a personality. It reads well at small sizes on mobile screens. Loaded from Google Fonts with system-stack fallback: `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`.
+**Inter** — A geometric sans-serif that's neutral enough to disappear behind content. It doesn't impose a personality. It reads well at small sizes on mobile screens. Self-hosted with system-stack fallback: `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`.
 
 **Fira Code** — Monospace with ligatures for code blocks. Chosen for readability in technical content.
 
@@ -164,13 +164,21 @@ New themes must only set `--theme-*` variables — never override component sele
 
 **Server-rendered first** — The page works with JavaScript disabled. Forms use native POST actions. Filter pills are `<a>` tags with query parameters. The server does the work; the client enhances.
 
-**Progressive enhancement** — Theme toggle, mobile nav hamburger, and code-block copy buttons are JavaScript features. Without JS, you get system-preference theming, a visible nav, and selectable code. Nothing breaks.
+**SPA navigation** — With JavaScript, the app shell router intercepts link clicks, fetches full HTML, swaps `<main>`, and pushes history state. The server still renders complete pages — the client just avoids full reloads. Prefetch on hover (65ms delay) makes transitions feel instant. A CSS-only progress bar shows during navigation. Falls back to full page loads without JS.
+
+**Progressive enhancement** — Theme toggle, bottom navigation, compose sheet, and code-block copy buttons are JavaScript features. Without JS, you get system-preference theming, a nav bar with links, and fully functional browsing. Nothing breaks — features degrade.
+
+**Mobile-native UX** — Bottom navigation (5-item tab bar) replaces the header nav on mobile. Full-screen search overlay slides up from the bottom nav. Visual viewport handlers reposition overlays above the iOS keyboard. Dynamic `theme-color` meta tag matches the page background. The app should feel like it belongs on the home screen, not in a browser tab.
+
+**Quick capture** — A floating action button (FAB) triggers a compose sheet overlay. On mobile: bottom sheet sliding up. On desktop: centered modal. Type content, hit Publish, done. Auto-save drafts to localStorage with 2-second debounce and recovery on re-open. Keyboard shortcut: Cmd/Ctrl+N. The goal: under 5 seconds from thought to published.
+
+**Offline and installable** — Service Worker caches pages for offline reading and queues compose submissions in IndexedDB for sync on reconnect. The PWA is installable with a dynamic web manifest generated from config. Network-only routes (admin, compose, login, feeds) are never cached.
 
 **FOUC prevention** — An inline `<script>` in `<head>` reads the theme preference from localStorage before the first paint. Wrapped in try/catch; fails silently.
 
 **Pagination, not infinite scroll** — "Page 1 of 3" with Newer/Older links. Your position in the feed is stable and bookmarkable. Attention is a finite resource; the UI respects it.
 
-**Compose and admin** — The compose form at `/compose` and the admin dashboard at `/admin` are gated behind credentials configured in `.env`. These exist to enable publishing from a phone or tablet — the "train with one thumb" scenario. They are optional; you can ignore them entirely and manage articles as files. The compose form writes markdown files to disk — it is a convenience layer over the filesystem, not a replacement for it.
+**Compose and admin** — The compose form at `/compose` and the admin dashboard at `/admin` are gated behind session authentication configured in `.env`. These exist to enable publishing from a phone or tablet — the "train with one thumb" scenario. They are optional; you can ignore them entirely and manage articles as files. The compose form writes markdown files to disk — it is a convenience layer over the filesystem, not a replacement for it.
 
 ---
 
@@ -186,7 +194,7 @@ Things MarkGo deliberately does not do. Each one names a trade-off, not just an 
 
 **No engagement metrics** — No like counts, no view counts, no "trending" badges. Writing is its own reward. The trade-off: you will never know if anyone read what you wrote from MarkGo itself. The benefit: the absence of metrics removes the anxiety of performance.
 
-**No first-party tracking** — No analytics scripts, no fingerprinting, no first-party tracking cookies. The trade-off: no usage data to inform design decisions. The benefit: no cookie consent banner needed. Note: Google Fonts and highlight.js CDN are external requests that exist currently; self-hosting is planned.
+**No first-party tracking** — No analytics scripts, no fingerprinting, no first-party tracking cookies. The trade-off: no usage data to inform design decisions. The benefit: no cookie consent banner needed. All assets are self-hosted — zero external requests.
 
 **No dark patterns** — No newsletter popup on first visit. No "subscribe before you read" gate. No exit-intent modals. Content is freely accessible the moment you arrive.
 
