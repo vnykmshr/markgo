@@ -225,6 +225,13 @@ async function navigate(url, { push = true } = {}) {
         main.focus({ preventScroll: true });
         main.addEventListener('blur', () => main.removeAttribute('tabindex'), { once: true });
 
+        // Announce new page to screen readers
+        const announcer = document.getElementById('route-announcer');
+        if (announcer) {
+            const heading = main.querySelector('h1');
+            announcer.textContent = heading ? heading.textContent : page.title;
+        }
+
         // Re-initialize page modules
         if (onNavigate) onNavigate(page.template);
 

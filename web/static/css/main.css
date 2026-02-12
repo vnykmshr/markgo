@@ -968,6 +968,28 @@ html {
    Utility Classes
    ========================================================================== */
 
+/* Skip-to-content link — visible on focus for keyboard users */
+.skip-link {
+    position: fixed;
+    top: -100%;
+    left: var(--spacing-4);
+    z-index: 99999;
+    padding: var(--spacing-2) var(--spacing-4);
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+    text-decoration: none;
+    transition: top var(--transition-fast);
+}
+
+.skip-link:focus {
+    top: 0;
+    outline: 2px solid var(--color-text-inverse);
+    outline-offset: -2px;
+}
+
 .sr-only {
     position: absolute;
     width: 1px;

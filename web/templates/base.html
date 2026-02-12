@@ -209,6 +209,8 @@
     {{- else if eq $tpl "404" -}}error-page
     {{- else if eq $tpl "offline" -}}error-page
     {{- end -}}">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div id="route-announcer" aria-live="polite" class="sr-only"></div>
     <!-- Header -->
     <header class="site-header">
         <nav class="navbar">
@@ -283,8 +285,10 @@
                     <form class="login-popover-form login-form">
                         <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
                         <input type="hidden" name="next" value="{{ .login_next }}">
-                        <input type="text" name="username" class="login-popover-input" placeholder="Username" autocomplete="username" required>
-                        <input type="password" name="password" class="login-popover-input" placeholder="Password" autocomplete="current-password" required>
+                        <label for="popover-username" class="sr-only">Username</label>
+                        <input type="text" name="username" id="popover-username" class="login-popover-input" placeholder="Username" autocomplete="username" required>
+                        <label for="popover-password" class="sr-only">Password</label>
+                        <input type="password" name="password" id="popover-password" class="login-popover-input" placeholder="Password" autocomplete="current-password" required>
                         <button type="submit" class="login-popover-submit">Sign in</button>
                         <div class="login-error" hidden></div>
                     </form>
@@ -296,7 +300,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="main-content">
+    <main id="main-content" class="main-content">
         {{ $tpl := .template | default "feed" }}
         {{ if .auth_required }}
         <div class="auth-gate">
@@ -310,8 +314,10 @@
                 <form class="auth-gate-form login-form" id="auth-gate-form" aria-labelledby="auth-gate-title">
                     <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
                     <input type="hidden" name="next" value="{{ .login_next }}">
-                    <input type="text" name="username" class="auth-gate-input" placeholder="Username" autocomplete="username" required>
-                    <input type="password" name="password" class="auth-gate-input" placeholder="Password" autocomplete="current-password" required>
+                    <label for="auth-gate-username" class="sr-only">Username</label>
+                    <input type="text" name="username" id="auth-gate-username" class="auth-gate-input" placeholder="Username" autocomplete="username" required>
+                    <label for="auth-gate-password" class="sr-only">Password</label>
+                    <input type="password" name="password" id="auth-gate-password" class="auth-gate-input" placeholder="Password" autocomplete="current-password" required>
                     <button type="submit" class="auth-gate-submit">Sign in</button>
                     <div class="login-error" hidden></div>
                 </form>
