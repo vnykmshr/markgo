@@ -21,6 +21,7 @@ let draftNotice = null;
 let isOpen = false;
 let isSubmitting = false;
 let saveTimer = null;
+let saveWarning = null;
 let viewportHandler = null;
 
 function getCSRFToken() {
@@ -41,7 +42,10 @@ function saveDraft() {
     }
     try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify({ content, title, ts: Date.now() }));
-    } catch { /* quota exceeded — ignore */ }
+        if (saveWarning) saveWarning.hidden = true;
+    } catch {
+        if (saveWarning) saveWarning.hidden = false;
+    }
 }
 
 function scheduleSave() {
@@ -163,6 +167,13 @@ function buildOverlay() {
     draftNotice.appendChild(draftText);
     draftNotice.appendChild(draftDiscard);
 
+    // Save warning (shown when localStorage is unavailable)
+    saveWarning = document.createElement('div');
+    saveWarning.className = 'compose-sheet-save-warning';
+    saveWarning.setAttribute('role', 'status');
+    saveWarning.textContent = 'Draft saving unavailable \u2014 copy your work before closing';
+    saveWarning.hidden = true;
+
     // Textarea
     textarea = document.createElement('textarea');
     textarea.className = 'compose-sheet-textarea';
@@ -205,6 +216,7 @@ function buildOverlay() {
     sheet.appendChild(header);
     sheet.appendChild(titleGroup);
     sheet.appendChild(draftNotice);
+    sheet.appendChild(saveWarning);
     sheet.appendChild(textarea);
     sheet.appendChild(footer);
 

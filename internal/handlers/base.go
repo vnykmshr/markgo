@@ -193,9 +193,13 @@ func (h *BaseHandler) handleError(c *gin.Context, err error, defaultMsg string) 
 		return
 	}
 
-	// Render error page
+	// Render error page — use 500 template for server errors, 404 for everything else
 	data := h.buildBaseTemplateData(message)
-	data["template"] = "404"
+	if httpStatus >= http.StatusInternalServerError {
+		data["template"] = "500"
+	} else {
+		data["template"] = "404"
+	}
 	data["description"] = message
 	h.renderHTML(c, httpStatus, "base.html", data)
 }

@@ -1,6 +1,6 @@
 /**
- * Contact Form — captcha generation, validation, and submission.
- * Messages use the global toast system.
+ * Contact Form — captcha generation, inline validation, and submission.
+ * Validation errors shown inline (field-level). Network/server errors use toasts.
  */
 
 import { showToast } from './modules/toast.js';
@@ -32,8 +32,43 @@ export function init() {
         captchaInput.value = '';
     }
 
+    /** Show inline error below a field. Uses existing .field-error + .error classes from components.css. */
+    function showFieldError(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+
+        field.classList.add('error');
+
+        // Find or create the error element after the field (or its parent for captcha)
+        const parent = field.closest('.form-group') || field.parentElement;
+        let errorEl = parent.querySelector('.field-error');
+        if (!errorEl) {
+            errorEl = document.createElement('div');
+            errorEl.className = 'field-error';
+            parent.appendChild(errorEl);
+        }
+        errorEl.textContent = message;
+    }
+
+    /** Clear all inline errors */
+    function clearErrors() {
+        contactForm.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+        contactForm.querySelectorAll('.field-error').forEach(el => el.remove());
+    }
+
+    /** Clear error on a single field when user starts typing */
+    function clearFieldError(e) {
+        const field = e.target;
+        if (!field.classList.contains('error')) return;
+        field.classList.remove('error');
+        const parent = field.closest('.form-group') || field.parentElement;
+        const errorEl = parent.querySelector('.field-error');
+        if (errorEl) errorEl.remove();
+    }
+
     function handleSubmit(e) {
         e.preventDefault();
+        clearErrors();
 
         const submitBtn = contactForm.querySelector('.contact-submit');
         const formData = new FormData(contactForm);
@@ -44,14 +79,25 @@ export function init() {
         const message = (formData.get('message') || '').trim();
         const captchaValue = (formData.get('captcha_answer') || '').trim();
 
-        if (!name || !email || !subject || !message || !captchaValue) {
-            showToast('Please fill in all required fields.', 'error');
+        // Inline validation — show errors on specific fields
+        let hasError = false;
+        if (!name) { showFieldError('name', 'Name is required'); hasError = true; }
+        if (!email) { showFieldError('email', 'Email is required'); hasError = true; }
+        if (!subject) { showFieldError('subject', 'Subject is required'); hasError = true; }
+        if (!message) { showFieldError('message', 'Message is required'); hasError = true; }
+        if (!captchaValue) { showFieldError('captcha', 'Please solve the math problem'); hasError = true; }
+
+        if (hasError) {
+            // Focus the first field with an error
+            const firstError = contactForm.querySelector('.error');
+            if (firstError) firstError.focus();
             return;
         }
 
         if (parseInt(captchaValue) !== captchaAnswer) {
-            showToast('Please solve the math problem correctly.', 'error');
+            showFieldError('captcha', 'Incorrect answer — try again');
             generateCaptcha();
+            captchaInput.focus();
             return;
         }
 
@@ -69,7 +115,7 @@ export function init() {
             .then((response) => response.json())
             .then((result) => {
                 if (result.success) {
-                    showToast(result.message || 'Message sent! You\'ll receive a response soon.', 'success');
+                    showToast(result.message || 'Message sent!', 'success');
                     contactForm.reset();
                 } else {
                     showToast(result.message || 'Failed to send message. Please try again.', 'error');
@@ -87,9 +133,11 @@ export function init() {
             });
     }
 
+    // Clear individual field errors on input (calm: error disappears as user fixes it)
+    contactForm.addEventListener('input', clearFieldError, { signal });
     refreshBtn.addEventListener('click', generateCaptcha, { signal });
     contactForm.addEventListener('submit', handleSubmit, { signal });
-    contactForm.addEventListener('reset', () => setTimeout(generateCaptcha, 0), { signal });
+    contactForm.addEventListener('reset', () => { clearErrors(); setTimeout(generateCaptcha, 0); }, { signal });
 
     generateCaptcha();
 }

@@ -191,6 +191,7 @@
     {{ if eq $tpl "admin_home" }}{{ template "admin_home-head" . }}{{ end }}
     {{ if eq $tpl "drafts" }}{{ template "drafts-head" . }}{{ end }}
     {{ if eq $tpl "404" }}{{ template "404-head" . }}{{ end }}
+    {{ if eq $tpl "500" }}{{ template "500-head" . }}{{ end }}
     {{ if eq $tpl "offline" }}{{ template "offline-head" . }}{{ end }}
 </head>
 <body data-template="{{ .template | default "feed" }}" class="{{- $tpl := .template | default "feed" -}}
@@ -207,6 +208,7 @@
     {{- else if eq $tpl "admin_home" -}}admin-page
     {{- else if eq $tpl "drafts" -}}drafts-page
     {{- else if eq $tpl "404" -}}error-page
+    {{- else if eq $tpl "500" -}}error-page
     {{- else if eq $tpl "offline" -}}error-page
     {{- end -}}">
     <a class="skip-link" href="#main-content">Skip to content</a>
@@ -377,6 +379,7 @@
         {{ if eq $tpl "admin_home" }}{{ template "admin_home-content" . }}{{ end }}
         {{ if eq $tpl "drafts" }}{{ template "drafts-content" . }}{{ end }}
         {{ if eq $tpl "404" }}{{ template "404-content" . }}{{ end }}
+        {{ if eq $tpl "500" }}{{ template "500-content" . }}{{ end }}
         {{ if eq $tpl "offline" }}{{ template "offline-content" . }}{{ end }}
         {{ end }}
     </main>

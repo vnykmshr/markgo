@@ -442,7 +442,7 @@ func setupTemplates(router *gin.Engine, templateService *services.TemplateServic
 	// Validate that required templates exist
 	requiredTemplates := []string{
 		"base.html", "feed.html", "compose.html", "article.html", "articles.html",
-		"404.html", "offline.html", "about.html", "search.html", "tags.html", "categories.html",
+		"404.html", "500.html", "offline.html", "about.html", "search.html", "tags.html", "categories.html",
 		"drafts.html",
 	}
 

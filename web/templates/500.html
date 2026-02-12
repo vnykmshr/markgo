@@ -1,0 +1,21 @@
+{{ define "500-content" }}
+<div class="error-content">
+    <div class="container">
+        <header class="page-header">
+            <h1 class="page-title">Something went wrong</h1>
+            <p class="page-subtitle">We hit an unexpected error. Please try again in a moment.</p>
+        </header>
+
+        <!-- Navigation -->
+        <div class="error-links">
+            <a href="/" class="error-link">Back to feed</a>
+            <a href="/writing" class="error-link">Browse writing</a>
+        </div>
+    </div>
+</div>
+{{ end }}
+
+{{ define "500-head" }}
+<meta name="description" content="Something went wrong on {{ .config.Blog.Title }}">
+<meta name="robots" content="noindex, nofollow">
+{{ end }}
