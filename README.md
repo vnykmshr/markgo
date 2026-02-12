@@ -4,13 +4,11 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25.0+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A high-performance blog engine built with Go. MarkGo combines file-based content management with a dynamic web server.
+A blog engine where you write first and categorize never.
 
-**[Live Demo](https://vnykmshr.github.io/markgo/)**
+Type two sentences without a title and it becomes a thought. Paste a URL with commentary and it becomes a link. Write something long with a title and it becomes an article. Three content types, inferred automatically from what you write. No database. No build step.
 
 ## Quick Start
-
-**Download a release** from [GitHub Releases](https://github.com/vnykmshr/markgo/releases), or **build from source**:
 
 ```bash
 git clone https://github.com/vnykmshr/markgo && cd markgo
@@ -21,111 +19,86 @@ make build
 # Visit http://localhost:3000
 ```
 
-See [Getting Started Guide](docs/GETTING-STARTED.md) for detailed setup instructions.
+Or download a release from [GitHub Releases](https://github.com/vnykmshr/markgo/releases).
 
-## Features
+## What You Get
 
-**Performance**
-- Server ready in under 1 second
-- 30MB memory footprint, ~27MB binary
-- In-memory caching with no external dependencies
-- No runtime requirements (Node.js, PHP, databases)
+**Write from anywhere** — CLI for drafting in your editor, web compose form for publishing from your phone. Quick capture: tap the FAB, type a thought, hit Publish. Under 5 seconds.
 
-**Content Management**
-- Markdown files with YAML frontmatter
-- Git-based workflow for version control
-- CLI tools for article creation and export
+**SPA navigation** — Instant page transitions. The router fetches HTML and swaps content — no full page reloads, no client-side rendering framework.
 
-**Production Ready**
-- Docker deployment support
-- Static site export (GitHub Pages, Netlify, Vercel)
-- Built-in security: rate limiting, CORS, input validation
-- SEO automation: sitemaps, Schema.org, Open Graph, Twitter Cards
-- Full-text search and RSS/JSON feeds
+**Works offline** — Installable PWA with Service Worker. Pages cached for offline reading. Compose queue syncs when you're back online.
 
-**Developer Experience**
-- Clean architecture with separated concerns
-- Unified CLI with subcommands
-- Environment variable configuration
-- Extensive documentation
+**Mobile-native feel** — Bottom navigation, full-screen search overlay, visual viewport handling for iOS keyboards. CSS starts at 320px and works up.
+
+**Your files, your control** — Articles are markdown files with YAML frontmatter. Edit in vim, version with git, back up however you like. The compose form writes files to disk — it's a convenience layer, not a lock-in.
+
+**Zero dependencies** — Single Go binary (~29MB). No Node.js, no PHP, no database. Starts in under a second, runs on 30MB of RAM.
 
 ## Usage
 
 ```bash
-markgo init [--quick]                    # Initialize a new blog
 markgo serve                             # Start the web server
+markgo init [--quick]                    # Initialize a new blog
 markgo new [--title "..." --tags "..."]  # Create an article
-markgo export --output ./public          # Export to static site
+markgo new --type thought                # Quick thought (no title needed)
+markgo new --type link                   # Share a link
+markgo export --output ./public          # Export to static HTML
 ```
 
 ## Configuration
 
-Configure via environment variables. Copy `.env.example` to `.env`:
+Copy `.env.example` to `.env`:
 
 ```bash
 BLOG_TITLE="Your Blog Title"
 BLOG_AUTHOR="Your Name"
 BASE_URL="https://yourdomain.com"
-CACHE_ENABLED=true
-SEARCH_ENABLED=true
 ```
 
-See [Configuration Guide](docs/configuration.md) for complete options.
+Admin credentials enable the compose form, admin panel, and login:
 
-## Deployment
+```bash
+ADMIN_USERNAME=you
+ADMIN_PASSWORD=something-strong
+```
+
+See [Configuration Guide](docs/configuration.md) for all options.
+
+## Deploy
+
+**Docker:**
+```bash
+docker compose up -d
+```
 
 **Static export** (GitHub Pages, Netlify, Vercel):
 ```bash
 markgo export --output ./public --base-url https://yourdomain.com
 ```
 
-**Docker**:
-```bash
-docker compose up -d
-```
-
-**Manual** (systemd):
-```bash
-make build
-scp build/markgo server:/usr/local/bin/
-sudo cp deployments/markgo.service /etc/systemd/system/
-sudo systemctl enable --now markgo
-```
-
-See [Deployment Guide](docs/deployment.md) and [Static Export Guide](docs/static-export.md) for details.
+See [Deployment Guide](docs/deployment.md) for systemd, reverse proxy, and production setup.
 
 ## Development
 
 ```bash
-make dev             # Start dev server with hot reload
-make build           # Build for current platform
-make build-release   # Build for all platforms
-make fmt             # Format code
-make lint            # Run linter (golangci-lint v2)
+make dev             # Dev server with hot reload
+make build           # Build binary
+make lint            # golangci-lint
 make test            # Run tests
-make test-race       # Run tests with race detection
-make coverage        # Generate coverage report
+make test-race       # Race detector
+make coverage        # Coverage report
 ```
 
 ## Documentation
 
-- [Getting Started](docs/GETTING-STARTED.md) - Setup walkthrough
-- [Configuration](docs/configuration.md) - All configuration options
-- [Deployment](docs/deployment.md) - Production deployment strategies
-- [Static Export](docs/static-export.md) - GitHub Pages, Netlify, Vercel
-- [Architecture](docs/architecture.md) - Technical architecture and design
-- [API](docs/API.md) - HTTP endpoints and responses
-- [Runbook](docs/RUNBOOK.md) - Operations and troubleshooting
-- [Benchmarks](docs/BENCHMARKS.md) - Performance metrics
-
-## Contributing
-
-Contributions welcome. See [Contributing Guide](.github/CONTRIBUTING.md) for details.
+- [Getting Started](docs/GETTING-STARTED.md) — Install, first post, and features overview
+- [Configuration](docs/configuration.md) — All environment variables
+- [Architecture](docs/architecture.md) — How the system works
+- [API](docs/API.md) — Every HTTP endpoint
+- [Deployment](docs/deployment.md) — Docker, systemd, static export, reverse proxy
+- [Design Language](docs/design.md) — The principles behind every decision
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file.
-
----
-
-Made with Go
+MIT License — see [LICENSE](LICENSE).

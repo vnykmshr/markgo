@@ -1,375 +1,174 @@
-# Getting Started with MarkGo
+# Getting Started
 
-Welcome to MarkGo! This guide will get you from zero to a running blog in under 5 minutes.
+> Zero to running blog in under 5 minutes.
 
-## 🚀 Quick Start (5 Minutes)
+---
 
-### Step 1: Install MarkGo
+## Install
 
-**Option A: Download Release (Recommended)**
-1. Visit [MarkGo Releases](https://github.com/vnykmshr/markgo/releases)
-2. Download for your platform (Linux, macOS, Windows)
-3. Extract and move to your PATH
+**Download a release** from [GitHub Releases](https://github.com/vnykmshr/markgo/releases), or build from source:
 
-**Option B: Build from Source**
 ```bash
-git clone https://github.com/vnykmshr/markgo.git
-cd markgo
+git clone https://github.com/vnykmshr/markgo.git && cd markgo
 make build
 ```
 
-### Step 2: Initialize Your Blog
+The binary lands at `./build/markgo`.
 
-Create a new blog in seconds:
+## Initialize
 
 ```bash
-# Quick setup with defaults
 markgo init --quick
-
-# Or interactive setup
-markgo init
 ```
 
-This creates:
-- ✅ Complete directory structure
-- ✅ Configuration file (`.env`)
-- ✅ Sample articles
-- ✅ Basic templates and CSS
-- ✅ README and .gitignore
+This creates a `.env` config, an `articles/` directory with a sample post, and the `web/` directory with templates and static assets.
 
-### Step 3: Start Your Blog
+## Run
 
 ```bash
 markgo serve
 ```
 
-Visit http://localhost:3000 - Your blog is live! 🎉
+Visit http://localhost:3000. Your blog is live.
 
-### Step 4: Create Your First Article
+---
 
-```bash
-markgo new
-```
+## Write Something
 
-Follow the interactive prompts to create your first blog post.
+MarkGo has three content types. You never pick one — the system infers it from what you write.
 
-## 📁 Project Structure
-
-Your blog is organized like this:
-
-```
-my-blog/
-├── .env                 # Configuration
-├── articles/            # Your blog posts (Markdown)
-│   ├── welcome.md
-│   └── getting-started.md
-├── web/
-│   ├── static/          # CSS, JS, images
-│   │   └── css/style.css
-│   └── templates/       # HTML templates
-│       └── base.html
-├── docs/                # Documentation
-├── README.md
-└── .gitignore
-```
-
-## ✍️ Writing Articles
-
-### Using the CLI (Recommended)
+### From the command line
 
 ```bash
-# Interactive mode - guided setup
-markgo new
+# Article — has a title, intended for long-form
+markgo new --title "How I Built This" --tags "golang,blogging"
 
-# Quick creation
-markgo new --title "My First Post" --tags "tutorial,markgo"
+# Thought — no title needed, short-form
+markgo new --type thought
 
-# With date prefix
-markgo new --title "News Update" --date-prefix
+# Link — sharing a URL with commentary
+markgo new --type link
 ```
 
-### Manual Creation
-
-Create a `.md` file in `articles/`:
+Articles are markdown files in `articles/` with YAML frontmatter:
 
 ```markdown
 ---
-title: "Your Awesome Title"
-description: "SEO-friendly description"
-author: "Your Name"
-date: 2024-01-01T00:00:00Z
-tags: ["golang", "blog", "tutorial"]
-category: "technology"
-draft: false
-featured: false
+title: "How I Built This"
+description: "A walkthrough of the architecture"
+tags: ["golang", "blogging"]
+category: "engineering"
+date: 2026-02-12T00:00:00Z
 ---
 
-# Your Content Here
-
-Write your article using **Markdown** syntax!
-
-## Subheadings Work Great
-
-- Bullet points
-- Are supported
-- Too!
-
-```code blocks
-Also work perfectly
+Your content here, in standard markdown.
 ```
 
-Images, links, tables - everything Markdown supports!
-```
+### From the browser
 
-## ⚙️ Configuration
-
-Edit `.env` to customize your blog:
-
-### Essential Settings
+If you configure admin credentials in `.env`:
 
 ```bash
-# Blog Information
-BLOG_TITLE=My Awesome Blog
-BLOG_DESCRIPTION=A blog about amazing things
-BLOG_AUTHOR=Your Name
-BLOG_AUTHOR_EMAIL=you@example.com
+ADMIN_USERNAME=you
+ADMIN_PASSWORD=something-strong
+```
 
-# Server Settings
-PORT=3000
+Then restart the server. You'll see a Compose link in the nav and a floating action button (FAB) on mobile. The compose form puts the cursor in the content field — not the title, not a category picker. Write first, categorize never.
+
+**Quick capture**: Tap the FAB, type a thought, hit Publish. Under 5 seconds.
+
+**Full compose**: Navigate to `/compose` for the full form with title, tags, markdown preview, and image upload.
+
+**Edit**: Any published post can be edited at `/compose/edit/:slug`.
+
+### Content type inference
+
+You don't choose a type. MarkGo figures it out:
+
+| What you write | What it becomes |
+|---|---|
+| No title, under 100 words | Thought |
+| Has a `link_url` in frontmatter | Link |
+| Everything else | Article |
+
+You can override this by setting `type: thought`, `type: link`, or `type: article` in the frontmatter.
+
+---
+
+## Configure
+
+Edit `.env`. The essential settings:
+
+```bash
+# Your blog
+BLOG_TITLE=My Blog
+BLOG_AUTHOR=Your Name
 BASE_URL=http://localhost:3000
 
-# For production:
-# ENVIRONMENT=production
-# BASE_URL=https://yourdomain.com
+# For production
+ENVIRONMENT=production
+BASE_URL=https://yourdomain.com
 ```
 
-### Email Setup (Contact Forms)
-
-```bash
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USERNAME=your-email@gmail.com
-EMAIL_PASSWORD=your-app-password
-EMAIL_FROM=noreply@yourdomain.com
-EMAIL_TO=contact@yourdomain.com
-EMAIL_USE_SSL=true
-```
-
-### Performance Tuning
-
-```bash
-# Cache Settings
-CACHE_TTL=3600              # 1 hour
-CACHE_MAX_SIZE=1000         # Max cached items
-CACHE_CLEANUP_INTERVAL=600  # 10 minutes
-
-# Rate Limiting
-RATE_LIMIT_GENERAL_REQUESTS=100
-RATE_LIMIT_GENERAL_WINDOW=900s
-```
-
-## 🎨 Customization
-
-### Styling
-
-Edit `web/static/css/style.css`:
-
-```css
-/* Add your custom styles */
-.my-custom-class {
-    color: #007bff;
-    font-weight: bold;
-}
-
-/* Override defaults */
-body {
-    font-family: 'Your Preferred Font', sans-serif;
-}
-```
-
-### Templates
-
-Modify `web/templates/base.html` for layout changes:
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{.Title}} - My Blog</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-</head>
-<body>
-    <!-- Your custom header -->
-    <main>{{template "content" .}}</main>
-    <!-- Your custom footer -->
-</body>
-</html>
-```
-
-## 🚀 Development Workflow
-
-### Live Development
-
-```bash
-# Start server (auto-reloads templates)
-markgo
-
-# In another terminal, create content
-markgo new
-
-# Edit files - changes appear instantly!
-```
-
-### Testing Performance
-
-```bash
-# Run Go benchmarks
-go test -bench=. -benchmem ./...
-
-# For load testing, see https://github.com/vnykmshr/webstress
-```
-
-## 📊 Monitoring & Analytics
-
-### Built-in Metrics
-
-Visit these endpoints while your blog is running:
-
-- `http://localhost:3000/health` - Health check
-- `http://localhost:3000/metrics` - Performance metrics
-- `http://localhost:3000/admin/stats` - Detailed statistics
-
-### Google Analytics Setup
-
-```bash
-ANALYTICS_ENABLED=true
-ANALYTICS_PROVIDER=google
-ANALYTICS_TRACKING_ID=GA_MEASUREMENT_ID
-```
-
-### Plausible Analytics
-
-```bash
-ANALYTICS_ENABLED=true
-ANALYTICS_PROVIDER=plausible
-ANALYTICS_DOMAIN=yourdomain.com
-```
-
-## 🌐 SEO Features
-
-MarkGo includes powerful SEO features out of the box:
-
-- **Automatic Sitemaps**: `yourdomain.com/sitemap.xml`
-- **RSS Feeds**: `yourdomain.com/rss` (XML) and `yourdomain.com/feed.json`
-- **Meta Tags**: Open Graph and Twitter Cards
-- **Structured Data**: JSON-LD for search engines
-- **Fast Loading**: Core Web Vitals optimized
-
-## 🚢 Deployment
-
-### Production Setup
-
-1. **Update Configuration**:
-   ```bash
-   ENVIRONMENT=production
-   BASE_URL=https://yourdomain.com
-   LOG_LEVEL=warn
-   ```
-
-2. **Build for Production**:
-   ```bash
-   make build
-   ```
-
-3. **Deploy Options**:
-
-   **Docker**:
-   ```bash
-   make docker
-   ```
-
-   **Systemd** (Linux):
-   ```bash
-   sudo cp deployments/etc/systemd/system/markgo.service /etc/systemd/system/
-   sudo systemctl daemon-reload
-   sudo systemctl enable markgo
-   sudo systemctl start markgo
-   ```
-
-   **Manual**:
-   ```bash
-   # Copy binary and files to server
-   scp build/markgo user@server:/opt/markgo/
-   scp -r .env articles web user@server:/opt/markgo/
-   
-   # Start on server
-   ./markgo
-   ```
-
-### Domain Setup
-
-1. Point your domain to your server
-2. Update `BASE_URL` in `.env`
-3. Set up HTTPS (recommended: Let's Encrypt)
-4. Update CORS settings if needed
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-**Port Already in Use**:
-```bash
-# Change port in .env
-PORT=3001
-```
-
-**Permission Denied**:
-```bash
-# Make binary executable
-chmod +x markgo
-```
-
-**Templates Not Loading**:
-```bash
-# Check templates path in .env
-TEMPLATES_PATH=./web/templates
-```
-
-**Articles Not Showing**:
-```bash
-# Check articles path and permissions
-ARTICLES_PATH=./articles
-ls -la articles/
-```
-
-### Getting Help
-
-- 📖 Check `docs/` directory for detailed documentation
-- 🐛 Report issues: [GitHub Issues](https://github.com/vnykmshr/markgo/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/vnykmshr/markgo/discussions)
-- 📧 Email: maintainer@markgo.dev
-
-## 🎯 Next Steps
-
-Now that you're up and running:
-
-1. **Customize Your Theme**: Modify CSS and templates
-2. **Set Up Email**: Enable contact forms
-3. **Configure Analytics**: Track your visitors
-4. **Write Great Content**: The most important part!
-5. **Deploy to Production**: Share with the world
-
-## 📚 Advanced Guides
-
-- [Configuration Reference](./configuration.md)
-- [Architecture Guide](./architecture.md)
-- [Deployment Guide](./deployment.md)
-- [API Documentation](./API.md)
-- [Contributing](../.github/CONTRIBUTING.md)
+See [configuration.md](configuration.md) for every option.
 
 ---
 
-**Welcome to the MarkGo community!** 🎉
+## Development
 
-*Need help? Don't hesitate to ask in our GitHub Discussions.*
+```bash
+make dev      # Live reload server at :3000 (requires air)
+make build    # Build binary
+make test     # Run tests
+make lint     # Run linter
+```
+
+---
+
+## Deploy
+
+**Docker:**
+```bash
+docker compose up -d
+```
+
+**Manual:**
+```bash
+make build
+scp build/markgo server:/usr/local/bin/
+```
+
+**Static export** (GitHub Pages, Netlify, Vercel):
+```bash
+markgo export --output ./public --base-url https://yourdomain.com
+```
+
+See [deployment.md](deployment.md) for reverse proxy setup, systemd, and production configuration.
+
+---
+
+## Features You Get Out of the Box
+
+- **SPA navigation** — Instant page transitions, no full reloads
+- **PWA** — Installable, works offline, caches pages for offline reading
+- **Quick capture** — FAB on mobile, Cmd/Ctrl+N on desktop
+- **Offline compose** — Write when disconnected, auto-syncs when back online
+- **Search** — Full-text search across all content
+- **Feeds** — RSS (`/feed.xml`), JSON Feed (`/feed.json`), sitemap (`/sitemap.xml`)
+- **SEO** — Open Graph, Twitter Cards, Schema.org, canonical URLs
+- **Themes** — Light/Dark/Auto mode, 5 color presets, 3 style themes
+- **Comments** — Optional Giscus integration
+- **Contact form** — SMTP email delivery with rate limiting
+- **Admin panel** — Stats, draft management, cache controls
+
+All of this works without JavaScript for core reading. JS enhances, it doesn't gate.
+
+---
+
+## Next Steps
+
+- [Configuration](configuration.md) — All environment variables
+- [Architecture](architecture.md) — How the system works
+- [API](api.md) — Every HTTP endpoint
+- [Deployment](deployment.md) — Production setup
+- [Design Language](design.md) — The principles behind the decisions

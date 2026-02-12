@@ -1,357 +1,140 @@
-# MarkGo HTTP API Reference
+# API Reference
 
-**Version:** 2.3.0
-
-## Overview
-
-MarkGo provides HTTP endpoints for browsing articles, search, RSS feeds, and administration. All endpoints return HTML unless otherwise specified.
-
-## Base Configuration
-
-- **Default Port:** 3000 (configurable via `PORT` env variable)
-- **Base URL:** Set via `BASE_URL` env variable
-
-## Public Endpoints
-
-### Home & Articles
-
-#### `GET /`
-Homepage displaying recent articles.
-
-**Response:** HTML page
+> All HTTP routes served by MarkGo. All responses are HTML unless noted otherwise.
 
 ---
 
-#### `GET /articles`
-List all published articles with pagination.
+## Public Routes
 
-**Query Parameters:**
-- `page` (optional): Page number (default: 1)
+### Feed & Content
 
-**Response:** HTML page with article list
+| Method | Path | Handler | Description |
+|--------|------|---------|-------------|
+| GET | `/` | FeedHandler | Homepage feed. Supports `?type=thought\|link\|article` and `?page=N`. |
+| GET | `/writing` | PostHandler | Articles listing with pagination (`?page=N`). |
+| GET | `/writing/:slug` | PostHandler | Single article by slug. |
+| GET | `/search` | SearchHandler | Full-text search. Query param: `?q=term`. |
+| GET | `/about` | AboutHandler | Config-driven about page with contact section. |
+| GET | `/contact` | — | 301 redirect to `/about#contact`. |
+| POST | `/contact` | ContactHandler | Contact form submission. Rate limited. |
 
----
+### Taxonomy
 
-#### `GET /articles/:slug`
-View individual article by slug.
+| Method | Path | Handler | Description |
+|--------|------|---------|-------------|
+| GET | `/tags` | TaxonomyHandler | All tags with article counts. |
+| GET | `/tags/:tag` | TaxonomyHandler | Articles filtered by tag. |
+| GET | `/categories` | TaxonomyHandler | All categories with article counts. |
+| GET | `/categories/:category` | TaxonomyHandler | Articles filtered by category. |
 
-**Parameters:**
-- `slug`: Article slug (from filename or frontmatter)
+### Feeds & SEO
 
-**Response:**
-- `200 OK`: HTML article page
-- `200 OK`: Error page (if article not found)
+| Method | Path | Response Type | Description |
+|--------|------|---------------|-------------|
+| GET | `/feed.xml` | `application/rss+xml` | RSS 2.0 feed. |
+| GET | `/feed.json` | `application/json` | JSON Feed v1. |
+| GET | `/sitemap.xml` | `application/xml` | XML sitemap for search engines. |
+| GET | `/robots.txt` | `text/plain` | Robots.txt (configurable via `SEO_ROBOTS_*`). |
 
----
+### Health & PWA
 
-### Filtering
+| Method | Path | Response Type | Description |
+|--------|------|---------------|-------------|
+| GET | `/health` | `application/json` | Health check with uptime and version. |
+| GET | `/manifest.json` | `application/json` | PWA manifest (config-driven). |
+| GET | `/offline` | HTML | Offline fallback page (served by Service Worker). |
 
-#### `GET /tags`
-List all tags with article counts.
+### Static Assets
 
-**Response:** HTML page with tag cloud
-
----
-
-#### `GET /tags/:tag`
-List articles with specific tag.
-
-**Parameters:**
-- `tag`: Tag name
-
-**Response:** HTML page with filtered articles
-
----
-
-#### `GET /categories`
-List all categories with article counts.
-
-**Response:** HTML page with categories
-
----
-
-#### `GET /categories/:category`
-List articles in specific category.
-
-**Parameters:**
-- `category`: Category name (URL-encoded for spaces)
-
-**Response:** HTML page with filtered articles
+| Path | Description |
+|------|-------------|
+| `/static/*` | CSS, JS, images, fonts. Cached with `Cache-Control: public, max-age=3600`. |
+| `/favicon.ico` | Favicon. |
+| `/sw.js` | Service Worker (served from root for scope). |
 
 ---
 
-### Search
+## Auth Routes
 
-#### `GET /search`
-Full-text search articles.
+Only registered when `ADMIN_USERNAME` and `ADMIN_PASSWORD` are configured.
 
-**Query Parameters:**
-- `q`: Search query string
-
-**Response:** HTML page with search results
-
----
-
-### Special Pages
-
-#### `GET /about`
-About page (if `about.md` exists in articles directory).
-
-**Response:** HTML page
+| Method | Path | Middleware | Description |
+|--------|------|-----------|-------------|
+| GET | `/login` | CSRF | Login form. |
+| POST | `/login` | CSRF | Authenticate. Sets session cookie (7-day, HttpOnly, SameSite=Strict). |
+| GET | `/logout` | — | Clear session and redirect. |
 
 ---
 
-#### `POST /contact`
-Contact form submission.
+## Compose Routes
 
-**Content-Type:** `application/x-www-form-urlencoded`
+Require authentication (soft auth: unauthenticated GET shows login popover, unauthenticated POST returns 401). All routes have CSRF and NoCache middleware.
 
-**Form Fields:**
-- `name`: Sender name (required)
-- `email`: Sender email (required)
-- `message`: Message content (required)
-
-**Response:**
-- `200 OK`: Success message
-- `400 Bad Request`: Validation errors
-- `429 Too Many Requests`: Rate limit exceeded
-
-**Rate Limit:** Configurable, default 1 request per minute per IP
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/compose` | Compose form (title, content, tags, preview, upload). |
+| POST | `/compose` | Create new article. Writes markdown file to disk. Redirects to article. |
+| GET | `/compose/edit/:slug` | Edit form pre-filled with existing article. |
+| POST | `/compose/edit/:slug` | Update existing article. Atomic write (temp + rename). |
+| POST | `/compose/preview` | Render markdown to HTML. Returns HTML fragment. |
+| POST | `/compose/upload` | Upload image. Content type detected via `http.DetectContentType`. Returns JSON with URL. |
+| POST | `/compose/quick` | Quick capture API. Returns JSON: `{ slug, url, type }`. |
 
 ---
 
-## Feeds
+## Admin Routes
 
-#### `GET /feed.xml`
-RSS 2.0 feed of recent articles.
+Require authentication (soft auth). NoCache middleware.
 
-**Response:** XML (application/rss+xml)
-
----
-
-#### `GET /feed.json`
-JSON feed of recent articles.
-
-**Response:** JSON (application/json)
-
-**Example Response:**
-```json
-{
-  "version": "https://jsonfeed.org/version/1",
-  "title": "Blog Title",
-  "home_page_url": "https://example.com",
-  "feed_url": "https://example.com/feed.json",
-  "items": [
-    {
-      "id": "article-slug",
-      "url": "https://example.com/articles/article-slug",
-      "title": "Article Title",
-      "content_html": "<p>Content...</p>",
-      "date_published": "2025-10-23T00:00:00Z",
-      "tags": ["tag1", "tag2"]
-    }
-  ]
-}
-```
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/admin` | Admin dashboard. |
+| GET | `/admin/drafts` | List all draft articles with edit links. |
+| GET | `/admin/stats` | Site statistics (JSON). |
+| GET | `/metrics` | Performance metrics (JSON). |
+| POST | `/admin/cache/clear` | Clear article cache. |
+| POST | `/admin/articles/reload` | Reload articles from disk. |
 
 ---
 
-## SEO & Crawlers
+## Debug Routes
 
-#### `GET /sitemap.xml`
-XML sitemap for search engines.
+Only available when `ENVIRONMENT=development`. Require hard session auth.
 
-**Response:** XML (application/xml)
-
----
-
-#### `GET /robots.txt`
-Robots.txt for web crawlers.
-
-**Response:** Plain text
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/debug/memory` | Memory statistics. |
+| GET | `/debug/runtime` | Runtime information. |
+| GET | `/debug/config` | Current configuration. |
+| GET | `/debug/requests` | Recent request log. |
+| GET | `/debug/pprof/*` | Go pprof profiling (Index, Cmdline, Profile, Symbol, Trace, heap, goroutine, allocs, block, mutex). |
 
 ---
 
-## Health & Monitoring
+## Contact Form
 
-#### `GET /health`
-Health check endpoint.
+`POST /contact` accepts `application/x-www-form-urlencoded`:
 
-**Response:** JSON
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | Yes | Sender name. |
+| `email` | Yes | Sender email (validated). |
+| `message` | Yes | Message content. |
 
-**Example Response:**
-```json
-{
-  "status": "healthy",
-  "timestamp": "2025-10-23T10:00:00Z",
-  "uptime": 3600,
-  "version": "v2.1.0"
-}
-```
-
-**Status Codes:**
-- `200 OK`: Service healthy
-- `503 Service Unavailable`: Service degraded
+Responses: 200 (success), 400 (validation), 429 (rate limited).
 
 ---
 
-#### `GET /metrics`
-Prometheus metrics endpoint.
+## Security
 
-**Response:** Plain text (Prometheus format)
+**Headers** on all responses:
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: SAMEORIGIN`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `X-Response-Time` (performance timing)
 
-**Metrics Include:**
-- HTTP request counters
-- Request duration histograms
-- Go runtime metrics
+**Rate limiting**: Sliding window per IP. Static assets excluded. General: 100 req/15min (production). Contact: 5 req/hour.
 
----
+**CSRF**: Double-submit cookie on login and compose routes. Token in cookie (`_csrf`, HttpOnly, SameSite=Strict) and form field/header (`_csrf` / `X-CSRF-Token`). 1-hour expiry.
 
-## Admin Endpoints
-
-Admin endpoints require Basic Authentication (configured via `ADMIN_USERNAME` and `ADMIN_PASSWORD`).
-
-#### `GET /admin`
-Admin dashboard.
-
-**Authentication:** Basic Auth required
-
-**Response:** HTML admin page with statistics
-
----
-
-#### `GET /admin/stats`
-Retrieve site statistics.
-
-**Authentication:** Basic Auth required
-
-**Response:** JSON
-
-**Example Response:**
-```json
-{
-  "articles": {
-    "total": 42,
-    "published": 40,
-    "drafts": 2
-  },
-  "tags": 15,
-  "categories": 8,
-  "cache": {
-    "enabled": true,
-    "hits": 1000,
-    "misses": 50
-  }
-}
-```
-
----
-
-#### `POST /admin/cache/clear`
-Clear application cache.
-
-**Authentication:** Basic Auth required
-
-**Response:** JSON
-
-**Example Response:**
-```json
-{
-  "message": "Cache cleared successfully"
-}
-```
-
----
-
-#### `POST /admin/articles/reload`
-Reload articles from disk without restarting.
-
-**Authentication:** Basic Auth required
-
-**Response:** JSON
-
-**Example Response:**
-```json
-{
-  "message": "Articles reloaded successfully",
-  "count": 42
-}
-```
-
----
-
-## Debug Endpoints (Development Only)
-
-Debug endpoints are only available when `ENVIRONMENT=development`. They require Basic Auth if admin credentials are configured.
-
-**Available Endpoints:**
-- `GET /debug/pprof/*`: Go pprof profiling endpoints
-- See Go pprof documentation for details
-
----
-
-## Static Assets
-
-#### `GET /static/*`
-Serve static files (CSS, JavaScript, images).
-
-**Response:** File content with appropriate Content-Type
-
-**Caching:** Long-term cache headers in production
-
----
-
-## Error Responses
-
-MarkGo typically returns HTML error pages for user-facing endpoints. Status codes:
-
-- `200 OK`: Success (even for "article not found" - returns error page)
-- `400 Bad Request`: Invalid request parameters
-- `404 Not Found`: Route not found
-- `429 Too Many Requests`: Rate limit exceeded
-- `500 Internal Server Error`: Server error
-- `503 Service Unavailable`: Service unavailable
-
----
-
-## Rate Limiting
-
-Rate limiting is applied per IP address:
-
-- **General requests:** Configurable (default: 10 req/s)
-- **Contact form:** Configurable (default: 1 req/min)
-
-Rate limit headers:
-- `X-RateLimit-Limit`: Request limit
-- `X-RateLimit-Remaining`: Remaining requests
-- `X-RateLimit-Reset`: Reset timestamp
-
----
-
-## Security Headers
-
-All responses include security headers:
-
-- `Strict-Transport-Security`: HSTS for HTTPS
-- `X-Frame-Options`: SAMEORIGIN
-- `X-Content-Type-Options`: nosniff
-- `X-XSS-Protection`: 1; mode=block
-- `Content-Security-Policy`: Configured CSP
-
----
-
-## CORS
-
-CORS is enabled with configurable allowed origins (via `CORS_ALLOWED_ORIGINS`).
-
----
-
-## Further Reading
-
-- [Configuration Guide](configuration.md) - All configuration options
-- [Getting Started](GETTING-STARTED.md) - Setup and usage
-- [Architecture](architecture.md) - Technical architecture
-
----
-
-**Last Updated:** February 2026 (v2.3.0)
+**Authentication**: Session cookie (`_session`), 7-day expiry, HttpOnly, SameSite=Strict, Secure in production.

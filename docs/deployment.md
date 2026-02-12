@@ -1,238 +1,210 @@
-# MarkGo Deployment Guide
+# Deployment
 
-**Version:** 2.3.0
+> Single binary, no runtime dependencies. Deploy however you deploy Go binaries.
 
-This guide covers production deployment of MarkGo using various methods.
+---
 
-## 🚀 Quick Deploy Options
+## Docker (Recommended)
 
-### Option 1: Docker (Recommended)
 ```bash
-# Clone and configure
-git clone https://github.com/vnykmshr/markgo.git
-cd markgo
-cp .env.example .env  # Edit with your settings
-
-# Deploy with Docker Compose
+cp .env.example .env    # edit with production values
 docker compose up -d
-
-# Access: http://localhost:3000
 ```
 
-### Option 2: Binary Deployment
+The Dockerfile uses multi-stage build (golang-alpine → scratch). The image contains only the binary, templates, static assets, and articles.
+
+## Binary + systemd
+
 ```bash
-# Download or build binary
+# Build
 make build-release
 
 # Copy to server
 scp build/markgo-linux-amd64 server:/usr/local/bin/markgo
 
-# Install systemd service
-sudo cp deployments/etc/systemd/system/markgo.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable markgo
-sudo systemctl start markgo
-```
-
-### Option 3: Nginx + MarkGo
-```bash
-# Install configurations
-sudo cp deployments/etc/nginx/nginx.conf /etc/nginx/
-sudo cp deployments/etc/nginx/conf.d/markgo.conf /etc/nginx/conf.d/
-
-# Update domain in markgo.conf
-sudo sed -i 's/yourdomain.com/your-actual-domain.com/g' /etc/nginx/conf.d/markgo.conf
-
-# Test and reload
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-## 📁 Configuration Files
-
-### SystemD Service
-Location: `/etc/systemd/system/markgo.service`
-- Optimized for security with hardening
-- Journal logging integration
-- Resource limits configured
-- Environment file support
-
-### Nginx Configuration
-Location: `/etc/nginx/conf.d/markgo.conf`
-- SSL termination ready
-- Rate limiting configured
-- Static file caching optimized
-- Security headers included
-
-## 🛡️ Security Setup
-
-### 1. Create User Account
-```bash
+# Create service user
 sudo useradd --system --no-create-home --shell /bin/false markgo
 sudo mkdir -p /opt/markgo/{articles,web,logs}
 sudo chown -R markgo:markgo /opt/markgo
+
+# Install systemd unit
+sudo cp deployments/etc/systemd/system/markgo.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now markgo
 ```
 
-### 2. SSL Certificate Setup
-```bash
-# Using Let's Encrypt
-sudo certbot certonly --nginx -d yourdomain.com
+### Production .env
 
-# Or place your certificates:
-# /etc/ssl/certs/yourdomain.com.crt
-# /etc/ssl/private/yourdomain.com.key
-```
-
-### 3. Environment Configuration
 ```bash
-# Create production environment file
-sudo tee /opt/markgo/.env << EOF
+sudo tee /opt/markgo/.env << 'EOF'
 ENVIRONMENT=production
 PORT=3000
 BASE_URL=https://yourdomain.com
-BLOG_TITLE="Your Blog Title"
-BLOG_AUTHOR="Your Name"
-# ... other settings
+BLOG_TITLE=Your Blog
+BLOG_AUTHOR=Your Name
+
+ADMIN_USERNAME=your-admin
+ADMIN_PASSWORD=a-strong-password
+
+LOG_LEVEL=warn
+LOG_OUTPUT=file
+LOG_FILE=/opt/markgo/logs/markgo.log
+
+CACHE_TTL=24h
+CORS_ALLOWED_ORIGINS=https://yourdomain.com
 EOF
 
 sudo chown markgo:markgo /opt/markgo/.env
 sudo chmod 600 /opt/markgo/.env
 ```
 
-## 🔧 Production Checklist
+## Reverse Proxy
 
-### Before Deployment
-- [ ] Set strong admin credentials
-- [ ] Configure email settings for contact form
-- [ ] Update domain names in configs
-- [ ] Set up SSL certificates
-- [ ] Configure rate limiting values
-- [ ] Set up log rotation
-- [ ] Configure firewall rules
+Put Nginx or Caddy in front for TLS termination, compression, and static asset caching.
 
-### After Deployment
-- [ ] Verify service starts: `systemctl status markgo`
-- [ ] Check logs: `journalctl -u markgo -f`
-- [ ] Test endpoints: `/health`, `/metrics`
-- [ ] Verify SSL: `curl -I https://yourdomain.com`
-- [ ] Test contact form and admin panel
-- [ ] Set up monitoring and backups
+### Nginx
 
-## 📊 Monitoring & Maintenance
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name yourdomain.com;
 
-### Health Checks
+    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Cache static assets at the proxy level
+    location /static/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_cache_valid 200 7d;
+        add_header Cache-Control "public, max-age=604800, immutable";
+    }
+
+    # Service Worker must be served from root
+    location = /sw.js {
+        proxy_pass http://127.0.0.1:3000;
+        add_header Cache-Control "no-cache";
+    }
+}
+```
+
+### Caddy
+
+```
+yourdomain.com {
+    reverse_proxy localhost:3000
+}
+```
+
+Caddy handles TLS automatically via Let's Encrypt.
+
+### SSL with Let's Encrypt
+
+```bash
+sudo certbot certonly --nginx -d yourdomain.com
+```
+
+---
+
+## Static Export
+
+Export MarkGo to static HTML for hosting on GitHub Pages, Netlify, or Vercel. No server needed — just files.
+
+```bash
+markgo export --output ./public --base-url https://yourdomain.com
+```
+
+This generates HTML pages, copies static assets, and creates feeds and sitemap.
+
+### GitHub Pages
+
+```bash
+markgo export --output ./public --base-url https://username.github.io/repo
+# Push ./public to gh-pages branch or configure GitHub Pages to serve from /public
+```
+
+### Netlify / Vercel
+
+```bash
+markgo export --output ./public --base-url https://yourdomain.com
+# Set build command: markgo export --output ./public
+# Set publish directory: public
+```
+
+### What static export does NOT include
+
+- SPA navigation (falls back to full-page loads)
+- Compose form and admin panel (no server to write files)
+- Contact form submission (no server to send email)
+- Service Worker offline compose queue (no server to sync to)
+- Search works via pre-built index (client-side)
+
+The reading experience is fully preserved. Publishing requires the live server.
+
+---
+
+## PWA Deployment Notes
+
+The Service Worker (`sw.js`) must be served from the root path to control the full scope. The Nginx config above handles this. If using a CDN, ensure `/sw.js` is not cached aggressively — use `Cache-Control: no-cache`.
+
+The PWA manifest is generated dynamically at `/manifest.json` from your `.env` configuration (blog title, description, icons).
+
+---
+
+## Health Checks
+
+```bash
+curl -f http://localhost:3000/health
+```
+
+Returns JSON with status, uptime, and version. Use this for load balancer health checks and monitoring.
+
+## Monitoring
+
 ```bash
 # Service status
 systemctl status markgo
 
-# Application health
-curl -f http://localhost:3000/health
+# Application logs
+journalctl -u markgo -f
 
-# Metrics endpoint
+# Application health
+curl http://localhost:3000/health
+
+# Performance metrics
 curl http://localhost:3000/metrics
 ```
 
-### Log Management
+---
+
+## Updates
+
 ```bash
-# View logs
-journalctl -u markgo -f
-
-# Log rotation (systemd handles automatically)
-# Custom rotation in /etc/logrotate.d/markgo if needed
-```
-
-### Performance Tuning
-```bash
-# Nginx worker processes (adjust for CPU cores)
-worker_processes auto;
-
-# MarkGo concurrency (via GOMAXPROCS)
-Environment=GOMAXPROCS=4
-```
-
-## 🚨 Troubleshooting
-
-### Common Issues
-
-**Service won't start:**
-```bash
-# Check service logs
-journalctl -u markgo --no-pager
-# Check file permissions
-ls -la /opt/markgo
-```
-
-**High memory usage:**
-```bash
-# Monitor memory
-systemctl status markgo
-# Adjust cache settings in .env
-CACHE_MAX_SIZE=500
-```
-
-**SSL errors:**
-```bash
-# Test SSL configuration
-nginx -t
-# Check certificate validity
-openssl x509 -in /etc/ssl/certs/yourdomain.com.crt -text -noout
-```
-
-## 🔄 Updates & Maintenance
-
-### Updating MarkGo
-```bash
-# Stop service
 sudo systemctl stop markgo
-
-# Backup current binary
 sudo cp /usr/local/bin/markgo /usr/local/bin/markgo.bak
-
-# Deploy new binary
-sudo cp new-markgo-binary /usr/local/bin/markgo
-sudo chown root:root /usr/local/bin/markgo
-sudo chmod +x /usr/local/bin/markgo
-
-# Start service
+sudo cp new-binary /usr/local/bin/markgo
 sudo systemctl start markgo
 ```
 
-### Configuration Updates
-```bash
-# Edit configuration
-sudo nano /opt/markgo/.env
-
-# Reload service
-sudo systemctl reload markgo
-```
-
-## 🌐 Multi-Instance Setup
-
-For high availability, deploy multiple instances:
-
-```yaml
-# docker compose.yml
-version: '3.8'
-services:
-  markgo1:
-    image: markgo:latest
-    environment:
-      PORT: 3001
-  markgo2:
-    image: markgo:latest  
-    environment:
-      PORT: 3002
-  nginx:
-    image: nginx
-    # Configure upstream with both instances
-```
-
-## 📞 Support
-
-- **Documentation**: [GitHub Repository](https://github.com/vnykmshr/markgo)
-- **Issues**: [GitHub Issues](https://github.com/vnykmshr/markgo/issues)
-- **Performance**: Sub-second cold start, single-digit ms cached responses
-- **Architecture**: Single ~27MB binary, zero external dependencies
+With Docker: rebuild and restart the container.
 
 ---
 
-**MarkGo Engine** - Production-ready, high-performance blog engine built with Go
+## Troubleshooting
+
+**Service won't start**: Check `journalctl -u markgo --no-pager`. Common causes: port in use, missing .env, file permissions.
+
+**High memory**: Reduce `CACHE_MAX_SIZE` in .env. Typical usage is ~30MB.
+
+**Articles not appearing**: Run `POST /admin/articles/reload` or restart the server. Check `ARTICLES_PATH` is correct.
+
+**SSL errors**: `nginx -t` to test config. `openssl x509 -in cert.pem -text -noout` to verify certificate.
+
+**Service Worker stale**: Users may have old SW cached. Increment the `CACHE_VERSION` in `sw.js` to force update on next visit.

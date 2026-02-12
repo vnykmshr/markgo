@@ -1,328 +1,258 @@
-# MarkGo Technical Architecture
+# Architecture
 
-**Version:** 2.3.0
-**Last Updated:** February 2026
+> Last revised: February 2026 (v3.1)
+
+---
 
 ## Overview
 
-MarkGo follows a **layered architecture** with clean separation of concerns. The design prioritizes simplicity, performance, and maintainability over complex patterns.
+MarkGo is a single-binary blog engine. Markdown files in, web pages out. No database, no build step, no external dependencies at runtime.
 
-## Architecture Layers
-
-```
-┌─────────────────────────────────────────┐
-│         HTTP Layer (Gin)                │
-│   Routes, Middleware, Static Files      │
-├─────────────────────────────────────────┤
-│       Application Layer (Handlers)      │
-│   Request/Response, Template Rendering  │
-├─────────────────────────────────────────┤
-│      Business Logic (Services)          │
-│   Articles, Search, Templates, Email    │
-├─────────────────────────────────────────┤
-│      Infrastructure (Config, Cache)     │
-│   File System, Configuration, Logging   │
-└─────────────────────────────────────────┘
-```
-
-## Core Components
-
-### HTTP Layer
-
-**Router:** Gin web framework
-
-**Middleware Pipeline:**
-- Recovery (panic handling)
-- Logging (request/response)
-- Security headers (HSTS, CSP, XSS protection)
-- CORS (cross-origin requests)
-- Rate limiting (request throttling)
-
-**Routes:**
-- Static files: `/static/*`, `/favicon.ico`
-- Public: `/`, `/articles/*`, `/tags`, `/categories`, `/search`, `/rss`
-- Admin: `/admin/*` (metrics, reload, cache management)
-- Health: `/health`, `/metrics`
-
-### Application Layer (Handlers)
-
-Handlers bridge HTTP requests and business logic.
-
-**Key Handlers:**
-- `ArticleHandler`: Article viewing, listing, filtering
-- `SearchHandler`: Full-text search queries
-- `AdminHandler`: Administrative functions
-- `HealthHandler`: Health checks and metrics
-
-All handlers use dependency injection for testability.
-
-### Business Logic Layer (Services)
-
-**ArticleService:**
-- Loads Markdown files with YAML frontmatter
-- Parses and caches parsed articles
-- Provides article retrieval, filtering, pagination
-- Manages tags and categories
-
-**SearchService:**
-- Full-text search with simple ranking
-- Query processing and result filtering
-- Integrates with article index
-
-**TemplateService:**
-- Loads and renders HTML templates
-- Provides 30+ custom template functions
-- Handles template caching
-
-**EmailService:**
-- Contact form processing
-- SMTP email delivery
-- Rate limiting and spam protection
-
-### Infrastructure Layer
-
-**Configuration:**
-- Environment variable based
-- Validation on startup
-- Hierarchical config structure
-
-**File System:**
-- Markdown article storage
-- Template and static file serving
-- Content scanning and monitoring
-
-**Caching:**
-- In-memory caching for parsed articles
-- Template render caching
-- Configurable TTL and size limits
-
-**Logging:**
-- Structured logging with slog
-- Request/response logging
-- Error tracking
-
-## Request Flow
+The server reads markdown files from a directory, infers content types (article, thought, link), and serves them through a progressively-enhanced SPA with offline support. The same binary handles the CLI (init, new, export) and the web server.
 
 ```
-HTTP Request
-    ↓
-Middleware Chain
-    ↓
-Handler
-    ↓
-Service Layer
-    ├─→ Check Cache → Return if hit
-    └─→ Process Request → Update Cache
-    ↓
-Response
+┌────────────────────────────────────────────────────┐
+│  Browser (SPA shell)                               │
+│  router.js → fetch HTML → swap <main> → history    │
+│  Service Worker → offline cache → compose queue    │
+├────────────────────────────────────────────────────┤
+│  HTTP Layer (Gin)                                  │
+│  Middleware → Handlers → Template rendering        │
+├────────────────────────────────────────────────────┤
+│  Services                                          │
+│  Articles, Feed, Compose, SEO, Email, Templates    │
+├────────────────────────────────────────────────────┤
+│  Filesystem                                        │
+│  articles/*.md → read, parse, cache, serve         │
+└────────────────────────────────────────────────────┘
 ```
 
-### Article Processing Pipeline
+---
+
+## Server
+
+### Handlers
+
+Eleven handler types, each focused on one concern. All share a `BaseHandler` that provides config, logger, template service, build info, and SEO service.
+
+| Handler | Routes | Purpose |
+|---------|--------|---------|
+| FeedHandler | `GET /` | Homepage feed with article/thought/link cards |
+| PostHandler | `GET /writing`, `GET /writing/:slug` | Article listing and single article |
+| TaxonomyHandler | `GET /tags`, `GET /tags/:tag`, `GET /categories`, `GET /categories/:category` | Tag cloud, category cards, filtered listings |
+| SearchHandler | `GET /search` | Full-text search |
+| AboutHandler | `GET /about` | Config-driven about page with contact section |
+| ContactHandler | `POST /contact` | Contact form submission (SMTP) |
+| SyndicationHandler | `GET /feed.xml`, `GET /feed.json`, `GET /sitemap.xml`, `GET /robots.txt` | RSS, JSON Feed, sitemap, robots |
+| HealthHandler | `GET /health`, `GET /manifest.json`, `GET /offline` | Health check, PWA manifest, offline page |
+| AuthHandler | `GET/POST /login`, `GET /logout` | Session-based login/logout |
+| ComposeHandler | `GET/POST /compose`, `GET/POST /compose/edit/:slug`, `POST /compose/preview`, `POST /compose/upload`, `POST /compose/quick` | Content creation, editing, preview, image upload, quick capture |
+| AdminHandler | `GET /admin`, `GET /admin/drafts`, `GET /admin/stats`, `POST /admin/cache/clear`, `POST /admin/articles/reload`, `GET /metrics` | Dashboard, drafts, stats, cache management |
+
+Auth and Compose handlers are only registered when admin credentials are configured. Debug and pprof routes are only registered in development.
+
+### Middleware
+
+Applied in this order on every request:
+
+1. **Recovery** — Panic recovery with type-aware logging
+2. **Logger** — Structured request logging (static assets demoted to debug)
+3. **Performance** — X-Response-Time header, slow request warnings (>1s)
+4. **SmartCacheHeaders** — Default `Cache-Control: public, max-age=3600`
+5. **CORS** — Exact origin matching with Vary header
+6. **Security** — X-Content-Type-Options, X-Frame-Options, Referrer-Policy
+7. **RateLimit** — Sliding window per IP, excludes static assets
+8. **ErrorHandler** — Centralized error logging
+
+Route-specific middleware:
+- **Login routes**: CSRF (double-submit cookie)
+- **Contact**: Stricter rate limit
+- **Compose routes**: SoftSessionAuth + NoCache + CSRF
+- **Admin routes**: SoftSessionAuth + NoCache
+- **Debug routes**: Hard session auth (development only)
+
+### Services
+
+| Service | Responsibility |
+|---------|---------------|
+| ArticleService | Load, parse, cache markdown files. Search index. Tag/category aggregation. Content type inference. |
+| FeedService | Generate RSS (XML), JSON Feed, and sitemap from article data |
+| ComposeService | Write markdown files to disk. Atomic writes (temp file + rename). Image upload with content type detection. |
+| TemplateService | Load and render Go HTML templates. 30+ custom template functions. Graceful shutdown. |
+| SEOService | Generate Open Graph, Twitter Card, Schema.org, and canonical URL metadata |
+| EmailService | SMTP delivery for contact form submissions |
+| LoggingService | Structured logging via slog |
+
+### Content Type Inference
+
+Three content types, inferred from what you write:
 
 ```
-Markdown File
-    ↓
-Read File → Parse YAML Frontmatter
-    ↓
-Parse Markdown → Render HTML
-    ↓
-Create Article Object
-    ↓
-Cache & Index
+Explicit `type` in frontmatter → wins always
+Has `link_url` field          → link
+No title, under 100 words     → thought
+Everything else               → article
 ```
 
-## Design Patterns
+Rules live in `internal/services/article/inference.go`. You never pick a type — you just write.
 
-### Dependency Injection
+---
 
-Services are injected into handlers via constructors:
+## Frontend
 
-```go
-func NewArticleHandler(
-    config *config.Config,
-    logger *slog.Logger,
-    templates *services.TemplateService,
-    articles services.ArticleServiceInterface,
-    // ... other dependencies
-) *ArticleHandler
-```
+### SPA Router
 
-### Interface-Based Design
-
-Services implement interfaces for testing and flexibility:
-
-```go
-type ArticleServiceInterface interface {
-    GetAllArticles() []*models.Article
-    GetArticleBySlug(slug string) (*models.Article, error)
-    // ... other methods
-}
-```
-
-### Repository Pattern
-
-Article storage is abstracted behind a repository interface, currently implemented with file system storage.
-
-## Configuration
-
-Configuration is environment-driven with sensible defaults:
-
-```go
-// Server
-PORT=3000
-BASE_URL=http://localhost:3000
-
-// Blog
-BLOG_TITLE=My Blog
-BLOG_AUTHOR=Author Name
-
-// Features
-CACHE_ENABLED=true
-SEARCH_ENABLED=true
-RSS_ENABLED=true
-
-// Performance
-CACHE_TTL=3600
-RATE_LIMIT_ENABLED=true
-```
-
-See [configuration.md](configuration.md) for complete options.
-
-## Testing Strategy
-
-MarkGo follows a pragmatic testing approach:
-
-**Unit Tests:** Core business logic, utilities, parsers
-**Integration Tests:** Handlers with mock services
-**Coverage Target:** Focus on critical paths over percentages
-
-Current coverage: ~46% overall, with focused coverage on handlers, article services, and content processing.
-
-Test files follow the `*_test.go` convention and use:
-- Standard library `testing` package
-- `testify` for assertions
-- `httptest` for HTTP testing
-- Mock interfaces for service isolation
-
-## Performance Characteristics
-
-**Startup Time:** < 1 second
-**Memory Usage:** ~30MB typical workload
-**Binary Size:** ~27MB
-**Response Time:**
-- Cached: < 5ms
-- Uncached: < 50ms (first request)
-
-**Scalability:**
-- Single binary handles 1000+ req/s
-- Horizontal scaling via load balancer
-- Stateless design (except in-memory cache)
-
-## Security
-
-**Input Validation:**
-- All user input sanitized
-- XSS protection via HTML escaping
-- CSRF token support for forms
-
-**Security Headers:**
-- Strict-Transport-Security
-- X-Frame-Options: SAMEORIGIN
-- X-Content-Type-Options: nosniff
-- Content-Security-Policy
-
-**Rate Limiting:**
-- Configurable per endpoint
-- Protection against abuse
-- Contact form throttling
-
-## Deployment Architecture
-
-**Binary Deployment:**
-```
-markgo binary
-├── Config (.env)
-├── Content (articles/)
-├── Templates (web/templates/)
-└── Static files (web/static/)
-```
-
-**Docker Deployment:**
-- Multi-stage build
-- Minimal base image (scratch)
-- Volume mounts for content
-
-**Reverse Proxy (Production):**
-```
-Client → Nginx/Caddy → MarkGo
-         (TLS, caching, compression)
-```
-
-See [deployment.md](deployment.md) for detailed deployment strategies.
-
-## CLI Structure
-
-Unified CLI with subcommands (since v2.1.0):
+Turbo Drive pattern. No client-side rendering — the server returns full HTML pages, and the router swaps the `<main>` element.
 
 ```
-markgo/
-└── cmd/markgo/          # Main entry point
-    └── main.go
-
-internal/commands/       # Command implementations
-├── serve/              # Server command (default)
-├── init/               # Initialize new blog
-├── new/                # Create new article
-└── export/             # Static site export
+Click link → fetch full HTML → DOMParser → swap <main>
+  → update <title> and meta tags
+  → push history state
+  → load/unload page modules
+  → announce route change (aria-live)
+  → focus <main> element
 ```
+
+Prefetch on hover (65ms delay, max 5 cached, 30s expiry). CSS-only progress bar with `prefers-reduced-motion` support. Redirects detected via `response.redirected`.
+
+### ES Modules
+
+No build step. Vanilla ES modules loaded via `<script type="module">`.
+
+**Entry point:** `app.js` orchestrates three module types:
+
+| Type | Lifecycle | Examples |
+|------|-----------|---------|
+| Shell modules | Load once at startup | router, navigation, theme, scroll, login, toast, fab, compose-sheet, search-overlay |
+| Content modules | Re-run after each page swap | highlight, lazy, clipboard |
+| Page modules | Load/unload per template | search-page, contact, compose, admin |
+
+Page modules are dynamically imported based on `data-template` attribute. Each exports `init()` and optionally `destroy()`.
+
+### Service Worker
+
+Three-tier caching strategy:
+
+| Tier | Strategy | What |
+|------|----------|------|
+| Precache | Cache on install | `offline.html` |
+| Static | Stale-while-revalidate | CSS, JS, images, fonts |
+| Content | Network-first | HTML pages |
+
+Network-only routes (never cached): admin, compose, login, logout, feeds, API.
+
+Offline compose queue: IndexedDB (`markgo` database, `compose-queue` store). Queued posts auto-sync when the browser comes back online.
+
+### CSS
+
+Mobile-first with design tokens. All colors, spacing, typography, and shadows defined as CSS custom properties in `main.css :root`.
+
+- **Base**: 320px
+- **Phone+**: 481px
+- **Tablet+**: 769px
+
+Dark mode via dual-selector pattern: system preference + manual toggle stored in `localStorage`. Five color presets via `data-color-theme` attribute. Three style themes (minimal, editorial, bold) via additional CSS files.
+
+All CSS loaded unconditionally for SPA (scoped by body class). Total: ~3KB gzipped.
+
+### Templates
+
+Go `html/template` with a base layout. Template name drives body class, conditional CSS, and head/content blocks via `$tpl := .template`.
+
+16 templates total. Required templates validated at startup in `setupTemplates()`.
+
+---
+
+## CLI
+
+```
+markgo serve     # Start the web server (default if no command given)
+markgo init      # Initialize a new blog (creates .env, articles/, etc.)
+markgo new       # Create a new article (supports --title, --tags, --type)
+markgo export    # Export to static HTML for GitHub Pages, Netlify, Vercel
+markgo version   # Show version information
+```
+
+---
 
 ## Project Structure
 
 ```
 markgo/
-├── cmd/markgo/              # CLI entry point
-├── internal/                # Private application code
-│   ├── commands/            # CLI commands
-│   ├── config/              # Configuration
-│   ├── handlers/            # HTTP handlers
-│   ├── middleware/          # HTTP middleware
-│   ├── models/              # Data structures
-│   └── services/            # Business logic
-├── web/                     # Frontend assets
-│   ├── static/              # CSS, JS, images
-│   └── templates/           # HTML templates
-├── articles/                # Markdown content
-├── deployments/             # Docker, systemd configs
-└── docs/                    # Documentation
+├── cmd/markgo/main.go           # CLI entry point, subcommand routing
+├── internal/
+│   ├── commands/
+│   │   ├── serve/command.go     # Server setup, route registration
+│   │   ├── init/                # Blog initialization
+│   │   ├── new/                 # Article creation
+│   │   └── export/              # Static site export
+│   ├── handlers/
+│   │   ├── router.go            # Router struct, holds all 11 handler types
+│   │   ├── base.go              # BaseHandler (shared config, logger, templates)
+│   │   └── *.go                 # One file per handler type
+│   ├── middleware/               # Rate limiting, CORS, security, auth, CSRF
+│   ├── services/
+│   │   ├── article/             # Article loading, caching, search, inference
+│   │   ├── feed/                # RSS, JSON Feed, sitemap generation
+│   │   ├── compose/             # File-writing compose service
+│   │   ├── seo/                 # SEO metadata generation
+│   │   ├── export/              # Static export service
+│   │   ├── template.go          # Template service with custom FuncMap
+│   │   ├── email.go             # SMTP email service
+│   │   └── logging.go           # Structured logging
+│   ├── models/                  # Article, Pagination, ContactMessage
+│   ├── config/                  # .env loading and validation
+│   ├── errors/                  # Typed error system
+│   └── constants/               # Build-time ldflags (version, commit)
+├── web/
+│   ├── static/
+│   │   ├── css/                 # 21 CSS files + 3 themes, mobile-first tokens
+│   │   ├── js/                  # ES modules: app.js + modules/ + page modules
+│   │   ├── sw.js                # Service Worker
+│   │   └── img/                 # Favicons, PWA icons
+│   └── templates/               # 16 Go HTML templates
+├── articles/                    # Markdown files (the content)
+├── deployments/                 # Dockerfile, docker-compose, systemd unit
+└── docs/                        # This documentation
 ```
-
-## Evolution: v1.0 → v2.1.0
-
-**Major Simplifications:**
-
-v2.0.0:
-- Removed 6,000+ lines of over-engineering
-- Eliminated unnecessary object pools
-- Simplified caching layers
-
-v2.1.0:
-- Consolidated 5 binaries into unified CLI
-- Simplified SEO service (stateless)
-- Removed template hot-reload (fsnotify)
-- Consolidated middleware
-- Reduced admin bloat
-
-**Philosophy:** "Less code, same functionality"
-
-## Further Reading
-
-- [Getting Started](GETTING-STARTED.md) - Setup and usage
-- [Configuration](configuration.md) - All config options
-- [API Documentation](API.md) - HTTP endpoints
-- [Deployment](deployment.md) - Production deployment
-- [Runbook](RUNBOOK.md) - Operations guide
 
 ---
 
-**Last Updated:** February 2026 (v2.3.0)
-**Questions?** See [GitHub Issues](https://github.com/vnykmshr/markgo/issues)
+## Performance
+
+| Metric | Value |
+|--------|-------|
+| Startup | < 1 second |
+| Memory | ~30MB typical |
+| Binary | ~29MB |
+| Cached response | < 5ms |
+| Uncached response | < 50ms |
+| Throughput | 1000+ req/s (single core) |
+
+Stateless design. Horizontal scaling via load balancer if needed.
+
+---
+
+## Security
+
+- **Authentication**: Session-based (cookie, 7-day expiry, HttpOnly, SameSite=Strict)
+- **CSRF**: Double-submit cookie on login, compose, and edit routes (1-hour token, constant-time compare)
+- **Input validation**: Slug regex with length limits, sanitized user input
+- **XSS protection**: Go html/template auto-escaping, no innerHTML in JS (DOM API only)
+- **Headers**: X-Content-Type-Options, X-Frame-Options, Referrer-Policy
+- **Rate limiting**: Sliding window per IP (general + stricter contact limit)
+
+---
+
+## Testing
+
+Tests alongside source (`*_test.go`). Coverage ~52% (CI threshold: 45%).
+
+- `testify` for assertions
+- `httptest` for handler tests
+- Mock interfaces for service isolation (canned data, not reimplemented business logic)
+- Race detector: `make test-race`
+
+---
+
+*See [configuration.md](configuration.md) for all environment variables, [api.md](api.md) for the full route reference, and [deployment.md](deployment.md) for production setup.*
