@@ -285,6 +285,64 @@ function handleKeydown(e) {
     }
 }
 
+function escapeHTML(str) {
+    const el = document.createElement('span');
+    el.textContent = str;
+    return el.innerHTML;
+}
+
+function prependCard(data, content, title) {
+    // Only update if we're on the feed page
+    if (document.body.dataset.template !== 'feed') return;
+
+    const feedStream = document.querySelector('.feed-stream');
+    if (!feedStream) return;
+
+    const now = new Date().toISOString();
+    const card = document.createElement('article');
+
+    if (data.type === 'thought') {
+        card.className = 'feed-card feed-card-thought';
+        card.innerHTML =
+            '<div class="feed-card-accent"></div>' +
+            '<div class="feed-card-body">' +
+                '<div class="feed-card-content thought-content">' +
+                    '<p>' + escapeHTML(content) + '</p>' +
+                '</div>' +
+                '<div class="feed-card-meta">' +
+                    '<time class="feed-card-time" datetime="' + now + '">just now</time>' +
+                '</div>' +
+            '</div>';
+    } else {
+        // Article or link — card with title
+        card.className = 'feed-card';
+        card.innerHTML =
+            '<div class="feed-card-body">' +
+                '<h3 class="feed-card-title">' +
+                    '<a href="' + escapeHTML(data.url) + '">' + escapeHTML(title || 'Untitled') + '</a>' +
+                '</h3>' +
+                '<p class="feed-card-excerpt">' + escapeHTML(content.substring(0, 160)) + '</p>' +
+                '<div class="feed-card-meta">' +
+                    '<time class="feed-card-time" datetime="' + now + '">just now</time>' +
+                '</div>' +
+            '</div>';
+    }
+
+    // Animate entrance
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(-10px)';
+    feedStream.insertBefore(card, feedStream.firstChild);
+
+    requestAnimationFrame(() => {
+        card.style.transition = 'opacity var(--transition-base), transform var(--transition-base)';
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+    });
+
+    // Scroll to top to see the new card
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 async function handlePublish() {
     if (isSubmitting) return;
 
@@ -326,7 +384,10 @@ async function handlePublish() {
 
         if (response.ok) {
             clearDraft();
+            const publishedContent = content;
+            const publishedTitle = title;
             close();
+            prependCard(data, publishedContent, publishedTitle);
             showToast(data.message || 'Published!', 'success');
         } else if (response.status === 401) {
             showToast('Not authenticated — please sign in', 'error');
