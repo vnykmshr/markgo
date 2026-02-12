@@ -182,6 +182,39 @@ New themes must only set `--theme-*` variables — never override component sele
 
 ---
 
+## Web Standards
+
+Structural HTML and SEO conventions used across all templates.
+
+### Heading Hierarchy
+
+One `<h1>` per page. The site title in the header is a `<span>`, not a heading — it's branding, not content structure. Each page template defines its own `<h1>` (the feed page uses an `sr-only` h1 since the feed has no visible heading). Card titles within listings are `<h2>`, never `<h3>` — no heading level skips.
+
+### Semantic Containers
+
+Content streams use `<section>` with `aria-label` instead of generic `<div>`. Contact information uses `<address>`. Navigation regions use `<nav>` with descriptive `aria-label` values. Breadcrumbs use `<nav aria-label="Breadcrumb">` with an ordered list (`<ol>`) and `aria-current="page"` on the current item.
+
+### Canonical URLs
+
+Every public page sets `canonicalPath` in its handler, rendered as `<link rel="canonical" href="{{ baseURL }}{{ canonicalPath }}">`. This covers: `/`, `/writing`, `/writing/{slug}`, `/tags`, `/tags/{tag}`, `/categories`, `/categories/{category}`, `/search`, `/about`.
+
+### Structured Data (JSON-LD)
+
+| Page Type | Schema | Source |
+|-----------|--------|--------|
+| All pages | WebSite (with SearchAction) | SEO service via `enhanceTemplateDataWithSEO` |
+| All pages | BreadcrumbList | SEO service via `seo_helper.go` |
+| Article | BlogPosting (headline, author, publisher+logo, dates, wordCount) | Inline in `article.html` |
+| Article | Article (from SEO service) | SEO service via `articleSchema` |
+| Tag page | CollectionPage + ItemList | Handler-built in `taxonomy_handler.go` |
+| Category page | CollectionPage + ItemList | Handler-built in `taxonomy_handler.go` |
+
+### External Links
+
+All `target="_blank"` links include `rel="noopener"`. The SPA router only intercepts same-origin links.
+
+---
+
 ## Anti-Patterns
 
 Things MarkGo deliberately does not do. Each one names a trade-off, not just an absence.
