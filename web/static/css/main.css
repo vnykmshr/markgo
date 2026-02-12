@@ -1157,14 +1157,14 @@ html {
 
 .install-banner {
     position: fixed;
-    bottom: var(--spacing-md);
-    left: var(--spacing-md);
-    right: var(--spacing-md);
+    bottom: var(--spacing-4);
+    left: var(--spacing-4);
+    right: var(--spacing-4);
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--color-bg);
+    gap: var(--spacing-3);
+    padding: var(--spacing-3) var(--spacing-4);
+    background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
@@ -1175,13 +1175,13 @@ html {
 .install-banner-text {
     flex: 1;
     font-size: var(--font-size-sm);
-    color: var(--color-text);
+    color: var(--color-text-primary);
 }
 
 .install-banner-btn {
-    padding: var(--spacing-xs) var(--spacing-md);
+    padding: var(--spacing-2) var(--spacing-4);
     background: var(--color-primary);
-    color: #fff;
+    color: var(--color-text-inverse);
     border: none;
     border-radius: var(--radius-md);
     font-size: var(--font-size-sm);
@@ -1191,7 +1191,7 @@ html {
 }
 
 .install-banner-dismiss {
-    padding: var(--spacing-xs);
+    padding: var(--spacing-1);
     background: none;
     border: none;
     color: var(--color-text-muted);
@@ -1208,8 +1208,8 @@ html {
 @media (min-width: 481px) {
     .install-banner {
         left: auto;
-        right: var(--spacing-lg);
-        bottom: var(--spacing-lg);
+        right: var(--spacing-6);
+        bottom: var(--spacing-6);
         max-width: 360px;
     }
 }
