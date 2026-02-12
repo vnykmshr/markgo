@@ -14,6 +14,7 @@ import { init as initScroll } from './modules/scroll.js';
 import { init as initLazy } from './modules/lazy.js';
 import { init as initLogin } from './modules/login.js';
 import { init as initToast } from './modules/toast.js';
+import { init as initFab } from './modules/fab.js';
 import { init as initRouter } from './modules/router.js';
 
 // Page-specific module loaders
@@ -56,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initScroll();
     initLogin();
     initToast();
+    initFab();
 
     // Content modules — initial page
     initHighlight();

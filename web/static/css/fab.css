@@ -1,0 +1,80 @@
+/* ==========================================================================
+   Floating Action Button (FAB)
+   Auth-gated compose trigger — bottom-right fixed position.
+   Mobile-first: base targets 320px+
+   ========================================================================== */
+
+.fab {
+    position: fixed;
+    bottom: var(--spacing-6);
+    right: var(--spacing-6);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    cursor: pointer;
+    z-index: var(--z-fixed);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.fab:hover {
+    background-color: var(--color-primary-dark);
+    transform: scale(1.05);
+    box-shadow: var(--shadow-xl, 0 20px 25px -5px rgba(0,0,0,.1));
+}
+
+.fab:active {
+    transform: scale(0.95);
+}
+
+.fab:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+}
+
+/* Shift back-to-top button up when FAB is present */
+.fab ~ .back-to-top {
+    bottom: calc(var(--spacing-6) + 56px + var(--spacing-3));
+}
+
+/* --------------------------------------------------------------------------
+   Mobile — slightly smaller, tighter spacing
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 480px) {
+    .fab {
+        width: 48px;
+        height: 48px;
+        bottom: var(--spacing-4);
+        right: var(--spacing-4);
+    }
+
+    .fab ~ .back-to-top {
+        bottom: calc(var(--spacing-4) + 48px + var(--spacing-3));
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .fab {
+        transition: none;
+    }
+
+    .fab:hover {
+        transform: none;
+    }
+
+    .fab:active {
+        transform: none;
+    }
+}
