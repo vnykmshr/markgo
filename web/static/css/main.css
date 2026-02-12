@@ -1088,3 +1088,64 @@ html {
         text-decoration: underline;
     }
 }
+
+/* ==========================================================================
+   SPA Router
+   ========================================================================== */
+
+/* Content transition */
+.main-content {
+    transition: opacity 120ms ease;
+}
+
+.main-content.swapping {
+    opacity: 0;
+}
+
+/* Progress bar */
+.router-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--color-primary);
+    z-index: 9999;
+    width: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.router-progress.active {
+    opacity: 1;
+    width: 70%;
+    transition: width 8s cubic-bezier(0.1, 0.5, 0.1, 1), opacity 150ms ease;
+}
+
+.router-progress.done {
+    width: 100%;
+    transition: width 120ms ease;
+}
+
+.router-progress.hiding {
+    opacity: 0;
+    transition: opacity 300ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .main-content {
+        transition: none;
+    }
+
+    .router-progress {
+        transition: none;
+    }
+
+    .router-progress.active,
+    .router-progress.done {
+        transition: none;
+    }
+
+    .router-progress.hiding {
+        transition: opacity 100ms ease;
+    }
+}

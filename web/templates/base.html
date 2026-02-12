@@ -150,26 +150,22 @@
     <!-- Canonical URL -->
     <link rel="canonical" href="{{ .config.BaseURL }}{{ if .article }}/writing/{{ .article.Slug }}{{ end }}">
 
-    <!-- Stylesheets -->
+    <!-- Stylesheets — all loaded upfront for SPA content swaps -->
     <link rel="stylesheet" href="/static/css/fonts.css">
     <link rel="stylesheet" href="/static/css/github-dark.min.css">
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/components.css">
     {{ if .config.Blog.Style }}<link rel="stylesheet" href="/static/css/themes/{{ .config.Blog.Style }}.css">{{ end }}
-
-    {{ $tpl := .template }}
-    {{ if eq $tpl "feed" "search" "tag" "category" "admin_home" "drafts" }}<link rel="stylesheet" href="/static/css/cards.css">{{ end }}
-
-    <!-- Template-specific CSS -->
-    {{ if eq $tpl "404" }}<link rel="stylesheet" href="/static/css/404.css">{{ end }}
-    {{ if eq $tpl "article" "compose" }}<link rel="stylesheet" href="/static/css/article.css">{{ end }}
-    {{ if eq $tpl "articles" }}<link rel="stylesheet" href="/static/css/articles.css">{{ end }}
-    {{ if eq $tpl "about" }}<link rel="stylesheet" href="/static/css/about.css">{{ end }}
-    {{ if eq $tpl "search" }}<link rel="stylesheet" href="/static/css/search.css">{{ end }}
-    {{ if eq $tpl "tags" "categories" }}<link rel="stylesheet" href="/static/css/taxonomy.css">{{ end }}
-    {{ if eq $tpl "feed" }}<link rel="stylesheet" href="/static/css/feed.css">{{ end }}
-    {{ if eq $tpl "compose" }}<link rel="stylesheet" href="/static/css/compose.css">{{ end }}
-    {{ if eq $tpl "admin_home" }}<link rel="stylesheet" href="/static/css/admin.css">{{ end }}
+    <link rel="stylesheet" href="/static/css/cards.css">
+    <link rel="stylesheet" href="/static/css/feed.css">
+    <link rel="stylesheet" href="/static/css/article.css">
+    <link rel="stylesheet" href="/static/css/articles.css">
+    <link rel="stylesheet" href="/static/css/search.css">
+    <link rel="stylesheet" href="/static/css/about.css">
+    <link rel="stylesheet" href="/static/css/taxonomy.css">
+    <link rel="stylesheet" href="/static/css/compose.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <link rel="stylesheet" href="/static/css/404.css">
     <link rel="stylesheet" href="/static/css/login.css">
 
     <!-- Additional head content -->
