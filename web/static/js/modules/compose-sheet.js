@@ -251,8 +251,9 @@ function close() {
     if (!isOpen) return;
     isOpen = false;
 
-    // Save draft before resetting (preserves content for next open)
-    saveDraft();
+    // Capture values before resetting the form
+    const draftContent = textarea.value;
+    const draftTitle = titleInput.value;
 
     overlay.hidden = true;
     document.body.style.overflow = '';
@@ -276,6 +277,15 @@ function close() {
     publishBtn.disabled = false;
     publishBtn.textContent = 'Publish';
     isSubmitting = false;
+
+    // Save captured draft after form reset
+    if (draftContent || draftTitle) {
+        try {
+            localStorage.setItem(DRAFT_KEY, JSON.stringify({ content: draftContent, title: draftTitle, ts: Date.now() }));
+        } catch { /* quota exceeded — ignore */ }
+    } else {
+        clearDraft();
+    }
 }
 
 function handleKeydown(e) {
@@ -370,8 +380,9 @@ async function handlePublish() {
     const body = { content };
     if (title) body.title = title;
 
+    let response;
     try {
-        const response = await fetch('/compose/quick', {
+        response = await fetch('/compose/quick', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -379,33 +390,39 @@ async function handlePublish() {
             },
             body: JSON.stringify(body),
         });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            clearDraft();
-            const publishedContent = content;
-            const publishedTitle = title;
-            close();
-            prependCard(data, publishedContent, publishedTitle);
-            showToast(data.message || 'Published!', 'success');
-        } else if (response.status === 401) {
-            showToast('Not authenticated — please sign in', 'error');
-            isSubmitting = false;
-            publishBtn.disabled = false;
-            publishBtn.textContent = 'Publish';
-        } else {
-            showToast(data.error || 'Failed to publish', 'error');
-            isSubmitting = false;
-            publishBtn.disabled = false;
-            publishBtn.textContent = 'Publish';
-        }
     } catch {
         showToast('Network error — try again', 'error');
-        isSubmitting = false;
-        publishBtn.disabled = false;
-        publishBtn.textContent = 'Publish';
+        resetPublishBtn();
+        return;
     }
+
+    let data;
+    try {
+        data = await response.json();
+    } catch {
+        showToast('Server error — please try again', 'error');
+        resetPublishBtn();
+        return;
+    }
+
+    if (response.ok) {
+        clearDraft();
+        close();
+        prependCard(data, content, title);
+        showToast(data.message || 'Published!', 'success');
+    } else if (response.status === 401) {
+        showToast('Not authenticated — please sign in', 'error');
+        resetPublishBtn();
+    } else {
+        showToast(data.error || 'Failed to publish', 'error');
+        resetPublishBtn();
+    }
+}
+
+function resetPublishBtn() {
+    isSubmitting = false;
+    publishBtn.disabled = false;
+    publishBtn.textContent = 'Publish';
 }
 
 export function init() {
