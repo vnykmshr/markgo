@@ -105,48 +105,33 @@ yourdomain.com {
 
 Caddy handles TLS automatically via Let's Encrypt.
 
+## Binary Deployment (Content-Only)
+
+The MarkGo binary embeds all web assets. You only need three things on the server:
+
+1. The `markgo` binary
+2. An `articles/` directory with your content
+3. A `.env` configuration file
+
+```bash
+# On the server
+mkdir -p /opt/markgo/articles
+# Copy your content
+scp articles/*.md server:/opt/markgo/articles/
+scp .env server:/opt/markgo/.env
+# Copy the binary
+scp build/markgo-linux-amd64 server:/opt/markgo/markgo
+# Start
+ssh server '/opt/markgo/markgo serve'
+```
+
+To customize templates or CSS, create `web/templates/` and `web/static/` directories on the server. Filesystem paths take precedence over embedded assets.
+
 ### SSL with Let's Encrypt
 
 ```bash
 sudo certbot certonly --nginx -d yourdomain.com
 ```
-
----
-
-## Static Export
-
-Export MarkGo to static HTML for hosting on GitHub Pages, Netlify, or Vercel. No server needed — just files.
-
-```bash
-markgo export --output ./public --base-url https://yourdomain.com
-```
-
-This generates HTML pages, copies static assets, and creates feeds and sitemap.
-
-### GitHub Pages
-
-```bash
-markgo export --output ./public --base-url https://username.github.io/repo
-# Push ./public to gh-pages branch or configure GitHub Pages to serve from /public
-```
-
-### Netlify / Vercel
-
-```bash
-markgo export --output ./public --base-url https://yourdomain.com
-# Set build command: markgo export --output ./public
-# Set publish directory: public
-```
-
-### What static export does NOT include
-
-- SPA navigation (falls back to full-page loads)
-- Compose form and admin panel (no server to write files)
-- Contact form submission (no server to send email)
-- Service Worker offline compose queue (no server to sync to)
-- Search works via pre-built index (client-side)
-
-The reading experience is fully preserved. Publishing requires the live server.
 
 ---
 

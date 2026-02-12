@@ -81,34 +81,13 @@ This checklist ensures all critical validations are performed before creating a 
   ```bash
   ./build/markgo init --quick --output /tmp/markgo-test
   ./build/markgo new --title "Test" --output /tmp/markgo-test/articles
-  ./build/markgo export --output /tmp/markgo-dist
-  ls /tmp/markgo-dist/index.html  # Should exist
   ```
 
-### 5. Static Export Verification 📦
-
-- [ ] **Static export succeeds:**
-  ```bash
-  ./build/markgo export --output ./test-dist --base-url https://test.example.com
-  ```
-
-- [ ] **Generated files look correct:**
-  ```bash
-  ls test-dist/  # Should have index.html, articles/, static/
-  grep "test.example.com" test-dist/index.html  # Should find base URL
-  ```
-
-### 6. GitHub Actions Workflow Validation 🔄
+### 5. GitHub Actions Workflow Validation 🔄
 
 - [ ] **CI workflow references correct paths:**
   ```bash
   grep "cmd/markgo" .github/workflows/ci.yml
-  # Should find: go build ... ./cmd/markgo
-  ```
-
-- [ ] **Deploy workflow references correct paths:**
-  ```bash
-  grep "cmd/markgo" .github/workflows/deploy.yml
   # Should find: go build ... ./cmd/markgo
   ```
 
@@ -118,7 +97,7 @@ This checklist ensures all critical validations are performed before creating a 
   # Should find version injection for serve.Version
   ```
 
-### 7. Documentation Accuracy 📚
+### 6. Documentation Accuracy 📚
 
 - [ ] **README.md metrics are current:**
   ```bash
@@ -144,7 +123,7 @@ This checklist ensures all critical validations are performed before creating a 
   # - docker compose.yml image tags (if publishing)
   ```
 
-### 8. Configuration & Environment 🔧
+### 7. Configuration & Environment 🔧
 
 - [ ] **.env.example up to date:**
   ```bash
@@ -158,7 +137,7 @@ This checklist ensures all critical validations are performed before creating a 
   - [ ] Dockerfile.dev (if exists) uses correct paths
   - [ ] systemd service file (if exists) references correct binary
 
-### 9. Security Check 🔒
+### 8. Security Check 🔒
 
 - [ ] **No secrets committed:**
   ```bash
@@ -178,7 +157,7 @@ This checklist ensures all critical validations are performed before creating a 
   govulncheck ./...
   ```
 
-### 10. Version Tagging 🏷️
+### 9. Version Tagging 🏷️
 
 - [ ] **Choose appropriate version number** (SemVer):
   - MAJOR: Breaking changes
@@ -197,7 +176,7 @@ This checklist ensures all critical validations are performed before creating a 
   # Should show: nothing to commit, working tree clean
   ```
 
-### 11. Create Release 🚀
+### 10. Create Release 🚀
 
 - [ ] **Create annotated tag:**
   ```bash
@@ -226,7 +205,7 @@ This checklist ensures all critical validations are performed before creating a 
   gh run view --log | grep "Build Artifacts"
   ```
 
-### 12. Post-Release Validation ✅
+### 11. Post-Release Validation ✅
 
 - [ ] **GitHub release created automatically:**
   ```bash
@@ -262,7 +241,7 @@ This checklist ensures all critical validations are performed before creating a 
   docker push markgo:v2.X.Y
   ```
 
-### 13. Communication 📢
+### 12. Communication 📢
 
 - [ ] **Update project documentation:**
   - [ ] Update installation instructions if needed
@@ -309,10 +288,9 @@ Based on actual incidents:
 4. ✅ **Update CHANGELOG** - Document changes before tagging
 5. ✅ **Verify version constants** - Update internal/constants/constants.go
 6. ✅ **Clean git state** - Commit all changes before tagging
-7. ✅ **Test static export** - Ensure GitHub Pages deploy works
-8. ✅ **Check workflow paths** - Grep for old paths (cmd/server)
-9. ✅ **Validate environment variables** - Ensure .env.example is current
-10. ✅ **Monitor CI after push** - Don't assume tag push succeeded
+7. ✅ **Check workflow paths** - Grep for old paths (cmd/server)
+8. ✅ **Validate environment variables** - Ensure .env.example is current
+9. ✅ **Monitor CI after push** - Don't assume tag push succeeded
 
 ---
 

@@ -21,7 +21,7 @@ The binary lands at `./build/markgo`.
 markgo init --quick
 ```
 
-This creates a `.env` config, an `articles/` directory with a sample post, and the `web/` directory with templates and static assets.
+This creates a `.env` config and an `articles/` directory with sample content (an article, a thought, and a link post). Templates and static assets are embedded in the binary — no `web/` directory needed.
 
 ## Run
 
@@ -114,6 +114,32 @@ See [configuration.md](configuration.md) for every option.
 
 ---
 
+## How It Works
+
+The MarkGo binary embeds all web assets (templates, CSS, JS, images). When you run `markgo init`, it only creates `articles/` and `.env` — no `web/` directory needed.
+
+**Filesystem overrides**: If you create `web/templates/` or `web/static/` directories, they take precedence over the embedded assets. This lets you customize the look without forking.
+
+**Content-only structure**: Your blog is just markdown files and a config file. To move to a new server, copy `articles/` and `.env`, then run the binary.
+
+---
+
+## Updating MarkGo
+
+Download the new binary, replace the old one, restart:
+
+```bash
+# Stop the server
+# Replace the binary
+cp markgo-new /usr/local/bin/markgo
+# Start the server
+markgo serve
+```
+
+Your content (`articles/`) and configuration (`.env`) are untouched. Embedded assets update automatically with the binary.
+
+---
+
 ## Development
 
 ```bash
@@ -136,11 +162,6 @@ docker compose up -d
 ```bash
 make build
 scp build/markgo server:/usr/local/bin/
-```
-
-**Static export** (GitHub Pages, Netlify, Vercel):
-```bash
-markgo export --output ./public --base-url https://yourdomain.com
 ```
 
 See [deployment.md](deployment.md) for reverse proxy setup, systemd, and production configuration.

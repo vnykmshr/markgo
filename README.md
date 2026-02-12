@@ -33,7 +33,7 @@ Or download a release from [GitHub Releases](https://github.com/vnykmshr/markgo/
 
 **Your files, your control** — Articles are markdown files with YAML frontmatter. Edit in vim, version with git, back up however you like. The compose form writes files to disk — it's a convenience layer, not a lock-in.
 
-**Zero dependencies** — Single Go binary (~29MB). No Node.js, no PHP, no database. Starts in under a second, runs on 30MB of RAM.
+**Zero dependencies** — Single Go binary with embedded web assets. No Node.js, no PHP, no database. `markgo init` creates only your content directory and config. Starts in under a second, runs on 30MB of RAM.
 
 ## Usage
 
@@ -43,7 +43,6 @@ markgo init [--quick]                    # Initialize a new blog
 markgo new [--title "..." --tags "..."]  # Create an article
 markgo new --type thought                # Quick thought (no title needed)
 markgo new --type link                   # Share a link
-markgo export --output ./public          # Export to static HTML
 ```
 
 ## Configuration
@@ -72,11 +71,6 @@ See [Configuration Guide](docs/configuration.md) for all options.
 docker compose up -d
 ```
 
-**Static export** (GitHub Pages, Netlify, Vercel):
-```bash
-markgo export --output ./public --base-url https://yourdomain.com
-```
-
 See [Deployment Guide](docs/deployment.md) for systemd, reverse proxy, and production setup.
 
 ## Development
@@ -96,7 +90,7 @@ make coverage        # Coverage report
 - [Configuration](docs/configuration.md) — All environment variables
 - [Architecture](docs/architecture.md) — How the system works
 - [API](docs/API.md) — Every HTTP endpoint
-- [Deployment](docs/deployment.md) — Docker, systemd, static export, reverse proxy
+- [Deployment](docs/deployment.md) — Docker, systemd, reverse proxy
 - [Design Language](docs/design.md) — The principles behind every decision
 
 ## License

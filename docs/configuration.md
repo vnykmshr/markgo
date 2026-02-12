@@ -35,8 +35,8 @@ Everything else has sensible defaults for development.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ARTICLES_PATH` | `./articles` | Directory containing markdown files. |
-| `STATIC_PATH` | `./web/static` | Static assets (CSS, JS, images). |
-| `TEMPLATES_PATH` | `./web/templates` | HTML templates directory. |
+| `STATIC_PATH` | *(empty)* | Static assets directory. Optional — falls back to embedded assets if unset or missing. |
+| `TEMPLATES_PATH` | *(empty)* | HTML templates directory. Optional — falls back to embedded templates if unset or missing. |
 
 ## Blog
 

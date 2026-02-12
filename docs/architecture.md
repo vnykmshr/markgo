@@ -8,7 +8,7 @@
 
 MarkGo is a single-binary blog engine. Markdown files in, web pages out. No database, no build step, no external dependencies at runtime.
 
-The server reads markdown files from a directory, infers content types (article, thought, link), and serves them through a progressively-enhanced SPA with offline support. The same binary handles the CLI (init, new, export) and the web server.
+The server reads markdown files from a directory, infers content types (article, thought, link), and serves them through a progressively-enhanced SPA with offline support. The same binary handles the CLI (init, new) and the web server.
 
 ```
 ┌────────────────────────────────────────────────────┐
@@ -169,7 +169,6 @@ Go `html/template` with a base layout. Template name drives body class, conditio
 markgo serve     # Start the web server (default if no command given)
 markgo init      # Initialize a new blog (creates .env, articles/, etc.)
 markgo new       # Create a new article (supports --title, --tags, --type)
-markgo export    # Export to static HTML for GitHub Pages, Netlify, Vercel
 markgo version   # Show version information
 ```
 
@@ -184,8 +183,7 @@ markgo/
 │   ├── commands/
 │   │   ├── serve/command.go     # Server setup, route registration
 │   │   ├── init/                # Blog initialization
-│   │   ├── new/                 # Article creation
-│   │   └── export/              # Static site export
+│   │   └── new/                 # Article creation
 │   ├── handlers/
 │   │   ├── router.go            # Router struct, holds all 11 handler types
 │   │   ├── base.go              # BaseHandler (shared config, logger, templates)
@@ -196,7 +194,6 @@ markgo/
 │   │   ├── feed/                # RSS, JSON Feed, sitemap generation
 │   │   ├── compose/             # File-writing compose service
 │   │   ├── seo/                 # SEO metadata generation
-│   │   ├── export/              # Static export service
 │   │   ├── template.go          # Template service with custom FuncMap
 │   │   ├── email.go             # SMTP email service
 │   │   └── logging.go           # Structured logging
