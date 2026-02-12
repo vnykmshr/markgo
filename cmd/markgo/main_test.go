@@ -35,7 +35,7 @@ func TestHelpOutput(t *testing.T) {
 			if exitCode != 0 {
 				t.Errorf("markgo %s exited with code %d, want 0", arg, exitCode)
 			}
-			for _, want := range []string{"USAGE:", "COMMANDS:", "ALIASES:", "EXAMPLES:", "serve", "init", "new", "export"} {
+			for _, want := range []string{"USAGE:", "COMMANDS:", "ALIASES:", "EXAMPLES:", "serve", "init", "new"} {
 				if !strings.Contains(stdout, want) {
 					t.Errorf("markgo %s output missing %q", arg, want)
 				}
@@ -77,28 +77,6 @@ func TestServeHelp(t *testing.T) {
 		if !strings.Contains(stdout, want) {
 			t.Errorf("markgo serve --help output missing %q", want)
 		}
-	}
-}
-
-func TestExportHelp(t *testing.T) {
-	stdout, _, exitCode := runMarkgo(t, "export", "--help")
-	if exitCode != 0 {
-		t.Errorf("markgo export --help exited with code %d, want 0", exitCode)
-	}
-	for _, want := range []string{"--output", "--base-url", "--include-drafts", "--verbose"} {
-		if !strings.Contains(stdout, want) {
-			t.Errorf("markgo export --help output missing %q", want)
-		}
-	}
-}
-
-func TestExportUnknownFlag(t *testing.T) {
-	_, stderr, exitCode := runMarkgo(t, "export", "--typo")
-	if exitCode != 1 {
-		t.Errorf("markgo export --typo exited with code %d, want 1", exitCode)
-	}
-	if !strings.Contains(stderr, "unknown flag") {
-		t.Errorf("markgo export --typo stderr missing error message, got: %q", stderr)
 	}
 }
 

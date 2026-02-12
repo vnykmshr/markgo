@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/vnykmshr/markgo/internal/commands/export"
 	initcmd "github.com/vnykmshr/markgo/internal/commands/init"
 	"github.com/vnykmshr/markgo/internal/commands/new"
 	"github.com/vnykmshr/markgo/internal/commands/serve"
@@ -46,8 +45,6 @@ func main() {
 		initcmd.Run(subArgs)
 	case "new", "create", "article":
 		new.Run(subArgs)
-	case "export", "build":
-		export.Run(subArgs)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n\n", command)
 		showHelp()
@@ -65,7 +62,6 @@ COMMANDS:
     serve       Start the blog server (default)
     init        Initialize a new blog
     new         Create a new article
-    export      Export blog to static HTML
     version     Show version information
     help        Show this help message
 
@@ -73,7 +69,6 @@ ALIASES:
     server, start    → serve
     initialize       → init
     create, article  → new
-    build            → export
 
 Run 'markgo [command] --help' for more information on a specific command.
 
@@ -83,7 +78,6 @@ EXAMPLES:
     markgo serve --help             # Show server options
     markgo init --quick             # Quick blog initialization
     markgo new --title "Hello"      # Create new article
-    markgo export --output ./dist   # Export to static files
 
 For more information, visit: https://github.com/vnykmshr/markgo
 `, constants.AppVersion)
