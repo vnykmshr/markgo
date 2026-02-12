@@ -40,6 +40,7 @@ type Config struct {
 	CORS          CORSConfig      `json:"cors"`
 	Admin         AdminConfig     `json:"admin"`
 	Blog          BlogConfig      `json:"blog"`
+	About         AboutConfig     `json:"about"`
 	Comments      CommentsConfig  `json:"comments"`
 	Logging       LoggingConfig   `json:"logging"`
 	SEO           SEOConfig       `json:"seo"`
@@ -133,6 +134,19 @@ type LoggingConfig struct {
 	Compress   bool   `json:"compress"`       // compress rotated files
 	AddSource  bool   `json:"add_source"`     // add source file and line number
 	TimeFormat string `json:"time_format"`    // custom time format for text logs
+}
+
+// AboutConfig holds about page configuration options.
+type AboutConfig struct {
+	Avatar   string `json:"avatar"`   // path relative to static dir
+	Tagline  string `json:"tagline"`  // one-liner under name
+	Bio      string `json:"bio"`      // markdown text (alt to about.md)
+	Location string `json:"location"` // e.g. "San Francisco, CA"
+	GitHub   string `json:"github"`   // username or full URL
+	Twitter  string `json:"twitter"`  // handle or full URL
+	LinkedIn string `json:"linkedin"` // full URL
+	Mastodon string `json:"mastodon"` // full URL
+	Website  string `json:"website"`  // full URL
 }
 
 // SEOConfig holds SEO-related configuration options.
@@ -246,6 +260,18 @@ func Load() (*Config, error) {
 			Theme:        getEnv("BLOG_THEME", "default"),
 			Style:        getEnv("BLOG_STYLE", "minimal"),
 			PostsPerPage: getEnvInt("BLOG_POSTS_PER_PAGE", 10),
+		},
+
+		About: AboutConfig{
+			Avatar:   getEnv("ABOUT_AVATAR", ""),
+			Tagline:  getEnv("ABOUT_TAGLINE", ""),
+			Bio:      getEnv("ABOUT_BIO", ""),
+			Location: getEnv("ABOUT_LOCATION", ""),
+			GitHub:   getEnv("ABOUT_GITHUB", ""),
+			Twitter:  getEnv("ABOUT_TWITTER", ""),
+			LinkedIn: getEnv("ABOUT_LINKEDIN", ""),
+			Mastodon: getEnv("ABOUT_MASTODON", ""),
+			Website:  getEnv("ABOUT_WEBSITE", ""),
 		},
 
 		Comments: CommentsConfig{
