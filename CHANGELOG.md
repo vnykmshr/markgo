@@ -9,6 +9,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.2.0] - 2026-02-13
+
+Semantic HTML, SEO, admin redesign, and security hardening. Web standards compliance across the board.
+
+### Added
+
+**SEO & Structured Data**
+- Canonical URLs on all public pages with conditional rendering (empty on 404/admin/compose)
+- Visible breadcrumb navigation with JSON-LD BreadcrumbList schema
+- JSON-LD structured data: BlogPosting (articles), CollectionPage (listings), WebSite (home)
+- Open Graph and meta description on all page types
+
+**Admin Dashboard**
+- Redesigned admin dashboard consistent with blog UX (card-based layout)
+- Admin popover in header with Dashboard, Drafts, Sign out
+- Auth-aware UI across all pages (login/admin popover based on session state)
+- Sample articles section with one-click creation
+
+**Public Compose**
+- Compose page accessible without authentication (login deferred to publish)
+- Compose link in header nav when admin is configured
+- FAB (floating action button) visible for all users when admin configured
+- Dynamic CTA: "Publish" / "Save Draft" / "Update" based on draft checkbox and edit state
+- Fetch-based form submit with 401/403 handling (toast + login popover trigger)
+
+**PWA**
+- Share target in web manifest for receiving shared content
+
+### Changed
+
+- Semantic HTML: single `<h1>` per page, proper heading hierarchy, `<section>`/`<article>` elements
+- 404/offline page CSS class renamed from `error-page` to `error-content` (fixes layout collision with body class)
+- SessionAware middleware generates CSRF tokens for unauthenticated visitors (enables login popover on all pages)
+- SPA router syncs CSRF meta tag and hidden inputs after content swap (prevents SPA desync)
+- Compose error responses shown via toast instead of DOM swap (preserves event listeners)
+
+### Security
+
+- CSRF cookie reuse validates token format (64-char hex) before accepting
+- CSRF cookie max-age refreshed on reuse to prevent silent expiry
+- `isValidCSRFToken()` rejects corrupted, truncated, or injected cookie values
+
+### Removed
+
+- Editorial and bold theme stubs (unused CSS)
+- Stale CDN references in design docs
+
+---
+
 ## [3.1.0] - 2026-02-12
 
 MarkGo reimagined as a blogging companion app. SPA navigation, installable PWA, mobile-native UX, quick capture, offline compose. Single binary with embedded web assets — no filesystem setup required.
