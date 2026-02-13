@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -342,7 +343,12 @@ func (h *ComposeHandler) PublishDraft(c *gin.Context) {
 
 	input, err := h.composeService.LoadArticle(slug)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Article not found"})
+		if errors.Is(err, apperrors.ErrArticleNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Article not found"})
+		} else {
+			h.logger.Error("Failed to load article for publish", "error", err, "slug", slug)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load article"})
+		}
 		return
 	}
 
@@ -364,6 +370,12 @@ func (h *ComposeHandler) PublishDraft(c *gin.Context) {
 
 	if err := h.articleService.ReloadArticles(); err != nil {
 		h.logger.Error("Failed to reload articles after publish", "error", err)
+		c.JSON(http.StatusOK, gin.H{
+			"slug":    slug,
+			"url":     "/",
+			"message": "Published (article will appear after next reload)",
+		})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{

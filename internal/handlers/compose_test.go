@@ -505,6 +505,120 @@ func TestQuickPublish(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
+// PublishDraft handler tests
+// ---------------------------------------------------------------------------
+
+func createPublishDraftHandler(t *testing.T) (*ComposeHandler, string) {
+	t.Helper()
+	tmpDir := t.TempDir()
+
+	cfg := &config.Config{
+		Environment:  "test",
+		BaseURL:      "http://localhost:3000",
+		ArticlesPath: tmpDir,
+		Blog:         config.BlogConfig{Title: "Test Blog", Author: "Test Author"},
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
+
+	composeSvc := compose.NewService(tmpDir, cfg.Blog.Author)
+	handler := NewComposeHandler(base, composeSvc, &MockArticleService{}, &MockMarkdownRenderer{})
+	return handler, tmpDir
+}
+
+func writeDraftArticle(t *testing.T, dir, slug string, isDraft bool) {
+	t.Helper()
+	draftStr := "false"
+	if isDraft {
+		draftStr = "true"
+	}
+	content := fmt.Sprintf("---\nslug: %s\ntitle: Test Article\ndraft: %s\ndate: 2026-01-01T00:00:00Z\n---\n\nHello world.\n", slug, draftStr)
+	filename := fmt.Sprintf("2026-01-01-%s.md", slug)
+	require.NoError(t, os.WriteFile(filepath.Join(dir, filename), []byte(content), 0o644))
+}
+
+func TestPublishDraft(t *testing.T) {
+	t.Run("invalid slug returns 400", func(t *testing.T) {
+		handler, _ := createPublishDraftHandler(t)
+
+		router := gin.New()
+		router.POST("/compose/publish/:slug", handler.PublishDraft)
+
+		req := httptest.NewRequest("POST", "/compose/publish/INVALID!SLUG", http.NoBody)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		var resp map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Equal(t, "Invalid slug", resp["error"])
+	})
+
+	t.Run("slug not found returns 404", func(t *testing.T) {
+		handler, _ := createPublishDraftHandler(t)
+
+		router := gin.New()
+		router.POST("/compose/publish/:slug", handler.PublishDraft)
+
+		req := httptest.NewRequest("POST", "/compose/publish/nonexistent", http.NoBody)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		var resp map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Equal(t, "Article not found", resp["error"])
+	})
+
+	t.Run("already published returns 200 with message", func(t *testing.T) {
+		handler, tmpDir := createPublishDraftHandler(t)
+		writeDraftArticle(t, tmpDir, "published-post", false)
+
+		router := gin.New()
+		router.POST("/compose/publish/:slug", handler.PublishDraft)
+
+		req := httptest.NewRequest("POST", "/compose/publish/published-post", http.NoBody)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		var resp map[string]any
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Equal(t, "Already published", resp["message"])
+		assert.Equal(t, "published-post", resp["slug"])
+		assert.Equal(t, "/writing/published-post", resp["url"])
+	})
+
+	t.Run("successful publish returns 200", func(t *testing.T) {
+		handler, tmpDir := createPublishDraftHandler(t)
+		writeDraftArticle(t, tmpDir, "my-draft", true)
+
+		router := gin.New()
+		router.POST("/compose/publish/:slug", handler.PublishDraft)
+
+		req := httptest.NewRequest("POST", "/compose/publish/my-draft", http.NoBody)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		var resp map[string]any
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Equal(t, "Published", resp["message"])
+		assert.Equal(t, "my-draft", resp["slug"])
+		assert.Equal(t, "/writing/my-draft", resp["url"])
+
+		// Verify file was updated on disk
+		updated, err := os.ReadFile(filepath.Join(tmpDir, "2026-01-01-my-draft.md"))
+		require.NoError(t, err)
+		assert.Contains(t, string(updated), "draft: false")
+	})
+}
+
+// ---------------------------------------------------------------------------
 // Drafts handler tests
 // ---------------------------------------------------------------------------
 

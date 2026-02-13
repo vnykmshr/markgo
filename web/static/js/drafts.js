@@ -11,6 +11,14 @@ function getCSRFToken() {
     return document.querySelector('meta[name="csrf-token"]')?.content || '';
 }
 
+function updateDraftCount() {
+    const subtitle = document.querySelector('.page-subtitle');
+    if (subtitle) {
+        const remaining = document.querySelectorAll('.draft-card-wrapper').length;
+        subtitle.textContent = `${remaining} draft${remaining !== 1 ? 's' : ''}`;
+    }
+}
+
 export function init() {
     controller = new AbortController();
     const { signal } = controller;
@@ -27,7 +35,16 @@ export function destroy() {
 
 async function handlePublish(btn) {
     const slug = btn.dataset.slug;
-    if (!slug) return;
+    if (!slug) {
+        showToast('Unable to publish — please reload the page', 'error');
+        return;
+    }
+
+    const csrfToken = getCSRFToken();
+    if (!csrfToken) {
+        showToast('Session expired — please reload the page', 'warning');
+        return;
+    }
 
     btn.disabled = true;
     btn.textContent = 'Publishing\u2026';
@@ -37,7 +54,7 @@ async function handlePublish(btn) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-Token': getCSRFToken(),
+                'X-CSRF-Token': csrfToken,
             },
         });
 
@@ -49,7 +66,15 @@ async function handlePublish(btn) {
             return;
         }
 
-        const data = await res.json();
+        let data;
+        try {
+            data = await res.json();
+        } catch {
+            showToast(`Publish failed (${res.status})`, 'error');
+            btn.disabled = false;
+            btn.textContent = 'Publish';
+            return;
+        }
 
         if (!res.ok) {
             showToast(data.error || 'Publish failed', 'error');
@@ -58,20 +83,18 @@ async function handlePublish(btn) {
             return;
         }
 
-        // Remove card with fade
+        // Remove card with fade, update count after removal
         const wrapper = btn.closest('.draft-card-wrapper');
         if (wrapper) {
+            const removeCard = () => {
+                if (wrapper.parentNode) wrapper.remove();
+                updateDraftCount();
+            };
             wrapper.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
             wrapper.style.opacity = '0';
             wrapper.style.transform = 'translateY(-8px)';
-            wrapper.addEventListener('transitionend', () => wrapper.remove(), { once: true });
-        }
-
-        // Update draft count in subtitle
-        const subtitle = document.querySelector('.page-subtitle');
-        if (subtitle) {
-            const remaining = document.querySelectorAll('.draft-card-wrapper').length - 1;
-            subtitle.textContent = `${remaining} draft${remaining !== 1 ? 's' : ''}`;
+            wrapper.addEventListener('transitionend', removeCard, { once: true });
+            setTimeout(removeCard, 400); // Safety: remove even if transitionend never fires
         }
 
         showToast(data.message || 'Published', 'success');
