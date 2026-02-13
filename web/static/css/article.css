@@ -211,9 +211,10 @@
 
 .article-edit-link:hover {
     background-color: var(--color-primary-dark);
+    color: var(--color-text-inverse);
+    text-decoration: none;
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    text-decoration: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
