@@ -21,6 +21,54 @@
     margin: 0;
 }
 
+/* Draft Recovery Notice */
+.compose-draft-notice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 48rem;
+    margin: 0 auto var(--spacing-3);
+    padding: var(--spacing-2) var(--spacing-4);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.compose-draft-notice[hidden] {
+    display: none;
+}
+
+.compose-draft-discard {
+    background: none;
+    border: none;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+}
+
+.compose-draft-discard:hover {
+    color: var(--color-error-text);
+}
+
+/* Save Warning */
+.compose-save-warning {
+    max-width: 48rem;
+    margin: 0 auto var(--spacing-3);
+    padding: var(--spacing-2) var(--spacing-4);
+    font-size: var(--font-size-sm);
+    color: var(--color-warning);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+    border-left: 2px solid var(--color-warning);
+}
+
+.compose-save-warning[hidden] {
+    display: none;
+}
+
 /* Error Display */
 .compose-error {
     max-width: 48rem;

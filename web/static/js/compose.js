@@ -6,9 +6,15 @@
  *
  * Draft-first: "Save Draft" is primary CTA, "Publish/Update" is secondary.
  * Uses e.submitter + FormData to distinguish which button was clicked.
+ *
+ * Auto-save: debounced localStorage save for all form fields.
+ * Separate key (markgo:compose-full-draft) from quick compose.
  */
 
 import { showToast } from './modules/toast.js';
+
+const FULL_DRAFT_KEY = 'markgo:compose-full-draft';
+const SAVE_DELAY = 2000;
 
 let ac = null;
 
@@ -24,6 +30,7 @@ export function init() {
     const form = document.querySelector('.compose-form');
     const saveDraftBtn = document.querySelector('.compose-submit');
     const publishBtn = document.querySelector('.compose-submit-secondary');
+    const isEditing = form?.action?.includes('/compose/edit/');
 
     if (!textarea || !previewBtn || !previewPanel || !previewContent) return;
 
@@ -98,6 +105,105 @@ export function init() {
     }, { signal });
 
     // =========================================================================
+    // Auto-save (new compose only, not editing)
+    // =========================================================================
+
+    const titleInput = document.getElementById('title');
+    const descInput = document.getElementById('description');
+    const linkInput = document.getElementById('link_url');
+    const tagsInput = document.getElementById('tags');
+    const catsInput = document.getElementById('categories');
+    const draftNotice = document.getElementById('compose-draft-notice');
+    const draftDiscard = document.getElementById('compose-draft-discard');
+    const saveWarning = document.getElementById('compose-save-warning');
+
+    let saveTimer = null;
+
+    function getFormFields() {
+        return {
+            content: textarea?.value || '',
+            title: titleInput?.value || '',
+            description: descInput?.value || '',
+            link_url: linkInput?.value || '',
+            tags: tagsInput?.value || '',
+            categories: catsInput?.value || '',
+        };
+    }
+
+    function hasContent(fields) {
+        return Object.values(fields).some((v) => v.trim() !== '');
+    }
+
+    function saveDraft() {
+        const fields = getFormFields();
+        if (!hasContent(fields)) {
+            clearDraft();
+            return;
+        }
+        try {
+            localStorage.setItem(FULL_DRAFT_KEY, JSON.stringify({ ...fields, ts: Date.now() }));
+            if (saveWarning) saveWarning.hidden = true;
+        } catch {
+            if (saveWarning) saveWarning.hidden = false;
+        }
+    }
+
+    function scheduleSave() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveDraft, SAVE_DELAY);
+    }
+
+    function clearDraft() {
+        clearTimeout(saveTimer);
+        try { localStorage.removeItem(FULL_DRAFT_KEY); } catch { /* ignore */ }
+    }
+
+    function loadDraft() {
+        try {
+            const raw = localStorage.getItem(FULL_DRAFT_KEY);
+            if (!raw) return null;
+            return JSON.parse(raw);
+        } catch {
+            return null;
+        }
+    }
+
+    if (!isEditing) {
+        // Recover draft on page load
+        const draft = loadDraft();
+        if (draft && hasContent(draft)) {
+            if (textarea && draft.content) textarea.value = draft.content;
+            if (titleInput && draft.title) titleInput.value = draft.title;
+            if (descInput && draft.description) descInput.value = draft.description;
+            if (linkInput && draft.link_url) linkInput.value = draft.link_url;
+            if (tagsInput && draft.tags) tagsInput.value = draft.tags;
+            if (catsInput && draft.categories) catsInput.value = draft.categories;
+            if (draftNotice) draftNotice.hidden = false;
+        }
+
+        // Discard button
+        if (draftDiscard) {
+            draftDiscard.addEventListener('click', () => {
+                clearDraft();
+                if (textarea) textarea.value = '';
+                if (titleInput) titleInput.value = '';
+                if (descInput) descInput.value = '';
+                if (linkInput) linkInput.value = '';
+                if (tagsInput) tagsInput.value = '';
+                if (catsInput) catsInput.value = '';
+                if (draftNotice) draftNotice.hidden = true;
+                textarea.focus();
+            }, { signal });
+        }
+
+        // Attach input listeners for auto-save
+        const fields = [textarea, titleInput, descInput, linkInput, tagsInput, catsInput];
+        for (const el of fields) {
+            if (el) el.addEventListener('input', scheduleSave, { signal });
+        }
+    }
+
+    // =========================================================================
     // Fetch-based form submit with 401 handling
     // =========================================================================
 
@@ -146,11 +252,13 @@ export function init() {
                 }
 
                 if (response.redirected) {
+                    clearDraft();
                     window.location.href = response.url;
                     return;
                 }
 
                 if (response.ok) {
+                    clearDraft();
                     window.location.href = response.url;
                 } else {
                     const html = await response.text();

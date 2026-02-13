@@ -480,8 +480,11 @@ async function handleSubmit(isDraft) {
         if (!isDraft) prependCard(data, content, title);
         showToast(data.message || (isDraft ? 'Saved as draft' : 'Published!'), 'success');
     } else if (response.status === 401) {
-        showToast('Not authenticated — please sign in', 'error');
-        resetButtons();
+        // Close sheet (draft auto-saves on close), open login popover
+        close();
+        showToast('Please sign in to publish', 'warning');
+        document.dispatchEvent(new CustomEvent('auth:open-login'));
+        return;
     } else {
         showToast(data.error || 'Failed to save', 'error');
         resetButtons();

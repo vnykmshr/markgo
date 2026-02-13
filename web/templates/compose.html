@@ -17,6 +17,14 @@
         </div>
         {{ end }}
 
+        <div class="compose-draft-notice" id="compose-draft-notice" hidden>
+            <span>Draft recovered</span>
+            <button type="button" class="compose-draft-discard" id="compose-draft-discard">Discard</button>
+        </div>
+        <div class="compose-save-warning" id="compose-save-warning" role="status" hidden>
+            Draft saving unavailable — copy your work before leaving
+        </div>
+
         <form class="compose-form" method="POST" action="{{ if .editing }}/compose/edit/{{ .slug }}{{ else }}/compose{{ end }}">
             <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
             <div class="compose-field">
