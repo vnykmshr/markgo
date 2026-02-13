@@ -410,6 +410,32 @@ func TestUploadConfigValidation(t *testing.T) {
 	})
 }
 
+func TestUploadConfigBoundary(t *testing.T) {
+	t.Run("exactly 100MB passes validation", func(t *testing.T) {
+		cfg := &UploadConfig{Path: "./uploads", MaxSize: 100 << 20}
+		assert.NoError(t, cfg.Validate())
+	})
+
+	t.Run("100MB plus one byte fails validation", func(t *testing.T) {
+		cfg := &UploadConfig{Path: "./uploads", MaxSize: 100<<20 + 1}
+		err := cfg.Validate()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "100MB")
+	})
+
+	t.Run("empty path fails validation", func(t *testing.T) {
+		cfg := &UploadConfig{Path: "", MaxSize: 10 << 20}
+		err := cfg.Validate()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "empty")
+	})
+
+	t.Run("non-empty path passes validation", func(t *testing.T) {
+		cfg := &UploadConfig{Path: "/tmp/uploads", MaxSize: 10 << 20}
+		assert.NoError(t, cfg.Validate())
+	})
+}
+
 func TestUploadConfigFromEnv(t *testing.T) {
 	clearEnvVars()
 

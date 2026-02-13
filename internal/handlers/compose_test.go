@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -421,6 +422,99 @@ func TestUpload(t *testing.T) {
 		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 		assert.Contains(t, resp["markdown"], "![file]")
 	})
+
+	t.Run("no-extension file rejected", func(t *testing.T) {
+		handler, _ := createTestComposeHandler(t, nil)
+
+		req := createMultipartRequest(t, "file", "noextension", []byte("some content"), nil)
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/compose/upload/:slug", handler.Upload)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		var resp map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Equal(t, "File must have an extension", resp["error"])
+	})
+
+	t.Run("case-insensitive extension blocking", func(t *testing.T) {
+		cases := []struct {
+			name     string
+			filename string
+		}{
+			{"uppercase EXE", "malware.EXE"},
+			{"uppercase HTML", "page.HTML"},
+			{"uppercase JS", "script.JS"},
+			{"mixed case Exe", "trojan.Exe"},
+			{"mixed case Html", "inject.Html"},
+		}
+
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				handler, _ := createTestComposeHandler(t, nil)
+
+				req := createMultipartRequest(t, "file", tc.filename, []byte("bad content"), nil)
+				w := httptest.NewRecorder()
+
+				router := gin.New()
+				router.POST("/compose/upload/:slug", handler.Upload)
+				router.ServeHTTP(w, req)
+
+				assert.Equal(t, http.StatusBadRequest, w.Code)
+				var resp map[string]string
+				require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+				assert.Equal(t, "File type not allowed", resp["error"])
+			})
+		}
+	})
+
+	t.Run("blocked extension categories", func(t *testing.T) {
+		cases := []struct {
+			name     string
+			filename string
+			reason   string
+		}{
+			{"JavaScript upload", "script.js", "XSS via JavaScript"},
+			{"PHP upload", "shell.php", "server-side code execution"},
+			{"shell script upload", "run.sh", "shell script execution"},
+			{"Python upload", "exploit.py", "server-side code execution"},
+			{"batch file upload", "virus.bat", "Windows batch execution"},
+			{"module JS upload", "module.mjs", "ES module JavaScript"},
+			{"CommonJS upload", "require.cjs", "CommonJS JavaScript"},
+			{"JSP upload", "admin.jsp", "Java server pages"},
+			{"ASP upload", "cmd.asp", "Active Server Pages"},
+			{"ASPX upload", "page.aspx", "ASP.NET pages"},
+			{"CGI upload", "handler.cgi", "CGI execution"},
+			{"Ruby upload", "app.rb", "Ruby execution"},
+			{"Perl upload", "hack.pl", "Perl execution"},
+			{"DLL upload", "payload.dll", "Windows library"},
+			{"SO upload", "payload.so", "Linux shared object"},
+			{"MSI upload", "setup.msi", "Windows installer"},
+			{"COM upload", "virus.com", "DOS executable"},
+			{"XHTML upload", "page.xhtml", "XHTML injection"},
+			{"HTM upload", "page.htm", "HTML injection"},
+		}
+
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				handler, _ := createTestComposeHandler(t, nil)
+
+				req := createMultipartRequest(t, "file", tc.filename, []byte("bad content"), nil)
+				w := httptest.NewRecorder()
+
+				router := gin.New()
+				router.POST("/compose/upload/:slug", handler.Upload)
+				router.ServeHTTP(w, req)
+
+				assert.Equal(t, http.StatusBadRequest, w.Code, "expected %s to be blocked (%s)", tc.filename, tc.reason)
+				var resp map[string]string
+				require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+				assert.Equal(t, "File type not allowed", resp["error"])
+			})
+		}
+	})
 }
 
 // ---------------------------------------------------------------------------
@@ -676,6 +770,66 @@ func TestPublishDraft(t *testing.T) {
 
 		// Verify file was updated on disk
 		updated, err := os.ReadFile(filepath.Join(tmpDir, "2026-01-01-my-draft.md"))
+		require.NoError(t, err)
+		assert.Contains(t, string(updated), "draft: false")
+	})
+}
+
+// ---------------------------------------------------------------------------
+// T5: PublishDraft reload-failure path
+// ---------------------------------------------------------------------------
+
+// FailReloadArticleService is a mock where ReloadArticles always returns an error.
+type FailReloadArticleService struct {
+	MockArticleService
+}
+
+func (m *FailReloadArticleService) ReloadArticles() error {
+	return errors.New("reload failed: index corrupted")
+}
+
+func createPublishDraftHandlerWithReloadFailure(t *testing.T) (*ComposeHandler, string) {
+	t.Helper()
+	tmpDir := t.TempDir()
+
+	cfg := &config.Config{
+		Environment:  "test",
+		BaseURL:      "http://localhost:3000",
+		ArticlesPath: tmpDir,
+		Blog:         config.BlogConfig{Title: "Test Blog", Author: "Test Author"},
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
+
+	composeSvc := compose.NewService(tmpDir, cfg.Blog.Author)
+	handler := NewComposeHandler(base, composeSvc, &FailReloadArticleService{}, &MockMarkdownRenderer{})
+	return handler, tmpDir
+}
+
+func TestPublishDraftReloadFailure(t *testing.T) {
+	t.Run("publish succeeds but reload fails returns degraded response", func(t *testing.T) {
+		handler, tmpDir := createPublishDraftHandlerWithReloadFailure(t)
+		writeDraftArticle(t, tmpDir, "reload-fail-draft", true)
+
+		router := gin.New()
+		router.POST("/compose/publish/:slug", handler.PublishDraft)
+
+		req := httptest.NewRequest("POST", "/compose/publish/reload-fail-draft", http.NoBody)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		var resp map[string]any
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+
+		// When reload fails, URL should fall back to "/"
+		assert.Equal(t, "/", resp["url"])
+		assert.Equal(t, "reload-fail-draft", resp["slug"])
+		assert.Contains(t, resp["message"], "next reload")
+
+		// Verify file was still updated on disk (publish succeeded)
+		updated, err := os.ReadFile(filepath.Join(tmpDir, "2026-01-01-reload-fail-draft.md"))
 		require.NoError(t, err)
 		assert.Contains(t, string(updated), "draft: false")
 	})
