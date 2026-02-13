@@ -68,8 +68,8 @@ self.addEventListener('fetch', (event) => {
     // Network-only routes (auth, API, feeds)
     if (isNetworkOnly(path)) return;
 
-    // Static assets → stale-while-revalidate
-    if (path.startsWith('/static/')) {
+    // Static assets and uploads → stale-while-revalidate
+    if (path.startsWith('/static/') || path.startsWith('/uploads/')) {
         event.respondWith(staleWhileRevalidate(request, STATIC_CACHE));
         return;
     }

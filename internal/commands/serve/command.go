@@ -301,6 +301,15 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 		})
 		slog.Info("Using embedded static assets", "checked_path", cfg.StaticPath)
 	}
+	// Uploaded assets — filesystem only, never embedded
+	if cfg.Upload.Path != "" {
+		if err := os.MkdirAll(cfg.Upload.Path, 0o755); err != nil { //nolint:gosec // upload dir needs to be accessible
+			logger.Warn("Could not create upload directory", "path", cfg.Upload.Path, "error", err)
+		} else {
+			router.Static("/uploads", cfg.Upload.Path)
+		}
+	}
+
 	// Redirect legacy /favicon.ico to SVG favicon
 	router.GET("/favicon.ico", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/static/img/favicon.svg")
@@ -363,7 +372,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 		composeGroup.GET("/edit/:slug", h.Compose.ShowEdit)
 		composeGroup.POST("/edit/:slug", h.Compose.HandleEdit)
 		composeGroup.POST("/preview", h.Compose.Preview)
-		composeGroup.POST("/upload", h.Compose.Upload)
+		composeGroup.POST("/upload/:slug", h.Compose.Upload)
 		composeGroup.POST("/quick", h.Compose.HandleQuickPublish)
 		composeGroup.POST("/publish/:slug", h.Compose.PublishDraft)
 	}
