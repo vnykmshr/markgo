@@ -44,7 +44,8 @@ function saveDraft() {
     try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify({ content, title, ts: Date.now() }));
         if (saveWarning) saveWarning.hidden = true;
-    } catch {
+    } catch (err) {
+        console.warn('Draft auto-save failed:', err.message);
         if (saveWarning) saveWarning.hidden = false;
     }
 }
@@ -59,14 +60,15 @@ function loadDraft() {
         const raw = localStorage.getItem(DRAFT_KEY);
         if (!raw) return null;
         return JSON.parse(raw);
-    } catch {
+    } catch (err) {
+        console.warn('Failed to load draft:', err.message);
         return null;
     }
 }
 
 function clearDraft() {
     clearTimeout(saveTimer);
-    try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+    try { localStorage.removeItem(DRAFT_KEY); } catch (err) { console.warn('Failed to clear draft:', err.message); }
 }
 
 function buildOverlay() {
@@ -336,8 +338,9 @@ function close() {
     if (draftContent || draftTitle) {
         try {
             localStorage.setItem(DRAFT_KEY, JSON.stringify({ content: draftContent, title: draftTitle, ts: Date.now() }));
-        } catch {
-            console.warn('Draft save on close failed — content may be lost');
+        } catch (err) {
+            console.warn('Draft save on close failed:', err.message);
+            showToast('Draft could not be saved \u2014 your work may be lost', 'error');
         }
     } else {
         clearDraft();
@@ -523,11 +526,17 @@ export function init() {
 
     // Drain offline queue when connectivity returns
     window.addEventListener('online', () => {
-        syncQueue().catch((err) => console.error('Queue sync failed:', err));
+        syncQueue().catch((err) => {
+            console.error('Queue sync failed:', err);
+            showToast('Failed to sync queued posts \u2014 try publishing again', 'warning');
+        });
     });
 
     // Try to drain on init (may have queued items from previous session)
     if (navigator.onLine) {
-        syncQueue().catch((err) => console.error('Queue sync failed:', err));
+        syncQueue().catch((err) => {
+            console.error('Queue sync failed:', err);
+            showToast('Failed to sync queued posts \u2014 try publishing again', 'warning');
+        });
     }
 }

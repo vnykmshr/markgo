@@ -12,10 +12,15 @@ import { showToast } from './toast.js';
 let popoverCtrl = null;
 
 function copyToClipboard(text) {
+    if (!navigator.clipboard?.writeText) {
+        showToast('Copy not available \u2014 use the address bar instead', 'warning');
+        return Promise.resolve();
+    }
     return navigator.clipboard.writeText(text).then(() => {
         showToast('URL copied!', 'success');
-    }).catch(() => {
-        showToast('Copy failed — try manually', 'error');
+    }).catch((err) => {
+        console.warn('Clipboard write failed:', err.message);
+        showToast('Copy failed \u2014 use the address bar instead', 'error');
     });
 }
 

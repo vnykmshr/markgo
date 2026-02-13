@@ -17,6 +17,7 @@ const FULL_DRAFT_KEY = 'markgo:compose-full-draft';
 const SAVE_DELAY = 2000;
 
 let ac = null;
+let saveTimer = null;
 
 export function init() {
     ac = new AbortController();
@@ -117,8 +118,6 @@ export function init() {
     const draftDiscard = document.getElementById('compose-draft-discard');
     const saveWarning = document.getElementById('compose-save-warning');
 
-    let saveTimer = null;
-
     function getFormFields() {
         return {
             content: textarea?.value || '',
@@ -143,7 +142,8 @@ export function init() {
         try {
             localStorage.setItem(FULL_DRAFT_KEY, JSON.stringify({ ...fields, ts: Date.now() }));
             if (saveWarning) saveWarning.hidden = true;
-        } catch {
+        } catch (err) {
+            console.warn('Draft auto-save failed:', err.message);
             if (saveWarning) saveWarning.hidden = false;
         }
     }
@@ -155,7 +155,7 @@ export function init() {
 
     function clearDraft() {
         clearTimeout(saveTimer);
-        try { localStorage.removeItem(FULL_DRAFT_KEY); } catch { /* ignore */ }
+        try { localStorage.removeItem(FULL_DRAFT_KEY); } catch (err) { console.warn('Failed to clear draft:', err.message); }
     }
 
     function loadDraft() {
@@ -163,7 +163,8 @@ export function init() {
             const raw = localStorage.getItem(FULL_DRAFT_KEY);
             if (!raw) return null;
             return JSON.parse(raw);
-        } catch {
+        } catch (err) {
+            console.warn('Failed to load draft:', err.message);
             return null;
         }
     }
@@ -268,8 +269,9 @@ export function init() {
                     showToast(msg, 'error');
                     resetButtons();
                 }
-            } catch {
-                showToast('Network error — please try again', 'error');
+            } catch (err) {
+                console.error('Compose submit failed:', err);
+                showToast('Network error \u2014 please try again', 'error');
                 resetButtons();
             }
         }, { signal });
@@ -372,5 +374,6 @@ export function init() {
 }
 
 export function destroy() {
+    clearTimeout(saveTimer);
     if (ac) { ac.abort(); ac = null; }
 }

@@ -123,7 +123,7 @@ No build step. Vanilla ES modules loaded via `<script type="module">`.
 
 | Type | Lifecycle | Examples |
 |------|-----------|---------|
-| Shell modules | Load once at startup | router, navigation, theme, scroll, login, toast, fab, compose-sheet, search-overlay |
+| Shell modules | Load once at startup | router, navigation, theme, scroll, login, toast, fab, compose-sheet, search-popover, subscribe-popover |
 | Content modules | Re-run after each page swap | highlight, lazy, clipboard |
 | Page modules | Load/unload per template | search-page, contact, compose, admin |
 

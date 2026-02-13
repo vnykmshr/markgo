@@ -47,9 +47,11 @@ export function init() {
                     if (result.data.success) {
                         if (isPopover) {
                             // Reactive auth — swap UI in place
-                            swapToAuthenticatedUI();
-                            document.dispatchEvent(new CustomEvent('auth:statechange', { detail: { authenticated: true } }));
-                            checkDraftRecovery();
+                            const swapped = swapToAuthenticatedUI();
+                            if (swapped !== false) {
+                                document.dispatchEvent(new CustomEvent('auth:statechange', { detail: { authenticated: true } }));
+                                checkDraftRecovery();
+                            }
                         } else {
                             // Auth gate — full reload to render protected page
                             window.location.href = result.data.redirect || window.location.pathname;
@@ -91,7 +93,12 @@ export function init() {
     // Listen for programmatic open-login requests (e.g. from compose 401)
     document.addEventListener('auth:open-login', () => {
         const loginTrigger = document.querySelector('.login-trigger');
-        if (loginTrigger) loginTrigger.click();
+        if (loginTrigger) {
+            loginTrigger.click();
+        } else {
+            // Login trigger not in DOM (e.g. after reactive swap to admin)
+            window.location.href = '/login';
+        }
     });
 }
 
@@ -118,7 +125,12 @@ function createPersonIcon() {
 function swapToAuthenticatedUI() {
     const loginTrigger = document.querySelector('.login-trigger');
     const loginPopover = document.getElementById('login-popover');
-    if (!loginTrigger) return;
+    if (!loginTrigger) {
+        // DOM is in unexpected state — fall back to full reload
+        console.warn('login-trigger not found for reactive auth swap — reloading');
+        window.location.reload();
+        return false;
+    }
 
     // Create admin trigger button
     const adminTrigger = document.createElement('button');
@@ -171,13 +183,20 @@ function swapToAuthenticatedUI() {
     if (loginPopover) {
         loginPopover.replaceWith(adminPopover);
     } else {
-        // Fallback: insert into navbar container
+        console.warn('login-popover not found — using fallback container append');
         const container = adminTrigger.closest('.container');
-        if (container) container.appendChild(adminPopover);
+        if (container) {
+            container.appendChild(adminPopover);
+        } else {
+            console.warn('No .container found for admin popover — admin menu non-functional');
+            showToast('Please refresh the page to access your account menu', 'warning');
+            return false;
+        }
     }
 
     // Initialize popover behavior on new elements
     initPopover('admin-popover', '.admin-trigger');
+    return true;
 }
 
 /**
@@ -192,7 +211,7 @@ function checkDraftRecovery() {
         if (draft && (draft.content || draft.title)) {
             showToast('Draft preserved \u2014 tap + to continue', 'info');
         }
-    } catch {
-        // ignore
+    } catch (err) {
+        console.warn('Draft recovery check failed:', err.message);
     }
 }
