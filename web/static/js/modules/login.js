@@ -159,12 +159,18 @@ function swapToAuthenticatedUI() {
     dashLink.className = 'admin-popover-link';
     dashLink.textContent = 'Dashboard';
 
+    const writingLink = document.createElement('a');
+    writingLink.href = '/writing';
+    writingLink.className = 'admin-popover-link';
+    writingLink.textContent = 'Writing';
+
     const draftsLink = document.createElement('a');
     draftsLink.href = '/admin/drafts';
     draftsLink.className = 'admin-popover-link';
     draftsLink.textContent = 'Drafts';
 
     nav.appendChild(dashLink);
+    nav.appendChild(writingLink);
     nav.appendChild(draftsLink);
 
     const divider = document.createElement('div');

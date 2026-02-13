@@ -85,6 +85,11 @@
 
             <!-- Footer -->
             <footer class="article-footer">
+                {{ if .authenticated }}
+                <div class="article-admin-actions">
+                    <a href="/compose/edit/{{ .article.Slug }}" class="article-edit-link">Edit</a>
+                </div>
+                {{ end }}
                 <div class="content-separator"></div>
                 <div class="article-footer-content">
                     <a href="/writing" class="page-back-link">← Writing</a>
