@@ -25,7 +25,7 @@
             Draft saving unavailable — copy your work before leaving
         </div>
 
-        <form class="compose-form" method="POST" action="{{ if .editing }}/compose/edit/{{ .slug }}{{ else }}/compose{{ end }}">
+        <form class="compose-form" method="POST" action="{{ if .editing }}/compose/edit/{{ .slug }}{{ else }}/compose{{ end }}" data-slug="{{ if .editing }}{{ .slug }}{{ end }}">
             <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
             <div class="compose-field">
                 <label for="content" class="compose-label">Content <span class="compose-required">*</span></label>
@@ -39,8 +39,8 @@
                 >{{ if .input }}{{ .input.Content }}{{ end }}</textarea>
                 <div class="compose-preview-controls">
                     <button type="button" class="compose-preview-btn" aria-pressed="false">Preview</button>
-                    <button type="button" class="compose-upload-btn">Upload Image</button>
-                    <input type="file" class="compose-file-input" accept="image/jpeg,image/png,image/gif,image/webp" hidden>
+                    <button type="button" class="compose-upload-btn">Upload File</button>
+                    <input type="file" class="compose-file-input" hidden>
                     <span class="upload-status"></span>
                 </div>
                 <div class="compose-preview-panel" aria-live="polite">

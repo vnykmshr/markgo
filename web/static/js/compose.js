@@ -285,8 +285,11 @@ export function init() {
     const fileInput = document.querySelector('.compose-file-input');
     const uploadStatus = document.querySelector('.upload-status');
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    const maxFileSize = 10 * 1024 * 1024; // 10MB
+
+    function getSlug() {
+        return form?.dataset.slug || '';
+    }
 
     function insertAtCursor(text) {
         const start = textarea.selectionStart;
@@ -305,15 +308,26 @@ export function init() {
         uploadStatus.className = 'upload-status' + (isError ? ' upload-error' : msg ? ' upload-success' : '');
     }
 
+    function updateUploadButton() {
+        if (!uploadBtn) return;
+        const slug = getSlug();
+        uploadBtn.disabled = !slug;
+        if (!slug) {
+            setUploadStatus('Save as draft first to upload files', false);
+        }
+    }
+
     function uploadFile(file) {
         if (!file) return;
 
-        if (!allowedTypes.includes(file.type)) {
-            setUploadStatus('Only JPEG, PNG, GIF, and WebP images are allowed.', true);
+        const slug = getSlug();
+        if (!slug) {
+            setUploadStatus('Save as draft first to upload files', true);
             return;
         }
+
         if (file.size > maxFileSize) {
-            setUploadStatus('File too large. Maximum size is 5MB.', true);
+            setUploadStatus('File too large. Maximum size is 10MB.', true);
             return;
         }
 
@@ -323,7 +337,7 @@ export function init() {
         formData.append('file', file);
         if (csrfInput) formData.append('_csrf', csrfInput.value);
 
-        fetch('/compose/upload', {
+        fetch(`/compose/upload/${encodeURIComponent(slug)}`, {
             method: 'POST',
             body: formData,
             credentials: 'same-origin',
@@ -344,6 +358,8 @@ export function init() {
                 setUploadStatus(err.message || 'Upload failed', true);
             });
     }
+
+    updateUploadButton();
 
     if (uploadBtn && fileInput) {
         uploadBtn.addEventListener('click', () => fileInput.click(), { signal });
