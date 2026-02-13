@@ -9,6 +9,87 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.3.0] - 2026-02-13
+
+Article asset uploads, reactive auth, brand identity, and security hardening across the board.
+
+### Added
+
+**Article Asset Uploads**
+- Slug-scoped file uploads: images, PDFs, and other assets stored per-article
+- Upload UI in compose page with save-first guard, multi-type support, and progress feedback
+- Extension-based blocklist (19 executable/script/HTML types) with case-insensitive matching
+- Filepath containment check prevents directory traversal attacks
+- Random 4-byte hex suffix in filenames prevents collision
+- Upload directory writability probe at startup with warning on failure
+- Dynamic `maxFileSize` from server config (no hardcoded client-side limit)
+- `Content-Disposition: inline` for images, `attachment` for all other uploaded types
+
+**Reactive Authentication**
+- Login without page reload — DOM swap preserves SPA state
+- Draft recovery toast after login (unsaved work detected)
+- Popover module with AbortController lifecycle cleanup
+- Search + subscribe header popovers
+
+**Admin & Drafts**
+- Admin dashboard with clickable stat tiles and Edit action buttons
+- `/admin/writing` page with direct edit links to published articles
+- One-click publish from drafts list with fade animation
+- Edit link on published article pages
+
+**Compose Enhancements**
+- Draft-first compose: two buttons (Save Draft / Publish) replace checkbox
+- Full compose auto-save with localStorage failure warning
+- Quick compose 401 auto-login flow
+
+**Brand Identity**
+- Bean Brace brand: logo, favicon, Open Graph images
+
+### Changed
+
+- `fallbackErrorHTML` extracted to `internal/errors.FallbackErrorHTML` (shared between handlers and recovery middleware)
+- 3 missing templates added to `requiredTemplates` startup validation (admin_home, category, tag)
+- Upload route registers even when directory creation fails (Gin static serves existing files)
+- Frontend CSS deduplication and layout consolidation
+- Active link management consolidated in navigation module (removed duplicate from router)
+- Button hover polish: prevent blue-on-blue text
+
+### Fixed
+
+- CSRF sync after reactive auth DOM swap (popover destroy + fresh token fetch)
+- Bare `catch {}` blocks replaced with proper error logging (drafts, compose-sheet)
+- Double-invocation guard on draft card removal animation
+- `og:image` default wired correctly with deterministic meta tag ordering
+- Nav active states, header consistency, tag ordering, article footer
+
+### Security
+
+- Upload blocklist expanded to 19 types (scripts, HTML-renderable, Java archives)
+- Upload filepath containment via `filepath.Abs` + prefix check
+- Upload config validation: empty path rejected, max size enforced
+- `X-Content-Type-Options: nosniff` on all uploaded files
+- Popover AbortController cleanup prevents event listener leaks
+
+### Testing
+
+- 28 upload security tests: no-extension, case-insensitive blocking, all 19 blocked extensions
+- HandleSubmit/HandleEdit: valid, missing-slug, empty-title, frontmatter-error, write-error paths
+- refreshCSRFToken: success, cookie-missing, cookie-empty, invalid-format paths
+- injectAuthState: authenticated/unauthenticated paths
+- PublishDraft reload-failure path test
+- AdminHome, Writing, formatDuration, HumansTxt handler tests
+- UploadConfig boundary tests (exactly-at-limit, over-limit, empty-path)
+- Coverage: 52% → 58.7%
+
+### Removed
+
+- 6 unused `logo-*.png` theme assets (~78KB)
+- Dead Twitter meta comment from base.html
+- Stale draft-publishing comment from article service
+- Duplicate `updateActiveLinks` from SPA router
+
+---
+
 ## [3.2.0] - 2026-02-13
 
 Semantic HTML, SEO, admin redesign, and security hardening. Web standards compliance across the board.
