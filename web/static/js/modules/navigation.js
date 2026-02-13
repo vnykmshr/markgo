@@ -32,33 +32,6 @@ function updateActiveLinks() {
 
 export function init() {
     const navbar = document.querySelector('.navbar');
-    const navbarToggle = document.getElementById('navbar-toggle');
-    const navbarMenu = document.getElementById('navbar-menu');
-
-    // Mobile menu toggle (still works on tablet if bottom nav not present)
-    if (navbarToggle && navbarMenu) {
-        navbarToggle.addEventListener('click', () => {
-            navbarMenu.classList.toggle('active');
-            navbarToggle.classList.toggle('active');
-            navbarToggle.setAttribute('aria-expanded', navbarMenu.classList.contains('active'));
-        });
-
-        document.addEventListener('click', (event) => {
-            if (!navbar.contains(event.target)) {
-                navbarMenu.classList.remove('active');
-                navbarToggle.classList.remove('active');
-                navbarToggle.setAttribute('aria-expanded', 'false');
-            }
-        });
-
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-                navbarMenu.classList.remove('active');
-                navbarToggle.classList.remove('active');
-                navbarToggle.setAttribute('aria-expanded', 'false');
-            }
-        });
-    }
 
     // Bottom nav compose button → dispatch fab:compose
     const composeBtn = document.querySelector('.bottom-nav-compose');

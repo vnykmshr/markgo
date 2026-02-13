@@ -629,22 +629,6 @@ html {
     outline-offset: 2px;
 }
 
-.navbar-toggle {
-    display: flex;
-    flex-direction: column;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: var(--spacing-2);
-    gap: var(--spacing-1);
-}
-
-.toggle-line {
-    width: 24px;
-    height: 2px;
-    background-color: var(--color-text-primary);
-    transition: all var(--transition-fast);
-}
 
 /* ==========================================================================
    Main Content
@@ -938,10 +922,6 @@ html {
         border-radius: var(--radius-base);
     }
 
-    .navbar-toggle {
-        display: none;
-    }
-
     .navbar-brand {
         overflow: visible;
     }
@@ -1093,6 +1073,7 @@ html {
 .theme-popover {
     position: absolute;
     top: 100%;
+    left: 0;
     right: 0;
     margin-top: var(--spacing-2);
     background: var(--color-bg-primary);
@@ -1101,8 +1082,13 @@ html {
     box-shadow: var(--shadow-lg);
     z-index: var(--z-popover);
     padding: var(--spacing-4);
-    width: calc(100vw - 2 * var(--container-padding));
-    max-width: 240px;
+}
+
+@media (min-width: 481px) {
+    .theme-popover {
+        left: auto;
+        width: 320px;
+    }
 }
 
 .theme-popover[hidden] {

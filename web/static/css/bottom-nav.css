@@ -105,11 +105,13 @@
    -------------------------------------------------------------------------- */
 
 @media (max-width: 768px) {
-    .navbar-toggle {
+    .navbar-menu {
         display: none !important;
     }
 
-    .navbar-menu {
+    /* Search is in bottom nav; subscribe is in footer — hide header duplicates */
+    .search-trigger,
+    .subscribe-trigger {
         display: none !important;
     }
 

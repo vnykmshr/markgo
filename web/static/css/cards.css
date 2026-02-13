@@ -84,12 +84,14 @@
     text-decoration: none;
 }
 
-/* Thought Card */
+/* Thought Card — clickable via stretched permalink */
 .feed-card-thought {
+    position: relative;
     display: flex;
     flex-direction: row;
     padding: 0;
     overflow: hidden;
+    cursor: pointer;
 }
 
 .feed-card-accent {
@@ -112,6 +114,25 @@
 
 .thought-content p {
     margin: 0;
+}
+
+/* Permalink — stretched link covers entire thought card */
+.feed-card-permalink {
+    color: var(--color-text-muted);
+    text-decoration: none;
+}
+
+.feed-card-permalink::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+/* Elevate interactive elements above stretched link */
+.feed-card-thought .feed-tag {
+    position: relative;
+    z-index: 1;
 }
 
 /* Link Card */

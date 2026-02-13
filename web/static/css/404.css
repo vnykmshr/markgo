@@ -57,10 +57,15 @@
 }
 
 .error-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: var(--spacing-2) var(--spacing-3);
     color: var(--color-text-secondary);
     text-decoration: none;
     font-size: var(--font-size-sm);
     font-weight: 500;
+    border-radius: var(--radius-base);
     transition: color var(--transition-fast);
 }
 

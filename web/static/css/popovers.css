@@ -78,15 +78,22 @@
 .subscribe-popover {
     position: absolute;
     top: 100%;
+    left: 0;
     right: 0;
     z-index: var(--z-popover);
     margin-top: var(--spacing-2);
-    min-width: 200px;
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     padding: var(--spacing-2) 0;
+}
+
+@media (min-width: 481px) {
+    .subscribe-popover {
+        left: auto;
+        width: 320px;
+    }
 }
 
 .subscribe-popover-label {

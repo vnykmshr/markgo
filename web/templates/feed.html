@@ -68,9 +68,11 @@
             {{ end }}
         </div>
         <div class="feed-card-meta">
-            <time class="feed-card-time" datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
-                {{ relativeTime .Date }}
-            </time>
+            <a href="/writing/{{ .Slug }}" class="feed-card-permalink">
+                <time class="feed-card-time" datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
+                    {{ relativeTime .Date }}
+                </time>
+            </a>
             {{ if .Tags }}
             <div class="feed-card-tags">
                 {{ range .Tags }}
