@@ -7,14 +7,14 @@
 
         <!-- Stats -->
         <section class="admin-stats" aria-label="Content statistics">
-            <div class="admin-stat">
+            <a href="/admin/writing" class="admin-stat admin-stat-link">
                 <span class="admin-stat-value">{{ .stats.published }}</span>
                 <span class="admin-stat-label">Published</span>
-            </div>
-            <div class="admin-stat">
+            </a>
+            <a href="/admin/drafts" class="admin-stat admin-stat-link">
                 <span class="admin-stat-value">{{ .stats.drafts }}</span>
                 <span class="admin-stat-label">Drafts</span>
-            </div>
+            </a>
             <div class="admin-stat">
                 <span class="admin-stat-value">{{ .stats.tags }}</span>
                 <span class="admin-stat-label">Tags</span>
@@ -30,11 +30,12 @@
             <h2 class="admin-section-title">Actions</h2>
             <div class="admin-actions">
                 <a href="/compose" class="admin-action-link">Compose</a>
-                <a href="/admin/drafts" class="admin-action-link">Manage Drafts</a>
+                <a href="/admin/writing" class="admin-action-link">Edit</a>
+                <a href="/admin/drafts" class="admin-action-link">Drafts</a>
                 {{ if .is_dev }}
-                <button type="button" class="admin-action-btn" data-url="/admin/articles/reload" data-label="Reload Articles">Reload Articles</button>
+                <button type="button" class="admin-action-btn" data-url="/admin/articles/reload" data-label="Reload Articles">Reload</button>
                 {{ end }}
-                <button type="button" class="admin-action-btn" data-url="/admin/cache/clear" data-label="Clear Cache">Clear Cache</button>
+                <button type="button" class="admin-action-btn" data-url="/admin/cache/clear" data-label="Clear Cache">Cache</button>
             </div>
         </section>
 

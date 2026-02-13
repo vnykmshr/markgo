@@ -37,6 +37,17 @@
     margin-top: var(--spacing-1);
 }
 
+a.admin-stat-link {
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+
+a.admin-stat-link:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
 /* --------------------------------------------------------------------------
    Sections — actions, system info
    -------------------------------------------------------------------------- */
@@ -209,12 +220,14 @@
 @media (prefers-reduced-motion: reduce) {
     .admin-action-link,
     .admin-action-btn,
-    .draft-publish-btn {
+    .draft-publish-btn,
+    a.admin-stat-link {
         transition: none;
     }
 
     .admin-action-link:hover,
-    .draft-publish-btn:hover {
+    .draft-publish-btn:hover,
+    a.admin-stat-link:hover {
         transform: none;
     }
 }
