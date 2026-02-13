@@ -2,15 +2,14 @@
  * Floating Action Button — compose trigger.
  *
  * Shell module: runs once, persists across SPA navigations.
- * Shows a "+" button in the bottom-right when admin is configured.
+ * Shows a "+" button in the bottom-right when owner is authenticated.
  * Dispatches "fab:compose" custom event on click for the compose sheet.
  */
 
 let fabEl = null;
 
-function isAdminConfigured() {
-    // Admin nav items are only rendered when admin credentials are configured
-    return document.querySelector('a[href="/compose"]') !== null;
+function isAuthenticated() {
+    return document.body.dataset.authenticated === 'true';
 }
 
 function createFAB() {
@@ -54,7 +53,16 @@ function createFAB() {
 }
 
 export function init() {
-    if (!isAdminConfigured()) return;
+    if (!isAuthenticated()) {
+        // Listen for reactive auth — show FAB after login
+        document.addEventListener('auth:authenticated', () => {
+            if (!fabEl) {
+                fabEl = createFAB();
+                document.body.appendChild(fabEl);
+            }
+        }, { once: true });
+        return;
+    }
     if (fabEl) return; // already initialized
 
     fabEl = createFAB();

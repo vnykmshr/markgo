@@ -472,6 +472,14 @@ async function handleSubmit(isDraft) {
         return;
     }
 
+    // Handle non-JSON responses (401, 500) before parsing body
+    if (response.status === 401) {
+        close();
+        showToast('Please sign in to publish', 'warning');
+        document.dispatchEvent(new CustomEvent('auth:open-login'));
+        return;
+    }
+
     let data;
     try {
         data = await response.json();
@@ -490,12 +498,6 @@ async function handleSubmit(isDraft) {
         close();
         if (!isDraft) prependCard(data, content, title);
         showToast(data.message || (isDraft ? 'Saved as draft' : 'Published!'), 'success');
-    } else if (response.status === 401) {
-        // Close sheet (draft auto-saves on close), open login popover
-        close();
-        showToast('Please sign in to publish', 'warning');
-        document.dispatchEvent(new CustomEvent('auth:open-login'));
-        return;
     } else {
         showToast(data.error || 'Failed to save', 'error');
         resetButtons();
@@ -526,6 +528,13 @@ async function syncQueue() {
 }
 
 export function init() {
+    // Compose is owner-only — skip initialization for visitors
+    if (document.body.dataset.authenticated !== 'true') {
+        // Listen for reactive auth — initialize after login
+        document.addEventListener('auth:authenticated', () => init(), { once: true });
+        return;
+    }
+
     // Listen for FAB trigger
     document.addEventListener('fab:compose', open);
 

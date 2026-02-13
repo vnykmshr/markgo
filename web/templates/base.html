@@ -168,7 +168,7 @@
     {{ if eq $tpl "500" }}{{ template "500-head" . }}{{ end }}
     {{ if eq $tpl "offline" }}{{ template "offline-head" . }}{{ end }}
 </head>
-<body data-template="{{ .template | default "feed" }}" class="{{- $tpl := .template | default "feed" -}}
+<body data-template="{{ .template | default "feed" }}"{{ if .authenticated }} data-authenticated="true"{{ end }} class="{{- $tpl := .template | default "feed" -}}
     {{- if eq $tpl "articles" -}}articles-page
     {{- else if eq $tpl "article" -}}article-page
     {{- else if eq $tpl "search" -}}search-page
@@ -210,7 +210,7 @@
                         <li class="nav-item">
                             <a href="/about" class="nav-link">About</a>
                         </li>
-                        {{ if and (ne .config.Admin.Username "") (ne .config.Admin.Password "") }}
+                        {{ if .authenticated }}
                         <li class="nav-item">
                             <a href="/compose" class="nav-link">Compose</a>
                         </li>
@@ -386,11 +386,16 @@
             <svg width="22" height="22" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg>
             <span>Writing</span>
         </a>
-        {{ if and (ne .config.Admin.Username "") (ne .config.Admin.Password "") }}
+        {{ if .authenticated }}
         <button class="bottom-nav-item bottom-nav-compose" data-nav="compose" aria-label="New post">
             <span class="bottom-nav-icon">
                 <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </span>
+        </button>
+        {{ else }}
+        <button class="bottom-nav-item bottom-nav-subscribe subscribe-trigger" data-nav="subscribe" aria-label="Subscribe" aria-expanded="false" aria-haspopup="true">
+            <svg width="22" height="22" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.429 2.776c7.729 0 10.367 2.714 10.367 10.368H11.07c0-5.585-1.909-7.494-7.494-7.494V2.776Z"/><path d="M3.429 6.205c4.373 0 6.938 2.565 6.938 6.938h-2.727c0-2.31-1.9-4.21-4.21-4.21V6.205Z"/><circle cx="4.571" cy="11.429" r="1.143"/></svg>
+            <span>Subscribe</span>
         </button>
         {{ end }}
         <a href="/search" class="bottom-nav-item" data-nav="search">

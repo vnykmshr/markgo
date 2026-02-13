@@ -381,12 +381,8 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 		router.GET("/logout", h.Auth.HandleLogout)
 	}
 
-	// Compose routes — public GET (anyone can draft), protected POST (auth required to publish)
+	// Compose routes — all gated behind auth (owner-only feature)
 	if cfg.Admin.Username != "" && cfg.Admin.Password != "" && h.Compose != nil {
-		// Public compose page (CSRF for form token, no auth required)
-		router.GET("/compose", middleware.NoCache(), middleware.CSRF(secureCookie), h.Compose.ShowCompose)
-
-		// Protected compose actions (auth required)
 		composeGroup := router.Group("/compose")
 		composeGroup.Use(
 			middleware.RecoveryWithErrorHandler(logger),
@@ -394,6 +390,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 			middleware.NoCache(),
 			middleware.CSRF(secureCookie),
 		)
+		composeGroup.GET("", h.Compose.ShowCompose)
 		composeGroup.POST("", h.Compose.HandleSubmit)
 		composeGroup.GET("/edit/:slug", h.Compose.ShowEdit)
 		composeGroup.POST("/edit/:slug", h.Compose.HandleEdit)

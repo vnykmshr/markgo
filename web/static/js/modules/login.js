@@ -52,8 +52,12 @@ export function init() {
                             // Reactive auth — swap UI in place
                             const swapped = swapToAuthenticatedUI();
                             if (swapped !== false) {
+                                document.body.dataset.authenticated = 'true';
+                                swapBottomNavToCompose();
+                                addHeaderComposeLink();
                                 syncCSRFAfterLogin();
                                 document.dispatchEvent(new CustomEvent('auth:statechange', { detail: { authenticated: true } }));
+                                document.dispatchEvent(new CustomEvent('auth:authenticated'));
                                 checkDraftRecovery();
                             }
                         } else {
@@ -213,6 +217,68 @@ function swapToAuthenticatedUI() {
     // Initialize popover behavior on new elements
     adminPopoverCtrl = initPopover('admin-popover', '.admin-trigger');
     return true;
+}
+
+/**
+ * Swap bottom nav subscribe button to compose button after login.
+ */
+function swapBottomNavToCompose() {
+    const subscribeBtn = document.querySelector('.bottom-nav-subscribe');
+    if (!subscribeBtn) return;
+
+    const composeBtn = document.createElement('button');
+    composeBtn.className = 'bottom-nav-item bottom-nav-compose';
+    composeBtn.dataset.nav = 'compose';
+    composeBtn.setAttribute('aria-label', 'New post');
+
+    const icon = document.createElement('span');
+    icon.className = 'bottom-nav-icon';
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '20');
+    svg.setAttribute('height', '20');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2.5');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+
+    const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line1.setAttribute('x1', '12'); line1.setAttribute('y1', '5');
+    line1.setAttribute('x2', '12'); line1.setAttribute('y2', '19');
+    const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line2.setAttribute('x1', '5'); line2.setAttribute('y1', '12');
+    line2.setAttribute('x2', '19'); line2.setAttribute('y2', '12');
+    svg.appendChild(line1);
+    svg.appendChild(line2);
+    icon.appendChild(svg);
+    composeBtn.appendChild(icon);
+
+    composeBtn.addEventListener('click', () => {
+        document.dispatchEvent(new CustomEvent('fab:compose'));
+    });
+
+    subscribeBtn.replaceWith(composeBtn);
+}
+
+/**
+ * Add Compose link to desktop header nav after login.
+ */
+function addHeaderComposeLink() {
+    const navList = document.querySelector('.navbar-nav');
+    if (!navList) return;
+    // Don't add if already present
+    if (navList.querySelector('a[href="/compose"]')) return;
+
+    const li = document.createElement('li');
+    li.className = 'nav-item';
+    const a = document.createElement('a');
+    a.href = '/compose';
+    a.className = 'nav-link';
+    a.textContent = 'Compose';
+    li.appendChild(a);
+    navList.appendChild(li);
 }
 
 /**

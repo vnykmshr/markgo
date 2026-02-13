@@ -43,6 +43,9 @@ export function init() {
         });
     }
 
+    // Bottom nav subscribe button — also opens popover (separate from header trigger)
+    bindBottomNavSubscribe();
+
     // Footer "Subscribe" link → open popover
     const footerSubscribe = document.querySelector('.footer-subscribe');
     if (footerSubscribe && popoverCtrl) {
@@ -57,5 +60,21 @@ export function init() {
     // Close on SPA navigation
     document.addEventListener('router:navigate-start', () => {
         if (popoverCtrl) popoverCtrl.close();
+    });
+}
+
+/**
+ * Bind the bottom nav subscribe button to open the header popover.
+ * Separate from popover.js because bottom-nav trigger is outside the navbar container.
+ */
+function bindBottomNavSubscribe() {
+    const btn = document.querySelector('.bottom-nav-subscribe');
+    if (!btn || !popoverCtrl) return;
+
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        popoverCtrl.open();
+        // Scroll to top so the popover is visible
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 }
