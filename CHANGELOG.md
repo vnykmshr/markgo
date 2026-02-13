@@ -9,6 +9,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.4.0] - 2026-02-13
+
+UX cohesion, responsive hardening, and auth flow resilience across the SPA.
+
+### Added
+
+- Context-aware UI: compose gated behind auth, visitors see subscribe button in bottom nav
+- Subscribe popover for non-authenticated users (header + bottom nav trigger)
+- SPA router syncs `data-authenticated` across navigations, dispatches `auth:statechange` on transitions
+- Login form event delegation — SPA-swapped auth gate forms now work without full reload
+- Offline queue CSRF sentinel (`failed: -1`) distinguishes "no token" from "nothing to drain"
+- Design language documentation for responsive cohesion patterns (`docs/design.md`)
+
+### Changed
+
+- Header actions consolidated: search + subscribe hidden on mobile (available in bottom nav/footer)
+- Thought cards: accent bar, improved touch targets, better visual hierarchy
+- Popover sizing standardized across login, search, subscribe, and theme popovers
+- Upload status hint moved below controls row as fine-print text (better mobile readability)
+- Bottom nav subscribe button scrolls before opening popover (matches footer pattern)
+- FAB keyboard shortcut (Cmd/Ctrl+N) now registers on both initial auth and reactive auth paths
+- Compose sheet uses `initialized` guard to prevent double listener registration on reactive auth
+- Active link highlighting consolidated in navigation module (removed duplicate from router)
+
+### Fixed
+
+- CSRF sync after reactive login: awaited before dispatching `auth:authenticated` (closes race window)
+- CSRF sync failure now surfaces actionable warning toast instead of silent swallow
+- Session expiry fallback changed from `/login` (404) to `window.location.reload()`
+- `drainQueue()` guards `openDB()` with try-catch, nil-guards `db.close()` in finally block
+- `syncQueue()` wraps `getQueueCount()` in try-catch for IndexedDB unavailability
+- Empty catch blocks replaced with `console.debug`/`console.warn` logging (navigation, offline-queue)
+- Per-item queue drain errors now logged before stopping
+
+---
+
 ## [3.3.0] - 2026-02-13
 
 Article asset uploads, reactive auth, brand identity, and security hardening across the board.
