@@ -376,6 +376,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 			middleware.NoCache(),
 		)
 		adminGroup.GET("", h.Admin.AdminHome)
+		adminGroup.GET("/writing", h.Admin.Writing)
 		adminGroup.GET("/drafts", middleware.CSRF(secureCookie), h.Admin.Drafts)
 		adminGroup.POST("/cache/clear", h.ClearCache)
 		adminGroup.GET("/stats", h.Admin.Stats)
@@ -445,6 +446,7 @@ func setupTemplates(router *gin.Engine, templateService *services.TemplateServic
 		"base.html", "feed.html", "compose.html", "article.html", "articles.html",
 		"404.html", "500.html", "offline.html", "about.html", "search.html", "tags.html", "categories.html",
 		"drafts.html",
+		"admin_writing.html",
 	}
 
 	for _, tmplName := range requiredTemplates {

@@ -160,7 +160,7 @@ function swapToAuthenticatedUI() {
     dashLink.textContent = 'Dashboard';
 
     const writingLink = document.createElement('a');
-    writingLink.href = '/writing';
+    writingLink.href = '/admin/writing';
     writingLink.className = 'admin-popover-link';
     writingLink.textContent = 'Writing';
 

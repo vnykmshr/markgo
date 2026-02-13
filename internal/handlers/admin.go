@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/vnykmshr/markgo/internal/models"
 	"github.com/vnykmshr/markgo/internal/services"
 )
 
@@ -249,6 +250,32 @@ func (h *AdminHandler) ReloadArticles(c *gin.Context) {
 		"message":   "Articles reloaded successfully",
 		"timestamp": time.Now().Unix(),
 	})
+}
+
+// Writing handles the admin writing page — all published content with direct edit links
+func (h *AdminHandler) Writing(c *gin.Context) {
+	articles := h.articleService.GetAllArticles()
+
+	if h.shouldReturnJSON(c) {
+		listings := make([]*models.ArticleList, len(articles))
+		for i, a := range articles {
+			listings[i] = a.ToListView()
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"articles":      listings,
+			"article_count": len(articles),
+			"timestamp":     time.Now().Unix(),
+		})
+		return
+	}
+
+	data := h.buildBaseTemplateData("Writing - " + h.config.Blog.Title)
+	data["description"] = "Manage published content"
+	data["template"] = "admin_writing"
+	data["articles"] = articles
+	data["article_count"] = len(articles)
+
+	h.renderHTML(c, http.StatusOK, "base.html", data)
 }
 
 // Drafts handles the draft management page

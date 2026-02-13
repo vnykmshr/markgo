@@ -191,6 +191,7 @@
     {{ if eq $tpl "category" }}{{ template "category-head" . }}{{ end }}
     {{ if eq $tpl "admin_home" }}{{ template "admin_home-head" . }}{{ end }}
     {{ if eq $tpl "drafts" }}{{ template "drafts-head" . }}{{ end }}
+    {{ if eq $tpl "admin_writing" }}{{ template "admin_writing-head" . }}{{ end }}
     {{ if eq $tpl "404" }}{{ template "404-head" . }}{{ end }}
     {{ if eq $tpl "500" }}{{ template "500-head" . }}{{ end }}
     {{ if eq $tpl "offline" }}{{ template "offline-head" . }}{{ end }}
@@ -207,6 +208,7 @@
     {{- else if eq $tpl "feed" -}}feed-page
     {{- else if eq $tpl "compose" -}}compose-page
     {{- else if eq $tpl "admin_home" -}}admin-page
+    {{- else if eq $tpl "admin_writing" -}}admin-page
     {{- else if eq $tpl "drafts" -}}drafts-page
     {{- else if eq $tpl "404" -}}error-page
     {{- else if eq $tpl "500" -}}error-page
@@ -287,7 +289,7 @@
                 <div class="admin-popover" id="admin-popover" hidden>
                     <nav class="admin-popover-nav" aria-label="Admin">
                         <a href="/admin" class="admin-popover-link">Dashboard</a>
-                        <a href="/writing" class="admin-popover-link">Writing</a>
+                        <a href="/admin/writing" class="admin-popover-link">Writing</a>
                         <a href="/admin/drafts" class="admin-popover-link">Drafts</a>
                     </nav>
                     <div class="admin-popover-divider"></div>
@@ -397,6 +399,7 @@
         {{ if eq $tpl "category" }}{{ template "category-content" . }}{{ end }}
         {{ if eq $tpl "admin_home" }}{{ template "admin_home-content" . }}{{ end }}
         {{ if eq $tpl "drafts" }}{{ template "drafts-content" . }}{{ end }}
+        {{ if eq $tpl "admin_writing" }}{{ template "admin_writing-content" . }}{{ end }}
         {{ if eq $tpl "404" }}{{ template "404-content" . }}{{ end }}
         {{ if eq $tpl "500" }}{{ template "500-content" . }}{{ end }}
         {{ if eq $tpl "offline" }}{{ template "offline-content" . }}{{ end }}
