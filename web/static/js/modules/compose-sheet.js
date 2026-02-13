@@ -16,7 +16,8 @@ const SAVE_DELAY = 2000;
 let overlay = null;
 let textarea = null;
 let titleInput = null;
-let publishBtn = null;
+let saveDraftBtn = null;
+let publishLink = null;
 let draftNotice = null;
 let isOpen = false;
 let isSubmitting = false;
@@ -204,13 +205,24 @@ function buildOverlay() {
 
     titleInput.addEventListener('input', scheduleSave);
 
-    publishBtn = document.createElement('button');
-    publishBtn.className = 'compose-sheet-publish';
-    publishBtn.textContent = 'Publish';
-    publishBtn.addEventListener('click', handlePublish);
+    const actions = document.createElement('div');
+    actions.className = 'compose-sheet-actions';
+
+    saveDraftBtn = document.createElement('button');
+    saveDraftBtn.className = 'compose-sheet-save-draft';
+    saveDraftBtn.textContent = 'Save Draft';
+    saveDraftBtn.addEventListener('click', () => handleSubmit(true));
+
+    publishLink = document.createElement('button');
+    publishLink.className = 'compose-sheet-publish-link';
+    publishLink.textContent = 'Publish';
+    publishLink.addEventListener('click', () => handleSubmit(false));
+
+    actions.appendChild(saveDraftBtn);
+    actions.appendChild(publishLink);
 
     footer.appendChild(wordCount);
-    footer.appendChild(publishBtn);
+    footer.appendChild(actions);
 
     // Assemble
     sheet.appendChild(header);
@@ -316,9 +328,8 @@ function close() {
         }
     }
 
-    // Reset publish button
-    publishBtn.disabled = false;
-    publishBtn.textContent = 'Publish';
+    // Reset buttons
+    resetButtons();
     isSubmitting = false;
 
     // Save captured draft after form reset
@@ -398,7 +409,7 @@ function prependCard(data, content, title) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-async function handlePublish() {
+async function handleSubmit(isDraft) {
     if (isSubmitting) return;
 
     const content = textarea.value.trim();
@@ -415,14 +426,19 @@ async function handlePublish() {
     }
 
     isSubmitting = true;
-    publishBtn.disabled = true;
-    publishBtn.textContent = 'Publishing\u2026';
+    saveDraftBtn.disabled = true;
+    publishLink.disabled = true;
+    if (isDraft) {
+        saveDraftBtn.textContent = 'Saving\u2026';
+    } else {
+        publishLink.textContent = 'Publishing\u2026';
+    }
 
     const titleGroup = overlay.querySelector('.compose-sheet-title-group');
     const hasTitle = titleGroup?.classList.contains('expanded');
     const title = hasTitle ? titleInput.value.trim() : '';
 
-    const body = { content };
+    const body = { content, draft: isDraft };
     if (title) body.title = title;
 
     let response;
@@ -445,7 +461,7 @@ async function handlePublish() {
         } catch {
             showToast('Network error — try again', 'error');
         }
-        resetPublishBtn();
+        resetButtons();
         return;
     }
 
@@ -454,28 +470,30 @@ async function handlePublish() {
         data = await response.json();
     } catch {
         showToast('Server error — please try again', 'error');
-        resetPublishBtn();
+        resetButtons();
         return;
     }
 
     if (response.ok) {
         clearDraft();
         close();
-        prependCard(data, content, title);
-        showToast(data.message || 'Published!', 'success');
+        if (!isDraft) prependCard(data, content, title);
+        showToast(data.message || (isDraft ? 'Saved as draft' : 'Published!'), 'success');
     } else if (response.status === 401) {
         showToast('Not authenticated — please sign in', 'error');
-        resetPublishBtn();
+        resetButtons();
     } else {
-        showToast(data.error || 'Failed to publish', 'error');
-        resetPublishBtn();
+        showToast(data.error || 'Failed to save', 'error');
+        resetButtons();
     }
 }
 
-function resetPublishBtn() {
+function resetButtons() {
     isSubmitting = false;
-    publishBtn.disabled = false;
-    publishBtn.textContent = 'Publish';
+    saveDraftBtn.disabled = false;
+    publishLink.disabled = false;
+    saveDraftBtn.textContent = 'Save Draft';
+    publishLink.textContent = 'Publish';
 }
 
 async function syncQueue() {

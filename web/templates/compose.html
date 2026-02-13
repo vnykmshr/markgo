@@ -102,35 +102,18 @@
                 >
             </div>
 
-            <div class="compose-field compose-field-inline">
-                <label class="compose-checkbox-label" id="draft-label">
-                    <input type="checkbox" name="draft" value="on" class="compose-checkbox" id="draft-checkbox">
-                    Save as draft
-                </label>
-            </div>
-
             <div class="compose-actions">
+                <button type="submit" name="draft" value="on" class="compose-submit">Save Draft</button>
+                <button type="submit" name="draft" value="" class="compose-submit-secondary">{{ if .editing }}Update{{ else }}Publish{{ end }}</button>
                 {{ if .editing }}
-                <button type="submit" class="compose-submit">Update</button>
                 <a href="/writing/{{ .slug }}" class="compose-cancel">Cancel</a>
                 {{ else }}
-                <button type="submit" class="compose-submit">Publish</button>
                 <a href="/" class="compose-cancel">Cancel</a>
                 {{ end }}
             </div>
         </form>
     </div>
 </div>
-{{ if .editing }}{{ if .input }}
-<script>
-    (function() {
-        var isDraft = {{ .input.Draft }};
-        if (isDraft) {
-            document.getElementById('draft-checkbox').checked = true;
-        }
-    })();
-</script>
-{{ end }}{{ end }}
 {{ end }}
 
 {{ define "compose-head" }}

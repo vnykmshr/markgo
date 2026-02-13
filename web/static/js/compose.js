@@ -3,6 +3,9 @@
  *
  * GET /compose is public. POST /compose requires auth — on 401, shows a toast
  * and opens the login popover. After login, the page reloads.
+ *
+ * Draft-first: "Save Draft" is primary CTA, "Publish/Update" is secondary.
+ * Uses e.submitter + FormData to distinguish which button was clicked.
  */
 
 import { showToast } from './modules/toast.js';
@@ -19,9 +22,8 @@ export function init() {
     const previewContent = document.querySelector('.compose-preview-content');
     const csrfInput = document.querySelector('input[name="_csrf"]');
     const form = document.querySelector('.compose-form');
-    const submitBtn = document.querySelector('.compose-submit');
-    const draftCheckbox = document.getElementById('draft-checkbox');
-    const isEditing = form?.action?.includes('/compose/edit/');
+    const saveDraftBtn = document.querySelector('.compose-submit');
+    const publishBtn = document.querySelector('.compose-submit-secondary');
 
     if (!textarea || !previewBtn || !previewPanel || !previewContent) return;
 
@@ -96,57 +98,50 @@ export function init() {
     }, { signal });
 
     // =========================================================================
-    // Dynamic CTA text based on draft checkbox
-    // =========================================================================
-
-    function updateCTA() {
-        if (!submitBtn || !draftCheckbox) return;
-        if (draftCheckbox.checked) {
-            submitBtn.textContent = 'Save Draft';
-        } else {
-            submitBtn.textContent = isEditing ? 'Update' : 'Publish';
-        }
-    }
-
-    if (draftCheckbox) {
-        draftCheckbox.addEventListener('change', updateCTA, { signal });
-        // Set initial state (handles pre-checked drafts when editing)
-        updateCTA();
-    }
-
-    // =========================================================================
     // Fetch-based form submit with 401 handling
     // =========================================================================
 
+    function resetButtons() {
+        if (saveDraftBtn) {
+            saveDraftBtn.disabled = false;
+            saveDraftBtn.textContent = 'Save Draft';
+        }
+        if (publishBtn) {
+            publishBtn.disabled = false;
+            publishBtn.textContent = publishBtn.dataset.label || 'Publish';
+        }
+    }
+
     if (form) {
+        // Store original label for the publish button (Update vs Publish)
+        if (publishBtn) publishBtn.dataset.label = publishBtn.textContent;
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Publishing\u2026';
+            const submitter = e.submitter;
+            const isDraft = submitter?.value === 'on';
+
+            // Disable both buttons during submit
+            if (saveDraftBtn) saveDraftBtn.disabled = true;
+            if (publishBtn) publishBtn.disabled = true;
+
+            if (submitter) {
+                submitter.textContent = isDraft ? 'Saving\u2026' : 'Publishing\u2026';
             }
 
             try {
                 const response = await fetch(form.action, {
                     method: 'POST',
-                    body: new FormData(form),
+                    body: new FormData(form, submitter),
                     credentials: 'same-origin',
                     headers: { Accept: 'text/html' },
                 });
 
                 if (response.status === 401 || response.status === 403) {
-                    const loginTrigger = document.querySelector('.login-trigger');
-                    if (loginTrigger) {
-                        showToast('Please sign in to publish', 'warning');
-                        loginTrigger.click();
-                    } else {
-                        showToast('Session expired — please refresh the page to sign in', 'error');
-                    }
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        updateCTA();
-                    }
+                    showToast('Please sign in to publish', 'warning');
+                    document.dispatchEvent(new CustomEvent('auth:open-login'));
+                    resetButtons();
                     return;
                 }
 
@@ -156,27 +151,18 @@ export function init() {
                 }
 
                 if (response.ok) {
-                    // Server returned HTML (success page or redirect)
                     window.location.href = response.url;
                 } else {
-                    // Extract error message from server response and show inline.
-                    // Avoids DOM swap which would destroy event listeners on the form.
                     const html = await response.text();
                     const doc = new DOMParser().parseFromString(html, 'text/html');
                     const serverError = doc.querySelector('.compose-error p');
                     const msg = serverError?.textContent || 'Something went wrong. Please try again.';
                     showToast(msg, 'error');
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        updateCTA();
-                    }
+                    resetButtons();
                 }
             } catch {
                 showToast('Network error — please try again', 'error');
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    updateCTA();
-                }
+                resetButtons();
             }
         }, { signal });
     }

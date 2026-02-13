@@ -218,7 +218,14 @@
     text-transform: capitalize;
 }
 
-.compose-sheet-publish {
+.compose-sheet-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--spacing-1);
+}
+
+.compose-sheet-save-draft {
     padding: var(--spacing-2) var(--spacing-5);
     font-family: var(--font-family-sans);
     font-size: var(--font-size-sm);
@@ -231,11 +238,30 @@
     transition: background-color var(--transition-fast);
 }
 
-.compose-sheet-publish:hover {
+.compose-sheet-save-draft:hover {
     background-color: var(--color-primary-dark);
 }
 
-.compose-sheet-publish:disabled {
+.compose-sheet-save-draft:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.compose-sheet-publish-link {
+    padding: var(--spacing-1) var(--spacing-2);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.compose-sheet-publish-link:hover {
+    color: var(--color-text-primary);
+}
+
+.compose-sheet-publish-link:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
@@ -300,7 +326,7 @@
         animation-duration: 0.01ms !important;
     }
 
-    .compose-sheet-publish {
+    .compose-sheet-save-draft {
         transition: none;
     }
 }

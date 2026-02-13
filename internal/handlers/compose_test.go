@@ -396,12 +396,13 @@ func TestQuickPublish(t *testing.T) {
 
 		assert.Equal(t, http.StatusCreated, w.Code)
 
-		var resp map[string]string
+		var resp map[string]any
 		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 		assert.NotEmpty(t, resp["slug"])
 		assert.Contains(t, resp["url"], "/writing/")
 		assert.Equal(t, "thought", resp["type"])
 		assert.Equal(t, "Published", resp["message"])
+		assert.Equal(t, false, resp["draft"])
 	})
 
 	t.Run("article — has title", func(t *testing.T) {
@@ -418,7 +419,7 @@ func TestQuickPublish(t *testing.T) {
 
 		assert.Equal(t, http.StatusCreated, w.Code)
 
-		var resp map[string]string
+		var resp map[string]any
 		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 		assert.Equal(t, "my-article", resp["slug"])
 		assert.Equal(t, "/writing/my-article", resp["url"])
@@ -439,7 +440,7 @@ func TestQuickPublish(t *testing.T) {
 
 		assert.Equal(t, http.StatusCreated, w.Code)
 
-		var resp map[string]string
+		var resp map[string]any
 		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 		assert.Equal(t, "link", resp["type"])
 	})
@@ -460,7 +461,7 @@ func TestQuickPublish(t *testing.T) {
 
 		assert.Equal(t, http.StatusCreated, w.Code)
 
-		var resp map[string]string
+		var resp map[string]any
 		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 		assert.Equal(t, "article", resp["type"])
 	})

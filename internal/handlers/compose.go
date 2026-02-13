@@ -317,11 +317,17 @@ func (h *ComposeHandler) HandleQuickPublish(c *gin.Context) {
 		postType = "thought"
 	}
 
+	message := "Published"
+	if input.Draft {
+		message = "Saved as draft"
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
 		"slug":    slug,
 		"url":     "/writing/" + slug,
 		"type":    postType,
-		"message": "Published",
+		"draft":   input.Draft,
+		"message": message,
 	})
 }
 
