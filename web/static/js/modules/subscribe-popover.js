@@ -1,0 +1,56 @@
+/**
+ * Subscribe Popover — header RSS/feed options.
+ *
+ * Shell module: persists across SPA navigations.
+ * Copy buttons use Clipboard API for feed URLs.
+ * Footer "Subscribe" link intercepted to open popover.
+ */
+
+import { initPopover } from './popover.js';
+import { showToast } from './toast.js';
+
+let popoverCtrl = null;
+
+function copyToClipboard(text) {
+    return navigator.clipboard.writeText(text).then(() => {
+        showToast('URL copied!', 'success');
+    }).catch(() => {
+        showToast('Copy failed — try manually', 'error');
+    });
+}
+
+export function init() {
+    popoverCtrl = initPopover('subscribe-popover', '.subscribe-trigger');
+
+    // Copy buttons
+    const rssBtn = document.getElementById('copy-rss-url');
+    const jsonBtn = document.getElementById('copy-json-url');
+
+    if (rssBtn) {
+        rssBtn.addEventListener('click', () => {
+            copyToClipboard(window.location.origin + '/feed.xml');
+        });
+    }
+
+    if (jsonBtn) {
+        jsonBtn.addEventListener('click', () => {
+            copyToClipboard(window.location.origin + '/feed.json');
+        });
+    }
+
+    // Footer "Subscribe" link → open popover
+    const footerSubscribe = document.querySelector('.footer-subscribe');
+    if (footerSubscribe && popoverCtrl) {
+        footerSubscribe.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Small delay so scroll completes before popover opens
+            setTimeout(() => popoverCtrl.open(), 300);
+        });
+    }
+
+    // Close on SPA navigation
+    document.addEventListener('router:navigate-start', () => {
+        if (popoverCtrl) popoverCtrl.close();
+    });
+}
