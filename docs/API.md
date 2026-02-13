@@ -77,7 +77,8 @@ Require authentication (soft auth: unauthenticated GET shows login popover, unau
 | GET | `/compose/edit/:slug` | Edit form pre-filled with existing article. |
 | POST | `/compose/edit/:slug` | Update existing article. Atomic write (temp + rename). |
 | POST | `/compose/preview` | Render markdown to HTML. Returns HTML fragment. |
-| POST | `/compose/upload` | Upload image. Content type detected via `http.DetectContentType`. Returns JSON with URL. |
+| POST | `/compose/upload/:slug` | Upload file to slug-scoped directory. Extension blocklist validates type. Returns JSON: url, markdown, filename |
+| POST | `/compose/publish/:slug` | Publish a draft article. Returns JSON with url and message |
 | POST | `/compose/quick` | Quick capture API. Returns JSON: `{ slug, url, type }`. |
 
 ---
@@ -90,6 +91,7 @@ Require authentication (soft auth). NoCache middleware.
 |--------|------|-------------|
 | GET | `/admin` | Admin dashboard. |
 | GET | `/admin/drafts` | List all draft articles with edit links. |
+| GET | `/admin/writing` | Published content list with edit links. |
 | GET | `/admin/stats` | Site statistics (JSON). |
 | GET | `/metrics` | Performance metrics (JSON). |
 | POST | `/admin/cache/clear` | Clear article cache. |

@@ -38,6 +38,13 @@ Everything else has sensible defaults for development.
 | `STATIC_PATH` | *(empty)* | Static assets directory. Optional — falls back to embedded assets if unset or missing. |
 | `TEMPLATES_PATH` | *(empty)* | HTML templates directory. Optional — falls back to embedded templates if unset or missing. |
 
+## Upload
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `UPLOAD_PATH` | `./uploads` | Directory for slug-scoped file uploads. Created at startup if missing. |
+| `UPLOAD_MAX_SIZE` | `10485760` | Maximum upload file size in bytes (default 10MB, max 100MB). |
+
 ## Blog
 
 | Variable | Default | Description |

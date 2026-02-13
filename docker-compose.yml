@@ -23,6 +23,7 @@ services:
     volumes:
       - ./articles:/articles:ro
       - ./web:/web:ro
+      - ./uploads:/uploads
       - logs:/var/log/markgo
     restart: unless-stopped
     healthcheck:

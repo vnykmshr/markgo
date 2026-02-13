@@ -1,6 +1,6 @@
 # Architecture
 
-> Last revised: February 2026 (v3.1)
+> Last revised: February 2026 (v3.3)
 
 ---
 
@@ -46,8 +46,8 @@ Eleven handler types, each focused on one concern. All share a `BaseHandler` tha
 | SyndicationHandler | `GET /feed.xml`, `GET /feed.json`, `GET /sitemap.xml`, `GET /robots.txt` | RSS, JSON Feed, sitemap, robots |
 | HealthHandler | `GET /health`, `GET /manifest.json`, `GET /offline` | Health check, PWA manifest, offline page |
 | AuthHandler | `GET/POST /login`, `GET /logout` | Session-based login/logout |
-| ComposeHandler | `GET/POST /compose`, `GET/POST /compose/edit/:slug`, `POST /compose/preview`, `POST /compose/upload`, `POST /compose/quick` | Content creation, editing, preview, image upload, quick capture |
-| AdminHandler | `GET /admin`, `GET /admin/drafts`, `GET /admin/stats`, `POST /admin/cache/clear`, `POST /admin/articles/reload`, `GET /metrics` | Dashboard, drafts, stats, cache management |
+| ComposeHandler | `GET/POST /compose`, `GET/POST /compose/edit/:slug`, `POST /compose/preview`, `POST /compose/upload/:slug`, `POST /compose/publish/:slug`, `POST /compose/quick` | Content creation, editing, preview, file upload, publish, quick capture |
+| AdminHandler | `GET /admin`, `GET /admin/drafts`, `GET /admin/writing`, `GET /admin/stats`, `POST /admin/cache/clear`, `POST /admin/articles/reload`, `GET /metrics` | Dashboard, drafts, published content, stats, cache management |
 
 Auth and Compose handlers are only registered when admin credentials are configured. Debug and pprof routes are only registered in development.
 
@@ -123,9 +123,9 @@ No build step. Vanilla ES modules loaded via `<script type="module">`.
 
 | Type | Lifecycle | Examples |
 |------|-----------|---------|
-| Shell modules | Load once at startup | router, navigation, theme, scroll, login, toast, fab, compose-sheet, search-popover, subscribe-popover |
+| Shell modules | Load once at startup | router, navigation, theme, scroll, login, toast, fab, compose-sheet, popover, search-popover, subscribe-popover |
 | Content modules | Re-run after each page swap | highlight, lazy, clipboard |
-| Page modules | Load/unload per template | search-page, contact, compose, admin |
+| Page modules | Load/unload per template | search-page, contact, compose, admin, drafts |
 
 Page modules are dynamically imported based on `data-template` attribute. Each exports `init()` and optionally `destroy()`.
 
@@ -159,7 +159,7 @@ All CSS loaded unconditionally for SPA (scoped by body class). Total: ~3KB gzipp
 
 Go `html/template` with a base layout. Template name drives body class, conditional CSS, and head/content blocks via `$tpl := .template`.
 
-16 templates total. Required templates validated at startup in `setupTemplates()`.
+17 templates total. Required templates validated at startup in `setupTemplates()`.
 
 ---
 
@@ -203,11 +203,11 @@ markgo/
 │   └── constants/               # Build-time ldflags (version, commit)
 ├── web/
 │   ├── static/
-│   │   ├── css/                 # 21 CSS files + 3 themes, mobile-first tokens
+│   │   ├── css/                 # 20 CSS files + 1 theme, mobile-first tokens
 │   │   ├── js/                  # ES modules: app.js + modules/ + page modules
 │   │   ├── sw.js                # Service Worker
 │   │   └── img/                 # Favicons, PWA icons
-│   └── templates/               # 16 Go HTML templates
+│   └── templates/               # 17 Go HTML templates
 ├── articles/                    # Markdown files (the content)
 ├── deployments/                 # Dockerfile, docker-compose, systemd unit
 └── docs/                        # This documentation

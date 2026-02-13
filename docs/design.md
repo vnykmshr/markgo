@@ -168,7 +168,7 @@ New themes must only set `--theme-*` variables — never override component sele
 
 **Progressive enhancement** — Theme toggle, bottom navigation, compose sheet, and code-block copy buttons are JavaScript features. Without JS, you get system-preference theming, a nav bar with links, and fully functional browsing. Nothing breaks — features degrade.
 
-**Mobile-native UX** — Bottom navigation (5-item tab bar) replaces the header nav on mobile. Full-screen search overlay slides up from the bottom nav. Visual viewport handlers reposition overlays above the iOS keyboard. Dynamic `theme-color` meta tag matches the page background. The app should feel like it belongs on the home screen, not in a browser tab.
+**Mobile-native UX** — Bottom navigation (5-item tab bar) replaces the header nav on mobile. Search via header popover (Cmd/Ctrl+K shortcut) or dedicated /search page. Visual viewport handlers reposition overlays above the iOS keyboard. Dynamic `theme-color` meta tag matches the page background. The app should feel like it belongs on the home screen, not in a browser tab.
 
 **Quick capture** — A floating action button (FAB) triggers a compose sheet overlay. On mobile: bottom sheet sliding up. On desktop: centered modal. Type content, hit Publish, done. Auto-save drafts to localStorage with 2-second debounce and recovery on re-open. Keyboard shortcut: Cmd/Ctrl+N. The goal: under 5 seconds from thought to published.
 

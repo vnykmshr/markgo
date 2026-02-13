@@ -127,6 +127,15 @@ ssh server '/opt/markgo/markgo serve'
 
 To customize templates or CSS, create `web/templates/` and `web/static/` directories on the server. Filesystem paths take precedence over embedded assets.
 
+### Upload Storage
+
+When compose upload is enabled, files are stored in `UPLOAD_PATH` (default `./uploads`) in slug-scoped subdirectories. Ensure this directory:
+- Is writable by the markgo process
+- Persists across container restarts (mount as a Docker volume)
+- Is included in backup procedures
+
+For large file uploads, consider increasing `SERVER_WRITE_TIMEOUT` (default 15s).
+
 ### SSL with Let's Encrypt
 
 ```bash
