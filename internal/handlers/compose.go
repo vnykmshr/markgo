@@ -331,6 +331,48 @@ func (h *ComposeHandler) HandleQuickPublish(c *gin.Context) {
 	})
 }
 
+// PublishDraft publishes a draft article by setting draft=false.
+// JSON endpoint for fetch-based publish from the drafts list.
+func (h *ComposeHandler) PublishDraft(c *gin.Context) {
+	slug := c.Param("slug")
+	if !validSlug.MatchString(slug) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid slug"})
+		return
+	}
+
+	input, err := h.composeService.LoadArticle(slug)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Article not found"})
+		return
+	}
+
+	if !input.Draft {
+		c.JSON(http.StatusOK, gin.H{
+			"slug":    slug,
+			"url":     "/writing/" + slug,
+			"message": "Already published",
+		})
+		return
+	}
+
+	input.Draft = false
+	if err := h.composeService.UpdateArticle(slug, input); err != nil {
+		h.logger.Error("Failed to publish draft", "error", err, "slug", slug)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to publish draft"})
+		return
+	}
+
+	if err := h.articleService.ReloadArticles(); err != nil {
+		h.logger.Error("Failed to reload articles after publish", "error", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"slug":    slug,
+		"url":     "/writing/" + slug,
+		"message": "Published",
+	})
+}
+
 // wordCount returns an approximate word count by splitting on whitespace.
 func wordCount(s string) int {
 	return len(strings.Fields(s))

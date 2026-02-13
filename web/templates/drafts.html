@@ -18,6 +18,7 @@
                         {{ template "card-article" . }}
                     {{ end }}
                     <div class="draft-actions">
+                        <button type="button" class="draft-publish-btn" data-slug="{{ .Slug }}">Publish</button>
                         <a href="/compose/edit/{{ .Slug }}" class="draft-edit-link">Edit</a>
                     </div>
                 </div>
@@ -35,4 +36,5 @@
 
 {{ define "drafts-head" }}
 <meta name="robots" content="noindex, nofollow">
+<meta name="csrf-token" content="{{ .csrf_token }}">
 {{ end }}

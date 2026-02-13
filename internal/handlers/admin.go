@@ -269,6 +269,7 @@ func (h *AdminHandler) Drafts(c *gin.Context) {
 	data["template"] = "drafts"
 	data["drafts"] = drafts
 	data["draft_count"] = len(drafts)
+	data["csrf_token"] = csrfToken(c)
 
 	h.renderHTML(c, http.StatusOK, "base.html", data)
 }

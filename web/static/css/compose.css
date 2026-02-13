@@ -165,11 +165,13 @@
     font-weight: 500;
     cursor: pointer;
     text-align: center;
-    transition: background-color var(--transition-fast);
+    transition: background-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .compose-submit:hover {
     background-color: var(--color-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .compose-submit:disabled,
@@ -318,6 +320,20 @@
     /* On larger screens, both textarea and preview coexist */
     .preview-visible .compose-textarea {
         display: block;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .compose-submit {
+        transition: none;
+    }
+
+    .compose-submit:hover {
+        transform: none;
     }
 }
 

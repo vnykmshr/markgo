@@ -71,16 +71,18 @@
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
-    transition: opacity var(--transition-fast);
+    transition: background-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
     -webkit-appearance: none;
 }
 
 .auth-gate-submit:hover {
-    opacity: 0.9;
+    background-color: var(--color-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .auth-gate-submit:active {
-    opacity: 0.8;
+    transform: translateY(0);
 }
 
 .auth-gate-submit:disabled {
@@ -151,21 +153,39 @@
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
-    transition: opacity var(--transition-fast);
+    transition: background-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
     -webkit-appearance: none;
 }
 
 .login-popover-submit:hover {
-    opacity: 0.9;
+    background-color: var(--color-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .login-popover-submit:active {
-    opacity: 0.8;
+    transform: translateY(0);
 }
 
 .login-popover-submit:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-gate-submit,
+    .login-popover-submit {
+        transition: none;
+    }
+
+    .auth-gate-submit:hover,
+    .login-popover-submit:hover {
+        transform: none;
+    }
 }
 
 /* --------------------------------------------------------------------------

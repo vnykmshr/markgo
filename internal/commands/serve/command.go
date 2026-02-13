@@ -364,6 +364,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 		composeGroup.POST("/preview", h.Compose.Preview)
 		composeGroup.POST("/upload", h.Compose.Upload)
 		composeGroup.POST("/quick", h.Compose.HandleQuickPublish)
+		composeGroup.POST("/publish/:slug", h.Compose.PublishDraft)
 	}
 
 	// Admin routes (soft auth — renders login popover when unauthenticated)
@@ -375,7 +376,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 			middleware.NoCache(),
 		)
 		adminGroup.GET("", h.Admin.AdminHome)
-		adminGroup.GET("/drafts", h.Admin.Drafts)
+		adminGroup.GET("/drafts", middleware.CSRF(secureCookie), h.Admin.Drafts)
 		adminGroup.POST("/cache/clear", h.ClearCache)
 		adminGroup.GET("/stats", h.Admin.Stats)
 		adminGroup.POST("/articles/reload", h.Admin.ReloadArticles)

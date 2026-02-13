@@ -235,11 +235,13 @@
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
-    transition: background-color var(--transition-fast);
+    transition: background-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .compose-sheet-save-draft:hover {
     background-color: var(--color-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .compose-sheet-save-draft:disabled {
@@ -328,5 +330,9 @@
 
     .compose-sheet-save-draft {
         transition: none;
+    }
+
+    .compose-sheet-save-draft:hover {
+        transform: none;
     }
 }

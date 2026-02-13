@@ -26,6 +26,7 @@ const PAGE_MODULES = {
     about: () => import('./contact.js'),
     compose: () => import('./compose.js'),
     admin_home: () => import('./admin.js'),
+    drafts: () => import('./drafts.js'),
 };
 
 let currentPageModule = null;
