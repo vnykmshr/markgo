@@ -17,71 +17,72 @@ let loginPopoverCtrl = null;
 let adminPopoverCtrl = null;
 
 export function init() {
-    // Attach fetch-based submit to all login forms (popover + auth gate)
-    document.querySelectorAll('.login-form').forEach((form) => {
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const errorEl = form.querySelector('.login-error');
-            if (errorEl) {
-                errorEl.hidden = true;
-                errorEl.textContent = '';
-            }
+    // Event delegation: handles login forms in both popover and SPA-swapped auth gates
+    document.addEventListener('submit', (e) => {
+        const form = e.target.closest('.login-form');
+        if (!form) return;
 
-            const submitBtn = form.querySelector('button[type="submit"]');
-            if (submitBtn) submitBtn.disabled = true;
+        e.preventDefault();
+        const errorEl = form.querySelector('.login-error');
+        if (errorEl) {
+            errorEl.hidden = true;
+            errorEl.textContent = '';
+        }
 
-            const isPopover = form.closest('.login-popover') !== null;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
 
-            fetch('/login', {
-                method: 'POST',
-                headers: { Accept: 'application/json' },
-                body: new FormData(form),
-                credentials: 'same-origin',
+        const isPopover = form.closest('.login-popover') !== null;
+
+        fetch('/login', {
+            method: 'POST',
+            headers: { Accept: 'application/json' },
+            body: new FormData(form),
+            credentials: 'same-origin',
+        })
+            .then((res) => {
+                if (res.status === 403) throw new Error('Session expired. Please refresh the page and try again.');
+                if (res.status === 429) throw new Error('Too many attempts. Please wait and try again.');
+                return res.json().then(
+                    (data) => ({ ok: res.ok, data }),
+                    () => { throw new Error('Server error. Please refresh the page.'); }
+                );
             })
-                .then((res) => {
-                    if (res.status === 403) throw new Error('Session expired. Please refresh the page and try again.');
-                    if (res.status === 429) throw new Error('Too many attempts. Please wait and try again.');
-                    return res.json().then(
-                        (data) => ({ ok: res.ok, data }),
-                        () => { throw new Error('Server error. Please refresh the page.'); }
-                    );
-                })
-                .then((result) => {
-                    if (result.data.success) {
-                        if (isPopover) {
-                            // Reactive auth — swap UI in place
-                            const swapped = swapToAuthenticatedUI();
-                            if (swapped !== false) {
-                                document.body.dataset.authenticated = 'true';
-                                swapBottomNavToCompose();
-                                addHeaderComposeLink();
-                                // Await CSRF sync before enabling compose functionality
-                                syncCSRFAfterLogin().then(() => {
-                                    document.dispatchEvent(new CustomEvent('auth:statechange', { detail: { authenticated: true } }));
-                                    document.dispatchEvent(new CustomEvent('auth:authenticated'));
-                                    checkDraftRecovery();
-                                });
-                            }
-                        } else {
-                            // Auth gate — full reload to render protected page
-                            window.location.href = result.data.redirect || window.location.pathname;
+            .then((result) => {
+                if (result.data.success) {
+                    if (isPopover) {
+                        // Reactive auth — swap UI in place
+                        const swapped = swapToAuthenticatedUI();
+                        if (swapped !== false) {
+                            document.body.dataset.authenticated = 'true';
+                            swapBottomNavToCompose();
+                            addHeaderComposeLink();
+                            // Await CSRF sync before enabling compose functionality
+                            syncCSRFAfterLogin().then(() => {
+                                document.dispatchEvent(new CustomEvent('auth:statechange', { detail: { authenticated: true } }));
+                                document.dispatchEvent(new CustomEvent('auth:authenticated'));
+                                checkDraftRecovery();
+                            });
                         }
                     } else {
-                        if (errorEl) {
-                            errorEl.textContent = result.data.error || 'Login failed.';
-                            errorEl.hidden = false;
-                        }
-                        if (submitBtn) submitBtn.disabled = false;
+                        // Auth gate — full reload to render protected page
+                        window.location.href = result.data.redirect || window.location.pathname;
                     }
-                })
-                .catch((err) => {
+                } else {
                     if (errorEl) {
-                        errorEl.textContent = err.message || 'Network error. Please try again.';
+                        errorEl.textContent = result.data.error || 'Login failed.';
                         errorEl.hidden = false;
                     }
                     if (submitBtn) submitBtn.disabled = false;
-                });
-        });
+                }
+            })
+            .catch((err) => {
+                if (errorEl) {
+                    errorEl.textContent = err.message || 'Network error. Please try again.';
+                    errorEl.hidden = false;
+                }
+                if (submitBtn) submitBtn.disabled = false;
+            });
     });
 
     // Auto-focus the inline auth gate form (protected pages)
@@ -106,8 +107,8 @@ export function init() {
         if (loginTrigger) {
             loginTrigger.click();
         } else {
-            // Login trigger not in DOM (e.g. after reactive swap to admin)
-            window.location.href = '/login';
+            // Login trigger not in DOM (e.g. session expired after reactive swap to admin)
+            window.location.reload();
         }
     });
 }
@@ -131,6 +132,7 @@ function createPersonIcon() {
 /**
  * Swap login trigger + popover to admin trigger + popover.
  * Old DOM nodes and their event listeners are garbage-collected.
+ * Mirrors server-rendered admin elements in base.html (.admin-trigger, #admin-popover).
  */
 function swapToAuthenticatedUI() {
     const loginTrigger = document.querySelector('.login-trigger');
@@ -223,6 +225,7 @@ function swapToAuthenticatedUI() {
 
 /**
  * Swap bottom nav subscribe button to compose button after login.
+ * Mirrors server-rendered .bottom-nav-compose in base.html.
  */
 function swapBottomNavToCompose() {
     const subscribeBtn = document.querySelector('.bottom-nav-subscribe');
@@ -266,6 +269,7 @@ function swapBottomNavToCompose() {
 
 /**
  * Add Compose link to desktop header nav after login.
+ * Mirrors server-rendered Compose nav-item in base.html (.navbar-nav).
  */
 function addHeaderComposeLink() {
     const navList = document.querySelector('.navbar-nav');

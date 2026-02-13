@@ -73,8 +73,7 @@ function bindBottomNavSubscribe() {
 
     btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        popoverCtrl.open();
-        // Scroll to top so the popover is visible
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => popoverCtrl.open(), 300);
     });
 }

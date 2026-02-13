@@ -15,7 +15,7 @@ function updateActiveLinks() {
                 (currentPath.startsWith('/tags/') && linkPath === '/tags') ||
                 (currentPath.startsWith('/categories/') && linkPath === '/categories')
             );
-        } catch { /* invalid href */ }
+        } catch (err) { console.debug('Skipping link active state:', link.href, err.message); }
     });
 
     // Bottom nav active states

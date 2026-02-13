@@ -54,12 +54,22 @@ export async function getQueueCount() {
 /**
  * Drain the queue: POST each item to /compose/quick.
  * Returns { published: number, failed: number }.
+ * failed === -1 signals missing CSRF token (caller should warn user).
  */
 export async function drainQueue() {
     const token = document.querySelector('meta[name="csrf-token"]')?.content;
-    if (!token) return { published: 0, failed: 0 };
+    if (!token) {
+        console.warn('drainQueue: no CSRF token available, cannot sync');
+        return { published: 0, failed: -1 };
+    }
 
-    const db = await openDB();
+    let db;
+    try {
+        db = await openDB();
+    } catch (err) {
+        console.warn('drainQueue: IndexedDB unavailable:', err?.message || err);
+        return { published: 0, failed: 0 };
+    }
 
     try {
         const items = await new Promise((resolve, reject) => {
@@ -104,8 +114,9 @@ export async function drainQueue() {
                 } else {
                     failed++;
                 }
-            } catch {
-                // Still offline — stop draining
+            } catch (err) {
+                // Network error or unexpected failure — stop draining
+                console.warn('Queue drain stopped:', err?.message || err);
                 failed += items.length - published;
                 break;
             }
@@ -113,6 +124,6 @@ export async function drainQueue() {
 
         return { published, failed };
     } finally {
-        db.close();
+        if (db) db.close();
     }
 }

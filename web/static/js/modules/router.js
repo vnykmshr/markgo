@@ -86,6 +86,7 @@ function extractPage(doc) {
         title: doc.querySelector('title')?.textContent || '',
         template: doc.body.dataset.template || 'feed',
         bodyClass: doc.body.className,
+        authenticated: doc.body.dataset.authenticated || '',
         meta: extractMeta(doc),
         csrfToken: doc.querySelector('meta[name="csrf-token"]')?.content || '',
     };
@@ -201,6 +202,18 @@ async function navigate(url, { push = true } = {}) {
         document.body.className = page.bodyClass;
         updateMeta(page.meta);
         syncCSRFToken(page.csrfToken);
+
+        // Sync auth state — detect session expiry across SPA navigations
+        const wasAuth = document.body.dataset.authenticated === 'true';
+        if (page.authenticated) {
+            document.body.dataset.authenticated = page.authenticated;
+        } else {
+            delete document.body.dataset.authenticated;
+        }
+        const isAuth = document.body.dataset.authenticated === 'true';
+        if (wasAuth !== isAuth) {
+            document.dispatchEvent(new CustomEvent('auth:statechange', { detail: { authenticated: isAuth } }));
+        }
 
         // Restore the swapping class removal (body class was just replaced)
         // main-content class is on the element, not body — we need to fade in

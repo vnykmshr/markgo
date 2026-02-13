@@ -514,17 +514,27 @@ function resetButtons() {
 }
 
 async function syncQueue() {
-    const count = await getQueueCount();
+    let count;
+    try {
+        count = await getQueueCount();
+    } catch (err) {
+        console.warn('Queue count check failed:', err?.message || err);
+        return;
+    }
     if (count === 0) return;
 
     showToast(`Syncing ${count} queued post${count > 1 ? 's' : ''}\u2026`, 'info');
 
     const result = await drainQueue();
+    if (result.failed === -1) {
+        showToast('Cannot sync \u2014 please refresh the page first', 'warning');
+        return;
+    }
     if (result.published > 0) {
         showToast(`Published ${result.published} queued post${result.published > 1 ? 's' : ''}`, 'success');
     }
     if (result.failed > 0) {
-        showToast(`${result.failed} post${result.failed > 1 ? 's' : ''} still queued — will retry`, 'warning');
+        showToast(`${result.failed} post${result.failed > 1 ? 's' : ''} still queued \u2014 will retry`, 'warning');
     }
 }
 
