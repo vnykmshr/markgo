@@ -12,6 +12,7 @@ import { queuePost, drainQueue, getQueueCount } from './offline-queue.js';
 
 const DRAFT_KEY = 'markgo:compose-draft';
 const SAVE_DELAY = 2000;
+let initialized = false;
 
 let overlay = null;
 let textarea = null;
@@ -534,6 +535,9 @@ export function init() {
         document.addEventListener('auth:authenticated', () => init(), { once: true });
         return;
     }
+
+    if (initialized) return; // Prevent double listener registration on reactive auth
+    initialized = true;
 
     // Listen for FAB trigger
     document.addEventListener('fab:compose', open);

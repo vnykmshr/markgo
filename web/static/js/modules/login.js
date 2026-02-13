@@ -55,10 +55,12 @@ export function init() {
                                 document.body.dataset.authenticated = 'true';
                                 swapBottomNavToCompose();
                                 addHeaderComposeLink();
-                                syncCSRFAfterLogin();
-                                document.dispatchEvent(new CustomEvent('auth:statechange', { detail: { authenticated: true } }));
-                                document.dispatchEvent(new CustomEvent('auth:authenticated'));
-                                checkDraftRecovery();
+                                // Await CSRF sync before enabling compose functionality
+                                syncCSRFAfterLogin().then(() => {
+                                    document.dispatchEvent(new CustomEvent('auth:statechange', { detail: { authenticated: true } }));
+                                    document.dispatchEvent(new CustomEvent('auth:authenticated'));
+                                    checkDraftRecovery();
+                                });
                             }
                         } else {
                             // Auth gate — full reload to render protected page
@@ -288,13 +290,19 @@ function addHeaderComposeLink() {
  * current page and extract the fresh token from the rendered meta tag.
  */
 function syncCSRFAfterLogin() {
-    fetch(location.href, { credentials: 'same-origin' })
-        .then((res) => res.ok ? res.text() : null)
+    return fetch(location.href, { credentials: 'same-origin' })
+        .then((res) => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.text();
+        })
         .then((html) => {
-            if (!html) return;
             const doc = new DOMParser().parseFromString(html, 'text/html');
             const freshToken = doc.querySelector('meta[name="csrf-token"]')?.content;
-            if (!freshToken) return;
+            if (!freshToken) {
+                console.warn('CSRF token not found in refreshed page');
+                showToast('Session may be stale \u2014 refresh if publishing fails', 'warning');
+                return;
+            }
 
             // Update meta tag
             let meta = document.querySelector('meta[name="csrf-token"]');
@@ -314,6 +322,7 @@ function syncCSRFAfterLogin() {
         })
         .catch((err) => {
             console.error('CSRF sync after login failed:', err);
+            showToast('Session sync failed \u2014 refresh the page before publishing', 'warning');
         });
 }
 

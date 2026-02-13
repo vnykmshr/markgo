@@ -52,6 +52,15 @@ function createFAB() {
     return btn;
 }
 
+function registerKeyboardShortcut() {
+    document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+            e.preventDefault();
+            document.dispatchEvent(new CustomEvent('fab:compose'));
+        }
+    });
+}
+
 export function init() {
     if (!isAuthenticated()) {
         // Listen for reactive auth — show FAB after login
@@ -59,6 +68,7 @@ export function init() {
             if (!fabEl) {
                 fabEl = createFAB();
                 document.body.appendChild(fabEl);
+                registerKeyboardShortcut();
             }
         }, { once: true });
         return;
@@ -67,12 +77,5 @@ export function init() {
 
     fabEl = createFAB();
     document.body.appendChild(fabEl);
-
-    // Keyboard shortcut: Cmd/Ctrl+N opens compose sheet
-    document.addEventListener('keydown', (e) => {
-        if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
-            e.preventDefault();
-            document.dispatchEvent(new CustomEvent('fab:compose'));
-        }
-    });
+    registerKeyboardShortcut();
 }
