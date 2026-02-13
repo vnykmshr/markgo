@@ -174,6 +174,7 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, *service
 		BaseURL:     cfg.BaseURL,
 		Language:    cfg.Blog.Language,
 		Author:      cfg.Blog.Author,
+		Image:       cfg.SEO.DefaultImage,
 	}
 	robotsConfig := services.RobotsConfig{
 		UserAgent:  "*",

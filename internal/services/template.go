@@ -13,6 +13,7 @@ import (
 	"log/slog"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 	"unicode"
@@ -620,7 +621,13 @@ var templateFuncs = template.FuncMap{
 	},
 	"renderMetaTags": func(tags map[string]string) template.HTML {
 		var buf strings.Builder
-		for name, content := range tags {
+		keys := make([]string, 0, len(tags))
+		for k := range tags {
+			keys = append(keys, k)
+		}
+		slices.Sort(keys)
+		for _, name := range keys {
+			content := tags[name]
 			if content == "" {
 				continue
 			}
