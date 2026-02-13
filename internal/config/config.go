@@ -44,6 +44,7 @@ type Config struct {
 	About         AboutConfig     `json:"about"`
 	Logging       LoggingConfig   `json:"logging"`
 	SEO           SEOConfig       `json:"seo"`
+	Upload        UploadConfig    `json:"upload"`
 }
 
 // ServerConfig holds server-related configuration options.
@@ -134,6 +135,12 @@ type AboutConfig struct {
 	LinkedIn string `json:"linkedin"` // full URL
 	Mastodon string `json:"mastodon"` // full URL
 	Website  string `json:"website"`  // full URL
+}
+
+// UploadConfig holds file upload configuration options.
+type UploadConfig struct {
+	Path    string `json:"path"`
+	MaxSize int64  `json:"max_size"`
 }
 
 // SEOConfig holds SEO-related configuration options.
@@ -290,6 +297,11 @@ func Load() (*Config, error) {
 			GoogleSiteVerify:   getEnv("SEO_GOOGLE_SITE_VERIFY", ""),
 			BingSiteVerify:     getEnv("SEO_BING_SITE_VERIFY", ""),
 		},
+
+		Upload: UploadConfig{
+			Path:    getEnv("UPLOAD_PATH", "./uploads"),
+			MaxSize: getEnvInt64("UPLOAD_MAX_SIZE", 10<<20),
+		},
 	}
 
 	// Validate the configuration
@@ -311,6 +323,15 @@ func getEnvInt(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if intValue, err := strconv.Atoi(value); err == nil {
 			return intValue
+		}
+	}
+	return defaultValue
+}
+
+func getEnvInt64(key string, defaultValue int64) int64 {
+	if value := os.Getenv(key); value != "" {
+		if parsed, err := strconv.ParseInt(value, 10, 64); err == nil {
+			return parsed
 		}
 	}
 	return defaultValue

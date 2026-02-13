@@ -297,6 +297,10 @@ BLOG_POSTS_PER_PAGE=10
 # Paths (optional — binary has embedded web assets)
 ARTICLES_PATH=./articles
 
+# Upload Configuration
+UPLOAD_PATH=./uploads
+UPLOAD_MAX_SIZE=10485760
+
 # About Page (optional)
 ABOUT_TAGLINE=
 ABOUT_LOCATION=

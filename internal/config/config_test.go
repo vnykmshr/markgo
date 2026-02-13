@@ -73,6 +73,9 @@ func TestLoad(t *testing.T) {
 	assert.Equal(t, "default", cfg.Blog.Theme)
 	assert.Equal(t, 10, cfg.Blog.PostsPerPage)
 
+	// Test upload config defaults
+	assert.Equal(t, "./uploads", cfg.Upload.Path)
+	assert.Equal(t, int64(10<<20), cfg.Upload.MaxSize)
 }
 
 func TestLoadWithEnvironmentVariables(t *testing.T) {
@@ -311,6 +314,7 @@ func clearEnvVars() {
 		"CORS_ALLOWED_ORIGINS", "CORS_ALLOWED_METHODS", "CORS_ALLOWED_HEADERS",
 		"ADMIN_USERNAME", "ADMIN_PASSWORD",
 		"BLOG_TITLE", "BLOG_DESCRIPTION", "BLOG_AUTHOR", "BLOG_AUTHOR_EMAIL", "BLOG_LANGUAGE", "BLOG_THEME", "BLOG_POSTS_PER_PAGE",
+		"UPLOAD_PATH", "UPLOAD_MAX_SIZE",
 	}
 
 	for _, env := range vars {
@@ -364,4 +368,38 @@ func TestEnvironmentAwareRateLimiting(t *testing.T) {
 			assert.Equal(t, 1*time.Hour, cfg.RateLimit.Contact.Window)
 		})
 	}
+}
+
+func TestGetEnvInt64(t *testing.T) {
+	t.Run("valid value", func(t *testing.T) {
+		_ = os.Setenv("TEST_INT64", "10485760")
+		defer func() { _ = os.Unsetenv("TEST_INT64") }()
+		assert.Equal(t, int64(10485760), getEnvInt64("TEST_INT64", 0))
+	})
+
+	t.Run("invalid value returns default", func(t *testing.T) {
+		_ = os.Setenv("TEST_INT64_BAD", "not-a-number")
+		defer func() { _ = os.Unsetenv("TEST_INT64_BAD") }()
+		assert.Equal(t, int64(42), getEnvInt64("TEST_INT64_BAD", 42))
+	})
+
+	t.Run("missing value returns default", func(t *testing.T) {
+		assert.Equal(t, int64(10<<20), getEnvInt64("NONEXISTENT_INT64", 10<<20))
+	})
+}
+
+func TestUploadConfigFromEnv(t *testing.T) {
+	clearEnvVars()
+
+	_ = os.Setenv("UPLOAD_PATH", "/tmp/custom-uploads")
+	_ = os.Setenv("UPLOAD_MAX_SIZE", "20971520")
+	defer func() {
+		_ = os.Unsetenv("UPLOAD_PATH")
+		_ = os.Unsetenv("UPLOAD_MAX_SIZE")
+	}()
+
+	cfg, err := Load()
+	require.NoError(t, err)
+	assert.Equal(t, "/tmp/custom-uploads", cfg.Upload.Path)
+	assert.Equal(t, int64(20971520), cfg.Upload.MaxSize)
 }
