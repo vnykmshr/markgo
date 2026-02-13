@@ -512,12 +512,23 @@ html {
 }
 
 .brand-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
     text-decoration: none;
     color: inherit;
 }
 
 .brand-link:hover {
     text-decoration: none;
+}
+
+.brand-logo {
+    flex-shrink: 0;
+}
+
+.brand-text {
+    min-width: 0;
 }
 
 .brand-title {
@@ -924,6 +935,15 @@ html {
 
     .navbar-brand {
         overflow: visible;
+    }
+
+    .brand-link {
+        gap: var(--spacing-3);
+    }
+
+    .brand-logo {
+        width: 32px;
+        height: 32px;
     }
 
     .brand-title {

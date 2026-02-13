@@ -53,7 +53,7 @@ func (h *HealthHandler) Manifest(c *gin.Context) {
 		"orientation":      "portrait",
 		"icons": []gin.H{
 			{"src": "/static/img/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-			{"src": "/static/img/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+			{"src": "/static/img/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
 		},
 		"categories": []string{"blog", "news", "writing"},
 		"shortcuts": []gin.H{

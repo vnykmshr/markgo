@@ -286,7 +286,6 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 	// Static files — filesystem first, embedded fallback
 	if dirExists(cfg.StaticPath) {
 		router.Static("/static", cfg.StaticPath)
-		router.StaticFile("/favicon.ico", cfg.StaticPath+"/img/favicon.ico")
 		router.StaticFile("/sw.js", cfg.StaticPath+"/sw.js")
 	} else {
 		staticFS, subErr := fs.Sub(web.Assets, "static")
@@ -296,15 +295,16 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 		}
 		httpFS := http.FS(staticFS)
 		router.StaticFS("/static", httpFS)
-		// Serve favicon and sw.js directly from embedded FS (not redirect — SW scope requires root path)
-		router.GET("/favicon.ico", func(c *gin.Context) {
-			c.FileFromFS("img/favicon.ico", httpFS)
-		})
+		// Serve sw.js directly from embedded FS (SW scope requires root path)
 		router.GET("/sw.js", func(c *gin.Context) {
 			c.FileFromFS("sw.js", httpFS)
 		})
 		slog.Info("Using embedded static assets", "checked_path", cfg.StaticPath)
 	}
+	// Redirect legacy /favicon.ico to SVG favicon
+	router.GET("/favicon.ico", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/static/img/favicon.svg")
+	})
 	router.GET("/robots.txt", h.Syndication.RobotsTxt)
 
 	// Health check, metrics, manifest, offline
