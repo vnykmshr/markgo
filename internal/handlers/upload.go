@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,20 +13,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const maxUploadSize = 5 << 20 // 5MB
-
 var (
-	allowedImageTypes = map[string]string{
-		"image/jpeg": ".jpg",
-		"image/png":  ".png",
-		"image/gif":  ".gif",
-		"image/webp": ".webp",
+	blockedExtensions = map[string]bool{
+		".exe": true, ".bat": true, ".cmd": true, ".sh": true,
+		".com": true, ".msi": true, ".dll": true, ".so": true,
+	}
+	imageExtensions = map[string]bool{
+		".jpg": true, ".jpeg": true, ".png": true, ".gif": true,
+		".webp": true, ".svg": true,
 	}
 	safeFilenameRe = regexp.MustCompile(`[^a-z0-9_-]`)
 )
 
 // sanitizeFilename strips the extension, lowercases, removes unsafe chars,
-// and caps length. Returns "image" if the result is empty.
+// and caps length. Returns "file" if the result is empty.
 func sanitizeFilename(name string) string {
 	name = filepath.Base(name)
 	ext := filepath.Ext(name)
@@ -35,7 +34,7 @@ func sanitizeFilename(name string) string {
 	name = strings.ToLower(name)
 	name = safeFilenameRe.ReplaceAllString(name, "")
 	if name == "" {
-		name = "image"
+		name = "file"
 	}
 	if len(name) > 50 {
 		name = name[:50]
@@ -50,12 +49,18 @@ func (h *ComposeHandler) cleanupTempFile(path string) {
 	}
 }
 
-// Upload handles image upload for the compose page.
-// Security: content type validated via http.DetectContentType on actual bytes.
-// Extension derived from detected MIME type, not from filename.
+// Upload handles file upload for the compose page.
+// Files are scoped to a slug directory: {config.Upload.Path}/{slug}/{filename}.
+// Extension-based blocklist rejects executable types; all others are allowed.
 func (h *ComposeHandler) Upload(c *gin.Context) {
-	// Limit request body before Gin parses the multipart form (defense in depth)
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxUploadSize)
+	slug := c.Param("slug")
+	if !validSlug.MatchString(slug) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid slug"})
+		return
+	}
+
+	maxSize := h.config.Upload.MaxSize
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxSize)
 
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
@@ -65,40 +70,25 @@ func (h *ComposeHandler) Upload(c *gin.Context) {
 	}
 	defer file.Close()
 
-	// Read first 512 bytes for content type detection
-	buf := make([]byte, 512)
-	n, readErr := file.Read(buf)
-	if readErr != nil && !errors.Is(readErr, io.EOF) {
-		h.logger.Error("Upload file read error", "error", readErr)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read file"})
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	if ext == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File must have an extension"})
 		return
 	}
-
-	detectedType := http.DetectContentType(buf[:n])
-	ext, ok := allowedImageTypes[detectedType]
-	if !ok {
-		h.logger.Warn("Upload rejected: disallowed content type",
-			"detected_type", detectedType,
+	if blockedExtensions[ext] {
+		h.logger.Warn("Upload rejected: blocked extension",
+			"extension", ext,
 			"filename", header.Filename,
 			"size", header.Size,
 		)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "File type not allowed. Supported: JPEG, PNG, GIF, WebP"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File type not allowed"})
 		return
 	}
 
-	// Seek back to start after content detection
-	if _, seekErr := file.Seek(0, io.SeekStart); seekErr != nil {
-		h.logger.Error("Upload file seek error", "error", seekErr)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process file"})
-		return
-	}
-
-	// Build safe filename
 	safeName := sanitizeFilename(header.Filename)
 	filename := fmt.Sprintf("%d-%s%s", time.Now().UnixMilli(), safeName, ext)
 
-	// Ensure upload directory exists
-	uploadDir := filepath.Join(h.config.StaticPath, "images", "uploads")
+	uploadDir := filepath.Join(h.config.Upload.Path, slug)
 	if mkdirErr := os.MkdirAll(uploadDir, 0o755); mkdirErr != nil { //nolint:gosec // upload dir needs to be accessible
 		h.logger.Error("Failed to create upload directory", "error", mkdirErr)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Upload failed"})
@@ -117,7 +107,7 @@ func (h *ComposeHandler) Upload(c *gin.Context) {
 	tmpPath := tmpFile.Name()
 
 	if _, copyErr := io.Copy(tmpFile, file); copyErr != nil {
-		_ = tmpFile.Close() //nolint:gosec // best-effort close before cleanup
+		_ = tmpFile.Close()
 		h.cleanupTempFile(tmpPath)
 		h.logger.Error("Failed to write file", "error", copyErr)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Upload failed"})
@@ -138,16 +128,20 @@ func (h *ComposeHandler) Upload(c *gin.Context) {
 		return
 	}
 
-	// Make uploaded file world-readable (os.CreateTemp defaults to 0600)
-	if chmodErr := os.Chmod(destPath, 0o644); chmodErr != nil { //nolint:gosec // uploaded images must be readable by web server
+	if chmodErr := os.Chmod(destPath, 0o644); chmodErr != nil { //nolint:gosec // uploaded files must be readable by web server
 		h.logger.Error("Failed to chmod uploaded file", "path", destPath, "error", chmodErr)
 		h.cleanupTempFile(destPath)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Upload failed"})
 		return
 	}
 
-	url := "/static/images/uploads/" + filename
-	markdown := fmt.Sprintf("![%s](%s)", safeName, url)
+	url := fmt.Sprintf("/uploads/%s/%s", slug, filename)
+	var markdown string
+	if imageExtensions[ext] {
+		markdown = fmt.Sprintf("![%s](%s)", safeName, url)
+	} else {
+		markdown = fmt.Sprintf("[%s](%s)", safeName, url)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"url":      url,

@@ -55,6 +55,10 @@ func createTestComposeHandler(t *testing.T, renderer MarkdownRenderer) (*Compose
 		Blog: config.BlogConfig{
 			Title: "Test Blog",
 		},
+		Upload: config.UploadConfig{
+			Path:    filepath.Join(tmpDir, "uploads"),
+			MaxSize: 10 << 20,
+		},
 	}
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
@@ -83,7 +87,7 @@ func createMultipartRequest(t *testing.T, fieldName, fileName string, fileConten
 	}
 	require.NoError(t, writer.Close())
 
-	req := httptest.NewRequest("POST", "/compose/upload", &buf)
+	req := httptest.NewRequest("POST", "/compose/upload/test-article", &buf)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	return req
 }
@@ -134,9 +138,9 @@ func TestSanitizeFilename(t *testing.T) {
 		{"simple name", "photo.jpg", "photo"},
 		{"uppercase", "MyPhoto.PNG", "myphoto"},
 		{"spaces and special chars", "my photo (1).jpg", "myphoto1"},
-		{"unicode only", "фото.jpg", "image"},
-		{"empty string", "", "image"},
-		{"extension only", ".jpg", "image"},
+		{"unicode only", "фото.jpg", "file"},
+		{"empty string", "", "file"},
+		{"extension only", ".jpg", "file"},
 		{"path traversal", "../../etc/passwd", "passwd"},
 		{"deep path traversal", "../../../secret.jpg", "secret"},
 		{"hyphens and underscores", "my-photo_2024.webp", "my-photo_2024"},
@@ -241,27 +245,27 @@ func TestPreview(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestUpload(t *testing.T) {
-	t.Run("valid JPEG upload", func(t *testing.T) {
+	t.Run("valid JPEG upload returns image markdown", func(t *testing.T) {
 		handler, tmpDir := createTestComposeHandler(t, nil)
 
 		req := createMultipartRequest(t, "file", "test-photo.jpg", minimalJPEG, nil)
 		w := httptest.NewRecorder()
 
 		router := gin.New()
-		router.POST("/compose/upload", handler.Upload)
+		router.POST("/compose/upload/:slug", handler.Upload)
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var resp map[string]string
 		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-		assert.Contains(t, resp["url"], "/static/images/uploads/")
+		assert.Contains(t, resp["url"], "/uploads/test-article/")
 		assert.Contains(t, resp["url"], ".jpg")
 		assert.Contains(t, resp["markdown"], "![test-photo]")
 		assert.NotEmpty(t, resp["filename"])
 
 		// Verify file exists on disk with correct permissions
-		uploadDir := filepath.Join(tmpDir, "images", "uploads")
+		uploadDir := filepath.Join(tmpDir, "uploads", "test-article")
 		files, err := os.ReadDir(uploadDir)
 		require.NoError(t, err)
 		assert.Len(t, files, 1)
@@ -271,40 +275,83 @@ func TestUpload(t *testing.T) {
 		assert.Equal(t, os.FileMode(0o644), info.Mode().Perm())
 	})
 
+	t.Run("PDF upload returns link markdown", func(t *testing.T) {
+		handler, _ := createTestComposeHandler(t, nil)
+
+		req := createMultipartRequest(t, "file", "document.pdf", []byte("fake pdf content"), nil)
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/compose/upload/:slug", handler.Upload)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var resp map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Contains(t, resp["url"], "/uploads/test-article/")
+		assert.Contains(t, resp["url"], ".pdf")
+		assert.Contains(t, resp["markdown"], "[document]")
+		assert.NotContains(t, resp["markdown"], "![")
+	})
+
+	t.Run("blocked extension rejected", func(t *testing.T) {
+		handler, _ := createTestComposeHandler(t, nil)
+
+		req := createMultipartRequest(t, "file", "malware.exe", []byte("bad content"), nil)
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/compose/upload/:slug", handler.Upload)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		var resp map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Equal(t, "File type not allowed", resp["error"])
+	})
+
+	t.Run("invalid slug rejected", func(t *testing.T) {
+		handler, _ := createTestComposeHandler(t, nil)
+
+		var buf bytes.Buffer
+		writer := multipart.NewWriter(&buf)
+		part, err := writer.CreateFormFile("file", "photo.jpg")
+		require.NoError(t, err)
+		_, err = part.Write(minimalJPEG)
+		require.NoError(t, err)
+		require.NoError(t, writer.Close())
+
+		req := httptest.NewRequest("POST", "/compose/upload/INVALID%20SLUG!", &buf)
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/compose/upload/:slug", handler.Upload)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		var resp map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Equal(t, "Invalid slug", resp["error"])
+	})
+
 	t.Run("no file provided", func(t *testing.T) {
 		handler, _ := createTestComposeHandler(t, nil)
 
 		form := url.Values{"other": {"data"}}
-		req := httptest.NewRequest("POST", "/compose/upload", strings.NewReader(form.Encode()))
+		req := httptest.NewRequest("POST", "/compose/upload/test-article", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		w := httptest.NewRecorder()
 
 		router := gin.New()
-		router.POST("/compose/upload", handler.Upload)
+		router.POST("/compose/upload/:slug", handler.Upload)
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		var resp map[string]string
 		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 		assert.Contains(t, resp["error"], "No file")
-	})
-
-	t.Run("disallowed content type", func(t *testing.T) {
-		handler, _ := createTestComposeHandler(t, nil)
-
-		// HTML file content — http.DetectContentType will identify as text/html
-		htmlContent := []byte("<html><body>hello</body></html>")
-		req := createMultipartRequest(t, "file", "sneaky.jpg", htmlContent, nil)
-		w := httptest.NewRecorder()
-
-		router := gin.New()
-		router.POST("/compose/upload", handler.Upload)
-		router.ServeHTTP(w, req)
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		var resp map[string]string
-		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-		assert.Contains(t, resp["error"], "File type not allowed")
 	})
 
 	t.Run("path traversal filename is sanitized", func(t *testing.T) {
@@ -314,49 +361,33 @@ func TestUpload(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		router := gin.New()
-		router.POST("/compose/upload", handler.Upload)
+		router.POST("/compose/upload/:slug", handler.Upload)
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var resp map[string]string
 		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-		// Filename should be sanitized — no path components
 		assert.NotContains(t, resp["filename"], "..")
 		assert.NotContains(t, resp["filename"], "/")
 		assert.Contains(t, resp["markdown"], "![passwd]")
 	})
 
-	t.Run("empty file detected as unsupported type", func(t *testing.T) {
-		handler, _ := createTestComposeHandler(t, nil)
-
-		req := createMultipartRequest(t, "file", "empty.jpg", []byte{}, nil)
-		w := httptest.NewRecorder()
-
-		router := gin.New()
-		router.POST("/compose/upload", handler.Upload)
-		router.ServeHTTP(w, req)
-
-		// Empty file: Read returns 0 bytes + io.EOF. DetectContentType on empty buf
-		// returns "text/plain" which is not in allowedImageTypes → 400.
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-	})
-
-	t.Run("unicode filename falls back to image", func(t *testing.T) {
+	t.Run("unicode filename falls back to file", func(t *testing.T) {
 		handler, _ := createTestComposeHandler(t, nil)
 
 		req := createMultipartRequest(t, "file", "фото.jpg", minimalJPEG, nil)
 		w := httptest.NewRecorder()
 
 		router := gin.New()
-		router.POST("/compose/upload", handler.Upload)
+		router.POST("/compose/upload/:slug", handler.Upload)
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var resp map[string]string
 		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-		assert.Contains(t, resp["markdown"], "![image]")
+		assert.Contains(t, resp["markdown"], "![file]")
 	})
 }
 
