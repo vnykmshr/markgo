@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -56,7 +58,7 @@ func (h *ComposeHandler) cleanupTempFile(path string) {
 
 // Upload handles file upload for the compose page.
 // Files are scoped to a slug directory: {config.Upload.Path}/{slug}/{filename}.
-// Extension-based blocklist rejects executable types; all others are allowed.
+// Extension-based blocklist rejects executables, scripts, and HTML-renderable types; all others are allowed.
 func (h *ComposeHandler) Upload(c *gin.Context) {
 	slug := c.Param("slug")
 	if !validSlug.MatchString(slug) {
@@ -91,7 +93,12 @@ func (h *ComposeHandler) Upload(c *gin.Context) {
 	}
 
 	safeName := sanitizeFilename(header.Filename)
-	filename := fmt.Sprintf("%d-%s%s", time.Now().UnixMilli(), safeName, ext)
+	randBytes := make([]byte, 4)
+	if _, randErr := rand.Read(randBytes); randErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Upload failed"})
+		return
+	}
+	filename := fmt.Sprintf("%d-%s-%s%s", time.Now().UnixMilli(), safeName, hex.EncodeToString(randBytes), ext)
 
 	uploadDir := filepath.Join(h.config.Upload.Path, slug)
 

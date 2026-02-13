@@ -11,6 +11,8 @@ import (
 	"net/http/pprof"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -308,6 +310,13 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 			logger.Error("Could not create upload directory — uploads may not work",
 				"path", cfg.Upload.Path, "error", err)
 		}
+		// Verify the upload directory is writable
+		if tmpFile, err := os.CreateTemp(cfg.Upload.Path, ".write-check-*"); err != nil {
+			logger.Warn("Upload directory is not writable", "path", cfg.Upload.Path, "error", err)
+		} else {
+			_ = tmpFile.Close()
+			_ = os.Remove(tmpFile.Name())
+		}
 		// Always register the static route. The upload handler creates
 		// slug subdirectories per-request; Gin's Static serves existing files.
 		// Security headers: nosniff prevents browsers from MIME-sniffing HTML
@@ -315,7 +324,13 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 		uploadsGroup := router.Group("/uploads")
 		uploadsGroup.Use(func(c *gin.Context) {
 			c.Header("X-Content-Type-Options", "nosniff")
-			c.Header("Content-Disposition", "attachment")
+			ext := strings.ToLower(filepath.Ext(c.Request.URL.Path))
+			switch ext {
+			case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".ico":
+				c.Header("Content-Disposition", "inline")
+			default:
+				c.Header("Content-Disposition", "attachment")
+			}
 			c.Next()
 		})
 		uploadsGroup.Static("/", cfg.Upload.Path)
@@ -467,7 +482,10 @@ func setupTemplates(router *gin.Engine, templateService *services.TemplateServic
 		"base.html", "feed.html", "compose.html", "article.html", "articles.html",
 		"404.html", "500.html", "offline.html", "about.html", "search.html", "tags.html", "categories.html",
 		"drafts.html",
+		"admin_home.html",
 		"admin_writing.html",
+		"category.html",
+		"tag.html",
 	}
 
 	for _, tmplName := range requiredTemplates {
