@@ -285,7 +285,13 @@ export function init() {
     const fileInput = document.querySelector('.compose-file-input');
     const uploadStatus = document.querySelector('.upload-status');
 
-    const maxFileSize = 10 * 1024 * 1024; // 10MB
+    const maxFileSize = parseInt(form?.dataset.maxUpload || '10485760', 10);
+
+    function formatFileSize(bytes) {
+        if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(0) + ' MB';
+        if (bytes >= 1024) return (bytes / 1024).toFixed(0) + ' KB';
+        return bytes + ' bytes';
+    }
 
     function getSlug() {
         return form?.dataset.slug || '';
@@ -327,7 +333,7 @@ export function init() {
         }
 
         if (file.size > maxFileSize) {
-            setUploadStatus('File too large. Maximum size is 10MB.', true);
+            setUploadStatus(`File too large. Maximum size is ${formatFileSize(maxFileSize)}.`, true);
             return;
         }
 

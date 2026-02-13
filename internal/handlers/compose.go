@@ -306,10 +306,6 @@ func (h *ComposeHandler) HandleQuickPublish(c *gin.Context) {
 		return
 	}
 
-	if err := h.articleService.ReloadArticles(); err != nil {
-		h.logger.Error("Failed to reload articles after quick publish", "error", err)
-	}
-
 	// Infer type for the response (mirrors inferPostType in article service)
 	postType := "article"
 	if input.LinkURL != "" {
@@ -321,6 +317,18 @@ func (h *ComposeHandler) HandleQuickPublish(c *gin.Context) {
 	message := "Published"
 	if input.Draft {
 		message = "Saved as draft"
+	}
+
+	if err := h.articleService.ReloadArticles(); err != nil {
+		h.logger.Error("Failed to reload articles after quick publish", "error", err)
+		c.JSON(http.StatusCreated, gin.H{
+			"slug":    slug,
+			"url":     "/",
+			"type":    postType,
+			"draft":   input.Draft,
+			"message": message + " (will appear after next reload)",
+		})
+		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{

@@ -13,6 +13,9 @@ import { showToast } from './toast.js';
 
 const DRAFT_KEY = 'markgo:compose-draft';
 
+let loginPopoverCtrl = null;
+let adminPopoverCtrl = null;
+
 export function init() {
     // Attach fetch-based submit to all login forms (popover + auth gate)
     document.querySelectorAll('.login-form').forEach((form) => {
@@ -49,6 +52,7 @@ export function init() {
                             // Reactive auth — swap UI in place
                             const swapped = swapToAuthenticatedUI();
                             if (swapped !== false) {
+                                syncCSRFAfterLogin();
                                 document.dispatchEvent(new CustomEvent('auth:statechange', { detail: { authenticated: true } }));
                                 checkDraftRecovery();
                             }
@@ -79,7 +83,7 @@ export function init() {
     if (authGateInput) authGateInput.focus();
 
     // Login popover toggle (unauthenticated, public pages)
-    initPopover('login-popover', '.login-trigger', (popover) => {
+    loginPopoverCtrl = initPopover('login-popover', '.login-trigger', (popover) => {
         const firstInput = popover.querySelector('input[name="username"]');
         if (firstInput) firstInput.focus();
     }, (popover) => {
@@ -88,7 +92,7 @@ export function init() {
     });
 
     // Admin popover toggle (authenticated)
-    initPopover('admin-popover', '.admin-trigger');
+    adminPopoverCtrl = initPopover('admin-popover', '.admin-trigger');
 
     // Listen for programmatic open-login requests (e.g. from compose 401)
     document.addEventListener('auth:open-login', () => {
@@ -200,9 +204,51 @@ function swapToAuthenticatedUI() {
         }
     }
 
+    // Destroy old login popover listeners before initializing admin popover
+    if (loginPopoverCtrl) {
+        loginPopoverCtrl.destroy();
+        loginPopoverCtrl = null;
+    }
+
     // Initialize popover behavior on new elements
-    initPopover('admin-popover', '.admin-trigger');
+    adminPopoverCtrl = initPopover('admin-popover', '.admin-trigger');
     return true;
+}
+
+/**
+ * Sync the CSRF meta tag after reactive auth login.
+ * The session cookie changed but the <meta name="csrf-token"> in <head> still has the
+ * old value. Since the CSRF cookie is HttpOnly, JS can't read it directly — fetch the
+ * current page and extract the fresh token from the rendered meta tag.
+ */
+function syncCSRFAfterLogin() {
+    fetch(location.href, { credentials: 'same-origin' })
+        .then((res) => res.ok ? res.text() : null)
+        .then((html) => {
+            if (!html) return;
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const freshToken = doc.querySelector('meta[name="csrf-token"]')?.content;
+            if (!freshToken) return;
+
+            // Update meta tag
+            let meta = document.querySelector('meta[name="csrf-token"]');
+            if (meta) {
+                meta.setAttribute('content', freshToken);
+            } else {
+                meta = document.createElement('meta');
+                meta.name = 'csrf-token';
+                meta.content = freshToken;
+                document.head.appendChild(meta);
+            }
+
+            // Update hidden CSRF inputs outside <main> (e.g. in popover forms)
+            document.querySelectorAll('input[name="_csrf"]').forEach((input) => {
+                input.value = freshToken;
+            });
+        })
+        .catch((err) => {
+            console.error('CSRF sync after login failed:', err);
+        });
 }
 
 /**

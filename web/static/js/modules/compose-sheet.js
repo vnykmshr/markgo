@@ -454,7 +454,8 @@ async function handleSubmit(isDraft) {
             },
             body: JSON.stringify(body),
         });
-    } catch {
+    } catch (fetchErr) {
+        console.error('Quick compose fetch failed:', fetchErr);
         // Network failure — queue for offline sync
         try {
             await queuePost(body);
@@ -463,7 +464,8 @@ async function handleSubmit(isDraft) {
             clearDraft();
             close();
             showToast('Saved offline — will publish when back online', 'info');
-        } catch {
+        } catch (queueErr) {
+            console.error('Offline queue failed:', queueErr);
             showToast('Network error — try again', 'error');
         }
         resetButtons();
@@ -473,7 +475,8 @@ async function handleSubmit(isDraft) {
     let data;
     try {
         data = await response.json();
-    } catch {
+    } catch (parseErr) {
+        console.error('Failed to parse quick compose response:', parseErr);
         showToast('Server error — please try again', 'error');
         resetButtons();
         return;

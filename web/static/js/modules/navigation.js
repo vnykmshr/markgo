@@ -5,8 +5,8 @@
 function updateActiveLinks() {
     const currentPath = window.location.pathname;
 
-    // Top nav active states
-    document.querySelectorAll('.nav-link').forEach((link) => {
+    // Top nav + footer link active states
+    document.querySelectorAll('.nav-link, .footer-link').forEach((link) => {
         try {
             const linkPath = new URL(link.href, location.origin).pathname;
             link.classList.toggle('active',

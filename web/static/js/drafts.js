@@ -69,7 +69,8 @@ async function handlePublish(btn) {
         let data;
         try {
             data = await res.json();
-        } catch {
+        } catch (err) {
+            console.error('Failed to parse publish response:', err);
             showToast(`Publish failed (${res.status})`, 'error');
             btn.disabled = false;
             btn.textContent = 'Publish';
@@ -86,7 +87,10 @@ async function handlePublish(btn) {
         // Remove card with fade, update count after removal
         const wrapper = btn.closest('.card-wrapper');
         if (wrapper) {
+            let removed = false;
             const removeCard = () => {
+                if (removed) return;
+                removed = true;
                 if (wrapper.parentNode) wrapper.remove();
                 updateDraftCount();
             };
@@ -98,7 +102,8 @@ async function handlePublish(btn) {
         }
 
         showToast(data.message || 'Published', 'success');
-    } catch {
+    } catch (err) {
+        console.error('Draft publish failed:', err);
         showToast('Network error — please try again', 'error');
         btn.disabled = false;
         btn.textContent = 'Publish';

@@ -310,7 +310,15 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 		}
 		// Always register the static route. The upload handler creates
 		// slug subdirectories per-request; Gin's Static serves existing files.
-		router.Static("/uploads", cfg.Upload.Path)
+		// Security headers: nosniff prevents browsers from MIME-sniffing HTML
+		// inside benign extensions; attachment forces download instead of inline render.
+		uploadsGroup := router.Group("/uploads")
+		uploadsGroup.Use(func(c *gin.Context) {
+			c.Header("X-Content-Type-Options", "nosniff")
+			c.Header("Content-Disposition", "attachment")
+			c.Next()
+		})
+		uploadsGroup.Static("/", cfg.Upload.Path)
 	}
 
 	// Redirect legacy /favicon.ico to SVG favicon

@@ -142,22 +142,6 @@ function updateMeta(meta) {
 }
 
 // ---------------------------------------------------------------------------
-// Active link updates
-// ---------------------------------------------------------------------------
-
-function updateActiveLinks(pathname) {
-    document.querySelectorAll('.nav-link, .footer-link').forEach((link) => {
-        const linkPath = new URL(link.href, location.origin).pathname;
-        const isActive =
-            linkPath === pathname ||
-            (pathname.startsWith('/writing/') && linkPath === '/writing') ||
-            (pathname.startsWith('/tags/') && linkPath === '/tags') ||
-            (pathname.startsWith('/categories/') && linkPath === '/categories');
-        link.classList.toggle('active', isActive);
-    });
-}
-
-// ---------------------------------------------------------------------------
 // Navigation
 // ---------------------------------------------------------------------------
 
@@ -253,9 +237,6 @@ async function navigate(url, { push = true } = {}) {
 
         // Re-initialize page modules
         if (onNavigate) onNavigate(page.template);
-
-        // Update nav
-        updateActiveLinks(new URL(finalUrl, location.origin).pathname);
 
         completeProgress();
         document.dispatchEvent(new CustomEvent('router:navigate-end', { detail: { url: finalUrl, template: page.template } }));

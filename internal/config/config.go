@@ -333,6 +333,8 @@ func getEnvInt64(key string, defaultValue int64) int64 {
 		if parsed, err := strconv.ParseInt(value, 10, 64); err == nil {
 			return parsed
 		}
+		slog.Warn("Invalid int64 env var, using default",
+			"key", key, "value", value, "default", defaultValue)
 	}
 	return defaultValue
 }
@@ -697,6 +699,10 @@ func (c *CORSConfig) Validate() error {
 
 // Validate upload configuration
 func (u *UploadConfig) Validate() error {
+	if u.Path == "" {
+		return apperrors.NewConfigError("path", u.Path,
+			"Upload path cannot be empty", apperrors.ErrMissingConfig)
+	}
 	if u.MaxSize <= 0 {
 		return apperrors.NewConfigError("max_size", u.MaxSize,
 			"Upload max size must be positive", apperrors.ErrConfigValidation)
