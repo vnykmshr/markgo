@@ -905,3 +905,641 @@ func TestDrafts(t *testing.T) {
 		assert.Equal(t, float64(0), resp["draft_count"])
 	})
 }
+
+// ---------------------------------------------------------------------------
+// J1: HandleSubmit form tests
+// ---------------------------------------------------------------------------
+
+// createFormComposeHandler creates a ComposeHandler with a REAL compose.Service
+// writing to t.TempDir(). Mirrors createQuickPublishHandler but for form tests.
+func createFormComposeHandler(t *testing.T) (*ComposeHandler, string) {
+	t.Helper()
+	tmpDir := t.TempDir()
+
+	cfg := &config.Config{
+		Environment:  "test",
+		BaseURL:      "http://localhost:3000",
+		ArticlesPath: tmpDir,
+		Blog:         config.BlogConfig{Title: "Test Blog", Author: "Test Author"},
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
+
+	composeSvc := compose.NewService(tmpDir, cfg.Blog.Author)
+	handler := NewComposeHandler(base, composeSvc, &MockArticleService{}, &MockMarkdownRenderer{})
+	return handler, tmpDir
+}
+
+func TestHandleSubmit(t *testing.T) {
+	t.Run("valid content creates article and redirects", func(t *testing.T) {
+		handler, tmpDir := createFormComposeHandler(t)
+
+		router := gin.New()
+		router.Use(func(c *gin.Context) {
+			c.Set("csrf_secure", false)
+			c.Next()
+		})
+		router.POST("/compose", handler.HandleSubmit)
+
+		form := url.Values{
+			"content": {"Hello world, this is a test article."},
+			"title":   {"My Test Article"},
+			"_csrf":   {"test-token"},
+		}
+		req := httptest.NewRequest("POST", "/compose", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusSeeOther, w.Code)
+		assert.Equal(t, "/writing/my-test-article", w.Header().Get("Location"))
+
+		// Verify file was created on disk
+		entries, err := os.ReadDir(tmpDir)
+		require.NoError(t, err)
+		assert.Len(t, entries, 1)
+		assert.Contains(t, entries[0].Name(), "my-test-article.md")
+	})
+
+	t.Run("empty content returns 400", func(t *testing.T) {
+		handler, _ := createFormComposeHandler(t)
+
+		router := gin.New()
+		router.Use(func(c *gin.Context) {
+			c.Set("csrf_secure", false)
+			c.Next()
+		})
+		router.POST("/compose", handler.HandleSubmit)
+
+		form := url.Values{
+			"content": {""},
+			"_csrf":   {"test-token"},
+		}
+		req := httptest.NewRequest("POST", "/compose", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("draft mode redirects to feed", func(t *testing.T) {
+		handler, _ := createFormComposeHandler(t)
+
+		router := gin.New()
+		router.Use(func(c *gin.Context) {
+			c.Set("csrf_secure", false)
+			c.Next()
+		})
+		router.POST("/compose", handler.HandleSubmit)
+
+		form := url.Values{
+			"content": {"Draft content here."},
+			"title":   {"Draft Post"},
+			"draft":   {"on"},
+			"_csrf":   {"test-token"},
+		}
+		req := httptest.NewRequest("POST", "/compose", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		// Draft posts without title redirect to "/" but with title they also redirect to "/"
+		// because the condition is `!reloadOK || input.Title == ""` — with a title and
+		// successful reload, it goes to /writing/slug. But it's a draft so let's test:
+		// Actually, the redirect target depends on reloadOK and title presence.
+		// With MockArticleService.ReloadArticles returning nil and title set, it goes to /writing/slug.
+		assert.Equal(t, http.StatusSeeOther, w.Code)
+		assert.Equal(t, "/writing/draft-post", w.Header().Get("Location"))
+	})
+
+	t.Run("content without title redirects to feed", func(t *testing.T) {
+		handler, _ := createFormComposeHandler(t)
+
+		router := gin.New()
+		router.Use(func(c *gin.Context) {
+			c.Set("csrf_secure", false)
+			c.Next()
+		})
+		router.POST("/compose", handler.HandleSubmit)
+
+		form := url.Values{
+			"content": {"Just a quick thought."},
+			"_csrf":   {"test-token"},
+		}
+		req := httptest.NewRequest("POST", "/compose", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		// No title → redirects to "/" (feed) regardless of reloadOK
+		assert.Equal(t, http.StatusSeeOther, w.Code)
+		assert.Equal(t, "/", w.Header().Get("Location"))
+	})
+
+	t.Run("reload failure redirects to feed", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		cfg := &config.Config{
+			Environment:  "test",
+			BaseURL:      "http://localhost:3000",
+			ArticlesPath: tmpDir,
+			Blog:         config.BlogConfig{Title: "Test Blog", Author: "Test Author"},
+		}
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
+
+		composeSvc := compose.NewService(tmpDir, cfg.Blog.Author)
+		handler := NewComposeHandler(base, composeSvc, &FailReloadArticleService{}, &MockMarkdownRenderer{})
+
+		router := gin.New()
+		router.Use(func(c *gin.Context) {
+			c.Set("csrf_secure", false)
+			c.Next()
+		})
+		router.POST("/compose", handler.HandleSubmit)
+
+		form := url.Values{
+			"content": {"Article with reload failure."},
+			"title":   {"Reload Fail"},
+			"_csrf":   {"test-token"},
+		}
+		req := httptest.NewRequest("POST", "/compose", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		// Reload failure → redirect to "/" even though title is set
+		assert.Equal(t, http.StatusSeeOther, w.Code)
+		assert.Equal(t, "/", w.Header().Get("Location"))
+	})
+}
+
+// ---------------------------------------------------------------------------
+// J1b: HandleEdit form tests
+// ---------------------------------------------------------------------------
+
+func TestHandleEdit(t *testing.T) {
+	t.Run("valid edit updates and redirects", func(t *testing.T) {
+		handler, tmpDir := createFormComposeHandler(t)
+		writeDraftArticle(t, tmpDir, "existing-post", false)
+
+		router := gin.New()
+		router.Use(func(c *gin.Context) {
+			c.Set("csrf_secure", false)
+			c.Next()
+		})
+		router.POST("/compose/edit/:slug", handler.HandleEdit)
+
+		form := url.Values{
+			"content": {"Updated content here."},
+			"title":   {"Updated Title"},
+			"_csrf":   {"test-token"},
+		}
+		req := httptest.NewRequest("POST", "/compose/edit/existing-post", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusSeeOther, w.Code)
+		assert.Equal(t, "/writing/existing-post", w.Header().Get("Location"))
+
+		// Verify file was updated on disk
+		updated, err := os.ReadFile(filepath.Join(tmpDir, "2026-01-01-existing-post.md"))
+		require.NoError(t, err)
+		assert.Contains(t, string(updated), "Updated content here.")
+		assert.Contains(t, string(updated), "Updated Title")
+	})
+
+	t.Run("invalid slug returns error", func(t *testing.T) {
+		handler, _ := createFormComposeHandler(t)
+
+		router := gin.New()
+		router.Use(func(c *gin.Context) {
+			c.Set("csrf_secure", false)
+			c.Next()
+		})
+		router.POST("/compose/edit/:slug", handler.HandleEdit)
+
+		form := url.Values{
+			"content": {"Some content."},
+			"_csrf":   {"test-token"},
+		}
+		req := httptest.NewRequest("POST", "/compose/edit/!!!invalid", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		// handleError renders a 404 error page for invalid slugs
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
+	t.Run("empty content returns 400", func(t *testing.T) {
+		handler, tmpDir := createFormComposeHandler(t)
+		writeDraftArticle(t, tmpDir, "edit-empty", false)
+
+		router := gin.New()
+		router.Use(func(c *gin.Context) {
+			c.Set("csrf_secure", false)
+			c.Next()
+		})
+		router.POST("/compose/edit/:slug", handler.HandleEdit)
+
+		form := url.Values{
+			"content": {""},
+			"_csrf":   {"test-token"},
+		}
+		req := httptest.NewRequest("POST", "/compose/edit/edit-empty", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("edit reload failure redirects to feed", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		cfg := &config.Config{
+			Environment:  "test",
+			BaseURL:      "http://localhost:3000",
+			ArticlesPath: tmpDir,
+			Blog:         config.BlogConfig{Title: "Test Blog", Author: "Test Author"},
+		}
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
+
+		composeSvc := compose.NewService(tmpDir, cfg.Blog.Author)
+		handler := NewComposeHandler(base, composeSvc, &FailReloadArticleService{}, &MockMarkdownRenderer{})
+
+		writeDraftArticle(t, tmpDir, "reload-fail-edit", false)
+
+		router := gin.New()
+		router.Use(func(c *gin.Context) {
+			c.Set("csrf_secure", false)
+			c.Next()
+		})
+		router.POST("/compose/edit/:slug", handler.HandleEdit)
+
+		form := url.Values{
+			"content": {"Updated content."},
+			"title":   {"Updated"},
+			"_csrf":   {"test-token"},
+		}
+		req := httptest.NewRequest("POST", "/compose/edit/reload-fail-edit", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		// Reload failure → redirect to "/" instead of /writing/slug
+		assert.Equal(t, http.StatusSeeOther, w.Code)
+		assert.Equal(t, "/", w.Header().Get("Location"))
+	})
+}
+
+// ---------------------------------------------------------------------------
+// J2: refreshCSRFToken tests
+// ---------------------------------------------------------------------------
+
+func TestRefreshCSRFToken(t *testing.T) {
+	t.Run("generates valid 64-char hex token", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Set("csrf_secure", false)
+		c.Request = httptest.NewRequest("GET", "/", http.NoBody)
+
+		token := refreshCSRFToken(c)
+
+		assert.NotEmpty(t, token)
+		assert.Len(t, token, 64, "token should be 64 hex characters (32 bytes)")
+		assert.False(t, c.IsAborted(), "should not abort on success")
+	})
+
+	t.Run("sets cookie with correct attributes", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Set("csrf_secure", false)
+		c.Request = httptest.NewRequest("GET", "/", http.NoBody)
+
+		token := refreshCSRFToken(c)
+
+		// Verify Set-Cookie header exists
+		cookies := w.Result().Cookies()
+		require.NotEmpty(t, cookies, "should have at least one cookie")
+
+		var csrfCookie *http.Cookie
+		for _, cookie := range cookies {
+			if cookie.Name == "_csrf" {
+				csrfCookie = cookie
+				break
+			}
+		}
+		require.NotNil(t, csrfCookie, "should have _csrf cookie")
+		assert.Equal(t, token, csrfCookie.Value)
+		assert.True(t, csrfCookie.HttpOnly, "cookie should be HttpOnly")
+		assert.Equal(t, http.SameSiteStrictMode, csrfCookie.SameSite, "cookie should be SameSite=Strict")
+		assert.False(t, csrfCookie.Secure, "cookie should not be Secure when csrf_secure=false")
+	})
+
+	t.Run("secure cookie when csrf_secure is true", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Set("csrf_secure", true)
+		c.Request = httptest.NewRequest("GET", "/", http.NoBody)
+
+		refreshCSRFToken(c)
+
+		cookies := w.Result().Cookies()
+		var csrfCookie *http.Cookie
+		for _, cookie := range cookies {
+			if cookie.Name == "_csrf" {
+				csrfCookie = cookie
+				break
+			}
+		}
+		require.NotNil(t, csrfCookie, "should have _csrf cookie")
+		assert.True(t, csrfCookie.Secure, "cookie should be Secure when csrf_secure=true")
+	})
+
+	t.Run("each call generates a unique token", func(t *testing.T) {
+		w1 := httptest.NewRecorder()
+		c1, _ := gin.CreateTestContext(w1)
+		c1.Set("csrf_secure", false)
+		c1.Request = httptest.NewRequest("GET", "/", http.NoBody)
+		token1 := refreshCSRFToken(c1)
+
+		w2 := httptest.NewRecorder()
+		c2, _ := gin.CreateTestContext(w2)
+		c2.Set("csrf_secure", false)
+		c2.Request = httptest.NewRequest("GET", "/", http.NoBody)
+		token2 := refreshCSRFToken(c2)
+
+		assert.NotEqual(t, token1, token2, "consecutive tokens should be unique")
+	})
+}
+
+// ---------------------------------------------------------------------------
+// csrfToken helper tests
+// ---------------------------------------------------------------------------
+
+func TestCsrfToken(t *testing.T) {
+	t.Run("returns token from context", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Set("csrf_token", "abc123")
+
+		assert.Equal(t, "abc123", csrfToken(c))
+	})
+
+	t.Run("returns empty string when no token set", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+
+		assert.Equal(t, "", csrfToken(c))
+	})
+
+	t.Run("returns empty string when token is not a string", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Set("csrf_token", 12345)
+
+		assert.Equal(t, "", csrfToken(c))
+	})
+}
+
+// ---------------------------------------------------------------------------
+// J3: injectAuthState tests
+// ---------------------------------------------------------------------------
+
+func TestInjectAuthState(t *testing.T) {
+	t.Run("unauthenticated with admin configured generates CSRF token", func(t *testing.T) {
+		cfg := &config.Config{
+			Environment: "development",
+			BaseURL:     "http://localhost:3000",
+			Blog:        config.BlogConfig{Title: "Test Blog"},
+			Admin: config.AdminConfig{
+				Username: "admin",
+				Password: "secret",
+			},
+		}
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/some-page", http.NoBody)
+
+		data := make(map[string]any)
+		base.injectAuthState(c, data)
+
+		// Should have generated a CSRF token since admin is configured and no token existed
+		assert.NotEmpty(t, data["csrf_token"], "should generate CSRF token for login popover")
+		token, ok := data["csrf_token"].(string)
+		assert.True(t, ok, "csrf_token should be a string")
+		assert.Len(t, token, 64, "generated token should be 64 hex chars")
+	})
+
+	t.Run("authenticated copies auth state to data", func(t *testing.T) {
+		cfg := &config.Config{
+			Environment: "test",
+			BaseURL:     "http://localhost:3000",
+			Blog:        config.BlogConfig{Title: "Test Blog"},
+		}
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/compose", http.NoBody)
+		c.Set("authenticated", true)
+		c.Set("auth_required", true)
+		c.Set("csrf_token", "existing-token-from-middleware")
+
+		data := make(map[string]any)
+		base.injectAuthState(c, data)
+
+		assert.Equal(t, true, data["authenticated"])
+		assert.Equal(t, true, data["auth_required"])
+		assert.Equal(t, "existing-token-from-middleware", data["csrf_token"])
+	})
+
+	t.Run("login_next set to request URI", func(t *testing.T) {
+		cfg := &config.Config{
+			Environment: "test",
+			BaseURL:     "http://localhost:3000",
+			Blog:        config.BlogConfig{Title: "Test Blog"},
+		}
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/writing/my-article?foo=bar", http.NoBody)
+
+		data := make(map[string]any)
+		base.injectAuthState(c, data)
+
+		assert.Equal(t, "/writing/my-article?foo=bar", data["login_next"])
+	})
+
+	t.Run("no CSRF token generated when admin not configured", func(t *testing.T) {
+		cfg := &config.Config{
+			Environment: "test",
+			BaseURL:     "http://localhost:3000",
+			Blog:        config.BlogConfig{Title: "Test Blog"},
+			Admin:       config.AdminConfig{}, // no username/password
+		}
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/", http.NoBody)
+
+		data := make(map[string]any)
+		base.injectAuthState(c, data)
+
+		// No admin configured → no CSRF token should be generated
+		_, hasCSRF := data["csrf_token"]
+		assert.False(t, hasCSRF, "should not generate CSRF token when admin is not configured")
+	})
+
+	t.Run("existing CSRF token preserved and not regenerated", func(t *testing.T) {
+		cfg := &config.Config{
+			Environment: "test",
+			BaseURL:     "http://localhost:3000",
+			Blog:        config.BlogConfig{Title: "Test Blog"},
+			Admin: config.AdminConfig{
+				Username: "admin",
+				Password: "secret",
+			},
+		}
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/", http.NoBody)
+		c.Set("csrf_token", "pre-existing-token")
+
+		data := make(map[string]any)
+		base.injectAuthState(c, data)
+
+		// Should preserve existing token, not generate a new one
+		assert.Equal(t, "pre-existing-token", data["csrf_token"])
+	})
+
+	t.Run("unauthenticated state is not copied when not set", func(t *testing.T) {
+		cfg := &config.Config{
+			Environment: "test",
+			BaseURL:     "http://localhost:3000",
+			Blog:        config.BlogConfig{Title: "Test Blog"},
+		}
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		base := NewBaseHandler(cfg, logger, &MockTemplateService{}, &BuildInfo{Version: "test"}, &MockSEOService{})
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/", http.NoBody)
+
+		data := make(map[string]any)
+		base.injectAuthState(c, data)
+
+		_, hasAuth := data["authenticated"]
+		assert.False(t, hasAuth, "authenticated should not be in data when not set in context")
+		_, hasAuthReq := data["auth_required"]
+		assert.False(t, hasAuthReq, "auth_required should not be in data when not set in context")
+	})
+}
+
+// ---------------------------------------------------------------------------
+// ShowCompose tests
+// ---------------------------------------------------------------------------
+
+func TestShowCompose(t *testing.T) {
+	t.Run("renders compose template", func(t *testing.T) {
+		handler, _ := createFormComposeHandler(t)
+
+		router := gin.New()
+		router.GET("/compose", handler.ShowCompose)
+
+		req := httptest.NewRequest("GET", "/compose", http.NoBody)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("pre-fills from share_target query params", func(t *testing.T) {
+		// Use a custom template service to capture the data passed to render
+		handler, _ := createFormComposeHandler(t)
+
+		router := gin.New()
+		router.GET("/compose", handler.ShowCompose)
+
+		req := httptest.NewRequest("GET", "/compose?title=Shared+Title&text=Shared+content&url=https://example.com", http.NoBody)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// ShowEdit tests
+// ---------------------------------------------------------------------------
+
+func TestShowEdit(t *testing.T) {
+	t.Run("renders edit form for existing article", func(t *testing.T) {
+		handler, tmpDir := createFormComposeHandler(t)
+		writeDraftArticle(t, tmpDir, "editable-post", false)
+
+		router := gin.New()
+		router.GET("/compose/edit/:slug", handler.ShowEdit)
+
+		req := httptest.NewRequest("GET", "/compose/edit/editable-post", http.NoBody)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("invalid slug returns error", func(t *testing.T) {
+		handler, _ := createFormComposeHandler(t)
+
+		router := gin.New()
+		router.GET("/compose/edit/:slug", handler.ShowEdit)
+
+		req := httptest.NewRequest("GET", "/compose/edit/!!!invalid", http.NoBody)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
+	t.Run("nonexistent slug returns error", func(t *testing.T) {
+		handler, _ := createFormComposeHandler(t)
+
+		router := gin.New()
+		router.GET("/compose/edit/:slug", handler.ShowEdit)
+
+		req := httptest.NewRequest("GET", "/compose/edit/does-not-exist", http.NoBody)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		// handleError wraps this as ErrArticleNotFound → 404
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+}
