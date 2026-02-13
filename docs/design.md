@@ -1,7 +1,7 @@
 # MarkGo Design Language
 
 > A living document. Updated as the product evolves.
-> Last revised: 2026-02-12
+> Last revised: 2026-02-13
 
 ---
 
@@ -33,9 +33,11 @@ Five beliefs that guide every decision. A principle that nobody would disagree w
 
 ### 1. Content-first, chrome-last
 
-The feed _is_ the homepage. Navigation is two text links — "Writing" and "About" — plus a search icon and RSS button. When admin credentials are configured, a third link ("Compose") appears. No sidebar. No hero image. No "featured posts" carousel. The content appears immediately, and everything else earns its pixel.
+The feed _is_ the homepage. On desktop, navigation is two text links — "Writing" and "About" — plus action icons (search, subscribe, user, appearance). When admin credentials are configured, a third link ("Compose") appears. No sidebar. No hero image. No "featured posts" carousel. The content appears immediately, and everything else earns its pixel.
 
-**Say no to:** dashboard widgets, sidebar recommendations, header banners, anything that pushes the first piece of content below the fold.
+On mobile, the header shows only the brand and the two actions that aren't available elsewhere: user/login and appearance. Search is in the bottom nav. Subscribe is in the footer. If an action is reachable through another persistent surface, it doesn't need a header icon — that pixel belongs to the blog title.
+
+**Say no to:** dashboard widgets, sidebar recommendations, header banners, anything that pushes the first piece of content below the fold. Say no to icon clutter in the header — if you can reach it from the bottom nav or footer, remove it from the header on mobile.
 
 ### 2. Thought-sized to essay-length
 
@@ -45,7 +47,14 @@ Publishing frequency shouldn't require ceremony. A two-sentence observation and 
 
 ### 3. Mobile is the default, not the fallback
 
-CSS starts at 320px and works up. Not 1024px scaled down. Interactive elements maintain a minimum 40px touch target (verified: `.nav-action-btn` and `.theme-toggle` are 40x40px). If an interaction requires a hover state for critical information, it is a bug.
+CSS starts at 320px and works up. Not 1024px scaled down. Interactive elements maintain a minimum 40px touch target (verified: `.nav-action-btn` and `.theme-toggle` are 40x40px). Admin and error page buttons must also meet this threshold. If an interaction requires a hover state for critical information, it is a bug.
+
+Three breakpoints, three device classes:
+- **320px base** — phones, the default CSS
+- **481px** — larger phones and small tablets (enhanced padding, popover sizing)
+- **769px** — tablets and desktop (full nav, hide bottom nav, show FAB)
+
+Each breakpoint adds capability; nothing is taken away. The jump from phone to tablet switches navigation strategy: bottom tab bar yields to inline header links. The jump from tablet to desktop is cosmetic only.
 
 **Say no to:** hover-only tooltips, right-click context menus, drag-and-drop as the only way to reorder, layouts that require horizontal scrolling on phone screens.
 
@@ -96,7 +105,9 @@ The voice is **conversational and direct**. It sounds like a person, not a produ
 
 MarkGo's content model has three types, inferred automatically from what you write. You never pick a type from a dropdown — the system figures it out from the shape of your content. This is MarkGo's most distinctive design decision.
 
-**Thoughts** — No title, under 100 words. A fleeting idea, a reaction, a note-to-self that's worth sharing. Displayed as a simple text card with a left accent stripe in `--color-primary`. No "read more" link — the whole thought is right there. Shows relative time ("2 hours ago") and tags.
+**Thoughts** — No title, under 100 words. A fleeting idea, a reaction, a note-to-self that's worth sharing. Displayed as a simple text card with a left accent stripe in `--color-primary`. The full thought is visible in the feed — no teaser, no truncation. Shows relative time ("2 hours ago") and tags.
+
+Every thought has a permalink at `/writing/{slug}`. The card is clickable — tapping anywhere navigates to the thought's detail page. The detail page is minimal: content, date, tags, back-to-feed link. No article chrome, no generated title. The page `<title>` uses the first ~60 characters of content. This gives thoughts what every piece of content deserves: a URL you can share, link to, and bookmark. The thought identity stays distinct — no title, short content, quick capture — but it's a first-class citizen with its own address.
 
 **Links** — A URL you're sharing, with optional commentary. Displayed with the domain extracted (e.g., "github.com") and a visit arrow (→). Links to both the MarkGo article page (title) and the external URL (domain). Shows relative time and tags.
 
@@ -168,7 +179,9 @@ New themes must only set `--theme-*` variables — never override component sele
 
 **Progressive enhancement** — Theme toggle, bottom navigation, compose sheet, and code-block copy buttons are JavaScript features. Without JS, you get system-preference theming, a nav bar with links, and fully functional browsing. Nothing breaks — features degrade.
 
-**Mobile-native UX** — Bottom navigation (5-item tab bar) replaces the header nav on mobile. Search via header popover (Cmd/Ctrl+K shortcut) or dedicated /search page. Visual viewport handlers reposition overlays above the iOS keyboard. Dynamic `theme-color` meta tag matches the page background. The app should feel like it belongs on the home screen, not in a browser tab.
+**Mobile-native UX** — Bottom navigation (5-item tab bar: Home, Writing, Compose, Search, About) replaces the header nav on mobile. The header simplifies to brand + two action icons (user/login and appearance). Search lives in the bottom nav — it doesn't need a header icon on mobile. Subscribe lives in the footer. Visual viewport handlers reposition overlays above the iOS keyboard. Dynamic `theme-color` meta tag matches the page background. The app should feel like it belongs on the home screen, not in a browser tab.
+
+**Popover system** — All header action popovers follow one standard: full-width on mobile (`left: 0; right: 0`), 320px right-anchored on tablet/desktop. One size, one pattern, consistent visual weight. This applies to search, subscribe, login, admin, and appearance popovers. Some content (subscribe's two buttons) gets more breathing room than strictly needed — that's fine. Consistency beats density. Each popover reimagines its content for the 320px canvas: subscribe shows feed options with clear labels, appearance lays out mode and color choices with comfortable spacing, admin menu items get generous touch targets. Only one popover can be open at a time.
 
 **Quick capture** — A floating action button (FAB) triggers a compose sheet overlay. On mobile: bottom sheet sliding up. On desktop: centered modal. Type content, hit Publish, done. Auto-save drafts to localStorage with 2-second debounce and recovery on re-open. Keyboard shortcut: Cmd/Ctrl+N. The goal: under 5 seconds from thought to published.
 
@@ -176,7 +189,7 @@ New themes must only set `--theme-*` variables — never override component sele
 
 **FOUC prevention** — An inline `<script>` in `<head>` reads the theme preference from localStorage before the first paint. Wrapped in try/catch; fails silently.
 
-**Pagination, not infinite scroll** — "Page 1 of 3" with Newer/Older links. Your position in the feed is stable and bookmarkable. Attention is a finite resource; the UI respects it.
+**Pagination, not infinite scroll** — "Page 1 of 3" with Newer/Older links. Configurable via `POSTS_PER_PAGE` (default: 20). Your position in the feed is stable and bookmarkable. No auto-triggering infinite scroll, no "load more" buttons, no lazy-loading content that shifts your viewport. With 100+ posts, the feed handler loads all articles from the in-memory cache, slices one page worth, and renders only that page. The HTML is lightweight regardless of total article count. Attention is a finite resource; the UI respects it.
 
 **Compose and admin** — The compose form at `/compose` and the admin dashboard at `/admin` are gated behind session authentication configured in `.env`. These exist to enable publishing from a phone or tablet — the "train with one thumb" scenario. They are optional; you can ignore them entirely and manage articles as files. The compose form writes markdown files to disk — it is a convenience layer over the filesystem, not a replacement for it.
 
@@ -196,15 +209,35 @@ MarkGo uses a Turbo Drive-style SPA router — intercept clicks, fetch full HTML
 
 **Trade-off:** No client-side state management. Every "page" is a fresh server render. This is fine for a blog — there's no complex interactive state to manage.
 
-### Mobile: Bottom Nav, Not Hamburger
+### Navigation Architecture: Three Strategies for Three Sizes
 
-Mobile navigation uses a 5-item bottom tab bar instead of a hamburger menu.
+Navigation adapts by viewport, not by hiding things behind menus.
 
-**Why?** Hamburger menus hide navigation behind a tap — users have to remember what's available. Bottom tabs show everything at a glance, are reachable with one thumb, and match the native app conventions users already know (iOS tab bar, Android bottom nav). Studies consistently show bottom tabs get more engagement than hamburger menus.
+**Phone (<769px): Bottom tab bar + simplified header**
 
-**Why 5 items?** Home, Writing, Compose (+), Search, About. This covers the primary user journeys. Apple's HIG recommends 3-5 items. More than 5 becomes cramped on narrow screens.
+5-item tab bar: Home, Writing, Compose (+), Search, About. Reachable with one thumb. Matches native app conventions (iOS tab bar, Android bottom nav). Hamburger menus hide navigation behind a tap — bottom tabs show everything at a glance. Apple's HIG recommends 3-5 items.
 
-**Trade-off:** The compose button is always visible even for unauthenticated visitors (though it triggers a login flow). This is intentional — it signals that MarkGo is a tool for writing, not just reading.
+The header simplifies to brand + 2 action icons (user/login and appearance). Search and subscribe are deliberately removed — search is in the bottom nav, subscribe is in the footer. This gives the blog title ≥60% of the header width instead of being squeezed by four icon buttons.
+
+**Tablet/Desktop (≥769px): Inline header nav + FAB**
+
+Full text links appear in the header (Writing, About, Compose). Bottom nav hides. FAB appears for quick compose. All four action icons show in the header — there's room. The hamburger toggle is never needed on desktop.
+
+**The compose button** is always visible even for unauthenticated visitors (though it triggers a login flow). This is intentional — it signals that MarkGo is a tool for writing, not just reading.
+
+**Trade-off:** Search appears in two places on desktop (header icon + `/search` page). On mobile, it appears in one place (bottom nav), and the header icon hides. This is the right trade-off: desktop has room for redundancy, mobile doesn't.
+
+### Content Width: 42rem, Deliberately
+
+All content constrains to 42rem (672px) centered within a 1200px container. On a wide monitor, this leaves ~264px of whitespace on each side. This is not wasted space — it's reading comfort.
+
+**Why 42rem?** Optimal line length for prose is 65-75 characters. At 16px body text with Inter, 42rem hits this range. Every page follows the same constraint: feed, articles, about, search, taxonomy, admin. The consistency is part of the calm — you never wonder "why is this page wider?"
+
+**Why not wider on desktop?** More content width doesn't improve a blog. It degrades readability, creates eye-tracking fatigue, and breaks the focused, centered aesthetic. Multi-column feeds are trendy but harm focus. MarkGo is a notebook, not a newspaper.
+
+**Why not a sidebar?** A sidebar implies there's something competing for attention beside the content. There isn't. Tags and categories have their own pages. Recent posts are in the feed. A sidebar would violate principle 1 (content-first, chrome-last).
+
+**Exception:** The compose form uses 48rem — slightly wider to give form fields breathing room.
 
 ### PWA: Offline Reading + Compose Queue
 
@@ -251,6 +284,43 @@ All `target="_blank"` links include `rel="noopener"`. The SPA router only interc
 
 ---
 
+## Responsive Patterns
+
+Rules for how components adapt across viewports. These patterns emerged from auditing every page at mobile, tablet, and desktop sizes and codifying what worked.
+
+### Cards: Single Column, Always
+
+Feed cards, search results, tag listings, and category listings use a single-column vertical stack at every viewport. No multi-column grid on wide screens. Single column maintains focus, prevents comparison-shopping behavior, and keeps reading flow linear. The card _width_ grows with the viewport (within the 42rem constraint), but the _layout_ stays one card per row.
+
+### Popovers: One Standard Size
+
+All header popovers share a single sizing pattern:
+
+```
+Mobile (<481px):   left: 0; right: 0     → full-width within container
+Desktop (≥481px):  left: auto; width: 320px → right-anchored card
+```
+
+Shared base: `position: absolute; top: 100%; z-index: var(--z-popover); background, border, border-radius, shadow from tokens`. Each popover adds only its content styles. This replaces five separate sizing strategies with one.
+
+### Touch Targets: 40px Minimum Everywhere
+
+All interactive elements maintain 40px minimum touch target. This includes admin action buttons, error page buttons, social links, and compose controls — not just the primary navigation. Icon-only buttons include `aria-label` for screen readers and `title` for sighted users on hover.
+
+### Deduplication: One Path Per Action Per Viewport
+
+Every user action should have exactly one visible path at each viewport size. If an action is reachable through a persistent surface (bottom nav, footer), it doesn't need redundant placement in the header. The mapping:
+
+| Action | Phone (<769px) | Desktop (≥769px) |
+|--------|---------------|-------------------|
+| Search | Bottom nav | Header icon + /search page |
+| Subscribe | Footer link | Header icon + footer |
+| User/Login | Header icon | Header icon |
+| Appearance | Header icon | Header icon |
+| Compose | Bottom nav (+) | Header link + FAB |
+
+---
+
 ## Anti-Patterns
 
 Things MarkGo deliberately does not do. Each one names a trade-off, not just an absence.
@@ -264,6 +334,8 @@ Things MarkGo deliberately does not do. Each one names a trade-off, not just an 
 **No engagement metrics** — No like counts, no view counts, no "trending" badges. Writing is its own reward. The trade-off: you will never know if anyone read what you wrote from MarkGo itself. The benefit: the absence of metrics removes the anxiety of performance.
 
 **No first-party tracking** — No analytics scripts, no fingerprinting, no first-party tracking cookies. The trade-off: no usage data to inform design decisions. The benefit: no cookie consent banner needed. All assets are self-hosted — zero external requests.
+
+**No infinite scroll** — The feed paginates. Every page is a stable URL. You can bookmark "page 3" and return to exactly that set of posts. Infinite scroll creates a treadmill that punishes the scroll position, makes sharing impossible, and turns a finite blog into a bottomless pit. The trade-off: you click "Older →" to see more. The benefit: you know where you are, and the page loads fast regardless of total article count.
 
 **No dark patterns** — No newsletter popup on first visit. No "subscribe before you read" gate. No exit-intent modals. Content is freely accessible the moment you arrive.
 
