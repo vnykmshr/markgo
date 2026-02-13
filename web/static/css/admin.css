@@ -162,10 +162,6 @@ a.admin-stat-link:hover {
    Drafts Page
    -------------------------------------------------------------------------- */
 
-.drafts-page {
-    padding: var(--spacing-6) 0;
-}
-
 .card-wrapper {
     position: relative;
     margin-bottom: var(--spacing-4);

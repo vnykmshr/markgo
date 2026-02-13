@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -56,6 +57,28 @@ func (h *SyndicationHandler) Sitemap(c *gin.Context) {
 
 	c.Header("Content-Type", "application/xml; charset=utf-8")
 	c.String(http.StatusOK, data)
+}
+
+// HumansTxt serves a humans.txt with team and site information.
+func (h *SyndicationHandler) HumansTxt(c *gin.Context) {
+	version := unknownValue
+	if h.buildInfo != nil && h.buildInfo.Version != "" {
+		version = h.buildInfo.Version
+	}
+
+	content := fmt.Sprintf(`/* TEAM */
+Author: %s
+Site: %s
+
+/* SITE */
+Software: MarkGo %s
+Language: Go
+Framework: Gin
+Standards: HTML5, CSS3, ES Modules
+`, h.config.Blog.Author, h.config.BaseURL, version)
+
+	c.Header("Content-Type", "text/plain; charset=utf-8")
+	c.String(http.StatusOK, content)
 }
 
 // RobotsTxt serves a dynamically generated robots.txt using the configured BASE_URL.

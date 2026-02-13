@@ -175,9 +175,9 @@ func (h *AdminHandler) Debug(c *gin.Context) {
 	runtime.ReadMemStats(&m)
 
 	buildInfo := map[string]any{
-		"version":     "unknown",
-		"git_commit":  "unknown",
-		"build_time":  "unknown",
+		"version":     unknownValue,
+		"git_commit":  unknownValue,
+		"build_time":  unknownValue,
 		"environment": h.config.Environment,
 	}
 	if h.buildInfo != nil {

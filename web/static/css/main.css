@@ -591,6 +591,11 @@ html {
     text-decoration: none;
 }
 
+.nav-link.active {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
 .navbar-actions {
     display: flex;
     align-items: center;
@@ -863,6 +868,10 @@ html {
 .footer-link:hover {
     color: var(--color-primary);
     text-decoration: none;
+}
+
+.footer-link.active {
+    color: var(--color-primary);
 }
 
 .footer-subscribe {

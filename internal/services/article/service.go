@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -274,6 +275,7 @@ func (s *CompositeService) GetAllTags() []string {
 		tags = append(tags, tag)
 	}
 
+	slices.Sort(tags)
 	return tags
 }
 
@@ -293,6 +295,7 @@ func (s *CompositeService) GetAllCategories() []string {
 		categories = append(categories, category)
 	}
 
+	slices.Sort(categories)
 	return categories
 }
 
@@ -315,6 +318,13 @@ func (s *CompositeService) GetTagCounts() []models.TagCount {
 		})
 	}
 
+	slices.SortFunc(result, func(a, b models.TagCount) int {
+		if a.Count != b.Count {
+			return b.Count - a.Count
+		}
+		return strings.Compare(a.Tag, b.Tag)
+	})
+
 	return result
 }
 
@@ -336,6 +346,13 @@ func (s *CompositeService) GetCategoryCounts() []models.CategoryCount {
 			Count:    count,
 		})
 	}
+
+	slices.SortFunc(result, func(a, b models.CategoryCount) int {
+		if a.Count != b.Count {
+			return b.Count - a.Count
+		}
+		return strings.Compare(a.Category, b.Category)
+	})
 
 	return result
 }

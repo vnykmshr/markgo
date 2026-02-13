@@ -85,11 +85,14 @@
 
             <!-- Footer -->
             <footer class="article-footer">
-                {{ if .authenticated }}
-                <div class="article-admin-actions">
+                <div class="article-footer-actions">
+                    {{ if .authenticated }}
                     <a href="/compose/edit/{{ .article.Slug }}" class="article-edit-link">Edit</a>
+                    {{ end }}
+                    {{ if .config.Blog.AuthorEmail }}
+                    <span class="article-reply">Have thoughts? <a href="mailto:{{ .config.Blog.AuthorEmail }}?subject=Re: {{ displayTitle .article }}">Reply by email</a></span>
+                    {{ end }}
                 </div>
-                {{ end }}
                 <div class="content-separator"></div>
                 <div class="article-footer-content">
                     <a href="/writing" class="page-back-link">← Writing</a>
@@ -101,11 +104,6 @@
                     </p>
                     {{ end }}
                 </div>
-                {{ if .config.Blog.AuthorEmail }}
-                <p class="article-reply">
-                    Have thoughts? <a href="mailto:{{ .config.Blog.AuthorEmail }}?subject=Re: {{ displayTitle .article }}">Reply by email</a>
-                </p>
-                {{ end }}
             </footer>
         </div>
     </article>

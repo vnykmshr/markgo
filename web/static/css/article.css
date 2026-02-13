@@ -174,8 +174,14 @@
     margin: 0;
 }
 
+.article-footer-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-4);
+    margin-bottom: var(--spacing-4);
+}
+
 .article-reply {
-    margin: var(--spacing-4) 0 0;
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);
 }
@@ -187,11 +193,6 @@
 
 .article-reply a:hover {
     color: var(--color-accent);
-}
-
-/* Admin edit action — authenticated users only */
-.article-admin-actions {
-    margin-bottom: var(--spacing-4);
 }
 
 .article-edit-link {

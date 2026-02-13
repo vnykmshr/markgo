@@ -3,24 +3,6 @@
    Auth-gated form for creating new posts
    ========================================================================== */
 
-.compose-header {
-    text-align: center;
-    padding: var(--spacing-8) 0 var(--spacing-4);
-}
-
-.compose-title {
-    font-size: var(--font-size-3xl);
-    font-weight: 700;
-    margin: 0 0 var(--spacing-2);
-    color: var(--color-text-primary);
-}
-
-.compose-subtitle {
-    font-size: var(--font-size-base);
-    color: var(--color-text-muted);
-    margin: 0;
-}
-
 /* Draft Recovery Notice */
 .compose-draft-notice {
     display: flex;

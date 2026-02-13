@@ -306,6 +306,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 		c.Redirect(http.StatusMovedPermanently, "/static/img/favicon.svg")
 	})
 	router.GET("/robots.txt", h.Syndication.RobotsTxt)
+	router.GET("/humans.txt", h.Syndication.HumansTxt)
 
 	// Health check, metrics, manifest, offline
 	router.GET("/health", h.Health.Health)

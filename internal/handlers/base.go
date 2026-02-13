@@ -17,6 +17,7 @@ import (
 )
 
 const templateArticle = "article"
+const unknownValue = "unknown"
 
 // fallbackErrorHTML is a self-contained styled error page used when template rendering fails.
 // Matches the recovery middleware's inline HTML so all error paths look consistent.
@@ -241,7 +242,7 @@ func (h *BaseHandler) requireDevelopmentEnv(c *gin.Context) bool {
 
 // buildBaseTemplateData creates common template data that most pages need
 func (h *BaseHandler) buildBaseTemplateData(title string) map[string]any {
-	appVersion := "unknown"
+	appVersion := unknownValue
 	if h.buildInfo != nil && h.buildInfo.Version != "" {
 		appVersion = h.buildInfo.Version
 	}
@@ -254,7 +255,7 @@ func (h *BaseHandler) buildBaseTemplateData(title string) map[string]any {
 
 // buildArticlePageData creates template data for article pages
 func (h *BaseHandler) buildArticlePageData(title string, recentArticles []*models.Article) map[string]any {
-	appVersion := "unknown"
+	appVersion := unknownValue
 	if h.buildInfo != nil && h.buildInfo.Version != "" {
 		appVersion = h.buildInfo.Version
 	}
