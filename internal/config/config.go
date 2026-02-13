@@ -427,6 +427,11 @@ func (c *Config) Validate() error {
 		return apperrors.NewConfigError("cors", c.CORS, "Invalid CORS configuration", err)
 	}
 
+	// Validate upload configuration
+	if err := c.Upload.Validate(); err != nil {
+		return apperrors.NewConfigError("upload", c.Upload, "Invalid upload configuration", err)
+	}
+
 	return nil
 }
 
@@ -687,6 +692,19 @@ func (c *CORSConfig) Validate() error {
 		}
 	}
 
+	return nil
+}
+
+// Validate upload configuration
+func (u *UploadConfig) Validate() error {
+	if u.MaxSize <= 0 {
+		return apperrors.NewConfigError("max_size", u.MaxSize,
+			"Upload max size must be positive", apperrors.ErrConfigValidation)
+	}
+	if u.MaxSize > 100<<20 { // 100MB sanity cap
+		return apperrors.NewConfigError("max_size", u.MaxSize,
+			"Upload max size should not exceed 100MB", apperrors.ErrConfigValidation)
+	}
 	return nil
 }
 

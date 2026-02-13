@@ -63,6 +63,10 @@ func TestConfigValidationTableDriven(t *testing.T) {
 				AllowedOrigins: []string{"http://localhost:3000"},
 				AllowedMethods: []string{"GET", "POST"},
 			},
+			Upload: UploadConfig{
+				Path:    "./uploads",
+				MaxSize: 10 << 20,
+			},
 		}
 	}
 

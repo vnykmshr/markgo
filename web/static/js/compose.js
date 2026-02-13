@@ -322,7 +322,7 @@ export function init() {
 
         const slug = getSlug();
         if (!slug) {
-            setUploadStatus('Save as draft first to upload files', true);
+            setUploadStatus('Save as draft first to upload files', false);
             return;
         }
 
@@ -374,7 +374,7 @@ export function init() {
     // Drag and drop on textarea
     textarea.addEventListener('dragover', (e) => {
         e.preventDefault();
-        textarea.classList.add('compose-textarea-dragover');
+        if (getSlug()) textarea.classList.add('compose-textarea-dragover');
     }, { signal });
 
     textarea.addEventListener('dragleave', () => {

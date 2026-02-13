@@ -311,6 +311,38 @@ func TestUpload(t *testing.T) {
 		assert.Equal(t, "File type not allowed", resp["error"])
 	})
 
+	t.Run("HTML extension rejected (XSS prevention)", func(t *testing.T) {
+		handler, _ := createTestComposeHandler(t, nil)
+
+		req := createMultipartRequest(t, "file", "page.html", []byte("<script>alert('xss')</script>"), nil)
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/compose/upload/:slug", handler.Upload)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		var resp map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Equal(t, "File type not allowed", resp["error"])
+	})
+
+	t.Run("SVG extension rejected (XSS prevention)", func(t *testing.T) {
+		handler, _ := createTestComposeHandler(t, nil)
+
+		req := createMultipartRequest(t, "file", "image.svg", []byte("<svg><script>alert('xss')</script></svg>"), nil)
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/compose/upload/:slug", handler.Upload)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		var resp map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Equal(t, "File type not allowed", resp["error"])
+	})
+
 	t.Run("invalid slug rejected", func(t *testing.T) {
 		handler, _ := createTestComposeHandler(t, nil)
 

@@ -17,10 +17,15 @@ var (
 	blockedExtensions = map[string]bool{
 		".exe": true, ".bat": true, ".cmd": true, ".sh": true,
 		".com": true, ".msi": true, ".dll": true, ".so": true,
+		".html": true, ".htm": true, ".xhtml": true,
+		".js": true, ".mjs": true, ".cjs": true,
+		".svg": true,
+		".php": true, ".py": true, ".rb": true, ".pl": true,
+		".cgi": true, ".jsp": true, ".asp": true, ".aspx": true,
 	}
 	imageExtensions = map[string]bool{
 		".jpg": true, ".jpeg": true, ".png": true, ".gif": true,
-		".webp": true, ".svg": true,
+		".webp": true,
 	}
 	safeFilenameRe = regexp.MustCompile(`[^a-z0-9_-]`)
 )

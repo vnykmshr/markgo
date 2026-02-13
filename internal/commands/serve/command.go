@@ -304,10 +304,12 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 	// Uploaded assets — filesystem only, never embedded
 	if cfg.Upload.Path != "" {
 		if err := os.MkdirAll(cfg.Upload.Path, 0o755); err != nil { //nolint:gosec // upload dir needs to be accessible
-			logger.Warn("Could not create upload directory", "path", cfg.Upload.Path, "error", err)
-		} else {
-			router.Static("/uploads", cfg.Upload.Path)
+			logger.Error("Could not create upload directory — uploads may not work",
+				"path", cfg.Upload.Path, "error", err)
 		}
+		// Always register the static route. The upload handler creates
+		// slug subdirectories per-request; Gin's Static serves existing files.
+		router.Static("/uploads", cfg.Upload.Path)
 	}
 
 	// Redirect legacy /favicon.ico to SVG favicon

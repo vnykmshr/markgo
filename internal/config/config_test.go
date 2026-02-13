@@ -388,6 +388,28 @@ func TestGetEnvInt64(t *testing.T) {
 	})
 }
 
+func TestUploadConfigValidation(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
+		cfg := &UploadConfig{Path: "./uploads", MaxSize: 10 << 20}
+		assert.NoError(t, cfg.Validate())
+	})
+
+	t.Run("zero max size rejected", func(t *testing.T) {
+		cfg := &UploadConfig{Path: "./uploads", MaxSize: 0}
+		assert.Error(t, cfg.Validate())
+	})
+
+	t.Run("negative max size rejected", func(t *testing.T) {
+		cfg := &UploadConfig{Path: "./uploads", MaxSize: -1}
+		assert.Error(t, cfg.Validate())
+	})
+
+	t.Run("exceeds 100MB cap rejected", func(t *testing.T) {
+		cfg := &UploadConfig{Path: "./uploads", MaxSize: 200 << 20}
+		assert.Error(t, cfg.Validate())
+	})
+}
+
 func TestUploadConfigFromEnv(t *testing.T) {
 	clearEnvVars()
 
