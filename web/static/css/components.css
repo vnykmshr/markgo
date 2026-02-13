@@ -7,7 +7,7 @@
 
 /* --------------------------------------------------------------------------
    Page Container — centered content column (42rem)
-   Used by: about, error, tags, categories, articles
+   Used by: about, article, admin, error, tags, categories, articles
    -------------------------------------------------------------------------- */
 
 .page-container {
@@ -23,8 +23,61 @@
 }
 
 /* --------------------------------------------------------------------------
+   Empty State — centered, muted placeholder when a list has no items
+   Used by: feed, articles, search, tags, categories, tag, category, drafts, admin
+   -------------------------------------------------------------------------- */
+
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-12) 0;
+    color: var(--color-text-muted);
+}
+
+.empty-state h2 {
+    font-size: var(--font-size-xl);
+    margin: 0 0 var(--spacing-2);
+}
+
+.empty-state p {
+    margin: 0;
+}
+
+.empty-state-cta {
+    display: inline-block;
+    margin-top: var(--spacing-4);
+    padding: var(--spacing-2) var(--spacing-6);
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    border-radius: var(--radius-lg);
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+    text-decoration: none;
+    transition: background-color var(--transition-fast);
+}
+
+.empty-state-cta:hover {
+    background: var(--color-primary-dark);
+    color: var(--color-text-inverse);
+    text-decoration: none;
+}
+
+/* --------------------------------------------------------------------------
+   Content Stream — vertical card list (42rem centered)
+   Used by: feed, articles, search, tag, category, drafts, admin
+   -------------------------------------------------------------------------- */
+
+.content-stream {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+    max-width: 42rem;
+    margin: 0 auto;
+    padding-bottom: var(--spacing-8);
+}
+
+/* --------------------------------------------------------------------------
    Breadcrumb — semantic navigation trail
-   Used by: articles, article, tags, tag, categories, category, search, about
+   Used by: article, tag, category (3-level pages only)
    -------------------------------------------------------------------------- */
 
 .breadcrumb {
@@ -125,26 +178,6 @@
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);
     margin-top: var(--spacing-4);
-}
-
-/* --------------------------------------------------------------------------
-   Empty State — centered muted placeholder
-   Used by: feed, search, articles, tags, categories, tag, category
-   -------------------------------------------------------------------------- */
-
-.empty-state {
-    text-align: center;
-    padding: var(--spacing-16) 0;
-    color: var(--color-text-muted);
-}
-
-.empty-state h3 {
-    font-size: var(--font-size-xl);
-    margin: 0 0 var(--spacing-2);
-}
-
-.empty-state p {
-    margin: 0;
 }
 
 /* --------------------------------------------------------------------------

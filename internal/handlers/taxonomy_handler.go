@@ -205,10 +205,6 @@ func (h *TaxonomyHandler) getTagsPage() (map[string]any, error) {
 	data["count"] = len(tagCounts)
 	data["template"] = "tags"
 	data["canonicalPath"] = "/tags"
-	data["breadcrumbs"] = []services.Breadcrumb{
-		{Name: "Home", URL: "/"},
-		{Name: "Tags"},
-	}
 
 	return data, nil
 }
@@ -222,10 +218,6 @@ func (h *TaxonomyHandler) getCategoriesPage() (map[string]any, error) {
 	data["count"] = len(categoryCounts)
 	data["template"] = "categories"
 	data["canonicalPath"] = "/categories"
-	data["breadcrumbs"] = []services.Breadcrumb{
-		{Name: "Home", URL: "/"},
-		{Name: "Categories"},
-	}
 
 	return data, nil
 }

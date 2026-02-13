@@ -57,31 +57,6 @@
     font-weight: 500;
 }
 
-/* Feed Stream */
-.feed-stream {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-4);
-    max-width: 42rem;
-    margin: 0 auto;
-    padding-bottom: var(--spacing-8);
-}
-
-/* Feed Empty State */
-.feed-empty {
-    text-align: center;
-    padding: var(--spacing-16) 0;
-    color: var(--color-text-muted);
-}
-
-.feed-empty h3 {
-    font-size: var(--font-size-xl);
-    margin: 0 0 var(--spacing-2);
-}
-
-.feed-empty p {
-    margin: 0;
-}
 
 /* ==========================================================================
    Responsive

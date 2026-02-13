@@ -37,10 +37,6 @@ func (h *AboutHandler) ShowAbout(c *gin.Context) {
 	data["template"] = "about"
 	data["path"] = "/about"
 	data["canonicalPath"] = "/about"
-	data["breadcrumbs"] = []services.Breadcrumb{
-		{Name: "Home", URL: "/"},
-		{Name: "About"},
-	}
 
 	// Identity (always present — BLOG_AUTHOR is required)
 	data["about_avatar"] = cfg.About.Avatar

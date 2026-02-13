@@ -1,10 +1,7 @@
 {{ define "search-content" }}
 <div class="search-page">
     <div class="container">
-        <!-- Search Header -->
-        <header class="page-header">
-            <h1 class="page-title">Search</h1>
-        </header>
+        <h1 class="sr-only">Search</h1>
 
         <!-- Search Form -->
         <div class="search-form-container">
@@ -38,19 +35,13 @@
         <!-- Search Results -->
         {{ if .query }}
             {{ if .results }}
-            <section class="card-stream" aria-label="Search results">
+            <section class="content-stream" aria-label="Search results">
                 {{ range .results }}
-                    {{ if eq .Article.Type "thought" }}
-                        {{ template "card-thought" .Article }}
-                    {{ else if eq .Article.Type "link" }}
-                        {{ template "card-link" .Article }}
-                    {{ else }}
-                        {{ template "card-article" .Article }}
-                    {{ end }}
+                    {{ template "card-by-type" .Article }}
                 {{ end }}
             </section>
             {{ else }}
-            <div class="search-empty">
+            <div class="empty-state">
                 <p>No results for "{{ .query }}"</p>
                 <a href="/writing" class="page-back-link">Browse writing →</a>
             </div>

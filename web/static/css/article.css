@@ -3,13 +3,6 @@
    Type-aware reading layout: article, thought, link
    ========================================================================== */
 
-/* Page Container */
-.article-page {
-    max-width: 42rem;
-    margin: 0 auto;
-    padding: var(--spacing-6) var(--spacing-4);
-}
-
 /* Header */
 .article-header {
     margin-bottom: var(--spacing-6);
@@ -233,10 +226,6 @@
    ========================================================================== */
 
 @media (min-width: 481px) {
-    .article-page {
-        padding: var(--spacing-8) var(--spacing-4);
-    }
-
     .article-title {
         font-size: var(--font-size-3xl);
     }

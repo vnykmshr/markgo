@@ -364,7 +364,7 @@ function prependCard(data, content, title) {
     // Only update if we're on the feed page
     if (document.body.dataset.template !== 'feed') return;
 
-    const feedStream = document.querySelector('.feed-stream');
+    const feedStream = document.querySelector('.content-stream');
     if (!feedStream) return;
 
     const now = new Date().toISOString();
@@ -458,6 +458,8 @@ async function handleSubmit(isDraft) {
         // Network failure — queue for offline sync
         try {
             await queuePost(body);
+            textarea.value = '';
+            titleInput.value = '';
             clearDraft();
             close();
             showToast('Saved offline — will publish when back online', 'info');
@@ -478,6 +480,9 @@ async function handleSubmit(isDraft) {
     }
 
     if (response.ok) {
+        // Clear fields BEFORE close() so close() won't re-save them
+        textarea.value = '';
+        titleInput.value = '';
         clearDraft();
         close();
         if (!isDraft) prependCard(data, content, title);

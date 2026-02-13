@@ -9,19 +9,13 @@
         </header>
 
         {{ if .articles }}
-        <section class="card-stream" aria-label="Posts in {{ .category }}">
+        <section class="content-stream" aria-label="Posts in {{ .category }}">
             {{ range .articles }}
-                {{ if eq .Type "thought" }}
-                    {{ template "card-thought" . }}
-                {{ else if eq .Type "link" }}
-                    {{ template "card-link" . }}
-                {{ else }}
-                    {{ template "card-article" . }}
-                {{ end }}
+                {{ template "card-by-type" . }}
             {{ end }}
         </section>
         {{ else }}
-        <div class="category-empty">
+        <div class="empty-state">
             <p>No posts in "{{ .category }}" yet.</p>
         </div>
         {{ end }}

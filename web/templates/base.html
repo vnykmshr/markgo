@@ -166,7 +166,6 @@
     <link rel="stylesheet" href="/static/css/taxonomy.css">
     <link rel="stylesheet" href="/static/css/compose.css">
     <link rel="stylesheet" href="/static/css/admin.css">
-    <!-- 404.css provides shared .error-content styles (used by 404, 500, offline) -->
     <link rel="stylesheet" href="/static/css/404.css">
     <link rel="stylesheet" href="/static/css/toast.css">
     <link rel="stylesheet" href="/static/css/fab.css">
@@ -198,7 +197,7 @@
 </head>
 <body data-template="{{ .template | default "feed" }}" class="{{- $tpl := .template | default "feed" -}}
     {{- if eq $tpl "articles" -}}articles-page
-    {{- else if eq $tpl "article" -}}article-page-body
+    {{- else if eq $tpl "article" -}}article-page
     {{- else if eq $tpl "search" -}}search-page
     {{- else if eq $tpl "about" -}}about-page
     {{- else if eq $tpl "tags" -}}tags-page

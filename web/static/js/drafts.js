@@ -5,7 +5,7 @@
 
 import { showToast } from './modules/toast.js';
 
-let controller = null;
+let ac = null;
 
 function getCSRFToken() {
     return document.querySelector('meta[name="csrf-token"]')?.content || '';
@@ -14,14 +14,14 @@ function getCSRFToken() {
 function updateDraftCount() {
     const subtitle = document.querySelector('.page-subtitle');
     if (subtitle) {
-        const remaining = document.querySelectorAll('.draft-card-wrapper').length;
+        const remaining = document.querySelectorAll('.card-wrapper').length;
         subtitle.textContent = `${remaining} draft${remaining !== 1 ? 's' : ''}`;
     }
 }
 
 export function init() {
-    controller = new AbortController();
-    const { signal } = controller;
+    ac = new AbortController();
+    const { signal } = ac;
 
     document.querySelectorAll('.draft-publish-btn').forEach((btn) => {
         btn.addEventListener('click', () => handlePublish(btn), { signal });
@@ -29,8 +29,8 @@ export function init() {
 }
 
 export function destroy() {
-    controller?.abort();
-    controller = null;
+    ac?.abort();
+    ac = null;
 }
 
 async function handlePublish(btn) {
@@ -60,7 +60,7 @@ async function handlePublish(btn) {
 
         if (res.status === 401 || res.status === 403) {
             showToast('Please sign in to publish', 'warning');
-            document.querySelector('.login-trigger')?.click();
+            document.dispatchEvent(new CustomEvent('auth:open-login'));
             btn.disabled = false;
             btn.textContent = 'Publish';
             return;
@@ -84,7 +84,7 @@ async function handlePublish(btn) {
         }
 
         // Remove card with fade, update count after removal
-        const wrapper = btn.closest('.draft-card-wrapper');
+        const wrapper = btn.closest('.card-wrapper');
         if (wrapper) {
             const removeCard = () => {
                 if (wrapper.parentNode) wrapper.remove();

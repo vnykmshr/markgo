@@ -686,15 +686,6 @@ html {
     margin: var(--spacing-6) 0;
 }
 
-/* Card stream - reusable layout for pages using feed cards */
-.card-stream {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-4);
-    max-width: 42rem;
-    margin: 0 auto;
-    padding-bottom: var(--spacing-8);
-}
 
 /* Simple pagination - Newer/Older pattern */
 .simple-pagination {
@@ -727,34 +718,6 @@ html {
     color: var(--color-text-muted);
 }
 
-/* Filtered view empty states (tag, category pages) */
-.tag-empty,
-.category-empty {
-    text-align: center;
-    padding: var(--spacing-8) 0;
-    color: var(--color-text-muted);
-    font-size: var(--font-size-sm);
-}
-
-/* Empty state CTA */
-.feed-empty-cta {
-    display: inline-block;
-    margin-top: var(--spacing-4);
-    padding: var(--spacing-2) var(--spacing-6);
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    border-radius: var(--radius-lg);
-    font-weight: 500;
-    font-size: var(--font-size-sm);
-    text-decoration: none;
-    transition: background-color var(--transition-fast);
-}
-
-.feed-empty-cta:hover {
-    background: var(--color-primary-dark);
-    color: var(--color-text-inverse);
-    text-decoration: none;
-}
 
 /* ==========================================================================
    Shared Layout Components
@@ -925,11 +888,11 @@ html {
 /* Large phones and up */
 @media (min-width: 481px) {
     .page-header {
-        padding: var(--spacing-8) 0 var(--spacing-6);
+        padding: var(--spacing-6) 0 var(--spacing-4);
     }
 
     .page-title {
-        font-size: var(--font-size-3xl);
+        font-size: var(--font-size-2xl);
     }
 }
 
@@ -972,12 +935,11 @@ html {
     }
 
     .page-title {
-        font-size: var(--font-size-4xl);
+        font-size: var(--font-size-3xl);
     }
 
     .page-header {
-        padding: var(--spacing-16) 0 var(--spacing-12) 0;
-        margin-bottom: var(--spacing-8);
+        padding: var(--spacing-8) 0 var(--spacing-4);
     }
 
 }

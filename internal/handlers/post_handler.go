@@ -99,7 +99,7 @@ func (h *PostHandler) getArticlesPage(page int) (map[string]any, error) {
 
 	var published []*models.Article
 	for _, article := range allArticles {
-		if !article.Draft && article.Type == "article" {
+		if !article.Draft {
 			published = append(published, article)
 		}
 	}
@@ -125,10 +125,6 @@ func (h *PostHandler) getArticlesPage(page int) (map[string]any, error) {
 	data["pagination"] = pagination
 	data["template"] = "articles"
 	data["canonicalPath"] = "/writing"
-	data["breadcrumbs"] = []services.Breadcrumb{
-		{Name: "Home", URL: "/"},
-		{Name: "Writing"},
-	}
 
 	return data, nil
 }

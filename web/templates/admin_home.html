@@ -1,5 +1,5 @@
 {{ define "admin_home-content" }}
-<div class="admin-content">
+<div class="page-container">
     <div class="container">
         <header class="page-header">
             <h1 class="page-title">Dashboard</h1>
@@ -69,5 +69,6 @@
 {{ end }}
 
 {{ define "admin_home-head" }}
+<meta name="description" content="Admin dashboard for {{ .config.Blog.Title }}">
 <meta name="robots" content="noindex, nofollow">
 {{ end }}

@@ -6,25 +6,19 @@
             <p class="page-subtitle">{{ .draft_count }} draft{{ if ne .draft_count 1 }}s{{ end }}</p>
         </header>
 
-        <div class="feed-stream">
+        <div class="content-stream">
             {{ if .drafts }}
                 {{ range .drafts }}
-                <div class="draft-card-wrapper">
-                    {{ if eq .Type "thought" }}
-                        {{ template "card-thought" . }}
-                    {{ else if eq .Type "link" }}
-                        {{ template "card-link" . }}
-                    {{ else }}
-                        {{ template "card-article" . }}
-                    {{ end }}
-                    <div class="draft-actions">
+                <div class="card-wrapper">
+                    {{ template "card-by-type" . }}
+                    <div class="card-actions">
                         <button type="button" class="draft-publish-btn" data-slug="{{ .Slug }}">Publish</button>
-                        <a href="/compose/edit/{{ .Slug }}" class="draft-edit-link">Edit</a>
+                        <a href="/compose/edit/{{ .Slug }}" class="card-action-link">Edit</a>
                     </div>
                 </div>
                 {{ end }}
             {{ else }}
-            <div class="feed-empty">
+            <div class="empty-state">
                 <h2>No drafts</h2>
                 <p>All caught up. <a href="/compose">Write something new</a>.</p>
             </div>
@@ -35,5 +29,6 @@
 {{ end }}
 
 {{ define "drafts-head" }}
+<meta name="description" content="Manage draft posts on {{ .config.Blog.Title }}">
 <meta name="robots" content="noindex, nofollow">
 {{ end }}

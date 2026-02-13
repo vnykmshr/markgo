@@ -1,29 +1,23 @@
 {{ define "admin_writing-content" }}
-<div class="admin-content">
+<div class="page-container">
     <div class="container">
         <header class="page-header">
             <h1 class="page-title">Writing</h1>
             <p class="page-subtitle">{{ .article_count }} published</p>
         </header>
 
-        <div class="feed-stream">
+        <div class="content-stream">
             {{ if .articles }}
                 {{ range .articles }}
-                <div class="admin-writing-card">
-                    {{ if eq .Type "thought" }}
-                        {{ template "card-thought" . }}
-                    {{ else if eq .Type "link" }}
-                        {{ template "card-link" . }}
-                    {{ else }}
-                        {{ template "card-article" . }}
-                    {{ end }}
-                    <div class="admin-writing-actions">
-                        <a href="/compose/edit/{{ .Slug }}" class="admin-writing-edit">Edit</a>
+                <div class="card-wrapper">
+                    {{ template "card-by-type" . }}
+                    <div class="card-actions">
+                        <a href="/compose/edit/{{ .Slug }}" class="card-action-link">Edit</a>
                     </div>
                 </div>
                 {{ end }}
             {{ else }}
-            <div class="feed-empty">
+            <div class="empty-state">
                 <h2>No published content yet</h2>
                 <p><a href="/compose">Write something new</a>.</p>
             </div>
@@ -34,5 +28,6 @@
 {{ end }}
 
 {{ define "admin_writing-head" }}
+<meta name="description" content="Manage published content on {{ .config.Blog.Title }}">
 <meta name="robots" content="noindex, nofollow">
 {{ end }}

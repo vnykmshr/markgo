@@ -20,23 +20,17 @@
         </nav>
 
         <!-- Feed Stream -->
-        <section class="feed-stream" aria-label="Posts">
+        <section class="content-stream" aria-label="Posts">
             {{ if .posts }}
                 {{ range .posts }}
-                    {{ if eq .Type "thought" }}
-                        {{ template "card-thought" . }}
-                    {{ else if eq .Type "link" }}
-                        {{ template "card-link" . }}
-                    {{ else }}
-                        {{ template "card-article" . }}
-                    {{ end }}
+                    {{ template "card-by-type" . }}
                 {{ end }}
             {{ else }}
-            <div class="feed-empty">
+            <div class="empty-state">
                 <h2>No posts yet</h2>
                 <p>This is a fresh start. Write your first thought, share a link, or publish an article.</p>
                 {{ if .authenticated }}
-                <a href="/compose" class="feed-empty-cta">Create your first post</a>
+                <a href="/compose" class="empty-state-cta">Create your first post</a>
                 {{ end }}
             </div>
             {{ end }}
@@ -146,6 +140,16 @@
         </div>
     </div>
 </article>
+{{ end }}
+
+{{ define "card-by-type" }}
+{{ if eq .Type "thought" }}
+    {{ template "card-thought" . }}
+{{ else if eq .Type "link" }}
+    {{ template "card-link" . }}
+{{ else }}
+    {{ template "card-article" . }}
+{{ end }}
 {{ end }}
 
 {{ define "feed-head" }}

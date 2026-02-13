@@ -67,17 +67,3 @@
     color: var(--color-text-muted);
     margin: var(--spacing-2) 0 0;
 }
-
-/* Empty State */
-.search-empty {
-    text-align: center;
-    padding: var(--spacing-16) 0;
-    color: var(--color-text-muted);
-    max-width: 42rem;
-    margin: 0 auto;
-}
-
-.search-empty p {
-    font-size: var(--font-size-lg);
-    margin: 0 0 var(--spacing-4);
-}
