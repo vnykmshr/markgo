@@ -361,6 +361,7 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 	router.GET("/contact", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/about#contact")
 	})
+	// Contact: no CSRF (public form, no session side effects, JSON-only, rate-limited)
 	contactGroup := router.Group("/contact")
 	contactGroup.Use(middleware.RateLimit(cfg.RateLimit.Contact.Requests, cfg.RateLimit.Contact.Window))
 	contactGroup.POST("", h.Contact.Submit)
@@ -392,7 +393,9 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 		composeGroup.GET("/edit/:slug", h.Compose.ShowEdit)
 		composeGroup.POST("/edit/:slug", h.Compose.HandleEdit)
 		composeGroup.POST("/preview", h.Compose.Preview)
-		composeGroup.POST("/upload/:slug", h.Compose.Upload)
+		composeGroup.POST("/upload/:slug",
+			middleware.RateLimit(cfg.RateLimit.Upload.Requests, cfg.RateLimit.Upload.Window),
+			h.Compose.Upload)
 		composeGroup.POST("/quick", h.Compose.HandleQuickPublish)
 		composeGroup.POST("/publish/:slug", h.Compose.PublishDraft)
 	}
@@ -404,10 +407,11 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 			middleware.RecoveryWithErrorHandler(logger),
 			middleware.SoftSessionAuth(sessionStore, secureCookie),
 			middleware.NoCache(),
+			middleware.CSRF(secureCookie),
 		)
 		adminGroup.GET("", h.Admin.AdminHome)
 		adminGroup.GET("/writing", h.Admin.Writing)
-		adminGroup.GET("/drafts", middleware.CSRF(secureCookie), h.Admin.Drafts)
+		adminGroup.GET("/drafts", h.Admin.Drafts)
 		adminGroup.POST("/cache/clear", h.ClearCache)
 		adminGroup.GET("/stats", h.Admin.Stats)
 		adminGroup.POST("/articles/reload", h.Admin.ReloadArticles)

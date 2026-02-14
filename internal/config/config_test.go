@@ -52,6 +52,8 @@ func TestLoad(t *testing.T) {
 	assert.Equal(t, 15*time.Minute, cfg.RateLimit.General.Window)
 	assert.Equal(t, 20, cfg.RateLimit.Contact.Requests) // Development default
 	assert.Equal(t, 1*time.Hour, cfg.RateLimit.Contact.Window)
+	assert.Equal(t, 100, cfg.RateLimit.Upload.Requests) // Development default
+	assert.Equal(t, 5*time.Minute, cfg.RateLimit.Upload.Window)
 
 	// Test CORS defaults
 	assert.Contains(t, cfg.CORS.AllowedOrigins, "http://localhost:3000")
@@ -117,6 +119,8 @@ func TestLoadWithEnvironmentVariables(t *testing.T) {
 	_ = os.Setenv("RATE_LIMIT_GENERAL_WINDOW", "30m")
 	_ = os.Setenv("RATE_LIMIT_CONTACT_REQUESTS", "10")
 	_ = os.Setenv("RATE_LIMIT_CONTACT_WINDOW", "2h")
+	_ = os.Setenv("RATE_LIMIT_UPLOAD_REQUESTS", "30")
+	_ = os.Setenv("RATE_LIMIT_UPLOAD_WINDOW", "10m")
 
 	_ = os.Setenv("CORS_ALLOWED_ORIGINS", "https://example.com,https://api.example.com")
 	_ = os.Setenv("CORS_ALLOWED_METHODS", "GET,POST,PUT,DELETE")
@@ -174,6 +178,8 @@ func TestLoadWithEnvironmentVariables(t *testing.T) {
 	assert.Equal(t, 30*time.Minute, cfg.RateLimit.General.Window)
 	assert.Equal(t, 10, cfg.RateLimit.Contact.Requests)
 	assert.Equal(t, 2*time.Hour, cfg.RateLimit.Contact.Window)
+	assert.Equal(t, 30, cfg.RateLimit.Upload.Requests)
+	assert.Equal(t, 10*time.Minute, cfg.RateLimit.Upload.Window)
 
 	// Test CORS config
 	assert.Contains(t, cfg.CORS.AllowedOrigins, "https://example.com")
@@ -310,7 +316,7 @@ func clearEnvVars() {
 		"SERVER_READ_TIMEOUT", "SERVER_WRITE_TIMEOUT", "SERVER_IDLE_TIMEOUT",
 		"CACHE_TTL", "CACHE_MAX_SIZE", "CACHE_CLEANUP_INTERVAL",
 		"EMAIL_HOST", "EMAIL_PORT", "EMAIL_USERNAME", "EMAIL_PASSWORD", "EMAIL_FROM", "EMAIL_TO", "EMAIL_USE_SSL",
-		"RATE_LIMIT_GENERAL_REQUESTS", "RATE_LIMIT_GENERAL_WINDOW", "RATE_LIMIT_CONTACT_REQUESTS", "RATE_LIMIT_CONTACT_WINDOW",
+		"RATE_LIMIT_GENERAL_REQUESTS", "RATE_LIMIT_GENERAL_WINDOW", "RATE_LIMIT_CONTACT_REQUESTS", "RATE_LIMIT_CONTACT_WINDOW", "RATE_LIMIT_UPLOAD_REQUESTS", "RATE_LIMIT_UPLOAD_WINDOW",
 		"CORS_ALLOWED_ORIGINS", "CORS_ALLOWED_METHODS", "CORS_ALLOWED_HEADERS",
 		"ADMIN_USERNAME", "ADMIN_PASSWORD",
 		"BLOG_TITLE", "BLOG_DESCRIPTION", "BLOG_AUTHOR", "BLOG_AUTHOR_EMAIL", "BLOG_LANGUAGE", "BLOG_THEME", "BLOG_POSTS_PER_PAGE",
@@ -329,24 +335,28 @@ func TestEnvironmentAwareRateLimiting(t *testing.T) {
 		environment             string
 		expectedGeneralRequests int
 		expectedContactRequests int
+		expectedUploadRequests  int
 	}{
 		{
 			name:                    "production environment",
 			environment:             "production",
 			expectedGeneralRequests: 100,
 			expectedContactRequests: 5,
+			expectedUploadRequests:  20,
 		},
 		{
 			name:                    "development environment",
 			environment:             "development",
 			expectedGeneralRequests: 3000,
 			expectedContactRequests: 20,
+			expectedUploadRequests:  100,
 		},
 		{
 			name:                    "test environment",
 			environment:             "test",
 			expectedGeneralRequests: 5000,
 			expectedContactRequests: 50,
+			expectedUploadRequests:  500,
 		},
 	}
 
@@ -364,8 +374,10 @@ func TestEnvironmentAwareRateLimiting(t *testing.T) {
 			// Check environment-specific rate limits
 			assert.Equal(t, tt.expectedGeneralRequests, cfg.RateLimit.General.Requests)
 			assert.Equal(t, tt.expectedContactRequests, cfg.RateLimit.Contact.Requests)
+			assert.Equal(t, tt.expectedUploadRequests, cfg.RateLimit.Upload.Requests)
 			assert.Equal(t, 15*time.Minute, cfg.RateLimit.General.Window)
 			assert.Equal(t, 1*time.Hour, cfg.RateLimit.Contact.Window)
+			assert.Equal(t, 5*time.Minute, cfg.RateLimit.Upload.Window)
 		})
 	}
 }

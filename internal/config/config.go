@@ -76,6 +76,7 @@ type EmailConfig struct {
 type RateLimitConfig struct {
 	General RateLimit `json:"general"`
 	Contact RateLimit `json:"contact"`
+	Upload  RateLimit `json:"upload"`
 }
 
 // RateLimit defines rate limiting parameters.
@@ -176,20 +177,24 @@ func Load() (*Config, error) {
 	// Set environment-aware rate limit defaults
 	var generalRequestsDefault int
 	var contactRequestsDefault int
+	var uploadRequestsDefault int
 
 	switch environment {
 	case ProductionEnvironment:
 		// Conservative limits for production
 		generalRequestsDefault = 100 // 100 requests per 15 min = ~0.11 req/sec
 		contactRequestsDefault = 5   // 5 contact submissions per hour
+		uploadRequestsDefault = 20   // 20 uploads per 5 min
 	case TestEnvironment:
 		// Higher limits for automated testing
 		generalRequestsDefault = 5000 // 5000 requests per 15 min = ~5.5 req/sec
 		contactRequestsDefault = 50   // 50 contact submissions per hour for test suites
+		uploadRequestsDefault = 500   // 500 uploads per 5 min for test suites
 	default: // development
 		// Permissive limits for development and manual testing
 		generalRequestsDefault = 3000 // 3000 requests per 15 min = ~3.3 req/sec
 		contactRequestsDefault = 20   // 20 contact submissions per hour
+		uploadRequestsDefault = 100   // 100 uploads per 5 min
 	}
 
 	cfg := &Config{
@@ -230,6 +235,10 @@ func Load() (*Config, error) {
 			Contact: RateLimit{
 				Requests: getEnvInt("RATE_LIMIT_CONTACT_REQUESTS", contactRequestsDefault),
 				Window:   getEnvDuration("RATE_LIMIT_CONTACT_WINDOW", 1*time.Hour),
+			},
+			Upload: RateLimit{
+				Requests: getEnvInt("RATE_LIMIT_UPLOAD_REQUESTS", uploadRequestsDefault),
+				Window:   getEnvDuration("RATE_LIMIT_UPLOAD_WINDOW", 5*time.Minute),
 			},
 		},
 
@@ -550,6 +559,9 @@ func (r *RateLimitConfig) Validate() error {
 		return err
 	}
 	if err := r.Contact.Validate("contact"); err != nil {
+		return err
+	}
+	if err := r.Upload.Validate("upload"); err != nil {
 		return err
 	}
 	return nil
