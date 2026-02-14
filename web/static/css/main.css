@@ -117,6 +117,7 @@
     /* Container */
     --container-max-width: 1200px;
     --container-padding: var(--spacing-4);
+    --max-content-width: 42rem;
 }
 
 /* Dark mode variables — system preference (auto)
@@ -642,7 +643,7 @@ html {
 /* Page Header - Content-first, minimal */
 .page-header {
     padding: var(--spacing-6) 0 var(--spacing-4);
-    max-width: 42rem;
+    max-width: var(--max-content-width);
     margin: 0 auto;
 }
 
@@ -694,7 +695,7 @@ html {
     align-items: center;
     gap: var(--spacing-4);
     padding: var(--spacing-6) 0;
-    max-width: 42rem;
+    max-width: var(--max-content-width);
     margin: 0 auto;
 }
 

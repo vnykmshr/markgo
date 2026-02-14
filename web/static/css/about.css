@@ -15,7 +15,7 @@
     display: flex;
     align-items: flex-start;
     gap: var(--spacing-5);
-    max-width: 42rem;
+    max-width: var(--max-content-width);
     margin: 0 auto var(--spacing-5);
     padding-bottom: var(--spacing-6);
     border-bottom: 1px solid var(--color-border);
@@ -109,7 +109,7 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     padding: var(--spacing-5);
-    max-width: 42rem;
+    max-width: var(--max-content-width);
     margin: 0 auto var(--spacing-4);
 }
 
@@ -171,7 +171,7 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     padding: var(--spacing-5);
-    max-width: 42rem;
+    max-width: var(--max-content-width);
     margin: 0 auto;
 }
 

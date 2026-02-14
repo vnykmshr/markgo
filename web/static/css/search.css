@@ -5,7 +5,7 @@
 
 /* Search Form */
 .search-form-container {
-    max-width: 42rem;
+    max-width: var(--max-content-width);
     margin: 0 auto var(--spacing-8);
 }
 

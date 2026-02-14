@@ -11,7 +11,7 @@
    -------------------------------------------------------------------------- */
 
 .page-container {
-    max-width: 42rem;
+    max-width: var(--max-content-width);
     margin: 0 auto;
     padding: var(--spacing-6) var(--spacing-4);
 }
@@ -70,7 +70,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-4);
-    max-width: 42rem;
+    max-width: var(--max-content-width);
     margin: 0 auto;
     padding-bottom: var(--spacing-8);
 }
@@ -87,7 +87,7 @@
 
 .breadcrumb-list {
     list-style: none;
-    max-width: 42rem;
+    max-width: var(--max-content-width);
     margin: 0 auto;
     padding: var(--spacing-3) var(--spacing-4);
     display: flex;
