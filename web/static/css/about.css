@@ -164,6 +164,50 @@
 }
 
 /* ==========================================================================
+   AMA Section
+   ========================================================================== */
+
+.about-ama {
+    max-width: var(--max-content-width);
+    margin: 0 auto var(--spacing-5);
+    padding: var(--spacing-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    text-align: center;
+}
+
+.about-ama-heading {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    margin: 0 0 var(--spacing-2);
+    color: var(--color-text-primary);
+}
+
+.about-ama-text {
+    font-size: var(--font-size-base);
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--spacing-4);
+}
+
+.about-ama-btn {
+    display: inline-block;
+    padding: var(--spacing-3) var(--spacing-6);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-inverse);
+    background-color: var(--color-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.about-ama-btn:hover {
+    background-color: var(--color-primary-dark);
+}
+
+/* ==========================================================================
    Contact Section — card container
    ========================================================================== */
 

@@ -1,0 +1,49 @@
+{{ define "admin_ama-content" }}
+<div class="page-container">
+    <div class="container">
+        <header class="page-header">
+            <h1 class="page-title">AMA</h1>
+            <p class="page-subtitle" aria-live="polite">{{ .pending_count }} pending question{{ if ne .pending_count 1 }}s{{ end }}</p>
+        </header>
+
+        {{ if .pending }}
+        <section class="ama-pending" aria-label="Pending AMA questions">
+            {{ range .pending }}
+            <div class="ama-card" data-slug="{{ .Slug }}">
+                <div class="ama-card-question">
+                    <span class="ama-card-badge">Q</span>
+                    <div class="ama-card-content">
+                        <p class="ama-card-text">{{ .Content }}</p>
+                        <div class="ama-card-meta">
+                            <span class="ama-card-asker">{{ .Asker }}</span>
+                            <time class="ama-card-time" datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
+                                {{ relativeTime .Date }}
+                            </time>
+                        </div>
+                    </div>
+                </div>
+                <div class="ama-card-answer">
+                    <label for="answer-{{ .Slug }}" class="sr-only">Your answer</label>
+                    <textarea id="answer-{{ .Slug }}" class="ama-card-textarea" placeholder="Write your answer..." rows="3"></textarea>
+                </div>
+                <div class="ama-card-actions">
+                    <button type="button" class="ama-publish-btn" data-slug="{{ .Slug }}">Publish</button>
+                    <button type="button" class="ama-delete-btn" data-slug="{{ .Slug }}">Delete</button>
+                </div>
+            </div>
+            {{ end }}
+        </section>
+        {{ else }}
+        <div class="empty-state">
+            <h2>No pending questions</h2>
+            <p>When readers submit questions via the AMA form, they'll appear here for moderation.</p>
+        </div>
+        {{ end }}
+    </div>
+</div>
+{{ end }}
+
+{{ define "admin_ama-head" }}
+<meta name="description" content="AMA moderation for {{ .config.Blog.Title }}">
+<meta name="robots" content="noindex, nofollow">
+{{ end }}

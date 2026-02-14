@@ -366,6 +366,13 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 	contactGroup.Use(middleware.RateLimit(cfg.RateLimit.Contact.Requests, cfg.RateLimit.Contact.Window))
 	contactGroup.POST("", h.Contact.Submit)
 
+	// AMA: public submission, rate-limited (reuses contact config), no CSRF (public, JSON-only)
+	if h.AMA != nil {
+		amaGroup := router.Group("/ama")
+		amaGroup.Use(middleware.RateLimit(cfg.RateLimit.Contact.Requests, cfg.RateLimit.Contact.Window))
+		amaGroup.POST("/submit", h.AMA.Submit)
+	}
+
 	// Feeds and SEO
 	router.GET("/feed.xml", h.Syndication.RSS)
 	router.GET("/feed.json", h.Syndication.JSONFeed)
@@ -415,6 +422,13 @@ func setupRoutes(router *gin.Engine, h *handlers.Router, sessionStore *middlewar
 		adminGroup.POST("/cache/clear", h.ClearCache)
 		adminGroup.GET("/stats", h.Admin.Stats)
 		adminGroup.POST("/articles/reload", h.Admin.ReloadArticles)
+
+		// AMA moderation routes
+		if h.AMA != nil {
+			adminGroup.GET("/ama", h.AMA.ListPending)
+			adminGroup.POST("/ama/:slug/answer", h.AMA.Answer)
+			adminGroup.POST("/ama/:slug/delete", h.AMA.Delete)
+		}
 	}
 
 	// Debug endpoints (development only)
@@ -482,6 +496,7 @@ func setupTemplates(router *gin.Engine, templateService *services.TemplateServic
 		"drafts.html",
 		"admin_home.html",
 		"admin_writing.html",
+		"admin_ama.html",
 		"category.html",
 		"tag.html",
 	}

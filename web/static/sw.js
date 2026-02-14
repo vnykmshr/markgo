@@ -8,7 +8,7 @@
  * - Network-only: auth routes, compose, admin, feeds, API
  */
 
-const CACHE_VERSION = 5;
+const CACHE_VERSION = 6;
 const PRECACHE = `markgo-precache-v${CACHE_VERSION}`;
 const STATIC_CACHE = `markgo-static-v${CACHE_VERSION}`;
 const CONTENT_CACHE = `markgo-content-v${CACHE_VERSION}`;

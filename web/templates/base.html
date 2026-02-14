@@ -141,10 +141,12 @@
     <link rel="stylesheet" href="/static/css/taxonomy.css">
     <link rel="stylesheet" href="/static/css/compose.css">
     <link rel="stylesheet" href="/static/css/admin.css">
+    <link rel="stylesheet" href="/static/css/admin-ama.css">
     <link rel="stylesheet" href="/static/css/404.css">
     <link rel="stylesheet" href="/static/css/toast.css">
     <link rel="stylesheet" href="/static/css/fab.css">
     <link rel="stylesheet" href="/static/css/compose-sheet.css">
+    <link rel="stylesheet" href="/static/css/ama-sheet.css">
     <link rel="stylesheet" href="/static/css/login.css">
     <link rel="stylesheet" href="/static/css/bottom-nav.css">
     <link rel="stylesheet" href="/static/css/popovers.css">
@@ -166,6 +168,7 @@
     {{ if eq $tpl "admin_home" }}{{ template "admin_home-head" . }}{{ end }}
     {{ if eq $tpl "drafts" }}{{ template "drafts-head" . }}{{ end }}
     {{ if eq $tpl "admin_writing" }}{{ template "admin_writing-head" . }}{{ end }}
+    {{ if eq $tpl "admin_ama" }}{{ template "admin_ama-head" . }}{{ end }}
     {{ if eq $tpl "404" }}{{ template "404-head" . }}{{ end }}
     {{ if eq $tpl "500" }}{{ template "500-head" . }}{{ end }}
     {{ if eq $tpl "offline" }}{{ template "offline-head" . }}{{ end }}
@@ -183,6 +186,7 @@
     {{- else if eq $tpl "compose" -}}compose-page
     {{- else if eq $tpl "admin_home" -}}admin-page
     {{- else if eq $tpl "admin_writing" -}}admin-page
+    {{- else if eq $tpl "admin_ama" -}}admin-page
     {{- else if eq $tpl "drafts" -}}drafts-page
     {{- else if eq $tpl "404" -}}error-page
     {{- else if eq $tpl "500" -}}error-page
@@ -263,6 +267,7 @@
                         <a href="/admin" class="admin-popover-link">Dashboard</a>
                         <a href="/admin/writing" class="admin-popover-link">Writing</a>
                         <a href="/admin/drafts" class="admin-popover-link">Drafts</a>
+                        <a href="/admin/ama" class="admin-popover-link">AMA</a>
                     </nav>
                     <div class="admin-popover-divider"></div>
                     <a href="/logout" class="admin-popover-link admin-popover-logout">Sign out</a>
@@ -372,6 +377,7 @@
         {{ if eq $tpl "admin_home" }}{{ template "admin_home-content" . }}{{ end }}
         {{ if eq $tpl "drafts" }}{{ template "drafts-content" . }}{{ end }}
         {{ if eq $tpl "admin_writing" }}{{ template "admin_writing-content" . }}{{ end }}
+        {{ if eq $tpl "admin_ama" }}{{ template "admin_ama-content" . }}{{ end }}
         {{ if eq $tpl "404" }}{{ template "404-content" . }}{{ end }}
         {{ if eq $tpl "500" }}{{ template "500-content" . }}{{ end }}
         {{ if eq $tpl "offline" }}{{ template "offline-content" . }}{{ end }}
@@ -395,9 +401,11 @@
             </span>
         </button>
         {{ else }}
-        <button class="bottom-nav-item bottom-nav-subscribe subscribe-trigger" data-nav="subscribe" aria-label="Subscribe" aria-expanded="false" aria-haspopup="true">
-            <svg width="22" height="22" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.429 2.776c7.729 0 10.367 2.714 10.367 10.368H11.07c0-5.585-1.909-7.494-7.494-7.494V2.776Z"/><path d="M3.429 6.205c4.373 0 6.938 2.565 6.938 6.938h-2.727c0-2.31-1.9-4.21-4.21-4.21V6.205Z"/><circle cx="4.571" cy="11.429" r="1.143"/></svg>
-            <span>Subscribe</span>
+        <button class="bottom-nav-item bottom-nav-ama" data-nav="ama" aria-label="Ask a question">
+            <span class="bottom-nav-icon">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/></svg>
+            </span>
+            <span>Ask</span>
         </button>
         {{ end }}
         <a href="/search" class="bottom-nav-item" data-nav="search">

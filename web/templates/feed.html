@@ -17,6 +17,7 @@
             <a href="/?type=thought" class="feed-filter{{ if eq .activeFilter "thought" }} active{{ end }}">Thoughts</a>
             <a href="/?type=link" class="feed-filter{{ if eq .activeFilter "link" }} active{{ end }}">Links</a>
             <a href="/?type=article" class="feed-filter{{ if eq .activeFilter "article" }} active{{ end }}">Articles</a>
+            <a href="/?type=ama" class="feed-filter{{ if eq .activeFilter "ama" }} active{{ end }}">AMA</a>
         </nav>
 
         <!-- Feed Stream -->
@@ -144,11 +145,47 @@
 </article>
 {{ end }}
 
+{{ define "card-ama" }}
+<article class="feed-card feed-card-ama">
+    <div class="feed-card-body">
+        <div class="feed-card-ama-header">
+            <span class="ama-badge">Q</span>
+            <div class="feed-card-ama-question">
+                {{ if .ProcessedContent }}
+                    {{ .ProcessedContent | safeHTML }}
+                {{ else }}
+                    {{ .Content | safeHTML }}
+                {{ end }}
+            </div>
+        </div>
+        {{ if .Asker }}
+        <p class="feed-card-asker">Asked by {{ .Asker }}</p>
+        {{ end }}
+        <div class="feed-card-meta">
+            <a href="/writing/{{ .Slug }}" class="feed-card-permalink">
+                <time class="feed-card-time" datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
+                    {{ relativeTime .Date }}
+                </time>
+            </a>
+            {{ if .Tags }}
+            <div class="feed-card-tags">
+                {{ range .Tags }}
+                <a href="/tags/{{ . | urlquery }}" class="feed-tag">{{ . }}</a>
+                {{ end }}
+            </div>
+            {{ end }}
+        </div>
+    </div>
+</article>
+{{ end }}
+
 {{ define "card-by-type" }}
 {{ if eq .Type "thought" }}
     {{ template "card-thought" . }}
 {{ else if eq .Type "link" }}
     {{ template "card-link" . }}
+{{ else if eq .Type "ama" }}
+    {{ template "card-ama" . }}
 {{ else }}
     {{ template "card-article" . }}
 {{ end }}

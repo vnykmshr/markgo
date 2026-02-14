@@ -184,6 +184,27 @@ func TestHomePage(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
+func TestHomePageAMAFilter(t *testing.T) {
+	base, svc := createTestBase()
+	router := gin.New()
+	router.GET("/", NewFeedHandler(base, svc).Home)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest("GET", "/?type=ama", http.NoBody))
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestHomePageInvalidFilter(t *testing.T) {
+	base, svc := createTestBase()
+	router := gin.New()
+	router.GET("/", NewFeedHandler(base, svc).Home)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest("GET", "/?type=invalid", http.NoBody))
+	// Invalid type falls back to empty (all)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
 func TestTagsPage(t *testing.T) {
 	base, svc := createTestBase()
 	router := gin.New()

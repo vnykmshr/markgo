@@ -21,6 +21,8 @@ type Article struct {
 	Author       string    `yaml:"author" json:"author"`
 	Type         string    `yaml:"type,omitempty" json:"type"`
 	LinkURL      string    `yaml:"link_url,omitempty" json:"link_url,omitempty"`
+	Asker        string    `yaml:"asker,omitempty" json:"asker,omitempty"`
+	AskerEmail   string    `yaml:"asker_email,omitempty" json:"asker_email,omitempty"`
 	Content      string    `yaml:"-" json:"content"`
 	ReadingTime  int       `yaml:"-" json:"reading_time"`
 	WordCount    int       `yaml:"-" json:"word_count"`
@@ -74,6 +76,14 @@ type ContactMessage struct {
 	CaptchaAnswer   string `json:"captcha_answer" binding:"required"`
 }
 
+// AMASubmission represents an AMA question submission from a reader
+type AMASubmission struct {
+	Name     string `json:"name" binding:"required,min=2,max=50"`
+	Email    string `json:"email" binding:"omitempty,email,max=100"`
+	Question string `json:"question" binding:"required,min=20,max=500"`
+	Website  string `json:"website"` // honeypot field
+}
+
 // SearchResult represents a search result with scoring
 type SearchResult struct {
 	*Article
@@ -94,6 +104,7 @@ type ArticleList struct {
 	Featured    bool      `json:"featured"`
 	Type        string    `json:"type"`
 	LinkURL     string    `json:"link_url,omitempty"`
+	Asker       string    `json:"asker,omitempty"`
 }
 
 // ToListView converts an Article to ArticleList
@@ -110,6 +121,7 @@ func (a *Article) ToListView() *ArticleList {
 		Featured:    a.Featured,
 		Type:        a.Type,
 		LinkURL:     a.LinkURL,
+		Asker:       a.Asker,
 	}
 }
 

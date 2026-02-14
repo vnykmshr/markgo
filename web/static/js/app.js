@@ -16,6 +16,7 @@ import { init as initLogin } from './modules/login.js';
 import { init as initToast, showToast } from './modules/toast.js';
 import { init as initFab } from './modules/fab.js';
 import { init as initComposeSheet } from './modules/compose-sheet.js';
+import { init as initAMASheet } from './modules/ama-sheet.js';
 import { init as initSearchPopover } from './modules/search-popover.js';
 import { init as initSubscribePopover } from './modules/subscribe-popover.js';
 import { init as initRouter } from './modules/router.js';
@@ -26,6 +27,7 @@ const PAGE_MODULES = {
     about: () => import('./contact.js'),
     compose: () => import('./compose.js'),
     admin_home: () => import('./admin.js'),
+    admin_ama: () => import('./admin-ama.js'),
     drafts: () => import('./drafts.js'),
 };
 
@@ -161,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initToast();
     initFab();
     initComposeSheet();
+    initAMASheet();
     initSearchPopover();
     initSubscribePopover();
 

@@ -90,11 +90,20 @@ func (h *AdminHandler) AdminHome(c *gin.Context) {
 	tagCounts := h.articleService.GetTagCounts()
 	categoryCounts := h.articleService.GetCategoryCounts()
 
+	// Count pending AMA questions
+	pendingAMA := 0
+	for _, d := range draftArticles {
+		if d.Type == "ama" {
+			pendingAMA++
+		}
+	}
+
 	stats := map[string]any{
-		"published":  publishedCount,
-		"drafts":     draftCount,
-		"tags":       len(tagCounts),
-		"categories": len(categoryCounts),
+		"published":   publishedCount,
+		"drafts":      draftCount,
+		"tags":        len(tagCounts),
+		"categories":  len(categoryCounts),
+		"pending_ama": pendingAMA,
 	}
 
 	system := map[string]any{

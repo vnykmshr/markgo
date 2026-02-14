@@ -1,0 +1,168 @@
+/* ==========================================================================
+   Admin AMA — pending question cards with answer textarea
+   ========================================================================== */
+
+.ama-pending {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+    max-width: 42rem;
+    margin: 0 auto;
+}
+
+.ama-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-4);
+    background-color: var(--color-bg-primary);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+/* --------------------------------------------------------------------------
+   Question section
+   -------------------------------------------------------------------------- */
+
+.ama-card-question {
+    display: flex;
+    gap: var(--spacing-3);
+    margin-bottom: var(--spacing-3);
+}
+
+.ama-card-badge {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text-inverse);
+    background-color: var(--color-primary);
+    border-radius: 50%;
+}
+
+.ama-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.ama-card-text {
+    margin: 0 0 var(--spacing-2);
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+    color: var(--color-text-primary);
+}
+
+.ama-card-meta {
+    display: flex;
+    gap: var(--spacing-3);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.ama-card-asker {
+    font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   Answer textarea
+   -------------------------------------------------------------------------- */
+
+.ama-card-answer {
+    margin-bottom: var(--spacing-3);
+}
+
+.ama-card-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: var(--spacing-3);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+    color: var(--color-text-primary);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    resize: vertical;
+    outline: none;
+}
+
+.ama-card-textarea:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
+}
+
+.ama-card-textarea::placeholder {
+    color: var(--color-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Actions
+   -------------------------------------------------------------------------- */
+
+.ama-card-actions {
+    display: flex;
+    gap: var(--spacing-2);
+    justify-content: flex-end;
+}
+
+.ama-publish-btn {
+    padding: var(--spacing-2) var(--spacing-4);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-inverse);
+    background-color: var(--color-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.ama-publish-btn:hover {
+    background-color: var(--color-primary-dark);
+}
+
+.ama-publish-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.ama-delete-btn {
+    padding: var(--spacing-2) var(--spacing-4);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-muted);
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.ama-delete-btn:hover {
+    color: var(--color-error-text);
+    border-color: var(--color-error-text);
+}
+
+.ama-delete-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .ama-card {
+        transition: none;
+    }
+
+    .ama-publish-btn,
+    .ama-delete-btn {
+        transition: none;
+    }
+}

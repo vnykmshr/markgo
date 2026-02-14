@@ -257,6 +257,123 @@ func TestSlugFromFilename(t *testing.T) {
 	}
 }
 
+func TestCreatePost_AMA(t *testing.T) {
+	dir := t.TempDir()
+	svc := NewService(dir, "Test Author")
+
+	slug, err := svc.CreatePost(&Input{
+		Content:    "What is your favorite programming language?",
+		Draft:      true,
+		Asker:      "Alice",
+		AskerEmail: "alice@example.com",
+		Type:       "ama",
+	})
+
+	require.NoError(t, err)
+	assert.Contains(t, slug, "thought-") // no title → timestamp slug
+
+	files, _ := filepath.Glob(filepath.Join(dir, "*.md"))
+	require.Len(t, files, 1)
+
+	content, err := os.ReadFile(files[0])
+	require.NoError(t, err)
+
+	s := string(content)
+	assert.Contains(t, s, "type: ama")
+	assert.Contains(t, s, "asker: Alice")
+	assert.Contains(t, s, "asker_email: alice@example.com")
+	assert.Contains(t, s, "draft: true")
+	assert.Contains(t, s, "What is your favorite programming language?")
+}
+
+func TestLoadArticle_AMAFields(t *testing.T) {
+	dir := t.TempDir()
+	svc := NewService(dir, "Test Author")
+
+	slug, err := svc.CreatePost(&Input{
+		Content:    "What is your favorite programming language?",
+		Draft:      true,
+		Asker:      "Alice",
+		AskerEmail: "alice@example.com",
+		Type:       "ama",
+	})
+	require.NoError(t, err)
+
+	// Load it back and verify AMA-specific fields are restored
+	input, err := svc.LoadArticle(slug)
+	require.NoError(t, err)
+	assert.Equal(t, "Alice", input.Asker)
+	assert.Equal(t, "alice@example.com", input.AskerEmail)
+	assert.Equal(t, "ama", input.Type)
+	assert.True(t, input.Draft)
+	assert.Equal(t, "What is your favorite programming language?", input.Content)
+}
+
+func TestUpdateArticle_PreservesAMAFields(t *testing.T) {
+	dir := t.TempDir()
+	svc := NewService(dir, "Test Author")
+
+	slug, err := svc.CreatePost(&Input{
+		Content:    "What is your favorite language?",
+		Draft:      true,
+		Asker:      "Bob",
+		AskerEmail: "bob@example.com",
+		Type:       "ama",
+	})
+	require.NoError(t, err)
+
+	// Update content (simulate answering) — don't set Asker/Type in input
+	err = svc.UpdateArticle(slug, &Input{
+		Content: "What is your favorite language?\n\n---\n\nGo, for its simplicity.",
+		Draft:   false,
+	})
+	require.NoError(t, err)
+
+	// Verify AMA metadata survived the update (preserved in frontmatter map)
+	input, err := svc.LoadArticle(slug)
+	require.NoError(t, err)
+	assert.Equal(t, "Bob", input.Asker)
+	assert.Equal(t, "bob@example.com", input.AskerEmail)
+	assert.Equal(t, "ama", input.Type)
+	assert.False(t, input.Draft)
+	assert.Contains(t, input.Content, "Go, for its simplicity.")
+}
+
+func TestDeletePost(t *testing.T) {
+	dir := t.TempDir()
+	svc := NewService(dir, "Test Author")
+
+	// Create a post
+	slug, err := svc.CreatePost(&Input{
+		Content: "To be deleted.",
+		Type:    "ama",
+		Asker:   "Bob",
+		Draft:   true,
+	})
+	require.NoError(t, err)
+
+	// Verify file exists
+	files, _ := filepath.Glob(filepath.Join(dir, "*.md"))
+	require.Len(t, files, 1)
+
+	// Delete it
+	err = svc.DeletePost(slug)
+	require.NoError(t, err)
+
+	// Verify file is gone
+	files, _ = filepath.Glob(filepath.Join(dir, "*.md"))
+	assert.Empty(t, files)
+}
+
+func TestDeletePost_NotFound(t *testing.T) {
+	dir := t.TempDir()
+	svc := NewService(dir, "")
+
+	err := svc.DeletePost("nonexistent-slug")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "article not found")
+}
+
 func TestGenerateSlug(t *testing.T) {
 	tests := []struct {
 		input    string

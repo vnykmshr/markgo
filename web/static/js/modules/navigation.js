@@ -41,6 +41,14 @@ export function init() {
         });
     }
 
+    // Bottom nav AMA button → dispatch fab:ama
+    const amaBtn = document.querySelector('.bottom-nav-ama');
+    if (amaBtn) {
+        amaBtn.addEventListener('click', () => {
+            document.dispatchEvent(new CustomEvent('fab:ama'));
+        });
+    }
+
     // Active link highlighting
     updateActiveLinks();
 

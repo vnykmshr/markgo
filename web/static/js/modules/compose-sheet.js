@@ -10,6 +10,7 @@
 import { showToast } from './toast.js';
 import { authenticatedJSON } from './auth-fetch.js';
 import { queuePost, drainQueue, getQueueCount } from './offline-queue.js';
+import { trapFocus, releaseFocus } from './focus-trap.js';
 
 const DRAFT_KEY = 'markgo:compose-draft';
 const SAVE_DELAY = 2000;
@@ -270,13 +271,13 @@ function open() {
         draftNotice.hidden = true;
     }
 
-    // Focus textarea after animation, reset auto-grow
+    // Focus textarea after animation, reset auto-grow, trap focus inside dialog
     requestAnimationFrame(() => {
         autoGrow(textarea);
         textarea.focus();
     });
 
-    // Escape key
+    trapFocus(overlay);
     document.addEventListener('keydown', handleKeydown);
 
     // Visual viewport handling — reposition above virtual keyboard on iOS
@@ -305,6 +306,7 @@ function close() {
     overlay.style.height = '';
     overlay.style.top = '';
     document.body.style.overflow = '';
+    releaseFocus();
     document.removeEventListener('keydown', handleKeydown);
 
     // Remove visual viewport handler

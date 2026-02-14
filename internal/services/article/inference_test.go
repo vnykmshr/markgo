@@ -71,6 +71,15 @@ func TestInferPostType(t *testing.T) {
 			expected: "article",
 		},
 		{
+			name: "explicit type ama respected",
+			article: &models.Article{
+				Type:      "ama",
+				Content:   "What is your favorite language?",
+				WordCount: 6,
+			},
+			expected: "ama",
+		},
+		{
 			name: "thought at boundary (99 words)",
 			article: &models.Article{
 				Content:   "Short",

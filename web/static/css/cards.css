@@ -164,6 +164,49 @@
     opacity: 0.7;
 }
 
+/* AMA Card */
+.feed-card-ama {
+    border-left: 3px solid var(--color-primary);
+}
+
+.feed-card-ama-header {
+    display: flex;
+    gap: var(--spacing-3);
+    align-items: flex-start;
+}
+
+.ama-badge {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-text-inverse);
+    background-color: var(--color-primary);
+    border-radius: 50%;
+}
+
+.feed-card-ama-question {
+    flex: 1;
+    font-size: var(--font-size-base);
+    line-height: 1.7;
+    color: var(--color-text-primary);
+}
+
+.feed-card-ama-question p {
+    margin: 0;
+}
+
+.feed-card-asker {
+    font-size: var(--font-size-sm);
+    font-style: italic;
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
 /* Article Card */
 .feed-card-article .feed-card-title {
     font-size: var(--font-size-xl);

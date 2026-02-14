@@ -36,6 +36,9 @@ type Input struct {
 	Tags        string `json:"tags"`
 	Categories  string `json:"categories"`
 	Draft       bool   `json:"draft"`
+	Asker       string `json:"asker"`
+	AskerEmail  string `json:"asker_email"`
+	Type        string `json:"type"`
 }
 
 // CreatePost creates a new markdown post file from compose input.
@@ -91,6 +94,15 @@ func (s *Service) CreatePost(input *Input) (string, error) {
 	}
 	if s.defaultAuthor != "" {
 		fm["author"] = s.defaultAuthor
+	}
+	if input.Type != "" {
+		fm["type"] = input.Type
+	}
+	if input.Asker != "" {
+		fm["asker"] = input.Asker
+	}
+	if input.AskerEmail != "" {
+		fm["asker_email"] = input.AskerEmail
 	}
 	fm["draft"] = input.Draft
 
@@ -174,6 +186,15 @@ func (s *Service) LoadArticle(slug string) (*Input, error) {
 	}
 	if draft, ok := fm["draft"].(bool); ok {
 		input.Draft = draft
+	}
+	if asker, ok := fm["asker"].(string); ok {
+		input.Asker = asker
+	}
+	if askerEmail, ok := fm["asker_email"].(string); ok {
+		input.AskerEmail = askerEmail
+	}
+	if typ, ok := fm["type"].(string); ok {
+		input.Type = typ
 	}
 
 	return input, nil
@@ -270,6 +291,18 @@ func (s *Service) UpdateArticle(slug string, input *Input) error {
 		return fmt.Errorf("failed to rename temp file: %w", err)
 	}
 
+	return nil
+}
+
+// DeletePost removes an article file by slug.
+func (s *Service) DeletePost(slug string) error {
+	filePath, _, err := s.findFileBySlug(slug)
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(filePath); err != nil {
+		return fmt.Errorf("failed to delete article file: %w", err)
+	}
 	return nil
 }
 

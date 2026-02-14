@@ -1,0 +1,261 @@
+/* ==========================================================================
+   AMA Sheet
+   Reader question submission — bottom sheet (mobile), centered modal (desktop).
+   Uses design tokens from main.css. Shell-level — persists across SPA swaps.
+   ========================================================================== */
+
+/* Overlay — covers entire viewport */
+.ama-sheet-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.ama-sheet-overlay[hidden] {
+    display: none;
+}
+
+/* Backdrop */
+.ama-sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    animation: amaFadeIn var(--transition-base) ease-out;
+}
+
+/* Sheet — mobile-first bottom sheet */
+.ama-sheet {
+    position: relative;
+    width: 100%;
+    max-height: 90vh;
+    max-height: 90dvh;
+    overflow-y: auto;
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    flex-direction: column;
+    animation: amaSlideUp var(--transition-base) ease-out;
+}
+
+/* --------------------------------------------------------------------------
+   Header
+   -------------------------------------------------------------------------- */
+
+.ama-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-4) var(--spacing-4) var(--spacing-2);
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.ama-sheet-heading {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.ama-sheet-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+    font-size: var(--font-size-xl);
+    line-height: 1;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0;
+    border-radius: var(--radius-base);
+}
+
+.ama-sheet-close:hover {
+    color: var(--color-text-primary);
+    background: var(--color-bg-tertiary);
+}
+
+/* --------------------------------------------------------------------------
+   Form
+   -------------------------------------------------------------------------- */
+
+.ama-sheet-form {
+    padding: var(--spacing-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+}
+
+.ama-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+}
+
+.ama-form-label {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.ama-form-input {
+    width: 100%;
+    padding: var(--spacing-2) var(--spacing-3);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-base);
+    color: var(--color-text-primary);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    outline: none;
+}
+
+.ama-form-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
+}
+
+.ama-form-input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.ama-form-textarea {
+    min-height: 100px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+/* --------------------------------------------------------------------------
+   Character counter
+   -------------------------------------------------------------------------- */
+
+.ama-char-counter {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    text-align: right;
+}
+
+.ama-char-near-limit {
+    color: var(--color-warning);
+}
+
+.ama-char-over-limit {
+    color: var(--color-error-text);
+}
+
+/* --------------------------------------------------------------------------
+   Captcha
+   -------------------------------------------------------------------------- */
+
+.ama-captcha-container {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+}
+
+.ama-captcha-question {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+.ama-captcha-input {
+    width: 80px;
+    text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Submit button
+   -------------------------------------------------------------------------- */
+
+.ama-submit-btn {
+    padding: var(--spacing-3) var(--spacing-5);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-inverse);
+    background-color: var(--color-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.ama-submit-btn:hover {
+    background-color: var(--color-primary-dark);
+}
+
+.ama-submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   Desktop — centered modal
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 481px) {
+    .ama-sheet-overlay {
+        align-items: center;
+    }
+
+    .ama-sheet {
+        max-width: 480px;
+        border-radius: var(--radius-xl);
+        animation-name: amaFadeScale;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Animations
+   -------------------------------------------------------------------------- */
+
+@keyframes amaFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes amaSlideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes amaFadeScale {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .ama-sheet-backdrop {
+        animation-duration: 0.01ms !important;
+    }
+
+    .ama-sheet {
+        animation-duration: 0.01ms !important;
+    }
+
+    .ama-submit-btn {
+        transition: none;
+    }
+}

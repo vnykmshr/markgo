@@ -50,6 +50,7 @@ type Router struct {
 	About       *AboutHandler
 	Auth        *AuthHandler    // nil when admin credentials not configured
 	Compose     *ComposeHandler // nil when compose not configured
+	AMA         *AMAHandler     // nil when compose not configured
 
 	base           *BaseHandler
 	articleService services.ArticleServiceInterface
@@ -61,8 +62,10 @@ func New(cfg *Config) *Router {
 	base := NewBaseHandler(cfg.Config, cfg.Logger, cfg.TemplateService, cfg.BuildInfo, cfg.SEOService)
 
 	var composeHandler *ComposeHandler
+	var amaHandler *AMAHandler
 	if cfg.ComposeService != nil {
 		composeHandler = NewComposeHandler(base, cfg.ComposeService, cfg.ArticleService, cfg.MarkdownRenderer)
+		amaHandler = NewAMAHandler(base, cfg.ComposeService, cfg.ArticleService)
 	}
 
 	var authHandler *AuthHandler
@@ -84,6 +87,7 @@ func New(cfg *Config) *Router {
 		About:       aboutHandler,
 		Auth:        authHandler,
 		Compose:     composeHandler,
+		AMA:         amaHandler,
 
 		base:           base,
 		articleService: cfg.ArticleService,
