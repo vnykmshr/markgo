@@ -11,7 +11,7 @@ require (
 	github.com/vnykmshr/goflow v1.5.0
 	github.com/vnykmshr/obcache-go v1.1.0
 	github.com/yuin/goldmark v1.7.16
-	golang.org/x/text v0.33.0
+	golang.org/x/text v0.34.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
 )
