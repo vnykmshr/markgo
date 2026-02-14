@@ -42,8 +42,10 @@
 {{ end }}
 
 {{ define "articles-head" }}
+{{ if not .config.SEO.Enabled }}
 <meta name="description" content="Writing from {{ .config.Blog.Title }}.">
 <meta name="keywords" content="blog, writing, {{ .config.Blog.Author }}">
+{{ end }}
 
 <!-- Pagination meta tags -->
 {{ if .pagination.HasPrevious }}

@@ -155,6 +155,8 @@
 {{ end }}
 
 {{ define "feed-head" }}
+{{ if not .config.SEO.Enabled }}
 <meta name="description" content="{{ .config.Blog.Description }}">
 <meta name="keywords" content="blog, technology, programming, development, {{ .config.Blog.Author }}">
+{{ end }}
 {{ end }}

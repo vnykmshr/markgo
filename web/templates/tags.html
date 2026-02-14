@@ -25,6 +25,7 @@
 {{ end }}
 
 {{ define "tags-head" }}
+{{ if not .config.SEO.Enabled }}
 <meta name="description" content="Browse posts by tag on {{ .config.Blog.Title }}.">
-
+{{ end }}
 {{ end }}

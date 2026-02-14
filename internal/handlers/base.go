@@ -134,7 +134,21 @@ func (h *BaseHandler) injectAuthState(c *gin.Context, data map[string]any) {
 // renderHTML renders HTML template with common error handling
 func (h *BaseHandler) renderHTML(c *gin.Context, status int, template string, data any) {
 	if h.shouldReturnJSON(c) {
-		c.JSON(status, data)
+		// Extract only safe fields for JSON response — never serialize template
+		// data directly, as it contains the full config (including credentials).
+		safeResp := gin.H{"status": status}
+		if mapData, ok := data.(map[string]any); ok {
+			if title, exists := mapData["title"]; exists {
+				safeResp["title"] = title
+			}
+			if desc, exists := mapData["description"]; exists {
+				safeResp["description"] = desc
+			}
+		}
+		if status >= 400 {
+			safeResp["error"] = http.StatusText(status)
+		}
+		c.JSON(status, safeResp)
 		return
 	}
 

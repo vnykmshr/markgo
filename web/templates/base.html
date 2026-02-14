@@ -123,7 +123,8 @@
     <link rel="alternate" type="application/feed+json" title="{{ .config.Blog.Title }} - JSON Feed" href="/feed.json">
 
     <!-- Canonical URL (only when handler provides a path — omit for 404/admin/compose) -->
-    {{ if .canonicalPath }}<link rel="canonical" href="{{ .config.BaseURL }}{{ .canonicalPath }}">{{ end }}
+    <!-- Skip when SEO service is enabled — it renders canonical via renderMetaTags -->
+    {{ if not .config.SEO.Enabled }}{{ if .canonicalPath }}<link rel="canonical" href="{{ .config.BaseURL }}{{ .canonicalPath }}">{{ end }}{{ end }}
 
     <!-- Stylesheets — all loaded upfront for SPA content swaps -->
     <link rel="stylesheet" href="/static/css/fonts.css">

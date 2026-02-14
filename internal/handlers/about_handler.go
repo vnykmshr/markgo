@@ -37,6 +37,11 @@ func (h *AboutHandler) ShowAbout(c *gin.Context) {
 	data["template"] = "about"
 	data["path"] = "/about"
 	data["canonicalPath"] = "/about"
+	if cfg.About.Tagline != "" {
+		data["description"] = cfg.About.Tagline
+	} else {
+		data["description"] = "About " + cfg.Blog.Author
+	}
 
 	// Identity (always present — BLOG_AUTHOR is required)
 	data["about_avatar"] = cfg.About.Avatar

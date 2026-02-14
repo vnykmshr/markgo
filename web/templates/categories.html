@@ -25,6 +25,7 @@
 {{ end }}
 
 {{ define "categories-head" }}
+{{ if not .config.SEO.Enabled }}
 <meta name="description" content="Browse posts by category on {{ .config.Blog.Title }}.">
-
+{{ end }}
 {{ end }}

@@ -150,6 +150,7 @@
 {{ end }}
 
 {{ define "article-head" }}
+{{ if not .config.SEO.Enabled }}
 <meta name="description" content="{{ if .article.Description }}{{ .article.Description }}{{ else }}{{ .article.Excerpt }}{{ end }}">
 <meta name="keywords" content="{{ join ", " .article.Tags }}">
 <meta name="author" content="{{ if .article.Author }}{{ .article.Author }}{{ else }}{{ .config.Blog.Author }}{{ end }}">
@@ -172,5 +173,5 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ displayTitle .article }}">
 <meta name="twitter:description" content="{{ if .article.Description }}{{ .article.Description }}{{ else }}{{ .article.Excerpt }}{{ end }}">
-
+{{ end }}
 {{ end }}

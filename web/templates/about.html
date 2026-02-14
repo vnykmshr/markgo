@@ -158,6 +158,7 @@
 {{ end }}
 
 {{ define "about-head" }}
+{{ if not .config.SEO.Enabled }}
 <meta name="description" content="{{ if .about_tagline }}{{ .about_tagline }}{{ else }}About {{ .config.Blog.Author }}{{ end }}">
 
 <!-- Open Graph -->
@@ -170,5 +171,5 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="About {{ .config.Blog.Author }}">
 <meta name="twitter:description" content="{{ if .about_tagline }}{{ .about_tagline }}{{ else }}About {{ .config.Blog.Author }}{{ end }}">
-
+{{ end }}
 {{ end }}

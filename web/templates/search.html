@@ -85,7 +85,9 @@
 {{ end }}
 
 {{ define "search-head" }}
+{{ if not .config.SEO.Enabled }}
 <meta name="description" content="{{ if .query }}Search results for {{ .query }} on {{ .config.Blog.Title }}{{ else }}Search posts on {{ .config.Blog.Title }}{{ end }}">
+{{ end }}
 {{ if .query }}
 <meta name="robots" content="noindex, follow">
 {{ end }}

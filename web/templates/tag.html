@@ -28,6 +28,8 @@
 {{ end }}
 
 {{ define "tag-head" }}
+{{ if not .config.SEO.Enabled }}
 <meta name="description" content="Posts tagged with {{ .tag }} on {{ .config.Blog.Title }}.">
 {{ if .collectionSchema }}{{ generateJsonLD .collectionSchema }}{{ end }}
+{{ end }}
 {{ end }}
