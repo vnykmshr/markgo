@@ -4,7 +4,7 @@ package constants
 // Application metadata
 const (
 	AppName    = "MarkGo"
-	AppVersion = "v3.1.0"
+	AppVersion = "v3.4.0"
 )
 
 // Build-time variables injected via ldflags
