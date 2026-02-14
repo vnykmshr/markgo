@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.5.0] - 2026-02-14
+
+Org migration, Go 1.26, and build improvements.
+
+### Changed
+
+- **Module path**: migrated from `github.com/vnykmshr/markgo` to `github.com/1mb-dev/markgo`
+- **Go**: upgraded from 1.25 to 1.26 (go.mod, CI, Docker images)
+- **golangci-lint**: bumped to v2.9.0 for Go 1.26 compatibility
+- **Dependencies**: updated 17 indirect deps (sonic 1.15, quic-go 0.59, otel 1.40, go-redis 9.17, x/crypto 0.48, x/net 0.50)
+- **Version injection**: `AppVersion` is now a single ldflags-injected var — health, logs, CLI, and `--version` all read from the same source
+
+### Fixed
+
+- Stale `cmd/server` references in docker-compose, scripts, and STRESS_TESTING.md
+- WebStress references updated to Lobster (current project name)
+- `AppVersion` constant was stuck at v3.1.0 — now injected at build time
+
+### Removed
+
+- Unused Codecov integration from CI workflow
+- Redundant `serve.Version` variable (consolidated into `constants.AppVersion`)
+
+---
+
 ## [3.4.0] - 2026-02-13
 
 UX cohesion, responsive hardening, and auth flow resilience across the SPA.
