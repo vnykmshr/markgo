@@ -67,13 +67,6 @@ jobs:
     - name: Build
       run: go build -ldflags="-w -s" ./cmd/markgo
 
-    - name: Upload coverage
-      uses: codecov/codecov-action@v5
-      continue-on-error: true
-      with:
-        file: ./coverage.out
-        token: ${{ secrets.CODECOV_TOKEN }}
-
   build-artifacts:
     name: Build Artifacts
     runs-on: ubuntu-latest
