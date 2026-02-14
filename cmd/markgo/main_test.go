@@ -51,7 +51,7 @@ func TestVersionOutput(t *testing.T) {
 			if exitCode != 0 {
 				t.Errorf("markgo %s exited with code %d, want 0", arg, exitCode)
 			}
-			if !strings.Contains(stdout, "MarkGo v") {
+			if !strings.Contains(stdout, "MarkGo ") {
 				t.Errorf("markgo %s output missing version string, got: %q", arg, stdout)
 			}
 		})

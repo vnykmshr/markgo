@@ -1,16 +1,14 @@
 // Package constants provides application-wide constants for the MarkGo blog engine.
 package constants
 
-// Application metadata
-const (
-	AppName    = "MarkGo"
-	AppVersion = "v3.4.0"
-)
+// AppName is the display name of the application.
+const AppName = "MarkGo"
 
 // Build-time variables injected via ldflags
 var (
-	GitCommit = "unknown"
-	BuildTime = "unknown"
+	AppVersion = "dev"
+	GitCommit  = "unknown"
+	BuildTime  = "unknown"
 )
 
 // SupportedMarkdownExtensions lists recognized markdown file extensions.

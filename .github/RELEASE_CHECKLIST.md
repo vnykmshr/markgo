@@ -93,8 +93,8 @@ This checklist ensures all critical validations are performed before creating a 
 
 - [ ] **Workflow builds use correct ldflags:**
   ```bash
-  grep "github.com/1mb-dev/markgo/internal/commands/serve" .github/workflows/ci.yml
-  # Should find version injection for serve.Version
+  grep "github.com/1mb-dev/markgo/internal/constants.AppVersion" .github/workflows/ci.yml
+  # Should find version injection for constants.AppVersion
   ```
 
 ### 6. Documentation Accuracy 📚

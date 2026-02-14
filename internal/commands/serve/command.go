@@ -35,9 +35,6 @@ const (
 	envDevelopment = "development"
 )
 
-// Version is injected via ldflags at build time
-var Version = constants.AppVersion
-
 // Run starts the MarkGo HTTP server.
 func Run(args []string) {
 	// Parse command-line flags
@@ -125,7 +122,7 @@ func Run(args []string) {
 		logger.Info("Starting MarkGo server",
 			"port", cfg.Port,
 			"environment", cfg.Environment,
-			"version", Version)
+			"version", constants.AppVersion)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error("Server failed to start", "error", err)
 			apperrors.HandleCLIError(
@@ -254,7 +251,7 @@ func setupServer(cfg *config.Config, logger *slog.Logger) (*gin.Engine, *service
 		Config:           cfg,
 		Logger:           logger,
 		BuildInfo: &handlers.BuildInfo{
-			Version:   Version,
+			Version:   constants.AppVersion,
 			GitCommit: constants.GitCommit,
 			BuildTime: constants.BuildTime,
 		},

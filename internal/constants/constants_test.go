@@ -14,5 +14,5 @@ func TestSupportedMarkdownExtensions(t *testing.T) {
 
 func TestApplicationMetadata(t *testing.T) {
 	assert.Equal(t, "MarkGo", AppName)
-	assert.Regexp(t, `^v\d+\.\d+\.\d+$`, AppVersion)
+	assert.Regexp(t, `^(dev|v\d+\.\d+\.\d+)`, AppVersion)
 }
