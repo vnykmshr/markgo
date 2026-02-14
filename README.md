@@ -1,7 +1,7 @@
 # MarkGo
 
 [![CI](https://github.com/1mb-dev/markgo/actions/workflows/ci.yml/badge.svg)](https://github.com/1mb-dev/markgo/actions/workflows/ci.yml)
-[![Go Version](https://img.shields.io/badge/Go-1.25.0+-blue.svg)](https://golang.org)
+[![Go Version](https://img.shields.io/badge/Go-1.26.0+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 A blog engine where you write first and categorize never.
