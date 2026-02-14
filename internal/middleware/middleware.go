@@ -157,7 +157,7 @@ func RateLimit(requests int, window time.Duration) gin.HandlerFunc {
 		// Prevent memory exhaustion: reject if too many unique IPs
 		if len(clients) >= maxClients && clients[ip] == nil {
 			c.Header("Retry-After", "3600")
-			c.AbortWithStatus(http.StatusTooManyRequests)
+			abortWithError(c, http.StatusTooManyRequests, "Too many requests — please wait")
 			return
 		}
 
@@ -176,7 +176,7 @@ func RateLimit(requests int, window time.Duration) gin.HandlerFunc {
 		if len(clients[ip]) >= requests {
 			retryAfter := int(window.Seconds())
 			c.Header("Retry-After", fmt.Sprintf("%d", retryAfter))
-			c.AbortWithStatus(http.StatusTooManyRequests)
+			abortWithError(c, http.StatusTooManyRequests, "Too many requests — please wait")
 			return
 		}
 
@@ -305,7 +305,7 @@ func CSRF(secureCookie bool) gin.HandlerFunc {
 			}
 			token := generateCSRFToken()
 			if token == "" {
-				c.AbortWithStatus(http.StatusInternalServerError)
+				abortWithError(c, http.StatusInternalServerError, "Internal server error")
 				return
 			}
 			c.SetSameSite(http.SameSiteStrictMode)
@@ -317,7 +317,7 @@ func CSRF(secureCookie bool) gin.HandlerFunc {
 
 		cookieToken, err := c.Cookie(csrfCookieName)
 		if err != nil || cookieToken == "" {
-			c.AbortWithStatus(http.StatusForbidden)
+			abortWithError(c, http.StatusForbidden, "Session expired — please reload")
 			return
 		}
 
@@ -327,7 +327,7 @@ func CSRF(secureCookie bool) gin.HandlerFunc {
 			submittedToken = c.GetHeader(csrfHeaderName)
 		}
 		if submittedToken == "" || subtle.ConstantTimeCompare([]byte(submittedToken), []byte(cookieToken)) != 1 {
-			c.AbortWithStatus(http.StatusForbidden)
+			abortWithError(c, http.StatusForbidden, "Request validation failed — please retry")
 			return
 		}
 

@@ -140,7 +140,7 @@ func SessionAuth(store *SessionStore) gin.HandlerFunc {
 		// Not authenticated — return 401 for all methods.
 		// Debug/API routes use this middleware; there is no dedicated login page to redirect to.
 		slog.Warn("Unauthenticated request", "method", c.Request.Method, "path", c.Request.URL.Path)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		abortWithError(c, http.StatusUnauthorized, "Authentication required")
 	}
 }
 
@@ -176,7 +176,7 @@ func SoftSessionAuth(store *SessionStore, secureCookie bool) gin.HandlerFunc {
 		}
 
 		slog.Warn("Unauthenticated non-GET request", "method", c.Request.Method, "path", c.Request.URL.Path)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		abortWithError(c, http.StatusUnauthorized, "Authentication required")
 	}
 }
 
@@ -186,7 +186,7 @@ func GenerateCSRFToken(c *gin.Context, secureCookie bool) {
 	token := generateCSRFToken()
 	if token == "" {
 		slog.Error("CSRF token generation failed — aborting request")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		abortWithError(c, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 	c.SetSameSite(http.SameSiteStrictMode)
