@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.7.0] - 2026-02-15
+
+AMA (Ask Me Anything) — a fourth content type. Readers submit questions via FAB or bottom nav, author moderates and answers from admin, published Q&As flow into the home feed.
+
+### Added
+
+- **AMA content type**: `type: ama` articles with `asker` and `asker_email` frontmatter fields, draft=pending / published=answered workflow
+- **AMA submission sheet**: bottom sheet (mobile) / centered modal (desktop) with name, email (optional), question fields, client-side math captcha, honeypot spam prevention, character counter
+- **Admin AMA page** (`/admin/ama`): pending question cards with answer textarea, publish and delete actions, live count updates
+- **AMA feed card**: distinct card design with "Q" badge, asker attribution, answer excerpt — appears in home feed with dedicated filter pill
+- **FAB dual-purpose**: compose button (auth) / AMA question mark button (unauth), keyboard shortcut Cmd/Ctrl+.
+- **Bottom nav AMA button**: prominent raised-circle center button for unauthenticated users, dispatches `fab:ama`
+- **About page CTA**: "Ask Me Anything" section with trigger button
+- **Focus trap utility** (`focus-trap.js`): shared Tab/Shift+Tab trap for modal dialogs, used by both compose-sheet and ama-sheet
+- **AMA handler tests**: submission, honeypot, validation, answer publish, delete, edge cases
+- **Compose service AMA support**: `LoadArticle` round-trips Asker/AskerEmail/Type fields, `DeletePost` for admin removal
+
+### Fixed
+
+- **Bottom nav login swap**: `swapBottomNavToCompose()` targeted removed `.bottom-nav-subscribe` class — updated to `.bottom-nav-ama`
+- **Keyboard shortcut conflict**: changed from Cmd+N (browser "new window") to Cmd+. for compose/AMA trigger
+- **Focus trap missing**: compose-sheet and ama-sheet dialogs declared `role="dialog"` without trapping keyboard focus (WCAG violation)
+
+---
+
 ## [3.6.0] - 2026-02-14
 
 Structural reliability release. No new features. Every change closes a security gap, eliminates an inconsistency class, or removes duplication.
