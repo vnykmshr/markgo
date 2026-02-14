@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.6.0] - 2026-02-14
+
+Structural reliability release. No new features. Every change closes a security gap, eliminates an inconsistency class, or removes duplication.
+
+### Added
+
+- **`auth-fetch.js` module**: single source of truth for mutation fetches — CSRF injection, auth error detection, and structured JSON responses
+- **Upload rate limiting**: per-endpoint rate limit (20 req/5min production), environment-aware defaults, configurable via `RATE_LIMIT_UPLOAD_*` env vars
+- **`abortWithError` middleware helper**: content-negotiated error responses (JSON for API clients, styled HTML for browsers) on all middleware error paths
+
+### Changed
+
+- **Middleware error responses**: all `AbortWithStatus()` calls in session, CSRF, and rate limit middleware replaced with `abortWithError()` — no more empty response bodies
+- **CSRF enforcement**: admin route group now has CSRF middleware applied at group level (was per-route opt-in on drafts only)
+- **JS fetch consolidation**: compose, compose-sheet, drafts, offline-queue, admin, and contact modules refactored to use `authenticatedFetch`/`authenticatedJSON` — removed 6 duplicate `getCSRFToken` implementations and manual CSRF header injection
+- **CSS design token**: extracted `--max-content-width` from 14 hardcoded `42rem` values
+- **CollectionPage JSON-LD**: consolidated from inline template logic to handler pattern (tags, categories, archive)
+- **Service worker**: cache version bumped to v4 to force invalidation after JS changes
+
+### Fixed
+
+- **`relativeTime` and `timeAgo`**: guard against zero time values (previously displayed "Jan 1, 0001")
+- **admin.js CSRF gap**: admin actions (cache clear, etc.) were sending POST requests without CSRF tokens — now injected via `authenticatedJSON`
+
+---
+
 ## [3.5.0] - 2026-02-14
 
 Org migration, Go 1.26, and build improvements.
