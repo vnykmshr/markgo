@@ -32,6 +32,10 @@ Structural reliability release. No new features. Every change closes a security 
 
 - **`relativeTime` and `timeAgo`**: guard against zero time values (previously displayed "Jan 1, 0001")
 - **admin.js CSRF gap**: admin actions (cache clear, etc.) were sending POST requests without CSRF tokens — now injected via `authenticatedJSON`
+- **Config leak in JSON error responses**: `renderHTML` no longer serializes full template data (including admin credentials) when returning JSON — extracts only safe fields
+- **Template crash on canonical line**: `html/template` `and` function with mixed types (string + bool) halted execution on every page — replaced with nested `{{ if }}` blocks
+- **Duplicate SEO meta tags**: per-page `-head` templates now gated by `{{ if not .config.SEO.Enabled }}` to prevent duplicate description/OG/Twitter tags across all public pages (9 templates fixed)
+- **About page missing OG description**: handler now sets `description` in template data for proper `og:description` and `twitter:description` generation
 
 ---
 
