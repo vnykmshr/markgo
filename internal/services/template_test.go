@@ -461,6 +461,38 @@ func TestTemplateFunctions_DateOperations(t *testing.T) {
 	daysAgo := time.Now().Add(-3 * 24 * time.Hour)
 	result = timeAgoFunc(daysAgo)
 	assert.Contains(t, result, "day")
+
+	// Test zero time returns empty string
+	result = timeAgoFunc(time.Time{})
+	assert.Equal(t, "", result)
+
+	// Test relativeTime function
+	relativeTimeFunc := funcMap["relativeTime"].(func(time.Time) string)
+
+	// Test zero time returns empty string
+	result = relativeTimeFunc(time.Time{})
+	assert.Equal(t, "", result)
+
+	// Test recent time
+	result = relativeTimeFunc(time.Now().Add(-30 * time.Second))
+	assert.Equal(t, "just now", result)
+
+	// Test minutes ago
+	result = relativeTimeFunc(time.Now().Add(-5 * time.Minute))
+	assert.Equal(t, "5m ago", result)
+
+	// Test hours ago
+	result = relativeTimeFunc(time.Now().Add(-2 * time.Hour))
+	assert.Equal(t, "2h ago", result)
+
+	// Test days ago
+	result = relativeTimeFunc(time.Now().Add(-3 * 24 * time.Hour))
+	assert.Equal(t, "3d ago", result)
+
+	// Test older dates fall back to date format
+	result = relativeTimeFunc(time.Now().Add(-30 * 24 * time.Hour))
+	assert.NotEmpty(t, result)
+	assert.NotContains(t, result, "ago")
 }
 
 func TestTemplateFunctions_UtilityOperations(t *testing.T) {

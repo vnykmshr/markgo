@@ -527,6 +527,9 @@ var templateFuncs = template.FuncMap{
 		return b.String()
 	},
 	"timeAgo": func(date time.Time) string {
+		if date.IsZero() {
+			return ""
+		}
 		duration := time.Since(date)
 		switch {
 		case duration < time.Minute:
@@ -704,6 +707,9 @@ var templateFuncs = template.FuncMap{
 		return fmt.Sprintf("%s/%s", baseURL, path)
 	},
 	"relativeTime": func(t time.Time) string {
+		if t.IsZero() {
+			return ""
+		}
 		duration := time.Since(t)
 		switch {
 		case duration < time.Hour:
