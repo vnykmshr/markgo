@@ -224,12 +224,12 @@ function swapToAuthenticatedUI() {
 }
 
 /**
- * Swap bottom nav subscribe button to compose button after login.
+ * Swap bottom nav AMA button to compose button after login.
  * Mirrors server-rendered .bottom-nav-compose in base.html.
  */
 function swapBottomNavToCompose() {
-    const subscribeBtn = document.querySelector('.bottom-nav-subscribe');
-    if (!subscribeBtn) return;
+    const amaBtn = document.querySelector('.bottom-nav-ama');
+    if (!amaBtn) return;
 
     const composeBtn = document.createElement('button');
     composeBtn.className = 'bottom-nav-item bottom-nav-compose';
@@ -264,7 +264,7 @@ function swapBottomNavToCompose() {
         document.dispatchEvent(new CustomEvent('fab:compose'));
     });
 
-    subscribeBtn.replaceWith(composeBtn);
+    amaBtn.replaceWith(composeBtn);
 }
 
 /**

@@ -55,12 +55,14 @@
     color: var(--color-primary);
 }
 
-/* Compose button — center, slightly raised */
-.bottom-nav-compose {
+/* Center button — raised circle (compose for auth, AMA for unauth) */
+.bottom-nav-compose,
+.bottom-nav-ama {
     position: relative;
 }
 
-.bottom-nav-compose .bottom-nav-icon {
+.bottom-nav-compose .bottom-nav-icon,
+.bottom-nav-ama .bottom-nav-icon {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -74,12 +76,14 @@
     transition: background-color var(--transition-fast), transform var(--transition-fast);
 }
 
-.bottom-nav-compose .bottom-nav-icon svg {
+.bottom-nav-compose .bottom-nav-icon svg,
+.bottom-nav-ama .bottom-nav-icon svg {
     width: 20px;
     height: 20px;
 }
 
-.bottom-nav-compose:active .bottom-nav-icon {
+.bottom-nav-compose:active .bottom-nav-icon,
+.bottom-nav-ama:active .bottom-nav-icon {
     transform: scale(0.9);
 }
 
@@ -157,7 +161,8 @@
         transition: none;
     }
 
-    .bottom-nav-compose .bottom-nav-icon {
+    .bottom-nav-compose .bottom-nav-icon,
+    .bottom-nav-ama .bottom-nav-icon {
         transition: none;
     }
 }
