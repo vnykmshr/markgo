@@ -206,6 +206,33 @@ func (h *TaxonomyHandler) getTagsPage() (map[string]any, error) {
 	data["template"] = "tags"
 	data["canonicalPath"] = "/tags"
 
+	if baseURL := h.config.BaseURL; baseURL != "" {
+		items := make([]map[string]any, len(tagCounts))
+		for i, tc := range tagCounts {
+			items[i] = map[string]any{
+				"@type":    "ListItem",
+				"position": i + 1,
+				"item": map[string]any{
+					"@type": "Thing",
+					"name":  tc.Tag,
+					"url":   baseURL + "/tags/" + url.PathEscape(tc.Tag),
+				},
+			}
+		}
+		data["collectionSchema"] = map[string]any{
+			"@context":    "https://schema.org",
+			"@type":       "CollectionPage",
+			"name":        "Tags - " + h.config.Blog.Title,
+			"description": "Browse posts by tag on " + h.config.Blog.Title,
+			"url":         baseURL + "/tags",
+			"mainEntity": map[string]any{
+				"@type":           "ItemList",
+				"numberOfItems":   len(tagCounts),
+				"itemListElement": items,
+			},
+		}
+	}
+
 	return data, nil
 }
 
@@ -218,6 +245,33 @@ func (h *TaxonomyHandler) getCategoriesPage() (map[string]any, error) {
 	data["count"] = len(categoryCounts)
 	data["template"] = "categories"
 	data["canonicalPath"] = "/categories"
+
+	if baseURL := h.config.BaseURL; baseURL != "" {
+		items := make([]map[string]any, len(categoryCounts))
+		for i, cc := range categoryCounts {
+			items[i] = map[string]any{
+				"@type":    "ListItem",
+				"position": i + 1,
+				"item": map[string]any{
+					"@type": "Thing",
+					"name":  cc.Category,
+					"url":   baseURL + "/categories/" + url.PathEscape(cc.Category),
+				},
+			}
+		}
+		data["collectionSchema"] = map[string]any{
+			"@context":    "https://schema.org",
+			"@type":       "CollectionPage",
+			"name":        "Categories - " + h.config.Blog.Title,
+			"description": "Browse posts by category on " + h.config.Blog.Title,
+			"url":         baseURL + "/categories",
+			"mainEntity": map[string]any{
+				"@type":           "ItemList",
+				"numberOfItems":   len(categoryCounts),
+				"itemListElement": items,
+			},
+		}
+	}
 
 	return data, nil
 }

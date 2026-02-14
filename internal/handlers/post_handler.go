@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -125,6 +126,40 @@ func (h *PostHandler) getArticlesPage(page int) (map[string]any, error) {
 	data["pagination"] = pagination
 	data["template"] = "articles"
 	data["canonicalPath"] = "/writing"
+
+	if baseURL := h.config.BaseURL; baseURL != "" {
+		items := make([]map[string]any, len(articles))
+		for i, a := range articles {
+			item := map[string]any{
+				"@type":         "BlogPosting",
+				"position":      i + 1,
+				"headline":      a.DisplayTitle(),
+				"description":   a.Excerpt,
+				"url":           baseURL + "/writing/" + a.Slug,
+				"datePublished": a.Date.Format("2006-01-02T15:04:05Z07:00"),
+				"author": map[string]any{
+					"@type": "Person",
+					"name":  h.config.Blog.Author,
+				},
+			}
+			if len(a.Tags) > 0 {
+				item["keywords"] = strings.Join(a.Tags, ", ")
+			}
+			items[i] = item
+		}
+		data["collectionSchema"] = map[string]any{
+			"@context":    "https://schema.org",
+			"@type":       "CollectionPage",
+			"name":        "Writing",
+			"description": "Writing from " + h.config.Blog.Title,
+			"url":         baseURL + "/writing",
+			"mainEntity": map[string]any{
+				"@type":           "ItemList",
+				"numberOfItems":   pagination.TotalItems,
+				"itemListElement": items,
+			},
+		}
+	}
 
 	return data, nil
 }

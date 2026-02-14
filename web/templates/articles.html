@@ -39,41 +39,6 @@
         {{ end }}
     </div>
 </div>
-
-{{ if .articles }}
-<!-- Structured Data -->
-<script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    "name": "Writing",
-    "description": "Writing from {{ .config.Blog.Title }}",
-    "url": "{{ .config.BaseURL }}/writing",
-    "mainEntity": {
-        "@type": "ItemList",
-        "numberOfItems": {{ .pagination.TotalItems }},
-        "itemListElement": [
-            {{ range $index, $article := .articles }}
-            {{ if $index }},{{ end }}
-            {
-                "@type": "BlogPosting",
-                "position": {{ add $index 1 }},
-                "headline": "{{ displayTitle $article }}",
-                "description": "{{ $article.Excerpt }}",
-                "url": "{{ $.config.BaseURL }}/writing/{{ $article.Slug }}",
-                "datePublished": "{{ $article.Date.Format "2006-01-02T15:04:05Z07:00" }}",
-                "author": {
-                    "@type": "Person",
-                    "name": "{{ $.config.Blog.Author }}"
-                },
-                "keywords": "{{ join ", " $article.Tags }}"
-            }
-            {{ end }}
-        ]
-    }
-}
-</script>
-{{ end }}
 {{ end }}
 
 {{ define "articles-head" }}

@@ -86,6 +86,7 @@
         {{ if .articleSchema }}{{ generateJsonLD .articleSchema }}{{ end }}
         {{ if .websiteSchema }}{{ generateJsonLD .websiteSchema }}{{ end }}
         {{ if .breadcrumbSchema }}{{ generateJsonLD .breadcrumbSchema }}{{ end }}
+        {{ if .collectionSchema }}{{ generateJsonLD .collectionSchema }}{{ end }}
 
         {{/* SEO Verification Tags */}}
         {{ if .config.SEO.GoogleSiteVerify }}

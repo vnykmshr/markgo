@@ -22,35 +22,6 @@
         {{ end }}
     </div>
 </div>
-
-<!-- Structured Data -->
-<script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    "name": "Categories - {{ .config.Blog.Title }}",
-    "description": "Browse posts by category on {{ .config.Blog.Title }}",
-    "url": "{{ .config.BaseURL }}/categories",
-    "mainEntity": {
-        "@type": "ItemList",
-        "numberOfItems": {{ .count }},
-        "itemListElement": [
-            {{ range $index, $category := .categories }}
-            {{ if $index }},{{ end }}
-            {
-                "@type": "ListItem",
-                "position": {{ add $index 1 }},
-                "item": {
-                    "@type": "Thing",
-                    "name": "{{ $category.Category }}",
-                    "url": "{{ $.config.BaseURL }}/categories/{{ $category.Category | urlquery }}"
-                }
-            }
-            {{ end }}
-        ]
-    }
-}
-</script>
 {{ end }}
 
 {{ define "categories-head" }}
