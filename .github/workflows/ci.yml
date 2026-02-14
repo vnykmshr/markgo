@@ -107,7 +107,7 @@ jobs:
         VERSION="${{ github.ref_name || 'dev' }}"
         GIT_COMMIT="${{ github.sha }}"
         BUILD_TIME="$(date -u '+%Y-%m-%d_%H:%M:%S')"
-        go build -ldflags="-w -s -X 'github.com/vnykmshr/markgo/internal/commands/serve.Version=${VERSION}' -X 'github.com/vnykmshr/markgo/internal/constants.GitCommit=${GIT_COMMIT}' -X 'github.com/vnykmshr/markgo/internal/constants.BuildTime=${BUILD_TIME}'" \
+        go build -ldflags="-w -s -X 'github.com/1mb-dev/markgo/internal/commands/serve.Version=${VERSION}' -X 'github.com/1mb-dev/markgo/internal/constants.GitCommit=${GIT_COMMIT}' -X 'github.com/1mb-dev/markgo/internal/constants.BuildTime=${BUILD_TIME}'" \
           -o markgo-${{ matrix.target.goos }}-${{ matrix.target.goarch }}${EXT} \
           ./cmd/markgo
 

@@ -1,4 +1,4 @@
-module github.com/vnykmshr/markgo
+module github.com/1mb-dev/markgo
 
 go 1.25.0
 

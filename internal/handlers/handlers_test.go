@@ -16,10 +16,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/vnykmshr/markgo/internal/config"
-	apperrors "github.com/vnykmshr/markgo/internal/errors"
-	"github.com/vnykmshr/markgo/internal/models"
-	"github.com/vnykmshr/markgo/internal/services"
+	"github.com/1mb-dev/markgo/internal/config"
+	apperrors "github.com/1mb-dev/markgo/internal/errors"
+	"github.com/1mb-dev/markgo/internal/models"
+	"github.com/1mb-dev/markgo/internal/services"
 )
 
 func init() {

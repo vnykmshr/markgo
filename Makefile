@@ -20,9 +20,9 @@ VERSION=$(shell git describe --tags --always --dirty 2>/dev/null || echo "v2.0.0
 GIT_COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BUILD_TIME=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
 LDFLAGS=-ldflags "-s -w \
-	-X 'github.com/vnykmshr/markgo/internal/commands/serve.Version=$(VERSION)' \
-	-X 'github.com/vnykmshr/markgo/internal/constants.GitCommit=$(GIT_COMMIT)' \
-	-X 'github.com/vnykmshr/markgo/internal/constants.BuildTime=$(BUILD_TIME)'"
+	-X 'github.com/1mb-dev/markgo/internal/commands/serve.Version=$(VERSION)' \
+	-X 'github.com/1mb-dev/markgo/internal/constants.GitCommit=$(GIT_COMMIT)' \
+	-X 'github.com/1mb-dev/markgo/internal/constants.BuildTime=$(BUILD_TIME)'"
 BUILD_FLAGS=-trimpath
 
 .PHONY: help build build-release clean test test-race coverage lint fmt run dev docker install tidy

@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/vnykmshr/markgo/internal/middleware"
+	"github.com/1mb-dev/markgo/internal/middleware"
 )
 
 const defaultRedirect = "/admin"

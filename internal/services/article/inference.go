@@ -1,6 +1,6 @@
 package article
 
-import "github.com/vnykmshr/markgo/internal/models"
+import "github.com/1mb-dev/markgo/internal/models"
 
 // inferPostType determines the post type based on article content.
 // Explicit type in frontmatter always wins. Otherwise:

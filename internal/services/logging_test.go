@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/1mb-dev/markgo/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vnykmshr/markgo/internal/config"
 )
 
 func TestNewLoggingService(t *testing.T) {

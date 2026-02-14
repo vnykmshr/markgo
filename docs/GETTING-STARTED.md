@@ -6,10 +6,10 @@
 
 ## Install
 
-**Download a release** from [GitHub Releases](https://github.com/vnykmshr/markgo/releases), or build from source:
+**Download a release** from [GitHub Releases](https://github.com/1mb-dev/markgo/releases), or build from source:
 
 ```bash
-git clone https://github.com/vnykmshr/markgo.git && cd markgo
+git clone https://github.com/1mb-dev/markgo.git && cd markgo
 make build
 ```
 

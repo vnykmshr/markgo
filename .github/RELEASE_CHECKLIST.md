@@ -93,7 +93,7 @@ This checklist ensures all critical validations are performed before creating a 
 
 - [ ] **Workflow builds use correct ldflags:**
   ```bash
-  grep "github.com/vnykmshr/markgo/internal/commands/serve" .github/workflows/ci.yml
+  grep "github.com/1mb-dev/markgo/internal/commands/serve" .github/workflows/ci.yml
   # Should find version injection for serve.Version
   ```
 
@@ -225,7 +225,7 @@ This checklist ensures all critical validations are performed before creating a 
 
 - [ ] **Test downloading release binary:**
   ```bash
-  wget https://github.com/vnykmshr/markgo/releases/download/vX.Y.Z/markgo-linux-amd64
+  wget https://github.com/1mb-dev/markgo/releases/download/vX.Y.Z/markgo-linux-amd64
   chmod +x markgo-linux-amd64
   ./markgo-linux-amd64 --version
   ```
@@ -335,4 +335,4 @@ echo "All checks passed!"
 ---
 
 **Maintained by:** @vnykmshr
-**Feedback:** https://github.com/vnykmshr/markgo/issues
+**Feedback:** https://github.com/1mb-dev/markgo/issues

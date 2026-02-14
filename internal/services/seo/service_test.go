@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vnykmshr/markgo/internal/models"
-	"github.com/vnykmshr/markgo/internal/services"
+	"github.com/1mb-dev/markgo/internal/models"
+	"github.com/1mb-dev/markgo/internal/services"
 )
 
 // MockArticleService for testing

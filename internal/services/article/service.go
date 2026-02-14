@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	apperrors "github.com/vnykmshr/markgo/internal/errors"
-	"github.com/vnykmshr/markgo/internal/models"
+	apperrors "github.com/1mb-dev/markgo/internal/errors"
+	"github.com/1mb-dev/markgo/internal/models"
 )
 
 // Service defines the main article service interface

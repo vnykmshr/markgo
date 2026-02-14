@@ -5,9 +5,9 @@ import (
 	"encoding/xml"
 	"time"
 
-	"github.com/vnykmshr/markgo/internal/config"
-	"github.com/vnykmshr/markgo/internal/models"
-	"github.com/vnykmshr/markgo/internal/services"
+	"github.com/1mb-dev/markgo/internal/config"
+	"github.com/1mb-dev/markgo/internal/models"
+	"github.com/1mb-dev/markgo/internal/services"
 )
 
 // Service generates RSS, JSON Feed, and Sitemap content.

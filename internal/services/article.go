@@ -6,7 +6,7 @@ package services
 import (
 	"log/slog"
 
-	"github.com/vnykmshr/markgo/internal/services/article"
+	"github.com/1mb-dev/markgo/internal/services/article"
 )
 
 // NewArticleService creates a new modular article service

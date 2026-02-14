@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	apperrors "github.com/vnykmshr/markgo/internal/errors"
-	"github.com/vnykmshr/markgo/internal/models"
+	apperrors "github.com/1mb-dev/markgo/internal/errors"
+	"github.com/1mb-dev/markgo/internal/models"
 )
 
 // --- Mock implementations ---

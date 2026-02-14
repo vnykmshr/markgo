@@ -355,7 +355,7 @@ MarkGo reimagined as a blogging companion app. SPA navigation, installable PWA, 
 
 **Stress Testing Tool Graduation:**
 - **WebStress** - Independent stress testing tool (graduated from examples/stress-test/)
-  - Migrated to standalone repository: https://github.com/vnykmshr/webstress
+  - Migrated to standalone repository: https://github.com/vnykmshr/lobster
   - Enhanced with clean architecture and comprehensive documentation
   - Generalized to work with any web application (not just MarkGo)
   - Added migration guide: examples/STRESS_TESTING.md
@@ -417,7 +417,7 @@ MarkGo reimagined as a blogging companion app. SPA navigation, installable PWA, 
 - **examples/stress-test/**: Graduated to independent WebStress project
   - 6 files removed (~50KB of code)
   - Replaced with migration guide (examples/STRESS_TESTING.md)
-  - Full functionality preserved in https://github.com/vnykmshr/webstress
+  - Full functionality preserved in https://github.com/vnykmshr/lobster
 
 ### Fixed
 
@@ -545,4 +545,4 @@ and bloat while maintaining full production features.
 
 ---
 
-For detailed commit history, see: https://github.com/vnykmshr/markgo/commits/main
+For detailed commit history, see: https://github.com/1mb-dev/markgo/commits/main

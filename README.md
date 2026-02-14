@@ -1,6 +1,6 @@
 # MarkGo
 
-[![CI](https://github.com/vnykmshr/markgo/actions/workflows/ci.yml/badge.svg)](https://github.com/vnykmshr/markgo/actions/workflows/ci.yml)
+[![CI](https://github.com/1mb-dev/markgo/actions/workflows/ci.yml/badge.svg)](https://github.com/1mb-dev/markgo/actions/workflows/ci.yml)
 [![Go Version](https://img.shields.io/badge/Go-1.25.0+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -11,7 +11,7 @@ Type two sentences without a title and it becomes a thought. Paste a URL with co
 ## Quick Start
 
 ```bash
-git clone https://github.com/vnykmshr/markgo && cd markgo
+git clone https://github.com/1mb-dev/markgo && cd markgo
 make build
 
 ./build/markgo init --quick
@@ -19,7 +19,7 @@ make build
 # Visit http://localhost:3000
 ```
 
-Or download a release from [GitHub Releases](https://github.com/vnykmshr/markgo/releases).
+Or download a release from [GitHub Releases](https://github.com/1mb-dev/markgo/releases).
 
 ## What You Get
 

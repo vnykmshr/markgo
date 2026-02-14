@@ -22,4 +22,4 @@ A space for long-form writing, quick thoughts, and interesting links. Built with
 
 ## The Stack
 
-This site runs on [MarkGo](https://github.com/vnykmshr/markgo), a Go blog engine with SPA navigation, offline reading, and instant capture. No database, no JS build step. Markdown in, blog out.
+This site runs on [MarkGo](https://github.com/1mb-dev/markgo), a Go blog engine with SPA navigation, offline reading, and instant capture. No database, no JS build step. Markdown in, blog out.

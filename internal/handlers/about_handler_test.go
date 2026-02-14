@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/vnykmshr/markgo/internal/config"
+	"github.com/1mb-dev/markgo/internal/config"
 )
 
 func createTestAboutHandler(cfg *config.Config) *AboutHandler {
@@ -121,23 +121,23 @@ func TestBuildSocialLinks(t *testing.T) {
 
 	t.Run("normalizes github username to full URL", func(t *testing.T) {
 		cfg := createTestConfig()
-		cfg.About.GitHub = "vnykmshr"
+		cfg.About.GitHub = "testuser"
 		handler := createTestAboutHandler(cfg)
 		links := handler.buildSocialLinks()
 
 		assert.Len(t, links, 1)
 		assert.Equal(t, "github", links[0].Platform)
-		assert.Equal(t, "https://github.com/vnykmshr", links[0].URL)
+		assert.Equal(t, "https://github.com/testuser", links[0].URL)
 	})
 
 	t.Run("preserves full URLs", func(t *testing.T) {
 		cfg := createTestConfig()
-		cfg.About.GitHub = "https://github.com/vnykmshr"
+		cfg.About.GitHub = "https://github.com/testuser"
 		handler := createTestAboutHandler(cfg)
 		links := handler.buildSocialLinks()
 
 		assert.Len(t, links, 1)
-		assert.Equal(t, "https://github.com/vnykmshr", links[0].URL)
+		assert.Equal(t, "https://github.com/testuser", links[0].URL)
 	})
 
 	t.Run("normalizes twitter handle", func(t *testing.T) {

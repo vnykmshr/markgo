@@ -4,7 +4,7 @@ import (
 	"html/template"
 	"io"
 
-	"github.com/vnykmshr/markgo/internal/models"
+	"github.com/1mb-dev/markgo/internal/models"
 )
 
 // ArticleServiceInterface defines the interface for article operations

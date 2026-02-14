@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/vnykmshr/markgo/internal/constants"
+	"github.com/1mb-dev/markgo/internal/constants"
 )
 
 // HealthHandler handles health check and metrics requests.

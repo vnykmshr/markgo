@@ -10,7 +10,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	apperrors "github.com/vnykmshr/markgo/internal/errors"
+	apperrors "github.com/1mb-dev/markgo/internal/errors"
 )
 
 // Service handles creating new posts from compose form input.

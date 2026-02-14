@@ -7,10 +7,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/vnykmshr/markgo/internal/config"
-	"github.com/vnykmshr/markgo/internal/middleware"
-	"github.com/vnykmshr/markgo/internal/services"
-	"github.com/vnykmshr/markgo/internal/services/compose"
+	"github.com/1mb-dev/markgo/internal/config"
+	"github.com/1mb-dev/markgo/internal/middleware"
+	"github.com/1mb-dev/markgo/internal/services"
+	"github.com/1mb-dev/markgo/internal/services/compose"
 )
 
 // BuildInfo contains build-time information

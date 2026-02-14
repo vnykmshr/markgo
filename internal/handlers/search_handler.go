@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/vnykmshr/markgo/internal/models"
-	"github.com/vnykmshr/markgo/internal/services"
+	"github.com/1mb-dev/markgo/internal/models"
+	"github.com/1mb-dev/markgo/internal/services"
 )
 
 // SearchHandler handles search requests.

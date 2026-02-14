@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	initcmd "github.com/vnykmshr/markgo/internal/commands/init"
-	"github.com/vnykmshr/markgo/internal/commands/new"
-	"github.com/vnykmshr/markgo/internal/commands/serve"
-	"github.com/vnykmshr/markgo/internal/constants"
+	initcmd "github.com/1mb-dev/markgo/internal/commands/init"
+	"github.com/1mb-dev/markgo/internal/commands/new"
+	"github.com/1mb-dev/markgo/internal/commands/serve"
+	"github.com/1mb-dev/markgo/internal/constants"
 )
 
 func main() {
@@ -79,6 +79,6 @@ EXAMPLES:
     markgo init --quick             # Quick blog initialization
     markgo new --title "Hello"      # Create new article
 
-For more information, visit: https://github.com/vnykmshr/markgo
+For more information, visit: https://github.com/1mb-dev/markgo
 `, constants.AppVersion)
 }

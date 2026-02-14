@@ -1,6 +1,6 @@
 [Unit]
 Description=MarkGo Engine v1.0.0 - High-Performance Blog Engine
-Documentation=https://github.com/vnykmshr/markgo
+Documentation=https://github.com/1mb-dev/markgo
 After=network.target
 Wants=network.target
 

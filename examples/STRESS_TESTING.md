@@ -10,11 +10,11 @@ WebStress has evolved beyond being a MarkGo-specific tool. It's now a general-pu
 
 ### Where to Find WebStress
 
-- **Repository**: https://github.com/vnykmshr/webstress
-- **Documentation**: See the WebStress README for full documentation
+- **Repository**: https://github.com/vnykmshr/lobster
+- **Documentation**: See the Lobster README for full documentation
 - **Installation**:
   ```bash
-  go install github.com/vnykmshr/webstress/cmd/webstress@latest
+  go install github.com/vnykmshr/lobster/cmd/lobster@latest
   ```
 
 ### Testing MarkGo with WebStress
@@ -81,8 +81,8 @@ webstress -config webstress-config.json
 
 ### Questions or Issues?
 
-- WebStress Issues: https://github.com/vnykmshr/webstress/issues
-- MarkGo Issues: https://github.com/vnykmshr/markgo/issues
+- Lobster Issues: https://github.com/vnykmshr/lobster/issues
+- MarkGo Issues: https://github.com/1mb-dev/markgo/issues
 
 ---
 

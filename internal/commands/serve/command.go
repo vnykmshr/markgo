@@ -18,17 +18,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/vnykmshr/markgo/internal/config"
-	"github.com/vnykmshr/markgo/internal/constants"
-	apperrors "github.com/vnykmshr/markgo/internal/errors"
-	"github.com/vnykmshr/markgo/internal/handlers"
-	"github.com/vnykmshr/markgo/internal/middleware"
-	"github.com/vnykmshr/markgo/internal/services"
-	"github.com/vnykmshr/markgo/internal/services/article"
-	"github.com/vnykmshr/markgo/internal/services/compose"
-	"github.com/vnykmshr/markgo/internal/services/feed"
-	"github.com/vnykmshr/markgo/internal/services/seo"
-	"github.com/vnykmshr/markgo/web"
+	"github.com/1mb-dev/markgo/internal/config"
+	"github.com/1mb-dev/markgo/internal/constants"
+	apperrors "github.com/1mb-dev/markgo/internal/errors"
+	"github.com/1mb-dev/markgo/internal/handlers"
+	"github.com/1mb-dev/markgo/internal/middleware"
+	"github.com/1mb-dev/markgo/internal/services"
+	"github.com/1mb-dev/markgo/internal/services/article"
+	"github.com/1mb-dev/markgo/internal/services/compose"
+	"github.com/1mb-dev/markgo/internal/services/feed"
+	"github.com/1mb-dev/markgo/internal/services/seo"
+	"github.com/1mb-dev/markgo/web"
 )
 
 const (

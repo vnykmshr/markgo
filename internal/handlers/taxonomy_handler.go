@@ -7,9 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apperrors "github.com/vnykmshr/markgo/internal/errors"
-	"github.com/vnykmshr/markgo/internal/models"
-	"github.com/vnykmshr/markgo/internal/services"
+	apperrors "github.com/1mb-dev/markgo/internal/errors"
+	"github.com/1mb-dev/markgo/internal/models"
+	"github.com/1mb-dev/markgo/internal/services"
 )
 
 // TaxonomyHandler handles tag and category pages.

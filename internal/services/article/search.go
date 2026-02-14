@@ -7,7 +7,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/vnykmshr/markgo/internal/models"
+	"github.com/1mb-dev/markgo/internal/models"
 )
 
 // SearchService provides article search functionality

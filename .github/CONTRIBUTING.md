@@ -8,7 +8,7 @@ Read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## First Time Contributing?
 
-Look for issues labeled [`good first issue`](https://github.com/vnykmshr/markgo/labels/good%20first%20issue).
+Look for issues labeled [`good first issue`](https://github.com/1mb-dev/markgo/labels/good%20first%20issue).
 
 **Response Times**: Expect PR feedback within 3-5 days. Ping the maintainer if no response after 1 week.
 
@@ -65,7 +65,7 @@ We welcome feature suggestions! Please:
 
 1. **Fork the repository** and clone your fork:
    ```bash
-   git clone https://github.com/vnykmshr/markgo
+   git clone https://github.com/1mb-dev/markgo
    cd markgo
    ```
 

@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-ORIGINAL_MODULE="github.com/vnykmshr/markgo"
+ORIGINAL_MODULE="github.com/1mb-dev/markgo"
 NEW_MODULE=""
 
 show_help() {

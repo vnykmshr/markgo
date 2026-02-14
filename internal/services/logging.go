@@ -10,9 +10,9 @@ import (
 
 	"gopkg.in/natefinch/lumberjack.v2"
 
-	"github.com/vnykmshr/markgo/internal/config"
-	"github.com/vnykmshr/markgo/internal/constants"
-	apperrors "github.com/vnykmshr/markgo/internal/errors"
+	"github.com/1mb-dev/markgo/internal/config"
+	"github.com/1mb-dev/markgo/internal/constants"
+	apperrors "github.com/1mb-dev/markgo/internal/errors"
 )
 
 // Log format constants

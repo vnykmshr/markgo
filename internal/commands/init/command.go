@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vnykmshr/markgo/internal/constants"
-	apperrors "github.com/vnykmshr/markgo/internal/errors"
+	"github.com/1mb-dev/markgo/internal/constants"
+	apperrors "github.com/1mb-dev/markgo/internal/errors"
 )
 
 const (
@@ -424,7 +424,7 @@ func createSampleArticles(dir string, config *BlogConfig) error {
 	linkContent := "---\n" +
 		"author: \"" + config.Author + "\"\n" +
 		"date: " + time.Now().Add(-2*time.Hour).Format("2006-01-02T15:04:05Z07:00") + "\n" +
-		"link_url: \"https://github.com/vnykmshr/markgo\"\n" +
+		"link_url: \"https://github.com/1mb-dev/markgo\"\n" +
 		"tags: [\"markgo\", \"open-source\"]\n" +
 		"draft: false\n" +
 		"---\n\n" +
@@ -436,7 +436,7 @@ func createSampleArticles(dir string, config *BlogConfig) error {
 func createReadme(dir string, config *BlogConfig) error {
 	readme := "# " + config.Title + "\n\n" +
 		config.Description + "\n\n" +
-		"Powered by [MarkGo](https://github.com/vnykmshr/markgo) — a single-binary blogging companion.\n\n" +
+		"Powered by [MarkGo](https://github.com/1mb-dev/markgo) — a single-binary blogging companion.\n\n" +
 		"## Quick Start\n\n" +
 		"```bash\n" +
 		"markgo serve\n" +

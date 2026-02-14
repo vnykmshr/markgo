@@ -10,7 +10,7 @@ import (
 
 	"github.com/vnykmshr/obcache-go/pkg/obcache"
 
-	"github.com/vnykmshr/markgo/internal/models"
+	"github.com/1mb-dev/markgo/internal/models"
 )
 
 // CacheCoordinator manages caching across all article services

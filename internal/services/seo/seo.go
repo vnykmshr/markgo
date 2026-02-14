@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vnykmshr/markgo/internal/models"
-	"github.com/vnykmshr/markgo/internal/services"
+	"github.com/1mb-dev/markgo/internal/models"
+	"github.com/1mb-dev/markgo/internal/services"
 )
 
 // Helper represents a simple SEO utility

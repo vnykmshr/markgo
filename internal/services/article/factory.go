@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/vnykmshr/markgo/internal/models"
+	"github.com/1mb-dev/markgo/internal/models"
 )
 
 // ServiceFactory creates and configures article services for different use cases

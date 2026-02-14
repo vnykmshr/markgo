@@ -16,7 +16,7 @@ import (
 
 	"github.com/joho/godotenv"
 
-	apperrors "github.com/vnykmshr/markgo/internal/errors"
+	apperrors "github.com/1mb-dev/markgo/internal/errors"
 )
 
 // Environment constants

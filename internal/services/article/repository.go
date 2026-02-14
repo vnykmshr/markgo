@@ -14,10 +14,10 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	apperrors "github.com/vnykmshr/markgo/internal/errors"
+	apperrors "github.com/1mb-dev/markgo/internal/errors"
 
-	"github.com/vnykmshr/markgo/internal/constants"
-	"github.com/vnykmshr/markgo/internal/models"
+	"github.com/1mb-dev/markgo/internal/constants"
+	"github.com/1mb-dev/markgo/internal/models"
 )
 
 // isMarkdownFile checks if a file has a supported Markdown extension
