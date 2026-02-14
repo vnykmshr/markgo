@@ -92,7 +92,7 @@ services:
       - ./web:/web
       - ./internal:/app/internal
       - ./cmd:/app/cmd
-    command: go run cmd/server/main.go
+    command: go run cmd/markgo/main.go serve
     ports:
       - "8080:8080"
       - "2345:2345"  # Delve debugger port

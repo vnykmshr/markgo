@@ -126,7 +126,7 @@ echo -e "  go test -v ./internal/models"
 echo -e "  go test -v ./internal/services"
 echo -e "  go test -v ./internal/handlers"
 echo -e "  go test -v ./internal/middleware"
-echo -e "  go test -v ./cmd/server"
+echo -e "  go test -v ./cmd/markgo"
 
 echo -e "${YELLOW}To run benchmarks:${NC}"
 echo -e "  go test -bench=. ./..."

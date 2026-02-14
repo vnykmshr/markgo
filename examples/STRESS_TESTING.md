@@ -1,14 +1,14 @@
 # Stress Testing for MarkGo
 
-## WebStress - Graduated Stress Testing Tool
+## Lobster - Graduated Stress Testing Tool
 
-The stress testing tool that was previously located in `examples/stress-test/` has been graduated into an independent project called **WebStress**.
+The stress testing tool that was previously located in `examples/stress-test/` has been graduated into an independent project called **Lobster**.
 
 ### Why the Change?
 
-WebStress has evolved beyond being a MarkGo-specific tool. It's now a general-purpose web stress testing tool that can test any web application, not just MarkGo.
+Lobster has evolved beyond being a MarkGo-specific tool. It's now a general-purpose web stress testing tool that can test any web application, not just MarkGo.
 
-### Where to Find WebStress
+### Where to Find Lobster
 
 - **Repository**: https://github.com/vnykmshr/lobster
 - **Documentation**: See the Lobster README for full documentation
@@ -17,14 +17,14 @@ WebStress has evolved beyond being a MarkGo-specific tool. It's now a general-pu
   go install github.com/vnykmshr/lobster/cmd/lobster@latest
   ```
 
-### Testing MarkGo with WebStress
+### Testing MarkGo with Lobster
 
 ```bash
 # Start your MarkGo server
-go run cmd/server/main.go
+go run cmd/markgo/main.go serve
 
-# In another terminal, run WebStress
-webstress -url http://localhost:3000 -duration 2m -concurrency 10 -output markgo-stress-test.json
+# In another terminal, run Lobster
+lobster -url http://localhost:3000 -duration 2m -concurrency 10 -output markgo-stress-test.json
 ```
 
 ### Key Features
@@ -38,7 +38,7 @@ webstress -url http://localhost:3000 -duration 2m -concurrency 10 -output markgo
 
 ### Example Configuration for MarkGo
 
-Create a `webstress-config.json`:
+Create a `lobster-config.json`:
 
 ```json
 {
@@ -62,13 +62,13 @@ Create a `webstress-config.json`:
 
 Then run:
 ```bash
-webstress -config webstress-config.json
+lobster -config lobster-config.json
 ```
 
 ### Migration Timeline
 
 - **Before**: `examples/stress-test/` in MarkGo repo
-- **After**: Independent WebStress project
+- **After**: Independent Lobster project
 - **Migration Date**: 2025-10-24
 - **MarkGo Version**: Removed in v0.4.0
 

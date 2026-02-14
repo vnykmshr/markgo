@@ -22,8 +22,6 @@ echo -e "${GREEN}📋 Canonical version: ${CANONICAL_VERSION}${NC}"
 
 # Files to check for version consistency
 declare -a VERSION_FILES=(
-    "cmd/init/main.go:constants\.AppVersion"
-    "internal/handlers/api.go:constants\.AppVersion"
     "internal/services/logging.go:constants\.AppVersion"
 )
 
@@ -60,7 +58,7 @@ NUMERIC_VERSION="${CANONICAL_VERSION#v}"
 
 # Look for hardcoded version patterns in Go files (excluding test files, generated files, and expected locations)
 echo -e "${GREEN}🔍 Checking for hardcoded version strings...${NC}"
-HARDCODED_VERSIONS=$(find . -name "*.go" -not -path "./vendor/*" -not -path "./.git/*" -not -name "*_test.go" -not -path "./internal/constants/constants.go" -not -path "./cmd/server/main.go" -exec grep -l "\"v1\.[0-9]\+\.[0-9]\+\"" {} \; 2>/dev/null || true)
+HARDCODED_VERSIONS=$(find . -name "*.go" -not -path "./vendor/*" -not -path "./.git/*" -not -name "*_test.go" -not -path "./internal/constants/constants.go" -not -path "./cmd/markgo/main.go" -exec grep -l "\"v1\.[0-9]\+\.[0-9]\+\"" {} \; 2>/dev/null || true)
 
 if [[ -n "$HARDCODED_VERSIONS" ]]; then
     echo -e "${RED}❌ Found hardcoded version strings in:${NC}"

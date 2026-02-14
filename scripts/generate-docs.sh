@@ -15,10 +15,7 @@ PACKAGES=(
     "internal/handlers:handlers-package.md"
     "internal/middleware:middleware-package.md"
     "internal/errors:errors-package.md"
-    "cmd/server:cmd-server-package.md"
-    "cmd/new-article:cmd-new-article-package.md"
-    "cmd/stress-test:stress-test-package.md"
-    "cmd/init:cmd-init-package.md"
+    "cmd/markgo:cmd-markgo-package.md"
 )
 
 # Generate package documentation
