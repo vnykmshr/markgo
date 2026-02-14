@@ -4,12 +4,9 @@
  */
 
 import { showToast } from './modules/toast.js';
+import { authenticatedJSON } from './modules/auth-fetch.js';
 
 let ac = null;
-
-function getCSRFToken() {
-    return document.querySelector('meta[name="csrf-token"]')?.content || '';
-}
 
 function updateDraftCount() {
     const subtitle = document.querySelector('.page-subtitle');
@@ -36,13 +33,7 @@ export function destroy() {
 async function handlePublish(btn) {
     const slug = btn.dataset.slug;
     if (!slug) {
-        showToast('Unable to publish — please reload the page', 'error');
-        return;
-    }
-
-    const csrfToken = getCSRFToken();
-    if (!csrfToken) {
-        showToast('Session expired — please reload the page', 'warning');
+        showToast('Unable to publish \u2014 please reload the page', 'error');
         return;
     }
 
@@ -50,35 +41,19 @@ async function handlePublish(btn) {
     btn.textContent = 'Publishing\u2026';
 
     try {
-        const res = await fetch(`/compose/publish/${encodeURIComponent(slug)}`, {
+        const result = await authenticatedJSON(`/compose/publish/${encodeURIComponent(slug)}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': csrfToken,
-            },
         });
 
-        if (res.status === 401 || res.status === 403) {
+        if (result.status === 401 || result.status === 403) {
             showToast('Please sign in to publish', 'warning');
-            document.dispatchEvent(new CustomEvent('auth:open-login'));
             btn.disabled = false;
             btn.textContent = 'Publish';
             return;
         }
 
-        let data;
-        try {
-            data = await res.json();
-        } catch (err) {
-            console.error('Failed to parse publish response:', err);
-            showToast(`Publish failed (${res.status})`, 'error');
-            btn.disabled = false;
-            btn.textContent = 'Publish';
-            return;
-        }
-
-        if (!res.ok) {
-            showToast(data.error || 'Publish failed', 'error');
+        if (!result.ok) {
+            showToast(result.error || 'Publish failed', 'error');
             btn.disabled = false;
             btn.textContent = 'Publish';
             return;
@@ -98,13 +73,13 @@ async function handlePublish(btn) {
             wrapper.style.opacity = '0';
             wrapper.style.transform = 'translateY(-8px)';
             wrapper.addEventListener('transitionend', removeCard, { once: true });
-            setTimeout(removeCard, 400); // Safety: remove even if transitionend never fires
+            setTimeout(removeCard, 400);
         }
 
-        showToast(data.message || 'Published', 'success');
+        showToast(result.data.message || 'Published', 'success');
     } catch (err) {
         console.error('Draft publish failed:', err);
-        showToast('Network error — please try again', 'error');
+        showToast('Network error \u2014 please try again', 'error');
         btn.disabled = false;
         btn.textContent = 'Publish';
     }

@@ -12,6 +12,7 @@
  */
 
 import { showToast } from './modules/toast.js';
+import { authenticatedFetch } from './modules/auth-fetch.js';
 
 const FULL_DRAFT_KEY = 'markgo:compose-full-draft';
 const SAVE_DELAY = 2000;
@@ -27,7 +28,6 @@ export function init() {
     const previewBtn = document.querySelector('.compose-preview-btn');
     const previewPanel = document.querySelector('.compose-preview-panel');
     const previewContent = document.querySelector('.compose-preview-content');
-    const csrfInput = document.querySelector('input[name="_csrf"]');
     const form = document.querySelector('.compose-form');
     const saveDraftBtn = document.querySelector('.compose-submit');
     const publishBtn = document.querySelector('.compose-submit-secondary');
@@ -61,12 +61,10 @@ export function init() {
 
         const formData = new FormData();
         formData.append('content', content);
-        if (csrfInput) formData.append('_csrf', csrfInput.value);
 
-        fetch('/compose/preview', {
+        authenticatedFetch('/compose/preview', {
             method: 'POST',
             body: formData,
-            credentials: 'same-origin',
         })
             .then((res) => {
                 if (!res.ok) throw new Error('Preview failed');
@@ -238,16 +236,14 @@ export function init() {
             }
 
             try {
-                const response = await fetch(form.action, {
+                const response = await authenticatedFetch(form.action, {
                     method: 'POST',
                     body: new FormData(form, submitter),
-                    credentials: 'same-origin',
                     headers: { Accept: 'text/html' },
                 });
 
                 if (response.status === 401 || response.status === 403) {
                     showToast('Please sign in to publish', 'warning');
-                    document.dispatchEvent(new CustomEvent('auth:open-login'));
                     resetButtons();
                     return;
                 }
@@ -341,12 +337,10 @@ export function init() {
 
         const formData = new FormData();
         formData.append('file', file);
-        if (csrfInput) formData.append('_csrf', csrfInput.value);
 
-        fetch(`/compose/upload/${encodeURIComponent(slug)}`, {
+        authenticatedFetch(`/compose/upload/${encodeURIComponent(slug)}`, {
             method: 'POST',
             body: formData,
-            credentials: 'same-origin',
         })
             .then((res) => {
                 if (!res.ok) {

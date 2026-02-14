@@ -4,6 +4,7 @@
  */
 
 import { showToast } from './modules/toast.js';
+import { authenticatedJSON } from './modules/auth-fetch.js';
 
 let ac = null;
 
@@ -110,18 +111,17 @@ export function init() {
         submitBtn.textContent = ' Sending...';
         submitBtn.prepend(spinner);
 
-        fetch('/contact', {
+        authenticatedJSON('/contact', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, subject, message, captcha_question: formData.get('captcha_question'), captcha_answer: captchaValue }),
+            body: { name, email, subject, message, captcha_question: formData.get('captcha_question'), captcha_answer: captchaValue },
+            skipCSRF: true,
         })
-            .then((response) => response.json())
             .then((result) => {
-                if (result.success) {
-                    showToast(result.message || 'Message sent!', 'success');
+                if (result.ok && result.data.success) {
+                    showToast(result.data.message || 'Message sent!', 'success');
                     contactForm.reset();
                 } else {
-                    showToast(result.message || 'Failed to send message. Please try again.', 'error');
+                    showToast(result.error || result.data?.message || 'Failed to send message. Please try again.', 'error');
                 }
                 generateCaptcha();
             })

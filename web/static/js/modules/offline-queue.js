@@ -6,6 +6,8 @@
  * CSRF token is read fresh from <meta> on each drain attempt.
  */
 
+import { authenticatedFetch, getCSRFToken } from './auth-fetch.js';
+
 const DB_NAME = 'markgo';
 const STORE_NAME = 'compose-queue';
 const DB_VERSION = 1;
@@ -57,7 +59,7 @@ export async function getQueueCount() {
  * failed === -1 signals missing CSRF token (caller should warn user).
  */
 export async function drainQueue() {
-    const token = document.querySelector('meta[name="csrf-token"]')?.content;
+    const token = getCSRFToken();
     if (!token) {
         console.warn('drainQueue: no CSRF token available, cannot sync');
         return { published: 0, failed: -1 };
@@ -89,12 +91,9 @@ export async function drainQueue() {
             if (item.title) body.title = item.title;
 
             try {
-                const response = await fetch('/compose/quick', {
+                const response = await authenticatedFetch('/compose/quick', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-Token': token,
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body),
                 });
 

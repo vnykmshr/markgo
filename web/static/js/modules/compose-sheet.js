@@ -8,6 +8,7 @@
  */
 
 import { showToast } from './toast.js';
+import { authenticatedJSON } from './auth-fetch.js';
 import { queuePost, drainQueue, getQueueCount } from './offline-queue.js';
 
 const DRAFT_KEY = 'markgo:compose-draft';
@@ -25,10 +26,6 @@ let isSubmitting = false;
 let saveTimer = null;
 let saveWarning = null;
 let viewportHandler = null;
-
-function getCSRFToken() {
-    return document.querySelector('meta[name="csrf-token"]')?.content || '';
-}
 
 function autoGrow(el) {
     el.style.height = 'auto';
@@ -423,12 +420,6 @@ async function handleSubmit(isDraft) {
         return;
     }
 
-    const token = getCSRFToken();
-    if (!token) {
-        showToast('Session expired — please refresh', 'error');
-        return;
-    }
-
     isSubmitting = true;
     saveDraftBtn.disabled = true;
     publishLink.disabled = true;
@@ -445,18 +436,19 @@ async function handleSubmit(isDraft) {
     const body = { content, draft: isDraft };
     if (title) body.title = title;
 
-    let response;
+    let result;
     try {
-        response = await fetch('/compose/quick', {
+        result = await authenticatedJSON('/compose/quick', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': token,
-            },
-            body: JSON.stringify(body),
+            body,
         });
-    } catch (fetchErr) {
-        console.error('Quick compose fetch failed:', fetchErr);
+    } catch (err) {
+        // TypeError = network failure; anything else = logic error (e.g. missing CSRF)
+        if (!(err instanceof TypeError)) {
+            showToast(err.message || 'Something went wrong', 'error');
+            resetButtons();
+            return;
+        }
         // Network failure — queue for offline sync
         try {
             await queuePost(body);
@@ -464,43 +456,31 @@ async function handleSubmit(isDraft) {
             titleInput.value = '';
             clearDraft();
             close();
-            showToast('Saved offline — will publish when back online', 'info');
+            showToast('Saved offline \u2014 will publish when back online', 'info');
         } catch (queueErr) {
             console.error('Offline queue failed:', queueErr);
-            showToast('Network error — try again', 'error');
+            showToast('Network error \u2014 try again', 'error');
         }
         resetButtons();
         return;
     }
 
-    // Handle non-JSON responses (401, 500) before parsing body
-    if (response.status === 401) {
+    if (result.status === 401 || result.status === 403) {
         close();
         showToast('Please sign in to publish', 'warning');
-        document.dispatchEvent(new CustomEvent('auth:open-login'));
         return;
     }
 
-    let data;
-    try {
-        data = await response.json();
-    } catch (parseErr) {
-        console.error('Failed to parse quick compose response:', parseErr);
-        showToast('Server error — please try again', 'error');
-        resetButtons();
-        return;
-    }
-
-    if (response.ok) {
+    if (result.ok) {
         // Clear fields BEFORE close() so close() won't re-save them
         textarea.value = '';
         titleInput.value = '';
         clearDraft();
         close();
-        if (!isDraft) prependCard(data, content, title);
-        showToast(data.message || (isDraft ? 'Saved as draft' : 'Published!'), 'success');
+        if (!isDraft) prependCard(result.data, content, title);
+        showToast(result.data.message || (isDraft ? 'Saved as draft' : 'Published!'), 'success');
     } else {
-        showToast(data.error || 'Failed to save', 'error');
+        showToast(result.error || 'Failed to save', 'error');
         resetButtons();
     }
 }

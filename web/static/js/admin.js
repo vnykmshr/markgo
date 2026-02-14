@@ -3,6 +3,7 @@
  */
 
 import { showToast } from './modules/toast.js';
+import { authenticatedJSON } from './modules/auth-fetch.js';
 
 let ac = null;
 
@@ -28,27 +29,15 @@ async function executeAction(button) {
     button.textContent = 'Working...';
 
     try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        });
+        const result = await authenticatedJSON(url, { method: 'POST' });
 
-        if (!response.ok) {
-            let msg = `${label} failed (HTTP ${response.status})`;
-            try {
-                const body = await response.json();
-                if (body.error) msg = body.error;
-            } catch { /* response not JSON, use default */ }
-            throw new Error(msg);
+        if (!result.ok) {
+            showToast(result.error || `${label} failed`, 'error');
+        } else {
+            showToast(result.data.message || `${label} completed`, 'success');
         }
-
-        const data = await response.json().catch(() => ({}));
-        showToast(data.message || `${label} completed`, 'success');
     } catch (error) {
-        const msg = error instanceof TypeError
-            ? `${label} failed — check your network connection`
-            : error.message || `${label} failed`;
-        showToast(msg, 'error');
+        showToast(`${label} failed \u2014 check your network connection`, 'error');
     } finally {
         button.textContent = originalText;
         button.disabled = false;
