@@ -53,7 +53,7 @@ func (h *AMAHandler) Submit(c *gin.Context) {
 		Draft:      true,
 		Asker:      form.Name,
 		AskerEmail: form.Email,
-		Type:       "ama",
+		Type:       templateAMA,
 	})
 	if err != nil {
 		h.logger.Error("Failed to create AMA submission", "error", err)
@@ -80,7 +80,7 @@ func (h *AMAHandler) ListPending(c *gin.Context) {
 
 	var pending []*models.Article
 	for _, a := range drafts {
-		if a.Type == "ama" {
+		if a.Type == templateAMA {
 			pending = append(pending, a)
 		}
 	}

@@ -93,7 +93,7 @@ func (h *AdminHandler) AdminHome(c *gin.Context) {
 	// Count pending AMA questions
 	pendingAMA := 0
 	for _, d := range draftArticles {
-		if d.Type == "ama" {
+		if d.Type == templateAMA {
 			pendingAMA++
 		}
 	}

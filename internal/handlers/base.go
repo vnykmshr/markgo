@@ -17,6 +17,7 @@ import (
 )
 
 const templateArticle = "article"
+const templateAMA = "ama"
 const unknownValue = "unknown"
 
 // BaseHandler provides common functionality for all handlers

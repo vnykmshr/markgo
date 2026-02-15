@@ -33,7 +33,7 @@ func (h *FeedHandler) Home(c *gin.Context) {
 	}
 	typeFilter := c.Query("type")
 	switch typeFilter {
-	case "", templateArticle, "thought", "link", "ama":
+	case "", templateArticle, "thought", "link", templateAMA:
 		// valid
 	default:
 		typeFilter = ""
