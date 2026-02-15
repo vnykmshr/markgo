@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/vnykmshr/obcache-go/pkg/obcache"
+	"github.com/1mb-dev/obcache-go/v2/pkg/obcache"
 
 	"github.com/1mb-dev/markgo/internal/models"
 )

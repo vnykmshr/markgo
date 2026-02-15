@@ -3,13 +3,13 @@ module github.com/1mb-dev/markgo
 go 1.26.0
 
 require (
+	github.com/1mb-dev/goflow v1.5.1
+	github.com/1mb-dev/obcache-go/v2 v2.0.2
 	github.com/dustin/go-humanize v1.0.1
 	github.com/gin-gonic/gin v1.11.0
 	github.com/joho/godotenv v1.5.1
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/stretchr/testify v1.11.1
-	github.com/vnykmshr/goflow v1.5.0
-	github.com/vnykmshr/obcache-go v1.1.0
 	github.com/yuin/goldmark v1.7.16
 	golang.org/x/text v0.34.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -54,8 +54,6 @@ require (
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
-	go.opentelemetry.io/otel v1.40.0 // indirect
-	go.opentelemetry.io/otel/metric v1.40.0 // indirect
 	go.uber.org/mock v0.6.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	golang.org/x/arch v0.24.0 // indirect

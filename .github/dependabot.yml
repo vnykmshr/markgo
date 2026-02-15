@@ -12,8 +12,6 @@ updates:
       time: "09:00"
       timezone: "UTC"
     open-pull-requests-limit: 5
-    reviewers:
-      - "vnykmshr"
     labels:
       - "dependencies"
       - "go"
@@ -38,8 +36,6 @@ updates:
       time: "09:00"
       timezone: "UTC"
     open-pull-requests-limit: 3
-    reviewers:
-      - "vnykmshr"
     labels:
       - "dependencies"
       - "github-actions"
@@ -56,8 +52,6 @@ updates:
       time: "09:00"
       timezone: "UTC"
     open-pull-requests-limit: 3
-    reviewers:
-      - "vnykmshr"
     labels:
       - "dependencies"
       - "docker"

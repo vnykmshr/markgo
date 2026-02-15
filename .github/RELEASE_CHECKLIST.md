@@ -334,5 +334,5 @@ echo "All checks passed!"
 
 ---
 
-**Maintained by:** @vnykmshr
+**Maintained by:** @1mb-dev
 **Feedback:** https://github.com/1mb-dev/markgo/issues
