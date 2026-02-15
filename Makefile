@@ -13,7 +13,8 @@ GOBUILD=$(GOCMD) build
 GOTEST=$(GOCMD) test
 GOMOD=$(GOCMD) mod
 GOFMT=gofmt
-GOLINT=golangci-lint
+GOBIN=$(shell $(GOCMD) env GOBIN)
+GOLINT=$(or $(shell command -v golangci-lint 2>/dev/null),$(GOBIN)/golangci-lint)
 
 # Build flags
 VERSION=$(shell git describe --tags --always --dirty 2>/dev/null || echo "v2.0.0")
@@ -90,14 +91,13 @@ fmt: ## Format code with gofmt
 
 lint: ## Run linter (requires golangci-lint)
 	@echo "Running linter..."
-	@if command -v $(GOLINT) > /dev/null; then \
-		$(GOLINT) run; \
-		echo "✓ Lint complete"; \
-	else \
-		echo "Error: '$(GOLINT)' not found."; \
-		echo "Install: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"; \
+	@if [ ! -x "$(GOLINT)" ] && ! command -v golangci-lint > /dev/null 2>&1; then \
+		echo "Error: golangci-lint not found."; \
+		echo "Install: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest"; \
 		exit 1; \
 	fi
+	$(GOLINT) run
+	@echo "✓ Lint complete"
 
 # Dependency management
 tidy: ## Tidy and verify dependencies
